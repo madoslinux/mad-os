@@ -57,6 +57,11 @@ INDICATOR_HEIGHT = 6       # Height of the running indicator area
 INDICATOR_DOT_RADIUS = 3   # Dot radius for running indicator
 WINDOW_POLL_MS = 2000      # Poll compositor every 2 seconds
 
+# --- Bounce animation constants ---
+BOUNCE_AMPLITUDE = 6       # Pixels to move up/down
+BOUNCE_DURATION_MS = 50   # Milliseconds per bounce frame
+BOUNCE_TOTAL_SECONDS = 3  # Total duration of bounce animation
+
 
 def _hex_to_rgb(hex_color):
     """Convert hex color string to (r, g, b) floats 0-1."""
@@ -85,6 +90,9 @@ class LauncherApp:
 
         # Icon zoom animation state: id(btn) -> {current_size, target_size, timer (GLib source ID or None), entry, btn}
         self._zoom_state = {}
+
+        # Bounce animation state: id(btn) -> {offset, direction, timer, original_y}
+        self._bounce_state = {}
 
         # Active popover reference (for dismissing on outside click)
         self._active_popover = None
@@ -728,13 +736,69 @@ class LauncherApp:
     def _on_popover_item_clicked(self, button, popover, exec_cmd):
         """Launch app from popover and close it."""
         popover.popdown()
+        btn = popover.get_relative_to()
         launch_application(exec_cmd)
+        self._start_bounce_animation(btn)
         self._schedule_auto_collapse()
 
     def _on_icon_clicked(self, button, exec_cmd):
         """Launch the clicked application."""
         launch_application(exec_cmd)
+        self._start_bounce_animation(button)
         self._schedule_auto_collapse()
+
+    def _start_bounce_animation(self, btn):
+        """Start bounce animation on the clicked icon button."""
+        key = id(btn)
+        if key in self._bounce_state:
+            return
+        
+        item_box = btn.get_parent()
+        if not item_box:
+            return
+        
+        alloc = item_box.get_allocation()
+        start_y = alloc.y
+        
+        self._bounce_state[key] = {
+            "offset": 0,
+            "direction": -1,
+            "timer": GLib.timeout_add(BOUNCE_DURATION_MS, self._bounce_tick, key),
+            "btn": btn,
+            "item_box": item_box,
+            "start_y": start_y,
+            "elapsed_ms": 0,
+        }
+
+    def _bounce_tick(self, key):
+        """Advance one frame of the bounce animation."""
+        state = self._bounce_state.get(key)
+        if not state:
+            return False
+        
+        state["elapsed_ms"] += BOUNCE_DURATION_MS
+        max_ms = BOUNCE_TOTAL_SECONDS * 1000
+        
+        if state["elapsed_ms"] >= max_ms:
+            item_box = state["item_box"]
+            item_box.set_margin_top(0)
+            if state.get("timer"):
+                state["timer"] = None
+            del self._bounce_state[key]
+            return False
+        
+        state["offset"] += state["direction"] * BOUNCE_AMPLITUDE
+        
+        if state["offset"] <= -BOUNCE_AMPLITUDE:
+            state["offset"] = -BOUNCE_AMPLITUDE
+            state["direction"] = 1
+        elif state["offset"] >= 0:
+            state["offset"] = 0
+            state["direction"] = -1
+        
+        state["item_box"].set_margin_top(state["offset"])
+        
+        return True
 
     def _schedule_auto_collapse(self):
         """Auto-collapse the dock 3 seconds after launching an application."""
