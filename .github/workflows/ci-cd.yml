@@ -314,9 +314,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prepare output directory
-        run: mkdir -p out
-
       - name: Build ISO
         id: build
         run: |
@@ -335,10 +332,9 @@ jobs:
               mkarchiso -v -w /tmp/work -o /out .
               sha256sum /out/*.iso > /out/SHA256SUMS
               chmod -R 777 /out
+              cp /out/*.iso /build/out/
+              cp /out/SHA256SUMS /build/out/
             "
-          
-          docker run --rm -v mados-build-out:/out -v ${{ github.workspace }}/out:/host-out busybox cp -r /out/. /host-out/
-          docker volume rm mados-build-out 2>/dev/null || true
           
           ls -la out/
           ISO_FILE=$(ls out/*.iso | head -1)
