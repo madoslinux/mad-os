@@ -1,0 +1,483 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: cicd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DNS_PRIMARY: "8.8.8.8"
+  DNS_SECONDARY: "8.8.4.4"
+  ARCHLINUX_IMAGE: archlinux:latest
+
+jobs:
+  # ================================================================
+  # Stage 1: Tests
+  # ================================================================
+  code-quality:
+    name: "Code Quality"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install pytest shellcheck-py
+
+      - name: Run ShellCheck
+        run: |
+          find airootfs/usr/local/bin -type f -executable | while read -r script; do
+            if head -1 "$script" | grep -qE "(bash|sh)$"; then
+              shellcheck "$script" || true
+            fi
+          done
+        continue-on-error: true
+
+      - name: Validate Python syntax
+        run: |
+          find airootfs -name "*.py" -type f | while read -r script; do
+            python3 -m py_compile "$script"
+          done
+
+  test-unit:
+    name: "Unit: ${{ matrix.category }}"
+    runs-on: ubuntu-latest
+    needs: code-quality
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - category: "Core"
+            files: "tests/test_boot_scripts.py tests/test_post_installation.py tests/test_first_boot.py"
+          - category: "AI & Desktop"
+            files: "tests/test_opencode.py tests/test_ollama.py tests/test_hyprland_config.py"
+          - category: "Hardware"
+            files: "tests/test_gpu_detection.py tests/test_wifi_backend.py"
+          - category: "Apps"
+            files: "tests/test_equalizer_presets.py tests/test_photo_navigator.py tests/test_installer_config.py"
+          - category: "Live USB"
+            files: "tests/test_liveusb_scripts.py"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install pytest
+        run: pip install pytest
+
+      - name: Run tests
+        run: |
+          for file in ${{ matrix.files }}; do
+            if [ -f "$file" ]; then
+              python3 -m pytest "$file" -v
+            fi
+          done
+
+  test-integration:
+    name: "Integration"
+    runs-on: ubuntu-latest
+    needs: code-quality
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "First-Boot Simulation"
+            script: "tests/test-first-boot-simulation.sh"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run integration test
+        run: |
+          docker run --privileged --rm \
+            --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
+            -v ${{ github.workspace }}:/build \
+            ${{ env.ARCHLINUX_IMAGE }} bash /build/${{ matrix.script }}
+
+  tests-passed:
+    name: "Tests Passed"
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration]
+    if: always() && (github.event_name == 'push' || github.event_name == 'pull_request')
+    outputs:
+      all_passed: ${{ steps.check.outputs.all_passed }}
+
+    steps:
+      - name: Check results
+        id: check
+        run: |
+          if [ "${{ needs.test-unit.result }}" == "failure" ] || [ "${{ needs.test-integration.result }}" == "failure" ]; then
+            echo "all_passed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+          echo "all_passed=true" >> $GITHUB_OUTPUT
+
+  # ================================================================
+  # Stage 2: Validation (only on push to main/develop after tests pass)
+  # ================================================================
+  validate:
+    name: "Validate: ${{ matrix.component }}"
+    runs-on: ubuntu-latest
+    needs: tests-passed
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    strategy:
+      fail-fast: false
+      matrix:
+        component:
+          - name: "Python Modules"
+            script: "tests/test-installer-python-validation.sh"
+          - name: "Config Generation"
+            script: "tests/test-installer-config-generation.sh"
+          - name: "Disk Installation"
+            script: "tests/test-installer-disk-install.sh"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run validation
+        run: |
+          docker run --privileged --rm \
+            --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
+            -v ${{ github.workspace }}:/build \
+            ${{ env.ARCHLINUX_IMAGE }} bash /build/${{ matrix.component.script }}
+
+  # ================================================================
+  # Stage 3: Auto Tag & Build ISO
+  # ================================================================
+  auto-tag:
+    name: "Auto Tag"
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    outputs:
+      new_tag: ${{ steps.create_tag.outputs.new_tag }}
+      version: ${{ steps.create_tag.outputs.version }}
+      is_release: ${{ steps.create_tag.outputs.is_release }}
+      is_prerelease: ${{ steps.create_tag.outputs.is_prerelease }}
+      release_type: ${{ steps.create_tag.outputs.release_type }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create version tag
+        id: create_tag
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+
+          if [[ "$BRANCH" == "develop" ]]; then
+            LAST_TAG=$(git tag -l --sort=-version:refname 'v*' | head -1)
+            LAST_TAG="${LAST_TAG:-v0.0.0}"
+            BASE_VERSION=$(echo "$LAST_TAG" | sed 's/^v//; s/-.*$//')
+            MAJOR=$(echo "$BASE_VERSION" | cut -d. -f1)
+            MINOR=$(echo "$BASE_VERSION" | cut -d. -f2)
+            PATCH=$(echo "$BASE_VERSION" | cut -d. -f3)
+
+            if git rev-parse "$LAST_TAG" >/dev/null 2>&1; then
+              COMMITS=$(git log "${LAST_TAG}..HEAD" --pretty=format:"%s" 2>/dev/null || echo "")
+            else
+              COMMITS=$(git log --pretty=format:"%s")
+            fi
+
+            HAS_BREAKING=false; HAS_FEATURE=false; HAS_FIX=false
+            if echo "$COMMITS" | grep -qiE "BREAKING CHANGE|^[a-zA-Z0-9]+!:"; then HAS_BREAKING=true; fi
+            if echo "$COMMITS" | grep -qiE "^feat(\(|:)"; then HAS_FEATURE=true; fi
+            if echo "$COMMITS" | grep -qiE "^fix(\(|:)|^hotfix(\(|:)"; then HAS_FIX=true; fi
+
+            if [ "$HAS_BREAKING" = "true" ]; then MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+            elif [ "$HAS_FEATURE" = "true" ]; then MINOR=$((MINOR + 1)); PATCH=0
+            elif [ "$HAS_FIX" = "true" ]; then PATCH=$((PATCH + 1))
+            else MINOR=$((MINOR + 1)); PATCH=0; fi
+
+            NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}-beta"
+            VERSION="${MAJOR}.${MINOR}.${PATCH}-beta"
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "release_type=beta" >> "$GITHUB_OUTPUT"
+
+          elif [[ "$BRANCH" == "main" ]]; then
+            LAST_BETA_TAG=$(git tag -l --sort=-version:refname 'v*-beta' | head -1)
+            if [ -n "$LAST_BETA_TAG" ]; then
+              VERSION=$(echo "$LAST_BETA_TAG" | sed 's/^v//; s/-beta$//')
+              NEW_TAG="v${VERSION}"
+            else
+              LAST_STABLE_TAG=$(git tag -l --sort=-version:refname 'v*' | grep -v '-' | head -1)
+              LAST_STABLE_TAG="${LAST_STABLE_TAG:-v0.0.0}"
+              BASE_VERSION=$(echo "$LAST_STABLE_TAG" | sed 's/^v//')
+              MAJOR=$(echo "$BASE_VERSION" | cut -d. -f1)
+              MINOR=$(echo "$BASE_VERSION" | cut -d. -f2)
+              PATCH=$(echo "$BASE_VERSION" | cut -d. -f3)
+
+              if git rev-parse "$LAST_STABLE_TAG" >/dev/null 2>&1; then
+                COMMITS=$(git log "${LAST_STABLE_TAG}..HEAD" --pretty=format:"%s" 2>/dev/null || echo "")
+              else
+                COMMITS=$(git log --pretty=format:"%s")
+              fi
+
+              HAS_BREAKING=false; HAS_FEATURE=false; HAS_FIX=false
+              if echo "$COMMITS" | grep -qiE "BREAKING CHANGE|^[a-zA-Z0-9]+!:"; then HAS_BREAKING=true; fi
+              if echo "$COMMITS" | grep -qiE "^feat(\(|:)"; then HAS_FEATURE=true; fi
+              if echo "$COMMITS" | grep -qiE "^fix(\(|:)|^hotfix(\(|:)"; then HAS_FIX=true; fi
+
+              if [ "$HAS_BREAKING" = "true" ]; then MAJOR=$((MAJOR + 1)); MINOR=0; PATCH=0
+              elif [ "$HAS_FEATURE" = "true" ]; then MINOR=$((MINOR + 1)); PATCH=0
+              elif [ "$HAS_FIX" = "true" ]; then PATCH=$((PATCH + 1))
+              else MINOR=$((MINOR + 1)); PATCH=0; fi
+
+              NEW_TAG="v${MAJOR}.${MINOR}.${PATCH}"
+              VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            fi
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "release_type=stable" >> "$GITHUB_OUTPUT"
+          fi
+
+          if git rev-parse "$NEW_TAG" >/dev/null 2>&1; then
+            echo "::warning::Tag $NEW_TAG already exists"
+            echo "new_tag=" >> "$GITHUB_OUTPUT"
+            echo "version=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Creating tag $NEW_TAG"
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag -a "$NEW_TAG" -m "Auto-generated tag $NEW_TAG"
+            git push origin "$NEW_TAG"
+            echo "new_tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: "Build ISO"
+    runs-on: ubuntu-latest
+    needs: auto-tag
+    if: always() && !cancelled() && (needs.auto-tag.result == 'success' || needs.auto-tag.result == 'skipped')
+    outputs:
+      iso_name: ${{ steps.iso_info.outputs.iso_name }}
+      version: ${{ steps.iso_info.outputs.version }}
+      build_date: ${{ steps.iso_info.outputs.build_date }}
+      iso_size_mb: ${{ steps.iso_info.outputs.iso_size_mb }}
+      short_sha: ${{ steps.iso_info.outputs.short_sha }}
+      is_release: ${{ needs.auto-tag.outputs.is_release }}
+      is_prerelease: ${{ needs.auto-tag.outputs.is_prerelease }}
+      release_type: ${{ needs.auto-tag.outputs.release_type }}
+      auto_tag: ${{ needs.auto-tag.outputs.new_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build ISO
+        run: |
+          docker run --privileged --rm \
+            --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
+            -v ${{ github.workspace }}:/build \
+            ${{ env.ARCHLINUX_IMAGE }} bash -c "
+              set -e
+              echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
+              echo 'nameserver ${{ env.DNS_SECONDARY }}' >> /etc/resolv.conf
+              pacman-key --init && pacman-key --populate
+              pacman -Syu --noconfirm archiso
+              cd /build
+              mkarchiso -v -w /tmp/work -o /build/out .
+              sha256sum out/*.iso > out/SHA256SUMS
+              chmod -R 777 /build/out
+            "
+
+      - name: Extract metadata
+        id: iso_info
+        run: |
+          ISO_FILE=$(ls out/*.iso | head -1)
+          ISO_NAME=$(basename "$ISO_FILE")
+          VERSION="${{ needs.auto-tag.outputs.version }}"
+          [ -n "$VERSION" ] || VERSION="${GITHUB_REF_NAME#v}"
+          [ -n "$VERSION" ] || VERSION="dev-$(date +%Y%m%d)"
+          BUILD_DATE=$(date +%Y.%m.%d)
+          ISO_SIZE=$(stat --format=%s "$ISO_FILE")
+          ISO_SIZE_MB=$((ISO_SIZE / 1024 / 1024))
+          SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
+          echo "iso_name=$ISO_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build_date=$BUILD_DATE" >> "$GITHUB_OUTPUT"
+          echo "iso_size_mb=$ISO_SIZE_MB" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: mados-iso
+          path: out/*.iso out/SHA256SUMS
+          retention-days: 7
+
+  # ================================================================
+  # Stage 4: Upload to Internet Archive
+  # ================================================================
+  upload-archive:
+    name: "Upload to Archive"
+    runs-on: ubuntu-latest
+    needs: build
+    if: needs.build.result == 'success'
+
+    steps:
+      - name: Download ISO
+        uses: actions/download-artifact@v4
+        with:
+          name: mados-iso
+          path: out
+
+      - name: Install IA CLI
+        run: pip install internetarchive
+
+      - name: Upload to Archive
+        id: upload_ia
+        env:
+          IAS3_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
+          IAS3_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
+        run: |
+          ISO_NAME=$(ls out/*.iso | head -1 | xargs basename)
+          VERSION="${{ needs.build.outputs.version }}"
+          BUILD_DATE="${{ needs.build.outputs.build_date }}"
+          RELEASE_TYPE="${{ needs.build.outputs.release_type }}"
+
+          mkdir -p ~/.config/internetarchive
+          cat > ~/.config/internetarchive/ia.ini <<EOF
+          [s3]
+          access = ${IAS3_ACCESS_KEY}
+          secret = ${IAS3_SECRET_KEY}
+          EOF
+          chmod 600 ~/.config/internetarchive/ia.ini
+
+          if [[ "$RELEASE_TYPE" == "stable" ]]; then
+            IDENTIFIER="mados-${VERSION}"
+            TITLE="madOS ${VERSION}"
+          else
+            SHORT_SHA="${{ needs.build.outputs.short_sha }}"
+            IDENTIFIER="mados-${RELEASE_TYPE}-${VERSION}-${SHORT_SHA}"
+            TITLE="madOS ${RELEASE_TYPE^} ${VERSION}"
+          fi
+
+          ia upload "$IDENTIFIER" out/*.iso out/SHA256SUMS \
+            --retries 3 \
+            --metadata="title:${TITLE}" \
+            --metadata="mediatype:software" \
+            --metadata="collection:opensource" \
+            --metadata="description:madOS - AI-Orchestrated Arch Linux Live ISO" \
+            --metadata="subject:linux;arch;live-iso;open-source" \
+            --metadata="creator:madOS Project" \
+            --metadata="date:${BUILD_DATE}"
+
+          echo "download_url=https://archive.org/download/${IDENTIFIER}/${ISO_NAME}" >> "$GITHUB_OUTPUT"
+          echo "identifier=$IDENTIFIER" >> "$GITHUB_OUTPUT"
+
+  # ================================================================
+  # Stage 5: GitHub Release (only stable)
+  # ================================================================
+  release:
+    name: "GitHub Release"
+    needs: upload-archive
+    if: needs.upload-archive.result == 'success' && needs.build.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download ISO
+        uses: actions/download-artifact@v4
+        with:
+          name: mados-iso
+          path: out
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build.outputs.auto_tag }}
+          name: "madOS ${{ needs.build.outputs.version }}"
+          prerelease: false
+          body: |
+            **Version:** `${{ needs.build.outputs.version }}`
+            **Commit:** `${{ github.sha }}`
+            **ISO:** `${{ needs.build.outputs.iso_name }}`
+            **Size:** ${{ needs.build.outputs.iso_size_mb }} MB
+
+            ### Download
+
+            **[Download from Internet Archive](${{ needs.upload-archive.outputs.download_url }})**
+
+            ### Verification
+
+            ```bash
+            sha256sum -c SHA256SUMS
+            ```
+          files: out/SHA256SUMS
+          make_latest: true
+
+  # ================================================================
+  # Stage 6: Update Website
+  # ================================================================
+  update-website:
+    name: "Update Website"
+    needs: upload-archive
+    if: needs.upload-archive.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Update download link
+        run: |
+          VERSION="${{ needs.build.outputs.version }}"
+          DOWNLOAD_URL="${{ needs.upload-archive.outputs.download_url }}"
+          RELEASE_TYPE="${{ needs.build.outputs.release_type }}"
+
+          [[ "$RELEASE_TYPE" == "stable" ]] && CHANNEL="stable" || CHANNEL="beta"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+
+          sed -i "/data-channel=\"$CHANNEL\"/s|https://archive.org/download/mados-[^/]*/madOS-[^\"]*\.iso|$DOWNLOAD_URL|g" docs/index.html
+          sed -i "/data-channel=\"$CHANNEL\"/s|data-version=\"[^\"]*\"|data-version=\"$VERSION\"|g" docs/index.html
+
+          if ! git diff --quiet docs/index.html; then
+            git add docs/index.html
+            git commit -m "Update $CHANNEL download link to $VERSION [skip ci]"
+            for i in 1 2 3; do
+              git push origin main && break || { git pull --rebase origin main; sleep 2; }
+            done
+          fi
