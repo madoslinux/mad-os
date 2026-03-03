@@ -3,27 +3,8 @@ name: "🧪 Tests"
 on:
   push:
     branches: [main, develop]
-    paths:
-      - 'airootfs/**'
-      - 'packages.x86_64'
-      - 'profiledef.sh'
-      - 'pacman.conf'
-      - 'grub/**'
-      - 'syslinux/**'
-      - 'efiboot/**'
-      - 'tests/**'
-      - '.github/workflows/tests.yml'
   pull_request:
-    paths:
-      - 'airootfs/**'
-      - 'packages.x86_64'
-      - 'profiledef.sh'
-      - 'pacman.conf'
-      - 'grub/**'
-      - 'syslinux/**'
-      - 'efiboot/**'
-      - 'tests/**'
-      - '.github/workflows/tests.yml'
+    branches: [main, develop]
 
 concurrency:
   group: tests-${{ github.ref }}
