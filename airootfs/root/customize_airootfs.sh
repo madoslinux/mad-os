@@ -185,7 +185,7 @@ else
     echo "Installing OpenCode..."
     
     # Install via curl (official method - binary)
-    if curl -fsSL https://opencode.ai/install | OPENCODE_INSTALL_DIR="$INSTALL_DIR" bash; then
+    if curl -fsSL https://opencode.ai/install | INSTALL_DIR="$INSTALL_DIR" bash; then
         if [[ -x "$INSTALL_DIR/$OPENCODE_CMD" ]] || command -v "$OPENCODE_CMD" &>/dev/null; then
             echo "✓ OpenCode installed"
         else
