@@ -58,9 +58,9 @@ INDICATOR_DOT_RADIUS = 3   # Dot radius for running indicator
 WINDOW_POLL_MS = 2000      # Poll compositor every 2 seconds
 
 # --- Bounce animation constants ---
-BOUNCE_AMPLITUDE = 6       # Pixels to move up/down
-BOUNCE_DURATION_MS = 50   # Milliseconds per bounce frame
-BOUNCE_TOTAL_SECONDS = 3  # Total duration of bounce animation
+BOUNCE_AMPLITUDE = 10      # Pixels to move up/down (increased for visibility)
+BOUNCE_DURATION_MS = 40   # Milliseconds per bounce frame (faster = snappier)
+BOUNCE_TOTAL_SECONDS = 2  # Total duration of bounce animation
 
 
 def _hex_to_rgb(hex_color):
@@ -737,15 +737,25 @@ class LauncherApp:
         """Launch app from popover and close it."""
         popover.popdown()
         btn = popover.get_relative_to()
+        self._cancel_zoom_animation(btn)
         launch_application(exec_cmd)
         self._start_bounce_animation(btn)
         self._schedule_auto_collapse()
 
     def _on_icon_clicked(self, button, exec_cmd):
         """Launch the clicked application."""
+        self._cancel_zoom_animation(button)
         launch_application(exec_cmd)
         self._start_bounce_animation(button)
         self._schedule_auto_collapse()
+
+    def _cancel_zoom_animation(self, btn):
+        """Cancel any running zoom animation on the given button."""
+        key = id(btn)
+        state = self._zoom_state.get(key)
+        if state and state.get("timer"):
+            GLib.source_remove(state["timer"])
+            del self._zoom_state[key]
 
     def _start_bounce_animation(self, btn):
         """Start bounce animation on the clicked icon button."""
