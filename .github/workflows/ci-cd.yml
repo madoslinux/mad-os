@@ -321,6 +321,7 @@ jobs:
         run: |
           docker run --privileged --rm \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
+            -v ${{ github.workspace }}:/build:ro \
             -v ${{ github.workspace }}/out:/build/out \
             -w /build \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
