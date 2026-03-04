@@ -524,20 +524,15 @@ jobs:
           RELEASE_TYPE="${{ needs.build.outputs.release_type }}"
           SHORT_SHA="${{ needs.build.outputs.short_sha }}"
 
-          echo "VERSION: $VERSION"
-          echo "DOWNLOAD_URL: $DOWNLOAD_URL"
-          echo "RELEASE_TYPE: $RELEASE_TYPE"
-          echo "SHORT_SHA: $SHORT_SHA"
-
           [[ "$RELEASE_TYPE" == "stable" ]] && CHANNEL="stable" || CHANNEL="beta"
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
 
-          sed -i "s|https://archive.org/download/mados-[^/]*/madOS-[^\"]*\.iso|$DOWNLOAD_URL|g" docs/index.html
-          sed -i "s|data-version=\"[^\"]*\"|data-version=\"$VERSION\"|g" docs/index.html
-          sed -i "s|<span>Download v[^<]*</span>|<span>Download v$VERSION</span>|g" docs/index.html
+          sed -i "/data-channel=\"$CHANNEL\"/s|https://archive.org/download/mados-[^/]*/madOS-[^\"]*\.iso|$DOWNLOAD_URL|g" docs/index.html
+          sed -i "/data-channel=\"$CHANNEL\"/s|data-version=\"[^\"]*\"|data-version=\"$VERSION\"|g" docs/index.html
+          sed -i "/data-channel=\"$CHANNEL\"/s|<span>Download v[^<]*</span>|<span>Download v$VERSION</span>|g" docs/index.html
 
           if git diff --quiet docs/index.html; then
             echo "No changes needed in website"
