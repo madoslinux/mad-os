@@ -362,7 +362,11 @@ jobs:
           echo "Waiting for container $CONTAINER_ID to complete..."
           docker wait "$CONTAINER_ID"
           
-          echo "Container completed. Copying files..."
+          echo "Container completed. Cleaning up old files..."
+          rm -rf out/ || true
+          mkdir -p out/
+          
+          echo "Copying files from container..."
           docker cp "$CONTAINER_ID:/build/out/." "${{ github.workspace }}/out/"
           docker cp "$CONTAINER_ID:/build/gha_output.txt" "${{ github.workspace }}/gha_output.txt" || true
           docker rm "$CONTAINER_ID"
