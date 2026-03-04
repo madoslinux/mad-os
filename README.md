@@ -42,7 +42,8 @@ madOS is a custom Arch Linux distribution optimized for low-RAM systems (1.9GB),
 - **Lightweight Desktop** - Sway Wayland compositor (~67MB RAM)
 - **Developer Ready** - Node.js, npm, Git, VS Code pre-installed
 - **Performance Tuned** - ZRAM compression, EarlyOOM, kernel optimizations
-- **Dual Installers** - GTK graphical and TUI text-based installers
+- **Steam Deck Ready** - Optimized for handheld gaming
+- **Xbox Controller Ready** - Plug & play support
 
 See [docs/FEATURES.md](docs/FEATURES.md) for detailed features.
 

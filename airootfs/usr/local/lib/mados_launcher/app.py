@@ -58,9 +58,9 @@ INDICATOR_DOT_RADIUS = 3   # Dot radius for running indicator
 WINDOW_POLL_MS = 2000      # Poll compositor every 2 seconds
 
 # --- Bounce animation constants ---
-BOUNCE_AMPLITUDE = 10      # Pixels to move up/down (increased for visibility)
-BOUNCE_DURATION_MS = 40   # Milliseconds per bounce frame (faster = snappier)
-BOUNCE_TOTAL_SECONDS = 2  # Total duration of bounce animation
+BOUNCE_AMPLITUDE = 3        # Pixels to jump up/down
+BOUNCE_DURATION_MS = 50   # Milliseconds per bounce frame
+BOUNCE_TOTAL_SECONDS = 3  # Total duration of bounce animation
 
 
 def _hex_to_rgb(hex_color):
@@ -113,11 +113,15 @@ class LauncherApp:
         # Populate icons
         self._refresh_entries()
 
+        # Force collapsed state at startup (ignore saved state)
+        self._expanded = False
+        self._revealer.set_reveal_child(False)
+
         # Show
         self.window.show_all()
 
-        # The revealer should start hidden
-        self._revealer.set_reveal_child(False)
+        # Initialize grip positions
+        self._update_grip_position()
 
         # Periodic rescan of .desktop entries
         GLib.timeout_add_seconds(REFRESH_INTERVAL_SECONDS, self._refresh_entries)
@@ -136,6 +140,8 @@ class LauncherApp:
         self.window.set_decorated(False)
         self.window.set_resizable(False)
         self.window.set_name("mados-launcher-window")
+        # Capa 1: padre transparente de 150px
+        self.window.set_size_request(-1, 150)
 
         # Enable RGBA visual for transparency
         screen = self.window.get_screen()
@@ -194,60 +200,43 @@ class LauncherApp:
 
     def _build_ui(self):
         """Build the dock UI: [revealer with icons] [grip tab]."""
-        # Outer container — horizontal box
-        self._main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        self._main_box.set_name("dock-container")
-        # Shadow padding — extra space for drop shadow rendering
-        self._main_box.set_margin_top(SHADOW_SIZE)
-        self._main_box.set_margin_end(SHADOW_SIZE + SHADOW_OFFSET_X)
-        self._main_box.set_margin_bottom(SHADOW_SIZE + SHADOW_OFFSET_Y)
-        self.window.add(self._main_box)
-
-        # --- Icon area inside a revealer (slides right) ---
+        # Create revealer for expand/collapse animation
         self._revealer = Gtk.Revealer()
         self._revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_RIGHT)
         self._revealer.set_transition_duration(ANIMATION_DURATION)
-        self._revealer.set_reveal_child(False)
+        self._revealer.connect("notify::child-revealed", self._on_revealer_animation_done)
 
-        # Container for icons (no scroll — size adapts to content)
-        self._icons_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL,
-            spacing=ICON_SPACING,
-        )
-        self._icons_box.set_name("icons-box")
+        # Use Fixed container para posicionar elementos exactamente
+        self._fixed = Gtk.Fixed()
+        self._fixed.set_size_request(-1, 150)
+        self.window.add(self._fixed)
 
-        # --- Left grip (visible when expanded, for dragging from the left) ---
-        self._left_grip_event_box = Gtk.EventBox()
-        self._left_grip_event_box.set_above_child(True)
-        self._left_grip_event_box.add_events(
-            Gdk.EventMask.BUTTON_PRESS_MASK
-            | Gdk.EventMask.BUTTON_RELEASE_MASK
-            | Gdk.EventMask.POINTER_MOTION_MASK
-        )
+        # Posicion X inicial del revealer (después de los grips) - mitad de espacio
+        self._revealer_x = TAB_WIDTH  # 14px en lugar de 28px
 
-        self._left_grip_draw = Gtk.DrawingArea()
-        self._left_grip_draw.set_name("left-grip")
-        self._left_grip_draw.set_size_request(TAB_WIDTH, -1)
-        self._left_grip_draw.connect("draw", self._on_draw_left_grip)
+        # Capa 2 visual: fondo gris de 50px centrado verticalmente (margen de 50px arriba y abajo)
+        self._visual_bg = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        self._visual_bg.set_name("dock-bg")
+        self._visual_bg.set_size_request(-1, 50)
+        self._fixed.put(self._visual_bg, 0, 50)
 
-        self._left_grip_event_box.add(self._left_grip_draw)
+        # Fondo gris detras de los iconos (mismo tamaño que el grip, centrado verticalmente)
+        self._icons_bg = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        self._icons_bg.set_name("icons-bg")
+        self._icons_bg.set_size_request(-1, 50)
+        self._fixed.put(self._icons_bg, self._revealer_x, 50)
 
-        # Reuse same drag handlers for left grip
-        self._left_grip_event_box.connect("button-press-event", self._on_tab_press)
-        self._left_grip_event_box.connect("button-release-event", self._on_left_grip_release)
-        self._left_grip_event_box.connect("motion-notify-event", self._on_tab_motion)
-        self._left_grip_event_box.connect("enter-notify-event", self._on_tab_enter)
-        self._left_grip_event_box.connect("leave-notify-event", self._on_tab_leave)
+        # Capa 3: caja de iconos (150px de alto)
+        self._icons_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        self._icons_box.set_size_request(-1, 150)
+        self._revealer.add(self._icons_box)
 
-        # Place left grip inside the revealer, before the icons
-        self._revealer_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-        self._revealer_box.pack_start(self._left_grip_event_box, False, False, 0)
-        self._revealer_box.pack_start(self._icons_box, True, True, 0)
-        self._revealer.add(self._revealer_box)
+        # Add revealer - posicionado a la izquierda (después de los grips)
+        self._fixed.put(self._revealer, self._revealer_x, 0)
 
-        self._main_box.pack_start(self._revealer, False, False, 0)
-
-        # --- Grip tab (always visible) ---
+        # --- Grip tab - a la derecha del revealer, centrado verticalmente ---
+        # Centrado: y = (150 - TAB_HEIGHT) / 2 = (150 - 60) / 2 = 45
+        self._tab_y = (150 - TAB_HEIGHT) // 2
         self._tab_event_box = Gtk.EventBox()
         self._tab_event_box.set_above_child(True)
         self._tab_event_box.add_events(
@@ -262,7 +251,30 @@ class LauncherApp:
         self._tab_draw.connect("draw", self._on_draw_grip)
 
         self._tab_event_box.add(self._tab_draw)
-        self._main_box.pack_start(self._tab_event_box, False, False, 0)
+        # Initially position grip at x=0 (collapsed state)
+        self._fixed.put(self._tab_event_box, 0, self._tab_y)
+
+        # --- Left grip (visible when expanded, on the left side) ---
+        self._left_grip_event_box = Gtk.EventBox()
+        self._left_grip_event_box.set_above_child(True)
+        self._left_grip_event_box.add_events(
+            Gdk.EventMask.BUTTON_PRESS_MASK
+            | Gdk.EventMask.BUTTON_RELEASE_MASK
+        )
+
+        self._left_grip_draw = Gtk.DrawingArea()
+        self._left_grip_draw.set_name("left-grip")
+        self._left_grip_draw.set_size_request(TAB_WIDTH, TAB_HEIGHT)
+        self._left_grip_draw.connect("draw", self._on_draw_left_grip)
+
+        self._left_grip_event_box.add(self._left_grip_draw)
+        # Initially hidden (will show when expanded)
+        self._left_grip_event_box.hide()
+        self._fixed.put(self._left_grip_event_box, 0, self._tab_y)
+
+        # Left grip event handlers
+        self._left_grip_event_box.connect("button-press-event", self._on_left_grip_press)
+        self._left_grip_event_box.connect("button-release-event", self._on_left_grip_release)
 
         # Tab event handlers
         self._tab_event_box.connect("button-press-event", self._on_tab_press)
@@ -278,48 +290,11 @@ class LauncherApp:
     # ------------------------------------------------------------------ #
 
     def _on_window_draw(self, widget, cr):
-        """Clear background to transparent and draw drop shadow behind the dock."""
-        # Clear entire window to transparent
+        """Clear background to 100% transparent."""
         cr.set_operator(1)  # cairo.OPERATOR_SOURCE
         cr.set_source_rgba(0, 0, 0, 0)
         cr.paint()
         cr.set_operator(2)  # cairo.OPERATOR_OVER
-
-        alloc = self._main_box.get_allocation()
-        if alloc.width <= 1 or alloc.height <= 1:
-            return False
-
-        x, y, w, h = alloc.x, alloc.y, alloc.width, alloc.height
-        radius = 8  # Matches CSS border-radius
-
-        # Draw shadow: multiple semi-transparent layers with decreasing spread
-        for i in range(SHADOW_LAYERS):
-            spread = SHADOW_SIZE * (SHADOW_LAYERS - i) / SHADOW_LAYERS
-            alpha = SHADOW_BASE_ALPHA / SHADOW_LAYERS
-
-            frac = (i + 1) / SHADOW_LAYERS
-            ox = SHADOW_OFFSET_X * frac
-            oy = SHADOW_OFFSET_Y * frac
-
-            sx = x - spread + ox
-            sy = y - spread + oy
-            sw = w + spread * 2
-            sh = h + spread * 2
-            sr = radius + spread
-
-            # Dock-shaped path: flat left edge, rounded right corners
-            cr.new_path()
-            cr.move_to(sx, sy)
-            cr.line_to(sx + sw - sr, sy)
-            cr.arc(sx + sw - sr, sy + sr, sr, -math.pi / 2, 0)
-            cr.line_to(sx + sw, sy + sh - sr)
-            cr.arc(sx + sw - sr, sy + sh - sr, sr, 0, math.pi / 2)
-            cr.line_to(sx, sy + sh)
-            cr.close_path()
-
-            cr.set_source_rgba(0, 0, 0, alpha)
-            cr.fill()
-
         return False  # Continue to draw child widgets
 
     # ------------------------------------------------------------------ #
@@ -420,6 +395,7 @@ class LauncherApp:
             # Click — toggle expand/collapse
             self._expanded = not self._expanded
             self._revealer.set_reveal_child(self._expanded)
+            self._update_grip_position()
             self._tab_draw.queue_draw()  # Redraw chevron direction
             self._save_state()
 
@@ -483,24 +459,43 @@ class LauncherApp:
             win.set_cursor(None)
         return False
 
+    def _on_revealer_animation_done(self, widget, gparam):
+        """Move grip to final position after revealer animation completes."""
+        self._update_grip_position()
+
+    def _update_grip_position(self):
+        """Update grip tab x position based on revealer width."""
+        if self._expanded:
+            child = self._revealer.get_child()
+            if child:
+                child.show_all()
+                width = child.get_allocated_width()
+                # Actualizar ancho del fondo de iconos
+                self._icons_bg.set_size_request(width, 50)
+                # En expanded, poner grip derecho a la derecha del contenido
+                self._fixed.move(self._tab_event_box, self._revealer_x + width, self._tab_y)
+                # Grip izquierdo a la izquierda de los iconos
+                self._left_grip_event_box.show()
+                self._fixed.move(self._left_grip_event_box, 0, self._tab_y)
+        else:
+            # En collapsed, solo el grip derecho visible en x=0
+            self._left_grip_event_box.hide()
+            self._fixed.move(self._tab_event_box, 0, self._tab_y)
+            # Fondo de iconos oculto
+            self._icons_bg.set_size_request(0, 50)
+
     # ------------------------------------------------------------------ #
     # Left grip drawing and interaction
     # ------------------------------------------------------------------ #
 
     def _on_draw_left_grip(self, widget, cr):
-        """Draw a grip pattern on the left side of the expanded dock (mirrors right tab)."""
+        """Draw a rectangular grip pattern on the left side."""
         alloc = widget.get_allocation()
         w, h = alloc.width, alloc.height
 
-        # Background — rounded on the left side
-        radius = 8
+        # Background — rectangular (no rounded corners)
         cr.new_path()
-        cr.move_to(w, 0)
-        cr.line_to(radius, 0)
-        cr.arc(radius, radius, radius, -math.pi, -math.pi / 2)
-        cr.line_to(0, h - radius)
-        cr.arc(radius, h - radius, radius, math.pi / 2, math.pi)
-        cr.line_to(w, h)
+        cr.rectangle(0, 0, w, h)
         cr.close_path()
 
         bg = _hex_to_rgb(NORD["nord1"])
@@ -526,6 +521,13 @@ class LauncherApp:
 
         return False
 
+    def _on_left_grip_press(self, widget, event):
+        """Record starting position for potential drag."""
+        if event.button == 1:
+            self._button_pressed = True
+            self._is_dragging = False
+        return True
+
     def _on_left_grip_release(self, widget, event):
         """On release of left grip: toggle if click, save if drag."""
         if event.button != 1:
@@ -540,6 +542,7 @@ class LauncherApp:
             # Click — toggle (collapse) the dock
             self._expanded = not self._expanded
             self._revealer.set_reveal_child(self._expanded)
+            self._update_grip_position()
             self._tab_draw.queue_draw()  # Redraw chevron direction
             self._save_state()
 
@@ -590,14 +593,22 @@ class LauncherApp:
 
     def _build_single_icon(self, entry):
         """Build an icon button for a single (ungrouped) entry."""
+        # Capa 3: contenedor de icono de 150px de alto
         item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-
+        item_box.set_size_request(48, 150)
+        
+        # Alignment para centrar el icono de 48px
+        align = Gtk.Alignment(xalign=0.5, yalign=0.5, xscale=0, yscale=0)
+        align.set_size_request(48, 48)
+        
         btn = Gtk.Button()
         btn.get_style_context().add_class("launcher-icon")
         btn.set_tooltip_text(entry.name)
         btn.set_relief(Gtk.ReliefStyle.NONE)
+        btn.set_size_request(48, 48)
 
         image = self._make_icon_image(entry)
+        image.set_size_request(ICON_SIZE, ICON_SIZE)
         btn.add(image)
         btn.connect("clicked", self._on_icon_clicked, entry.exec_cmd)
 
@@ -608,28 +619,38 @@ class LauncherApp:
         btn.connect("enter-notify-event", self._on_icon_enter, entry)
         btn.connect("leave-notify-event", self._on_icon_leave, entry)
 
-        # Indicator drawing area (small dot below icon)
+        align.add(btn)
+        
+        # Indicator
         indicator = Gtk.DrawingArea()
-        indicator.set_size_request(ICON_SIZE, INDICATOR_HEIGHT)
+        indicator.set_size_request(48, 4)
         indicator.connect("draw", self._on_draw_indicator, entry)
 
-        item_box.pack_start(btn, False, False, 0)
-        item_box.pack_start(indicator, False, False, 0)
+        item_box.pack_start(align, True, True, 0)
+        item_box.pack_end(indicator, False, False, 0)
 
         self._icons_box.pack_start(item_box, False, False, 0)
-        self._icon_buttons.append((btn, indicator, entry))
+        self._icon_buttons.append((btn, indicator, entry, align))
 
     def _build_group_icon(self, group):
         """Build an icon button for a group of entries — click shows a popup submenu."""
+        # Capa 3: contenedor de icono de 150px de alto
         item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        item_box.set_size_request(48, 150)
+        
+        # Alignment para centrar el icono
+        align = Gtk.Alignment(xalign=0.5, yalign=0.5, xscale=0, yscale=0)
+        align.set_size_request(48, 48)
 
         btn = Gtk.Button()
         btn.get_style_context().add_class("launcher-icon")
         btn.get_style_context().add_class("launcher-group")
         btn.set_tooltip_text(f"{group.group_name} ({len(group.entries)})")
         btn.set_relief(Gtk.ReliefStyle.NONE)
+        btn.set_size_request(48, 48)
 
         image = self._make_icon_image(group.representative)
+        image.set_size_request(ICON_SIZE, ICON_SIZE)
         btn.add(image)
         btn.connect("clicked", self._on_group_clicked, group)
 
@@ -640,18 +661,20 @@ class LauncherApp:
         btn.connect("enter-notify-event", self._on_icon_enter, group.representative)
         btn.connect("leave-notify-event", self._on_icon_leave, group.representative)
 
-        # Indicator: show dot if any entry in the group is running
+        align.add(btn)
+
+        # Indicator
         indicator = Gtk.DrawingArea()
-        indicator.set_size_request(ICON_SIZE, INDICATOR_HEIGHT)
+        indicator.set_size_request(48, 4)
         indicator.connect("draw", self._on_draw_group_indicator, group)
 
-        item_box.pack_start(btn, False, False, 0)
-        item_box.pack_start(indicator, False, False, 0)
+        item_box.pack_start(align, True, True, 0)
+        item_box.pack_end(indicator, False, False, 0)
 
         self._icons_box.pack_start(item_box, False, False, 0)
         # Track each entry in the group for indicator updates
         for entry in group.entries:
-            self._icon_buttons.append((btn, indicator, entry))
+            self._icon_buttons.append((btn, indicator, entry, align))
 
     def _make_icon_image(self, entry):
         """Create a Gtk.Image widget from a DesktopEntry's icon."""
@@ -763,21 +786,20 @@ class LauncherApp:
         if key in self._bounce_state:
             return
         
-        item_box = btn.get_parent()
-        if not item_box:
+        align = None
+        for item in self._icon_buttons:
+            if item[0] == btn:
+                align = item[3]
+                break
+        
+        if not align:
             return
         
-        alloc = item_box.get_allocation()
-        start_y = alloc.y
-        
         self._bounce_state[key] = {
-            "offset": 0,
-            "direction": -1,
-            "timer": GLib.timeout_add(BOUNCE_DURATION_MS, self._bounce_tick, key),
+            "start_time": GLib.get_monotonic_time(),
+            "timer": GLib.timeout_add(16, self._bounce_tick, key),  # ~60fps
             "btn": btn,
-            "item_box": item_box,
-            "start_y": start_y,
-            "elapsed_ms": 0,
+            "align": align,
         }
 
     def _bounce_tick(self, key):
@@ -786,27 +808,15 @@ class LauncherApp:
         if not state:
             return False
         
-        state["elapsed_ms"] += BOUNCE_DURATION_MS
-        max_ms = BOUNCE_TOTAL_SECONDS * 1000
+        elapsed = (GLib.get_monotonic_time() - state["start_time"]) / 1000000.0  # seconds
         
-        if state["elapsed_ms"] >= max_ms:
-            item_box = state["item_box"]
-            item_box.set_margin_top(0)
-            if state.get("timer"):
-                state["timer"] = None
-            del self._bounce_state[key]
-            return False
+        # Sinusoidal bounce going UP only, infinite loop until dock closes
+        # Frequency: 1 bounce per second
+        # 150px container - 48px icon = 102px available, use 64px
+        bounce = abs(math.sin(elapsed * math.pi * 2))
+        y_offset = bounce * 0.42  # ~64px of 150px
         
-        state["offset"] += state["direction"] * BOUNCE_AMPLITUDE
-        
-        if state["offset"] <= -BOUNCE_AMPLITUDE:
-            state["offset"] = -BOUNCE_AMPLITUDE
-            state["direction"] = 1
-        elif state["offset"] >= 0:
-            state["offset"] = 0
-            state["direction"] = -1
-        
-        state["item_box"].set_margin_top(state["offset"])
+        state["align"].set_property("yalign", 0.5 - y_offset)
         
         return True
 
@@ -822,6 +832,14 @@ class LauncherApp:
     def _auto_collapse(self):
         """Collapse the dock (called from timer)."""
         self._auto_collapse_id = None
+        # Stop all bounce animations
+        for key, state in list(self._bounce_state.items()):
+            if state.get("timer"):
+                GLib.source_remove(state["timer"])
+            if state.get("align"):
+                state["align"].set_property("yalign", 0.5)
+        self._bounce_state.clear()
+        
         if self._expanded:
             self._expanded = False
             self._revealer.set_reveal_child(False)
@@ -876,11 +894,16 @@ class LauncherApp:
             GLib.source_remove(state["timer"])
 
         current = state["current_size"] if state else ICON_SIZE
+        
+        # Find the Fixed container to get the image
+        image = btn.get_child()
+        
         self._zoom_state[key] = {
             "current_size": current,
             "target_size": target_size,
             "entry": entry,
             "btn": btn,
+            "image": image,
             "timer": GLib.timeout_add(ICON_ZOOM_INTERVAL_MS, self._zoom_tick, key),
         }
 
@@ -904,19 +927,20 @@ class LauncherApp:
             new_size = max(current - ICON_ZOOM_STEP, target)
 
         state["current_size"] = new_size
-        self._apply_icon_size(state["btn"], new_size, state["entry"])
+        image = state.get("image")
+        if image:
+            self._apply_icon_size(image, new_size, state.get("entry"))
 
         if new_size == target:
             state["timer"] = None
             return False  # Done
         return True  # Continue animation
 
-    def _apply_icon_size(self, btn, size, entry):
-        """Set the icon image inside a button to the given pixel size."""
-        image = btn.get_child()
+    def _apply_icon_size(self, image, size, entry=None):
+        """Set the icon image to the given pixel size."""
         if image is None:
             return
-        if entry.pixbuf:
+        if entry and entry.pixbuf:
             pixbuf = entry.pixbuf.scale_simple(
                 size, size, GdkPixbuf.InterpType.BILINEAR
             )

@@ -57,24 +57,22 @@ def create_welcome_page(app):
     features_box.set_selection_mode(Gtk.SelectionMode.NONE)
     features_box.set_homogeneous(True)
     features_box.set_max_children_per_line(4)
-    features_box.set_min_children_per_line(1)
+    features_box.set_min_children_per_line(4)
     features_box.set_column_spacing(8)
-    features_box.set_row_spacing(8)
+    features_box.set_row_spacing(6)
     features_box.set_halign(Gtk.Align.CENTER)
+    features_box.set_margin_start(20)
+    features_box.set_margin_end(20)
 
-    for f1, f2 in app.t('features'):
-        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+    for feature in app.t('features'):
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         card.get_style_context().add_class('feature-card')
 
-        lbl1 = Gtk.Label()
-        lbl1.set_markup(f'<span foreground="{NORD_FROST["nord8"]}" weight="bold">{f1}</span>')
-        lbl1.set_halign(Gtk.Align.START)
-        card.pack_start(lbl1, False, False, 0)
-
-        lbl2 = Gtk.Label()
-        lbl2.set_markup(f'<span size="small" foreground="{NORD_SNOW_STORM["nord4"]}">{f2}</span>')
-        lbl2.set_halign(Gtk.Align.START)
-        card.pack_start(lbl2, False, False, 0)
+        lbl = Gtk.Label()
+        lbl.set_markup(f'<span foreground="{NORD_FROST["nord8"]}" weight="bold" size="small">{feature}</span>')
+        lbl.set_halign(Gtk.Align.CENTER)
+        lbl.set_valign(Gtk.Align.CENTER)
+        card.pack_start(lbl, True, True, 0)
 
         features_box.insert(card, -1)
 

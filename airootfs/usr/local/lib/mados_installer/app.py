@@ -44,7 +44,7 @@ class MadOSInstaller(Gtk.Window):
             )
             sys.exit(1)
 
-        self.set_default_size(1024, 600)
+        self.set_default_size(1024, 550)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_resizable(True)
 
