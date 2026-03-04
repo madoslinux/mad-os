@@ -317,11 +317,10 @@ jobs:
       - name: Build ISO
         id: build
         run: |
-          docker run --privileged --rm \
+          CONTAINER_ID=$(docker run -d --privileged \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
             -v ${{ github.workspace }}:/build \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
-              set -e
               echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
               echo 'nameserver ${{ env.DNS_SECONDARY }}' >> /etc/resolv.conf
               pacman-key --init && pacman-key --populate
@@ -341,8 +340,7 @@ jobs:
               
               echo '=== Generating SHA256SUMS ==='
               sha256sum out/*.iso > out/SHA256SUMS
-              chown -R 1000:1000 out/ || true
-              chmod -R 777 out/
+              chmod 644 out/*
               
               ISO_FILE=\$(ls out/*.iso | head -1)
               ISO_NAME=\$(basename \"\$ISO_FILE\")
@@ -359,7 +357,14 @@ jobs:
               echo \"iso_size_mb=\$ISO_SIZE_MB\" >> /build/gha_output.txt
               echo \"short_sha=\$SHORT_SHA\" >> /build/gha_output.txt
               echo '=== Build completed successfully ==='
-            "
+              
+              tail -f /dev/null
+            ")
+          
+          sleep 5
+          docker cp "$CONTAINER_ID:/build/out/" "${{ github.workspace }}/out/"
+          docker cp "$CONTAINER_ID:/build/gha_output.txt" "${{ github.workspace }}/gha_output.txt"
+          docker stop "$CONTAINER_ID" && docker rm "$CONTAINER_ID"
           
           if [ -f gha_output.txt ]; then
             cat gha_output.txt >> $GITHUB_OUTPUT
