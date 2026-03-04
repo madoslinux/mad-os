@@ -320,10 +320,14 @@ jobs:
           WORKSPACE="${{ github.workspace }}"
           echo "Workspace: $WORKSPACE"
           
-          # Run build in detached container
+          # Create a Docker volume for output
+          docker volume create mados-output || true
+          
+          # Run build in detached container with volume mount
           CONTAINER_ID=$(docker run -d --privileged \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
             -v "$WORKSPACE:/build" \
+            -v mados-output:/output \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
               echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
@@ -334,20 +338,17 @@ jobs:
               rm -rf out/
               mkdir -p out
               mkarchiso -v -w /tmp/work -o out .
-              chmod -R 777 out/
+              cp out/* /output/
+              chmod -R 777 /output/
             ")
           
           echo "Waiting for build to complete..."
           docker wait "$CONTAINER_ID"
           
-          # Copy files to host
-          mkdir -p "$WORKSPACE/out_from_docker"
-          docker cp "$CONTAINER_ID:/build/out/." "$WORKSPACE/out_from_docker/"
+          # Copy files from volume
+          docker run --rm -v mados-output:/output -v "$WORKSPACE:/workspace" alpine cp -r /output/. /workspace/out/
           docker rm -f "$CONTAINER_ID"
-          
-          # Move files to correct location
-          rm -rf "$WORKSPACE/out/"
-          mv "$WORKSPACE/out_from_docker" "$WORKSPACE/out"
+          docker volume rm mados-output || true
           
           echo "Build completed. Checking output..."
           ls -la out/
