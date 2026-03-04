@@ -500,8 +500,8 @@ jobs:
   # ================================================================
   update-website:
     name: "Update Website"
-    needs: upload-archive
-    if: needs.upload-archive.result == 'success'
+    needs: [build, upload-archive]
+    if: needs.build.result == 'success' && needs.upload-archive.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
