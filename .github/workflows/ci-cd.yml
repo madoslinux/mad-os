@@ -336,6 +336,7 @@ jobs:
               pacman -Syu --noconfirm archiso
               cd /build
               mkarchiso -v -w /tmp/work -o out .
+              chmod -R 777 out/
             "
           
           echo "Build completed. Checking output..."
