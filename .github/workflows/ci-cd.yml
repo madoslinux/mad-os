@@ -396,6 +396,10 @@ jobs:
     needs: build
     if: needs.build.result == 'success'
 
+    outputs:
+      download_url: ${{ steps.upload_ia.outputs.download_url }}
+      identifier: ${{ steps.upload_ia.outputs.identifier }}
+
     steps:
       - name: Download ISO
         uses: actions/download-artifact@v4
