@@ -320,14 +320,14 @@ jobs:
           WORKSPACE="${{ github.workspace }}"
           echo "Workspace: $WORKSPACE"
           
-          # Create a Docker volume for output
-          docker volume create mados-output || true
+          # Create output directory BEFORE starting the container
+          mkdir -p "$WORKSPACE/out"
+          chmod 777 "$WORKSPACE/out"
           
-          # Run build in container with volume - using run without -d but with tee to capture logs
+          # Run build - output directly to host-mounted directory
           docker run --privileged --rm \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
             -v "$WORKSPACE:/build" \
-            -v mados-output:/output \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
               echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
@@ -335,26 +335,9 @@ jobs:
               pacman-key --init && pacman-key --populate
               pacman -Syu --noconfirm archiso
               cd /build
-              rm -rf out/
-              mkdir -p out
+              rm -rf out/*
               mkarchiso -v -w /tmp/work -o out .
-              cp out/* /output/
-              chmod -R 777 /output/
-            " | tee /tmp/build.log || true
-          
-          # Check if build was successful from logs
-          if grep -q "Writing to.*completed successfully" /tmp/build.log; then
-            echo "Build completed successfully"
-          else
-            echo "Build may have failed, checking logs..."
-            cat /tmp/build.log
-          fi
-          
-          # Copy files from volume
-          docker run --rm -v mados-output:/output -v "$WORKSPACE:/workspace" alpine cp -r /output/. /workspace/out/ || \
-            docker run --rm -v mados-output:/output -v "$WORKSPACE:/workspace" archlinux:latest cp -r /output/. /workspace/out/
-          
-          docker volume rm mados-output || true
+            "
           
           echo "Build completed. Checking output..."
           ls -la out/
