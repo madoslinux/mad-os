@@ -15,7 +15,7 @@ bootmodes=('bios.syslinux'
             'uefi.systemd-boot')
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
-airootfs_image_tool_options=('-comp' 'xz' '-Xpreset' '9' '-Xbcj' 'x86' '-b' '1M' '-duplicates')
+airootfs_image_tool_options=('-comp' 'xz' '-Xbcj' 'x86' '-Xdict-size' '100%' '-b' '1M' '-duplicates')
 bootstrap_tarball_compression=('xz' '-c' '-T0' '--threads=0' '-9')
 file_permissions=(
   ["/etc/shadow"]="0:0:400"
