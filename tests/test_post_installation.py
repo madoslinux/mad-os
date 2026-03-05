@@ -21,6 +21,7 @@ import unittest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 # ---------------------------------------------------------------------------
@@ -56,10 +57,12 @@ class TestInstallerModuleSyntax(unittest.TestCase):
                 with self.subTest(module=rel):
                     result = subprocess.run(
                         [sys.executable, "-m", "py_compile", fpath],
-                        capture_output=True, text=True,
+                        capture_output=True,
+                        text=True,
                     )
                     self.assertEqual(
-                        result.returncode, 0,
+                        result.returncode,
+                        0,
                         f"Syntax error in {rel}: {result.stderr}",
                     )
 
@@ -83,62 +86,71 @@ class TestInstallerPackages(unittest.TestCase):
     def test_config_packages_importable(self):
         """Installer config module should be importable."""
         from mados_installer.config import PACKAGES
+
         self.assertIsInstance(PACKAGES, (list, tuple))
         self.assertGreater(len(PACKAGES), 0, "PACKAGES must not be empty")
 
     def test_essential_packages_present(self):
         """PACKAGES must include all essential system packages."""
         from mados_installer.config import PACKAGES
+
         for pkg in self.ESSENTIAL_PACKAGES:
             with self.subTest(package=pkg):
                 self.assertIn(
-                    pkg, PACKAGES,
+                    pkg,
+                    PACKAGES,
                     f"Essential package '{pkg}' missing from installer PACKAGES",
                 )
 
     def test_zram_generator_included(self):
         """PACKAGES should include zram-generator for RAM optimization."""
         from mados_installer.config import PACKAGES
+
         self.assertIn(
-            "zram-generator", PACKAGES,
+            "zram-generator",
+            PACKAGES,
             "zram-generator must be in PACKAGES for low-RAM optimization",
         )
 
     def test_phase1_packages_exist(self):
         """PACKAGES_PHASE1 must exist and contain essential boot packages."""
         from mados_installer.config import PACKAGES_PHASE1
+
         self.assertIsInstance(PACKAGES_PHASE1, (list, tuple))
         self.assertGreater(len(PACKAGES_PHASE1), 0, "PACKAGES_PHASE1 must not be empty")
         for pkg in self.ESSENTIAL_PACKAGES:
             with self.subTest(package=pkg):
                 self.assertIn(
-                    pkg, PACKAGES_PHASE1,
+                    pkg,
+                    PACKAGES_PHASE1,
                     f"Essential package '{pkg}' must be in PACKAGES_PHASE1 for Phase 1 install",
                 )
 
     def test_phase2_packages_exist(self):
         """PACKAGES_PHASE2 must exist and contain desktop/app packages."""
         from mados_installer.config import PACKAGES_PHASE2
+
         self.assertIsInstance(PACKAGES_PHASE2, (list, tuple))
         self.assertGreater(len(PACKAGES_PHASE2), 0, "PACKAGES_PHASE2 must not be empty")
 
     def test_combined_packages_equal_phases(self):
         """PACKAGES must be the combination of PACKAGES_PHASE1 + PACKAGES_PHASE2."""
         from mados_installer.config import PACKAGES, PACKAGES_PHASE1, PACKAGES_PHASE2
+
         self.assertEqual(
-            PACKAGES, PACKAGES_PHASE1 + PACKAGES_PHASE2,
+            PACKAGES,
+            PACKAGES_PHASE1 + PACKAGES_PHASE2,
             "PACKAGES must equal PACKAGES_PHASE1 + PACKAGES_PHASE2",
         )
 
     def test_no_first_boot_service_in_installation(self):
         """installation.py must NOT contain mados-first-boot references."""
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         with open(install_py) as f:
             content = f.read()
         self.assertNotIn(
-            "mados-first-boot", content,
+            "mados-first-boot",
+            content,
             "installation.py must not reference mados-first-boot — no Phase 2",
         )
 
@@ -152,10 +164,7 @@ class TestLiveISOPackages(unittest.TestCase):
     def _read_packages(self):
         pkg_file = os.path.join(REPO_DIR, "packages.x86_64")
         with open(pkg_file) as f:
-            return [
-                line.strip() for line in f
-                if line.strip() and not line.strip().startswith("#")
-            ]
+            return [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
     def test_zsh_included(self):
         """Live ISO must include zsh (default shell for mados user)."""
@@ -196,26 +205,24 @@ class TestSystemConfigFiles(unittest.TestCase):
             content = f.read()
         self.assertIn("[zram0]", content, "Must define [zram0] section")
         self.assertIn(
-            "zram-size", content.lower(),
+            "zram-size",
+            content.lower(),
             "Must configure zram-size",
         )
 
     def test_sysctl_tuning_exists(self):
         """Kernel parameter tuning config must exist."""
-        path = os.path.join(
-            AIROOTFS, "etc", "sysctl.d", "99-extreme-low-ram.conf"
-        )
+        path = os.path.join(AIROOTFS, "etc", "sysctl.d", "99-extreme-low-ram.conf")
         self.assertTrue(os.path.isfile(path), "sysctl tuning config missing")
 
     def test_sysctl_has_swappiness(self):
         """Sysctl config must set vm.swappiness."""
-        path = os.path.join(
-            AIROOTFS, "etc", "sysctl.d", "99-extreme-low-ram.conf"
-        )
+        path = os.path.join(AIROOTFS, "etc", "sysctl.d", "99-extreme-low-ram.conf")
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "vm.swappiness", content,
+            "vm.swappiness",
+            content,
             "Must configure vm.swappiness for RAM optimization",
         )
 
@@ -236,9 +243,7 @@ class TestLiveInitramfsConfig(unittest.TestCase):
     """Verify the archiso mkinitcpio config for optimal boot splash timing."""
 
     def setUp(self):
-        self.conf_path = os.path.join(
-            AIROOTFS, "etc", "mkinitcpio.conf.d", "archiso.conf"
-        )
+        self.conf_path = os.path.join(AIROOTFS, "etc", "mkinitcpio.conf.d", "archiso.conf")
         if not os.path.isfile(self.conf_path):
             self.skipTest("archiso.conf not found")
         with open(self.conf_path) as f:
@@ -252,14 +257,16 @@ class TestLiveInitramfsConfig(unittest.TestCase):
         self.assertIn("kms", hooks, "Live HOOKS must include 'kms'")
         self.assertIn("plymouth", hooks, "Live HOOKS must include 'plymouth'")
         self.assertLess(
-            hooks.index("kms"), hooks.index("plymouth"),
+            hooks.index("kms"),
+            hooks.index("plymouth"),
             "kms must come before plymouth so GPU drivers are loaded before the splash",
         )
 
     def test_compression_is_zstd(self):
         """Live initramfs must use zstd compression for fast decompression."""
         self.assertIn(
-            'COMPRESSION="zstd"', self.content,
+            'COMPRESSION="zstd"',
+            self.content,
             "Initramfs must use zstd for fast decompression during boot",
         )
 
@@ -282,36 +289,28 @@ class TestSkelConfig(unittest.TestCase):
     def test_sway_config_exists(self):
         """Sway compositor config must exist in skel."""
         self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.SKEL, ".config", "sway", "config")
-            ),
+            os.path.isfile(os.path.join(self.SKEL, ".config", "sway", "config")),
             "Sway config missing from /etc/skel",
         )
 
     def test_hyprland_config_exists(self):
         """Hyprland compositor config must exist in skel."""
         self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.SKEL, ".config", "hypr", "hyprland.conf")
-            ),
+            os.path.isfile(os.path.join(self.SKEL, ".config", "hypr", "hyprland.conf")),
             "Hyprland config missing from /etc/skel",
         )
 
     def test_waybar_config_exists(self):
         """Waybar status bar config must exist in skel."""
         self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.SKEL, ".config", "waybar", "config")
-            ),
+            os.path.isfile(os.path.join(self.SKEL, ".config", "waybar", "config")),
             "Waybar config missing from /etc/skel",
         )
 
     def test_waybar_style_exists(self):
         """Waybar style CSS must exist in skel."""
         self.assertTrue(
-            os.path.isfile(
-                os.path.join(self.SKEL, ".config", "waybar", "style.css")
-            ),
+            os.path.isfile(os.path.join(self.SKEL, ".config", "waybar", "style.css")),
             "Waybar style.css missing from /etc/skel",
         )
 
@@ -336,10 +335,13 @@ class TestInstallerScripts(unittest.TestCase):
         """select-compositor must have valid bash syntax."""
         path = os.path.join(BIN_DIR, "select-compositor")
         result = subprocess.run(
-            ["bash", "-n", path], capture_output=True, text=True,
+            ["bash", "-n", path],
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
@@ -352,10 +354,13 @@ class TestInstallerScripts(unittest.TestCase):
         """hyprland-session must have valid bash syntax."""
         path = os.path.join(BIN_DIR, "hyprland-session")
         result = subprocess.run(
-            ["bash", "-n", path], capture_output=True, text=True,
+            ["bash", "-n", path],
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
@@ -363,10 +368,13 @@ class TestInstallerScripts(unittest.TestCase):
         """install-mados launcher must have valid bash syntax."""
         path = os.path.join(BIN_DIR, "install-mados")
         result = subprocess.run(
-            ["bash", "-n", path], capture_output=True, text=True,
+            ["bash", "-n", path],
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
@@ -380,10 +388,12 @@ class TestInstallerScripts(unittest.TestCase):
         path = os.path.join(BIN_DIR, "install-mados-gtk.py")
         result = subprocess.run(
             [sys.executable, "-m", "py_compile", path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Syntax error in GTK installer: {result.stderr}",
         )
 
@@ -395,9 +405,7 @@ class TestScriptCopyPermissions(unittest.TestCase):
     """Verify all copied scripts are made executable."""
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -412,7 +420,8 @@ class TestScriptCopyPermissions(unittest.TestCase):
         # The chmod loop should iterate over `scripts + [launchers]`
         # and NOT `scripts[1:]` which would skip setup-ohmyzsh.sh.
         self.assertNotIn(
-            "scripts[1:]", self.content,
+            "scripts[1:]",
+            self.content,
             "Must not use scripts[1:] — that skips the first script's chmod +x",
         )
 
@@ -424,9 +433,7 @@ class TestPostInstallServices(unittest.TestCase):
     """Verify the installer enables required services after installation."""
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -444,28 +451,32 @@ class TestPostInstallServices(unittest.TestCase):
         for svc in self.REQUIRED_SERVICES:
             with self.subTest(service=svc):
                 self.assertIn(
-                    svc, self.content,
+                    svc,
+                    self.content,
                     f"Installer must enable {svc} service",
                 )
 
     def test_enables_greetd(self):
         """Installer should enable greetd for graphical login."""
         self.assertIn(
-            "greetd", self.content,
+            "greetd",
+            self.content,
             "Installer must enable greetd for graphical login",
         )
 
     def test_enables_plymouth_quit_wait(self):
         """Installer must enable plymouth-quit-wait.service so Plymouth exits at boot."""
         self.assertIn(
-            "plymouth-quit-wait", self.content,
+            "plymouth-quit-wait",
+            self.content,
             "Installer must enable plymouth-quit-wait.service to prevent Plymouth freeze",
         )
 
     def test_greetd_ordered_after_plymouth_quit(self):
         """greetd override must order After plymouth-quit-wait.service."""
         self.assertIn(
-            "plymouth-quit-wait.service", self.content,
+            "plymouth-quit-wait.service",
+            self.content,
             "greetd override must include After=plymouth-quit-wait.service",
         )
 
@@ -483,7 +494,8 @@ class TestProfileScriptsSafety(unittest.TestCase):
             content = f.read()
         # 'exit' inside a sourced script kills the calling shell
         self.assertNotIn(
-            "exit 0", content,
+            "exit 0",
+            content,
             "mados-welcome.sh must use 'return 0' instead of 'exit 0' — "
             "scripts in /etc/profile.d/ are sourced, so 'exit' kills the login shell",
         )
@@ -494,7 +506,8 @@ class TestProfileScriptsSafety(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "return 0", content,
+            "return 0",
+            content,
             "mados-welcome.sh should use 'return 0' for safe early exit",
         )
 
@@ -516,7 +529,8 @@ class TestProfileScriptsSafety(unittest.TestCase):
                     if stripped.startswith("#"):
                         continue
                     self.assertNotRegex(
-                        stripped, r'\bexit\b',
+                        stripped,
+                        r"\bexit\b",
                         f"{fname}:{i} uses 'exit' — must use 'return' instead "
                         f"(scripts in /etc/profile.d/ are sourced, not executed)",
                     )
@@ -529,9 +543,7 @@ class TestInitramfsPresetRestoration(unittest.TestCase):
     """Verify the installer restores the standard linux.preset before mkinitcpio."""
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -540,14 +552,16 @@ class TestInitramfsPresetRestoration(unittest.TestCase):
     def test_restores_standard_linux_preset(self):
         """Installer must restore standard linux.preset with default/fallback presets."""
         self.assertIn(
-            "PRESETS=('default' 'fallback')", self.content,
+            "PRESETS=('default' 'fallback')",
+            self.content,
             "Installer must restore standard PRESETS=('default' 'fallback') in linux.preset",
         )
 
     def test_removes_archiso_mkinitcpio_conf(self):
         """Installer must remove archiso-specific mkinitcpio config."""
         self.assertIn(
-            "rm -f /etc/mkinitcpio.conf.d/archiso.conf", self.content,
+            "rm -f /etc/mkinitcpio.conf.d/archiso.conf",
+            self.content,
             "Installer must remove archiso.conf before mkinitcpio -P",
         )
 
@@ -558,41 +572,44 @@ class TestInitramfsPresetRestoration(unittest.TestCase):
         self.assertNotEqual(preset_pos, -1, "Must contain preset restoration")
         self.assertNotEqual(mkinitcpio_pos, -1, "Must contain mkinitcpio -P")
         self.assertLess(
-            preset_pos, mkinitcpio_pos,
+            preset_pos,
+            mkinitcpio_pos,
             "linux.preset must be written before mkinitcpio -P is called",
         )
 
     def test_kernel_recovery_before_mkinitcpio(self):
         """Installer must recover kernel from modules dir if /boot/vmlinuz-linux is missing."""
         self.assertIn(
-            "/usr/lib/modules/", self.content,
+            "/usr/lib/modules/",
+            self.content,
             "Installer must recover kernel from /usr/lib/modules/*/vmlinuz",
         )
         recovery_pos = self.content.find("/usr/lib/modules/")
         mkinitcpio_pos = self.content.find("mkinitcpio -P")
         self.assertLess(
-            recovery_pos, mkinitcpio_pos,
+            recovery_pos,
+            mkinitcpio_pos,
             "Kernel recovery must happen before mkinitcpio -P is called",
         )
 
     def test_kernel_recovery_fallback_reinstall(self):
         """Installer must have fallback to reinstall linux package if kernel not found."""
         self.assertIn(
-            "pacman -Sy --noconfirm linux", self.content,
+            "pacman -Sy --noconfirm linux",
+            self.content,
             "Installer must fallback to reinstalling linux package if kernel still missing",
         )
 
     def test_kernel_recovery_before_grub(self):
         """Kernel recovery from /usr/lib/modules/ must appear before grub-mkconfig in the script."""
         # Use the PROGRESS marker to anchor into the configure script, not docstrings.
-        recovery_pos = self.content.find(
-            "Kernel not found or unreadable at /boot/vmlinuz-linux"
-        )
+        recovery_pos = self.content.find("Kernel not found or unreadable at /boot/vmlinuz-linux")
         grub_mkconfig_pos = self.content.find("grub-mkconfig -o /boot/grub/grub.cfg")
         self.assertNotEqual(recovery_pos, -1, "Must contain kernel recovery message")
         self.assertNotEqual(grub_mkconfig_pos, -1, "Must contain grub-mkconfig command")
         self.assertLess(
-            recovery_pos, grub_mkconfig_pos,
+            recovery_pos,
+            grub_mkconfig_pos,
             "Kernel recovery must happen before grub-mkconfig is called",
         )
 
@@ -603,7 +620,8 @@ class TestInitramfsPresetRestoration(unittest.TestCase):
         hooks_str = hooks_match.group(1)
         hooks = hooks_str.split()
         self.assertIn(
-            "microcode", hooks,
+            "microcode",
+            hooks,
             "mkinitcpio HOOKS must include 'microcode' for CPU microcode loading",
         )
 
@@ -616,7 +634,8 @@ class TestInitramfsPresetRestoration(unittest.TestCase):
         self.assertIn("kms", hooks, "HOOKS must include 'kms'")
         self.assertIn("plymouth", hooks, "HOOKS must include 'plymouth'")
         self.assertLess(
-            hooks.index("kms"), hooks.index("plymouth"),
+            hooks.index("kms"),
+            hooks.index("plymouth"),
             "kms must come before plymouth so GPU drivers are loaded before the splash",
         )
 
@@ -630,21 +649,30 @@ class TestLiveAutologin(unittest.TestCase):
     def test_autologin_conf_exists(self):
         """getty@tty1 autologin drop-in must exist."""
         path = os.path.join(
-            AIROOTFS, "etc", "systemd", "system",
-            "getty@tty1.service.d", "autologin.conf",
+            AIROOTFS,
+            "etc",
+            "systemd",
+            "system",
+            "getty@tty1.service.d",
+            "autologin.conf",
         )
         self.assertTrue(os.path.isfile(path), "autologin.conf missing")
 
     def test_autologin_for_mados_user(self):
         """Autologin must be configured for the mados user."""
         path = os.path.join(
-            AIROOTFS, "etc", "systemd", "system",
-            "getty@tty1.service.d", "autologin.conf",
+            AIROOTFS,
+            "etc",
+            "systemd",
+            "system",
+            "getty@tty1.service.d",
+            "autologin.conf",
         )
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "--autologin mados", content,
+            "--autologin mados",
+            content,
             "Autologin must be configured for the mados user",
         )
 
@@ -662,9 +690,7 @@ class TestLiveISOCleanup(unittest.TestCase):
     """
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -713,7 +739,8 @@ class TestLiveISOCleanup(unittest.TestCase):
         for svc in live_services:
             with self.subTest(service=svc):
                 self.assertIn(
-                    svc, self.content,
+                    svc,
+                    self.content,
                     f"Config script must remove live-only service: {svc}",
                 )
 
@@ -727,9 +754,9 @@ class TestLiveISOCleanup(unittest.TestCase):
         for svc in persistence_services:
             with self.subTest(service=svc):
                 self.assertIn(
-                    svc, self.content,
-                    f"Config script must remove live-USB persistence "
-                    f"service: {svc}",
+                    svc,
+                    self.content,
+                    f"Config script must remove live-USB persistence service: {svc}",
                 )
 
     def test_initializes_pacman_keyring_in_chroot(self):
@@ -746,16 +773,18 @@ class TestLiveISOCleanup(unittest.TestCase):
         """
         from mados_installer.pages.installation import _build_config_script
 
-        script = _build_config_script({
-            "disk": "/dev/sda",
-            "disk_size_gb": 60,
-            "separate_home": True,
-            "username": "testuser",
-            "password": "TestPass123!",  # NOSONAR - test fixture, not a real credential
-            "hostname": "mados-test",
-            "timezone": "America/New_York",
-            "locale": "en_US.UTF-8",
-        })
+        script = _build_config_script(
+            {
+                "disk": "/dev/sda",
+                "disk_size_gb": 60,
+                "separate_home": True,
+                "username": "testuser",
+                "password": "TestPass123!",  # NOSONAR - test fixture, not a real credential
+                "hostname": "mados-test",
+                "timezone": "America/New_York",
+                "locale": "en_US.UTF-8",
+            }
+        )
         self.assertIn(
             "pacman-key --init",
             script,
@@ -782,22 +811,25 @@ class TestLiveISOCleanup(unittest.TestCase):
         import re
         from mados_installer.pages.installation import _build_config_script
 
-        script = _build_config_script({
-            "disk": "/dev/sda",
-            "disk_size_gb": 60,
-            "separate_home": True,
-            "username": "testuser",
-            "password": "TestPass123!",  # NOSONAR - test fixture, not a real credential
-            "hostname": "mados-test",
-            "timezone": "America/New_York",
-            "locale": "en_US.UTF-8",
-        })
+        script = _build_config_script(
+            {
+                "disk": "/dev/sda",
+                "disk_size_gb": 60,
+                "separate_home": True,
+                "username": "testuser",
+                "password": "TestPass123!",  # NOSONAR - test fixture, not a real credential
+                "hostname": "mados-test",
+                "timezone": "America/New_York",
+                "locale": "en_US.UTF-8",
+            }
+        )
         keyring_pos = script.find("pacman-key --init")
         m = re.search(r"systemctl enable \w", script)
         self.assertNotEqual(keyring_pos, -1, "pacman-key --init not found in config script")
         self.assertIsNotNone(m, "no 'systemctl enable' found in config script")
         self.assertLess(
-            keyring_pos, m.start(),
+            keyring_pos,
+            m.start(),
             "pacman-key --init must appear before systemctl enable in the config script",
         )
 
@@ -811,23 +843,26 @@ class TestLiveISOCleanup(unittest.TestCase):
         import re
         from mados_installer.pages.installation import _build_config_script
 
-        script = _build_config_script({
-            "disk": "/dev/sda",
-            "disk_size_gb": 60,
-            "separate_home": True,
-            "username": "testuser",
-            "password": "TestPass123!",  # NOSONAR - test fixture, not a real credential
-            "hostname": "mados-test",
-            "timezone": "America/New_York",
-            "locale": "en_US.UTF-8",
-        })
+        script = _build_config_script(
+            {
+                "disk": "/dev/sda",
+                "disk_size_gb": 60,
+                "separate_home": True,
+                "username": "testuser",
+                "password": "TestPass123!",  # NOSONAR - test fixture, not a real credential
+                "hostname": "mados-test",
+                "timezone": "America/New_York",
+                "locale": "en_US.UTF-8",
+            }
+        )
         keyring_pos = script.find("pacman-key --init")
         self.assertNotEqual(keyring_pos, -1, "pacman-key --init not found in config script")
         # Find the first bare 'pacman ' invocation (not 'pacman-key')
         m = re.search(r"\bpacman\s+-", script)
         if m:
             self.assertLess(
-                keyring_pos, m.start(),
+                keyring_pos,
+                m.start(),
                 "pacman-key --init must appear before the first 'pacman' invocation "
                 "in the config script",
             )
@@ -844,7 +879,8 @@ class TestLiveISOCleanup(unittest.TestCase):
         self.assertNotEqual(userdel_pos, -1, "userdel not found in config script")
         self.assertNotEqual(useradd_pos, -1, "useradd not found in config script")
         self.assertLess(
-            userdel_pos, useradd_pos,
+            userdel_pos,
+            useradd_pos,
             "userdel must appear before useradd so UID 1000 is freed "
             "before the new user is created",
         )
@@ -852,12 +888,13 @@ class TestLiveISOCleanup(unittest.TestCase):
     def test_useradd_uses_usr_bin_zsh(self):
         """useradd must use /usr/bin/zsh (Arch Linux canonical path)."""
         self.assertIn(
-            "/usr/bin/zsh", self.content,
-            "useradd must use /usr/bin/zsh — Arch Linux installs zsh at "
-            "/usr/bin/zsh, not /bin/zsh",
+            "/usr/bin/zsh",
+            self.content,
+            "useradd must use /usr/bin/zsh — Arch Linux installs zsh at /usr/bin/zsh, not /bin/zsh",
         )
         self.assertNotRegex(
-            self.content, r"useradd.*-s /bin/zsh",
+            self.content,
+            r"useradd.*-s /bin/zsh",
             "useradd must NOT use /bin/zsh — use /usr/bin/zsh instead",
         )
 
@@ -870,9 +907,11 @@ class TestLiveISOCleanup(unittest.TestCase):
         """
         # Ensure we don't use su - for mkdir commands
         import re
+
         su_mkdirs = re.findall(r'su - .* -c "mkdir', self.content)
         self.assertEqual(
-            len(su_mkdirs), 0,
+            len(su_mkdirs),
+            0,
             "Config script must not use 'su - user -c mkdir' — "
             "zsh login profile may fail if Oh My Zsh is not yet installed. "
             "Use 'install -d -o user' instead.",
@@ -895,12 +934,14 @@ class TestLiveISOCleanup(unittest.TestCase):
         script = _build_config_script(data)
         result = subprocess.run(
             ["bash", "-n"],
-            input=script, capture_output=True, text=True,
+            input=script,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
-            f"Generated config script has bash syntax errors:\n"
-            f"{result.stderr}",
+            result.returncode,
+            0,
+            f"Generated config script has bash syntax errors:\n{result.stderr}",
         )
 
     def test_config_script_syntax_with_mados_username(self):
@@ -925,12 +966,14 @@ class TestLiveISOCleanup(unittest.TestCase):
         script = _build_config_script(data)
         result = subprocess.run(
             ["bash", "-n"],
-            input=script, capture_output=True, text=True,
+            input=script,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
-            f"Config script with username='mados' has bash syntax errors:\n"
-            f"{result.stderr}",
+            result.returncode,
+            0,
+            f"Config script with username='mados' has bash syntax errors:\n{result.stderr}",
         )
 
     def test_removes_archiso_root_scripts(self):
@@ -956,8 +999,7 @@ class TestLiveISOCleanup(unittest.TestCase):
         self.assertIn(
             "sway-desktop-override.hook",
             self.content,
-            "Config script must create sway pacman hook for session file "
-            "protection on upgrades",
+            "Config script must create sway pacman hook for session file protection on upgrades",
         )
 
     def test_creates_hyprland_pacman_hook(self):
@@ -1017,12 +1059,11 @@ class TestLiveISOCleanup(unittest.TestCase):
         script = _build_config_script(data)
         disable_pos = script.find("systemctl disable")
         rm_pos = script.find('rm -f "/etc/systemd/system/$svc"')
-        self.assertNotEqual(disable_pos, -1,
-                            "systemctl disable not found in script")
-        self.assertNotEqual(rm_pos, -1,
-                            "rm -f service file not found in script")
+        self.assertNotEqual(disable_pos, -1, "systemctl disable not found in script")
+        self.assertNotEqual(rm_pos, -1, "rm -f service file not found in script")
         self.assertLess(
-            disable_pos, rm_pos,
+            disable_pos,
+            rm_pos,
             "systemctl disable must appear BEFORE rm -f so that "
             "the unit file is still present when systemctl reads "
             "its [Install] section to find .wants/ symlinks",
@@ -1038,8 +1079,7 @@ class TestLiveISOCleanup(unittest.TestCase):
         self.assertIn(
             "dangling symlinks",
             self.content.lower(),
-            "Config script must clean up dangling symlinks "
-            "in systemd .wants directories",
+            "Config script must clean up dangling symlinks in systemd .wants directories",
         )
         self.assertRegex(
             self.content,
@@ -1056,28 +1096,23 @@ class TestSudoersConfig(unittest.TestCase):
 
     def test_claude_nopasswd_exists(self):
         """OpenCode NOPASSWD sudoers file must exist."""
-        path = os.path.join(
-            AIROOTFS, "etc", "sudoers.d", "99-opencode-nopasswd"
-        )
+        path = os.path.join(AIROOTFS, "etc", "sudoers.d", "99-opencode-nopasswd")
         self.assertTrue(os.path.isfile(path), "99-opencode-nopasswd missing")
 
     def test_mados_has_nopasswd(self):
         """mados user should have NOPASSWD sudo access."""
-        path = os.path.join(
-            AIROOTFS, "etc", "sudoers.d", "99-opencode-nopasswd"
-        )
+        path = os.path.join(AIROOTFS, "etc", "sudoers.d", "99-opencode-nopasswd")
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "NOPASSWD", content,
+            "NOPASSWD",
+            content,
             "mados user must have NOPASSWD sudo access",
         )
 
     def test_wheel_sudoers_has_chmod_440(self):
         """Installer must chmod 440 the wheel sudoers file (sudo ignores bad perms)."""
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         with open(install_py) as f:
             content = f.read()
         self.assertIn(
@@ -1108,8 +1143,9 @@ class TestCompositorSelection(unittest.TestCase):
         path = os.path.join(AIROOTFS, "etc", "skel", ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("select-compositor", content,
-                       ".bash_profile must use select-compositor script")
+        self.assertIn(
+            "select-compositor", content, ".bash_profile must use select-compositor script"
+        )
 
     def test_bash_profile_only_autostart_on_live_iso(self):
         """bash_profile must only auto-start compositor on live ISO, not installed system.
@@ -1122,7 +1158,8 @@ class TestCompositorSelection(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "/run/archiso", content,
+            "/run/archiso",
+            content,
             ".bash_profile auto-start compositor must be guarded by "
             "/run/archiso check — on installed system greetd manages VT1",
         )
@@ -1132,75 +1169,70 @@ class TestCompositorSelection(unittest.TestCase):
         path = os.path.join(AIROOTFS, "etc", "skel", ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec sway", content,
-                       ".bash_profile must exec sway for software rendering")
+        self.assertIn("exec sway", content, ".bash_profile must exec sway for software rendering")
         # Hyprland is launched via start-hyprland without exec so fallback to sway works if it fails
-        self.assertIn("start-hyprland ||", content,
-                       ".bash_profile must launch Hyprland via start-hyprland with fallback for hardware rendering")
+        self.assertIn(
+            "start-hyprland ||",
+            content,
+            ".bash_profile must launch Hyprland via start-hyprland with fallback for hardware rendering",
+        )
 
     def test_zlogin_uses_select_compositor(self):
         """zlogin should use select-compositor for dynamic selection."""
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("select-compositor", content,
-                       ".zlogin must use select-compositor script")
+        self.assertIn("select-compositor", content, ".zlogin must use select-compositor script")
 
     def test_hyprland_in_installer_packages(self):
         """Installer PACKAGES must include hyprland."""
         from mados_installer.config import PACKAGES
-        self.assertIn("hyprland", PACKAGES,
-                       "hyprland must be in installer PACKAGES")
+
+        self.assertIn("hyprland", PACKAGES, "hyprland must be in installer PACKAGES")
 
     def test_hyprland_session_script_execs_hyprland(self):
         """hyprland-session must exec start-hyprland."""
         path = os.path.join(BIN_DIR, "hyprland-session")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec start-hyprland", content,
-                       "hyprland-session must exec start-hyprland")
+        self.assertIn("exec start-hyprland", content, "hyprland-session must exec start-hyprland")
 
     def test_hyprland_session_sets_desktop(self):
         """hyprland-session must set XDG_CURRENT_DESKTOP."""
         path = os.path.join(BIN_DIR, "hyprland-session")
         with open(path) as f:
             content = f.read()
-        self.assertIn("XDG_CURRENT_DESKTOP=Hyprland", content,
-                       "hyprland-session must set XDG_CURRENT_DESKTOP")
+        self.assertIn(
+            "XDG_CURRENT_DESKTOP=Hyprland", content, "hyprland-session must set XDG_CURRENT_DESKTOP"
+        )
 
     def test_profiledef_includes_new_scripts(self):
         """profiledef.sh must set permissions for compositor scripts."""
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")
         with open(profiledef) as f:
             content = f.read()
-        for script in ['hyprland-session', 'select-compositor']:
+        for script in ["hyprland-session", "select-compositor"]:
             with self.subTest(script=script):
-                self.assertIn(script, content,
-                               f"profiledef.sh must include {script}")
+                self.assertIn(script, content, f"profiledef.sh must include {script}")
 
     def test_waybar_supports_both_compositors(self):
         """Waybar config must include modules for both Sway and Hyprland."""
-        path = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "waybar", "config"
-        )
+        path = os.path.join(AIROOTFS, "etc", "skel", ".config", "waybar", "config")
         with open(path) as f:
             content = f.read()
-        self.assertIn("sway/workspaces", content,
-                       "Waybar must include sway/workspaces module")
-        self.assertIn("hyprland/workspaces", content,
-                       "Waybar must include hyprland/workspaces module")
+        self.assertIn("sway/workspaces", content, "Waybar must include sway/workspaces module")
+        self.assertIn(
+            "hyprland/workspaces", content, "Waybar must include hyprland/workspaces module"
+        )
 
     def test_installer_copies_compositor_scripts(self):
         """Installer must copy compositor selection scripts."""
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         with open(install_py) as f:
             content = f.read()
-        for script in ['hyprland-session', 'start-hyprland', 'select-compositor']:
+        for script in ["hyprland-session", "start-hyprland", "select-compositor"]:
             with self.subTest(script=script):
-                self.assertIn(script, content,
-                               f"Installer must copy {script}")
+                self.assertIn(script, content, f"Installer must copy {script}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1212,53 +1244,39 @@ class TestAudioQualityPostInstall(unittest.TestCase):
     def test_audio_quality_script_exists(self):
         """Audio quality script must exist."""
         path = os.path.join(BIN_DIR, "mados-audio-quality.sh")
-        self.assertTrue(
-            os.path.isfile(path),
-            "mados-audio-quality.sh script missing"
-        )
+        self.assertTrue(os.path.isfile(path), "mados-audio-quality.sh script missing")
 
     def test_audio_quality_service_exists(self):
         """Audio quality systemd service must exist."""
-        path = os.path.join(
-            AIROOTFS, "etc", "systemd", "system", "mados-audio-quality.service"
-        )
-        self.assertTrue(
-            os.path.isfile(path),
-            "mados-audio-quality.service missing"
-        )
+        path = os.path.join(AIROOTFS, "etc", "systemd", "system", "mados-audio-quality.service")
+        self.assertTrue(os.path.isfile(path), "mados-audio-quality.service missing")
 
     def test_audio_quality_service_enabled(self):
         """Audio quality service must be enabled."""
         wants = os.path.join(
-            AIROOTFS, "etc", "systemd", "system",
-            "multi-user.target.wants", "mados-audio-quality.service"
+            AIROOTFS,
+            "etc",
+            "systemd",
+            "system",
+            "multi-user.target.wants",
+            "mados-audio-quality.service",
         )
-        self.assertTrue(
-            os.path.islink(wants),
-            "mados-audio-quality.service not enabled"
-        )
+        self.assertTrue(os.path.islink(wants), "mados-audio-quality.service not enabled")
 
     def test_audio_quality_user_service_in_skel(self):
         """User audio quality service must be in skel."""
         path = os.path.join(
-            AIROOTFS, "etc", "skel", ".config",
-            "systemd", "user", "mados-audio-quality.service"
+            AIROOTFS, "etc", "skel", ".config", "systemd", "user", "mados-audio-quality.service"
         )
-        self.assertTrue(
-            os.path.isfile(path),
-            "User audio quality service missing from skel"
-        )
+        self.assertTrue(os.path.isfile(path), "User audio quality service missing from skel")
 
     def test_audio_quality_runs_after_audio_init(self):
         """Audio quality service must run after basic audio init."""
-        path = os.path.join(
-            AIROOTFS, "etc", "systemd", "system", "mados-audio-quality.service"
-        )
+        path = os.path.join(AIROOTFS, "etc", "systemd", "system", "mados-audio-quality.service")
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "mados-audio-init.service", content,
-            "Must run after mados-audio-init.service"
+            "mados-audio-init.service", content, "Must run after mados-audio-init.service"
         )
 
     def test_script_has_pipewire_config(self):
@@ -1289,9 +1307,7 @@ class TestCopyItemErrorReporting(unittest.TestCase):
     """Verify _copy_item reports errors instead of silently swallowing them."""
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -1300,7 +1316,8 @@ class TestCopyItemErrorReporting(unittest.TestCase):
     def test_copy_item_checks_source_exists(self):
         """_copy_item must check if source file exists before copying."""
         self.assertIn(
-            "os.path.exists(src)", self.content,
+            "os.path.exists(src)",
+            self.content,
             "_copy_item must check os.path.exists(src)",
         )
 
@@ -1308,39 +1325,45 @@ class TestCopyItemErrorReporting(unittest.TestCase):
         """_copy_item must print a warning when source doesn't exist."""
         # Find the _copy_item function body
         func_match = re.search(
-            r'def _copy_item\(.*?\n(.*?)(?=\ndef |\nclass |\Z)',
-            self.content, re.DOTALL,
+            r"def _copy_item\(.*?\n(.*?)(?=\ndef |\nclass |\Z)",
+            self.content,
+            re.DOTALL,
         )
         self.assertIsNotNone(func_match, "Must find _copy_item function")
         func_body = func_match.group(1)
         self.assertIn(
-            "WARNING", func_body,
+            "WARNING",
+            func_body,
             "_copy_item must warn when source is missing",
         )
 
     def test_copy_item_captures_cp_output(self):
         """_copy_item must capture cp errors instead of silently ignoring."""
         func_match = re.search(
-            r'def _copy_item\(.*?\n(.*?)(?=\ndef |\nclass |\Z)',
-            self.content, re.DOTALL,
+            r"def _copy_item\(.*?\n(.*?)(?=\ndef |\nclass |\Z)",
+            self.content,
+            re.DOTALL,
         )
         self.assertIsNotNone(func_match, "Must find _copy_item function")
         func_body = func_match.group(1)
         self.assertIn(
-            "capture_output", func_body,
+            "capture_output",
+            func_body,
             "_copy_item must capture cp output to detect failures",
         )
 
     def test_copy_item_checks_returncode(self):
         """_copy_item must check cp return code for failures."""
         func_match = re.search(
-            r'def _copy_item\(.*?\n(.*?)(?=\ndef |\nclass |\Z)',
-            self.content, re.DOTALL,
+            r"def _copy_item\(.*?\n(.*?)(?=\ndef |\nclass |\Z)",
+            self.content,
+            re.DOTALL,
         )
         self.assertIsNotNone(func_match, "Must find _copy_item function")
         func_body = func_match.group(1)
         self.assertIn(
-            "returncode", func_body,
+            "returncode",
+            func_body,
             "_copy_item must check subprocess returncode",
         )
 
@@ -1352,9 +1375,7 @@ class TestChrootValidation(unittest.TestCase):
     """Verify arch-chroot validates configure.sh before executing."""
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -1363,25 +1384,29 @@ class TestChrootValidation(unittest.TestCase):
     def test_validates_script_exists_before_chroot(self):
         """Must check configure.sh exists before running arch-chroot."""
         func_match = re.search(
-            r'def _run_chroot_with_progress\(.*?\n(.*?)(?=\ndef |\nclass |\Z)',
-            self.content, re.DOTALL,
+            r"def _run_chroot_with_progress\(.*?\n(.*?)(?=\ndef |\nclass |\Z)",
+            self.content,
+            re.DOTALL,
         )
         self.assertIsNotNone(func_match, "Must find _run_chroot_with_progress")
         func_body = func_match.group(1)
         self.assertIn(
-            "os.path.isfile", func_body,
+            "os.path.isfile",
+            func_body,
             "Must validate configure.sh exists before arch-chroot",
         )
 
     def test_validates_script_not_empty(self):
         """Must check configure.sh is not empty before running arch-chroot."""
         func_match = re.search(
-            r'def _run_chroot_with_progress\(.*?\n(.*?)(?=\ndef |\nclass |\Z)',
-            self.content, re.DOTALL,
+            r"def _run_chroot_with_progress\(.*?\n(.*?)(?=\ndef |\nclass |\Z)",
+            self.content,
+            re.DOTALL,
         )
         self.assertIsNotNone(func_match, "Must find _run_chroot_with_progress")
         func_body = func_match.group(1)
         self.assertIn(
-            "getsize", func_body,
+            "getsize",
+            func_body,
             "Must check configure.sh is not empty (getsize > 0)",
         )

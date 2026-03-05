@@ -344,7 +344,7 @@ class PlayerEngine:
         # Enable subtitle rendering
         flags = self._pipeline.get_property("flags")
         # Flag bit 2 = text (subtitles)
-        flags |= (1 << 2)
+        flags |= 1 << 2
         self._pipeline.set_property("flags", flags)
 
     def cleanup(self):

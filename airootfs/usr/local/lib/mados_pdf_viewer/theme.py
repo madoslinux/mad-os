@@ -11,37 +11,38 @@ Nord Palette:
 """
 
 import gi
-gi.require_version('Gtk', '3.0')
+
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 
 # ── Nord Color Constants ──────────────────────────────────────────────────────
 
 NORD_POLAR_NIGHT = {
-    'nord0': '#2E3440',
-    'nord1': '#3B4252',
-    'nord2': '#434C5E',
-    'nord3': '#4C566A',
+    "nord0": "#2E3440",
+    "nord1": "#3B4252",
+    "nord2": "#434C5E",
+    "nord3": "#4C566A",
 }
 
 NORD_SNOW_STORM = {
-    'nord4': '#D8DEE9',
-    'nord5': '#E5E9F0',
-    'nord6': '#ECEFF4',
+    "nord4": "#D8DEE9",
+    "nord5": "#E5E9F0",
+    "nord6": "#ECEFF4",
 }
 
 NORD_FROST = {
-    'nord7': '#8FBCBB',
-    'nord8': '#88C0D0',
-    'nord9': '#81A1C1',
-    'nord10': '#5E81AC',
+    "nord7": "#8FBCBB",
+    "nord8": "#88C0D0",
+    "nord9": "#81A1C1",
+    "nord10": "#5E81AC",
 }
 
 NORD_AURORA = {
-    'nord11': '#BF616A',
-    'nord12': '#D08770',
-    'nord13': '#EBCB8B',
-    'nord14': '#A3BE8C',
-    'nord15': '#B48EAD',
+    "nord11": "#BF616A",
+    "nord12": "#D08770",
+    "nord13": "#EBCB8B",
+    "nord14": "#A3BE8C",
+    "nord15": "#B48EAD",
 }
 
 # ── CSS Stylesheet ────────────────────────────────────────────────────────────
@@ -504,7 +505,7 @@ def apply_theme():
     the FALLBACK priority so it styles all widgets application-wide.
     """
     css_provider = Gtk.CssProvider()
-    css_provider.load_from_data(NORD_CSS.encode('utf-8'))
+    css_provider.load_from_data(NORD_CSS.encode("utf-8"))
 
     screen = Gdk.Screen.get_default()
     if screen is not None:
@@ -531,7 +532,7 @@ def get_nord_rgba(color_name):
     all_colors.update(NORD_FROST)
     all_colors.update(NORD_AURORA)
 
-    hex_val = all_colors.get(color_name, '#FFFFFF')
+    hex_val = all_colors.get(color_name, "#FFFFFF")
     rgba = Gdk.RGBA()
     rgba.parse(hex_val)
     return rgba
@@ -547,7 +548,7 @@ def hex_to_rgb_float(hex_color):
     Returns:
         Tuple of (red, green, blue) floats.
     """
-    hex_color = hex_color.lstrip('#')
+    hex_color = hex_color.lstrip("#")
     r = int(hex_color[0:2], 16) / 255.0
     g = int(hex_color[2:4], 16) / 255.0
     b = int(hex_color[4:6], 16) / 255.0

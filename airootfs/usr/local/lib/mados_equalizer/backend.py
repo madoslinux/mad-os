@@ -118,11 +118,7 @@ class AudioBackend:
                 LEGACY_PIPEWIRE_CONFIG_FILE.unlink()
             # Also clean the old filter-chain.conf.d location
             legacy_alt = (
-                Path.home()
-                / CONFIG_DIR
-                / "pipewire"
-                / "filter-chain.conf.d"
-                / "mados-eq.conf"
+                Path.home() / CONFIG_DIR / "pipewire" / "filter-chain.conf.d" / "mados-eq.conf"
             )
             if legacy_alt.exists():
                 legacy_alt.unlink()
@@ -176,9 +172,7 @@ class AudioBackend:
         # Try wpctl (PipeWire WirePlumber)
         if self.has_wpctl:
             try:
-                rc, stdout, _ = self._run_command(
-                    ["wpctl", "inspect", DEFAULT_AUDIO_SINK]
-                )
+                rc, stdout, _ = self._run_command(["wpctl", "inspect", DEFAULT_AUDIO_SINK])
                 if rc == 0 and stdout:
                     for line in stdout.splitlines():
                         line = line.strip()
@@ -210,11 +204,7 @@ class AudioBackend:
                             in_sinks = True
                             continue
                         if in_sinks:
-                            if (
-                                line.strip() == ""
-                                or ("Sources:" in line)
-                                or ("Filters:" in line)
-                            ):
+                            if line.strip() == "" or ("Sources:" in line) or ("Filters:" in line):
                                 in_sinks = False
                                 continue
                             if "*" in line:
@@ -224,9 +214,7 @@ class AudioBackend:
                                     sink_desc = parts[1].strip()
                                     # Remove volume info in brackets
                                     if "[" in sink_desc:
-                                        sink_desc = sink_desc[
-                                            : sink_desc.index("[")
-                                        ].strip()
+                                        sink_desc = sink_desc[: sink_desc.index("[")].strip()
                                     self.active_sink_name = sink_desc
                                     self.active_sink = sink_desc
                                 return
@@ -309,9 +297,7 @@ class AudioBackend:
 
         # Determine target sink
         target_sink = (
-            self.active_sink
-            if self.active_sink
-            else "alsa_output.pci-0000_00_1b.0.analog-stereo"
+            self.active_sink if self.active_sink else "alsa_output.pci-0000_00_1b.0.analog-stereo"
         )
 
         config = f"""# madOS Equalizer - Standalone PipeWire filter-chain config
@@ -458,9 +444,7 @@ context.modules = [
             return
 
         try:
-            rc, stdout, _ = self._run_command(
-                ["wpctl", "inspect", DEFAULT_AUDIO_SINK]
-            )
+            rc, stdout, _ = self._run_command(["wpctl", "inspect", DEFAULT_AUDIO_SINK])
             if rc == 0 and stdout:
                 node_id = self._parse_node_id_from_inspect(stdout)
                 if node_id is not None:
@@ -487,9 +471,7 @@ context.modules = [
             return False
 
         try:
-            rc, _, _ = self._run_command(
-                ["wpctl", "set-default", str(eq_node_id)]
-            )
+            rc, _, _ = self._run_command(["wpctl", "set-default", str(eq_node_id)])
             return rc == 0
         except Exception:
             return False
@@ -523,9 +505,7 @@ context.modules = [
             return None
 
         try:
-            rc, stdout, _ = self._run_command(
-                ["pw-cli", "list-objects"], timeout=3
-            )
+            rc, stdout, _ = self._run_command(["pw-cli", "list-objects"], timeout=3)
             if rc != 0 or not stdout:
                 return None
 
@@ -547,9 +527,7 @@ context.modules = [
             return
 
         try:
-            self._run_command(
-                ["wpctl", "set-default", str(self._original_default_sink_id)]
-            )
+            self._run_command(["wpctl", "set-default", str(self._original_default_sink_id)])
         except Exception:
             pass
         finally:
@@ -645,8 +623,10 @@ context.modules = [
 
             # Route all audio through the EQ by setting it as default sink
             if not self._set_default_sink_to_eq():
-                print("Warning: Could not set EQ as default sink. "
-                      "Audio may not be routed through the equalizer.")
+                print(
+                    "Warning: Could not set EQ as default sink. "
+                    "Audio may not be routed through the equalizer."
+                )
 
             return True, "eq_applied"
 
@@ -793,9 +773,7 @@ context.modules = [
         """
         if self.has_wpctl:
             try:
-                rc, stdout, _ = self._run_command(
-                    ["wpctl", "get-volume", DEFAULT_AUDIO_SINK]
-                )
+                rc, stdout, _ = self._run_command(["wpctl", "get-volume", DEFAULT_AUDIO_SINK])
                 if rc == 0 and stdout:
                     # Output format: "Volume: 0.75" or "Volume: 0.75 [MUTED]"
                     parts = stdout.strip().split()
@@ -813,9 +791,7 @@ context.modules = [
 
         if self.has_pulseaudio:
             try:
-                rc, stdout, _ = self._run_command(
-                    ["pactl", "get-sink-volume", DEFAULT_SINK]
-                )
+                rc, stdout, _ = self._run_command(["pactl", "get-sink-volume", DEFAULT_SINK])
                 if rc == 0 and stdout:
                     # Parse percentage from output
                     for part in stdout.split():
@@ -827,9 +803,7 @@ context.modules = [
                             except ValueError:
                                 continue
 
-                rc2, stdout2, _ = self._run_command(
-                    ["pactl", "get-sink-mute", DEFAULT_SINK]
-                )
+                rc2, stdout2, _ = self._run_command(["pactl", "get-sink-mute", DEFAULT_SINK])
                 if rc2 == 0 and stdout2:
                     self.muted = "yes" in stdout2.lower()
 
@@ -863,9 +837,7 @@ context.modules = [
         if self.has_pulseaudio:
             try:
                 pct = int(volume * 100)
-                rc, _, _ = self._run_command(
-                    ["pactl", "set-sink-volume", DEFAULT_SINK, f"{pct}%"]
-                )
+                rc, _, _ = self._run_command(["pactl", "set-sink-volume", DEFAULT_SINK, f"{pct}%"])
                 return rc == 0
             except Exception:
                 pass
@@ -911,9 +883,7 @@ context.modules = [
 
         if self.has_wpctl:
             try:
-                rc, _, _ = self._run_command(
-                    ["wpctl", "set-mute", DEFAULT_AUDIO_SINK, state]
-                )
+                rc, _, _ = self._run_command(["wpctl", "set-mute", DEFAULT_AUDIO_SINK, state])
                 return rc == 0
             except Exception:
                 pass
@@ -921,9 +891,7 @@ context.modules = [
         if self.has_pulseaudio:
             pa_state = "yes" if muted else "no"
             try:
-                rc, _, _ = self._run_command(
-                    ["pactl", "set-sink-mute", DEFAULT_SINK, pa_state]
-                )
+                rc, _, _ = self._run_command(["pactl", "set-sink-mute", DEFAULT_SINK, pa_state])
                 return rc == 0
             except Exception:
                 pass

@@ -50,9 +50,7 @@ class TextAnnotation:
         dragging:   Internal flag for drag operations.
     """
 
-    def __init__(
-        self, page_index, x, y, text="", font_size=14, color="#2E3440", opacity=1.0
-    ):
+    def __init__(self, page_index, x, y, text="", font_size=14, color="#2E3440", opacity=1.0):
         self.page_index = page_index
         self.x = x
         self.y = y
@@ -147,9 +145,7 @@ class SignaturePlacement:
     DEFAULT_WIDTH = 150
     DEFAULT_HEIGHT = 60
 
-    def __init__(
-        self, page_index, x, y, surface, width=None, height=None, opacity=0.85
-    ):
+    def __init__(self, page_index, x, y, surface, width=None, height=None, opacity=0.85):
         self.page_index = page_index
         self.x = x
         self.y = y
@@ -325,9 +321,7 @@ class SignaturePad(Gtk.DrawingArea):
         Returns:
             True if loaded successfully, False otherwise.
         """
-        json_path = (
-            filepath if filepath.endswith(JSON_EXTENSION) else filepath + JSON_EXTENSION
-        )
+        json_path = filepath if filepath.endswith(JSON_EXTENSION) else filepath + JSON_EXTENSION
         if not os.path.isfile(json_path):
             return False
 
@@ -585,9 +579,7 @@ class TextAnnotationDialog(Gtk.Dialog):
 
         # Font size
         hbox_fs = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        hbox_fs.pack_start(
-            Gtk.Label(label=get_text("font_size", lang)), False, False, 0
-        )
+        hbox_fs.pack_start(Gtk.Label(label=get_text("font_size", lang)), False, False, 0)
         self.font_size_spin = Gtk.SpinButton.new_with_range(6, 72, 1)
         self.font_size_spin.set_value(14)
         hbox_fs.pack_start(self.font_size_spin, False, False, 0)
@@ -595,9 +587,7 @@ class TextAnnotationDialog(Gtk.Dialog):
 
         # Color
         hbox_color = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        hbox_color.pack_start(
-            Gtk.Label(label=get_text("text_color", lang)), False, False, 0
-        )
+        hbox_color.pack_start(Gtk.Label(label=get_text("text_color", lang)), False, False, 0)
         self.color_button = Gtk.ColorButton()
         rgba = Gdk.RGBA()
         rgba.parse("#2E3440")
@@ -694,9 +684,7 @@ class FormFieldManager:
                 if field_type == Poppler.FormFieldType.TEXT:
                     current_value = field.get_text() or ""
                 elif field_type == Poppler.FormFieldType.BUTTON:
-                    current_value = (
-                        field.get_state() if hasattr(field, "get_state") else False
-                    )
+                    current_value = field.get_state() if hasattr(field, "get_state") else False
             except Exception:
                 current_value = None
 

@@ -8,6 +8,7 @@ from collections import OrderedDict
 from configparser import ConfigParser
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GdkPixbuf
 
@@ -17,7 +18,7 @@ from . import config as _config
 
 # Regex to strip field codes from Exec values (%f, %F, %u, %U, %d, %D, %n, %N, %i, %c, %k, %v, %m)
 # Uses a possessive-style pattern (atomic via fixed-width match) to avoid backtracking issues.
-_FIELD_CODE_RE = re.compile(r' ?%[fFuUdDnNickvm](?:\s|$)')
+_FIELD_CODE_RE = re.compile(r" ?%[fFuUdDnNickvm](?:\s|$)")
 
 
 class DesktopEntry:
@@ -42,7 +43,7 @@ class EntryGroup:
 
     def __init__(self, group_name, entries):
         self.group_name = group_name
-        self.entries = entries          # list of DesktopEntry
+        self.entries = entries  # list of DesktopEntry
         self.representative = entries[0]  # icon/pixbuf comes from first entry
 
 
@@ -236,7 +237,7 @@ def group_entries(entries):
 
     Items are sorted alphabetically: groups by first entry name, singles by name.
     """
-    icon_groups = OrderedDict()   # icon_key -> [DesktopEntry]
+    icon_groups = OrderedDict()  # icon_key -> [DesktopEntry]
     ungrouped = []
 
     for entry in entries:

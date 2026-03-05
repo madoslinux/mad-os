@@ -20,6 +20,7 @@ import unittest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks(extra_modules=("Gst", "GstVideo"))
 
 # ---------------------------------------------------------------------------
@@ -488,8 +489,7 @@ class TestPlaylistDB(unittest.TestCase):
 
     def test_save_session_playlist(self):
         files = [self._A, self._B]
-        self.db.save_session_playlist(files, current_index=1,
-                                       repeat_mode="all", shuffle=True)
+        self.db.save_session_playlist(files, current_index=1, repeat_mode="all", shuffle=True)
         session = self.db.load_session_playlist()
         self.assertIsNotNone(session)
         self.assertEqual(session["filepaths"], files)
@@ -535,31 +535,37 @@ class TestTranslations(unittest.TestCase):
 
     def test_import_translations(self):
         from mados_video_player.translations import TRANSLATIONS, get_text, get_languages
+
         self.assertIsInstance(TRANSLATIONS, dict)
         self.assertGreater(len(TRANSLATIONS), 0)
 
     def test_all_languages_have_title(self):
         from mados_video_player.translations import TRANSLATIONS
+
         for lang, strings in TRANSLATIONS.items():
             self.assertIn("title", strings, f"Language '{lang}' missing 'title' key")
 
     def test_get_text_default(self):
         from mados_video_player.translations import get_text
+
         result = get_text("title")
         self.assertEqual(result, "madOS Video Player")
 
     def test_get_text_spanish(self):
         from mados_video_player.translations import get_text
+
         result = get_text("title", "Español")
         self.assertIn("madOS", result)
 
     def test_get_text_missing_key(self):
         from mados_video_player.translations import get_text
+
         result = get_text("nonexistent_key_xyz")
         self.assertEqual(result, "nonexistent_key_xyz")
 
     def test_get_languages(self):
         from mados_video_player.translations import get_languages
+
         langs = get_languages()
         self.assertIn("English", langs)
         self.assertIn("Español", langs)
@@ -567,14 +573,12 @@ class TestTranslations(unittest.TestCase):
 
     def test_all_languages_have_same_keys(self):
         from mados_video_player.translations import TRANSLATIONS
+
         english_keys = set(TRANSLATIONS["English"].keys())
         for lang, strings in TRANSLATIONS.items():
             lang_keys = set(strings.keys())
             missing = english_keys - lang_keys
-            self.assertEqual(
-                len(missing), 0,
-                f"Language '{lang}' missing keys: {missing}"
-            )
+            self.assertEqual(len(missing), 0, f"Language '{lang}' missing keys: {missing}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -585,15 +589,18 @@ class TestModuleMetadata(unittest.TestCase):
 
     def test_version(self):
         from mados_video_player import __version__
+
         self.assertIsInstance(__version__, str)
         self.assertTrue(len(__version__) > 0)
 
     def test_app_id(self):
         from mados_video_player import __app_id__
+
         self.assertEqual(__app_id__, "mados-video-player")
 
     def test_app_name(self):
         from mados_video_player import __app_name__
+
         self.assertEqual(__app_name__, "madOS Video Player")
 
 

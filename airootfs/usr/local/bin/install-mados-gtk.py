@@ -6,7 +6,9 @@ from /usr/local/lib/mados-installer/
 """
 
 import sys
-sys.path.insert(0, '/usr/local/lib')
+
+sys.path.insert(0, "/usr/local/lib")
 
 from mados_installer import main
+
 main()

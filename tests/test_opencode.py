@@ -21,6 +21,7 @@ import unittest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks(use_setdefault=True)
 
 # ---------------------------------------------------------------------------
@@ -71,6 +72,7 @@ class TestLiveUSBOpenCodeNoService(unittest.TestCase):
 # Live USB – OpenCode is pre-installed during ISO build
 # No setup script needed
 
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Post-installation – OpenCode is copied by rsync from live USB
 # ═══════════════════════════════════════════════════════════════════════════
@@ -83,9 +85,7 @@ class TestPostInstallOpenCode(unittest.TestCase):
     """
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -94,18 +94,21 @@ class TestPostInstallOpenCode(unittest.TestCase):
     def test_installer_does_not_create_service(self):
         """Installer must NOT create setup-opencode.service (opencode is a program)."""
         self.assertNotIn(
-            "setup-opencode.service", self.content,
+            "setup-opencode.service",
+            self.content,
             "Installer must NOT create setup-opencode.service — opencode is a program, not a service",
         )
 
     def test_installer_configures_sudoers_for_opencode(self):
         """Installer must grant NOPASSWD sudo for the opencode binary."""
         self.assertIn(
-            "opencode", self.content,
+            "opencode",
+            self.content,
             "Installer must reference opencode in sudoers configuration",
         )
         self.assertIn(
-            "/usr/local/bin/opencode", self.content,
+            "/usr/local/bin/opencode",
+            self.content,
             "Installer sudoers must include /usr/local/bin/opencode path",
         )
 
@@ -136,10 +139,7 @@ class TestLiveUSBOpenCodeDependencies(unittest.TestCase):
     def _read_packages(self):
         pkg_file = os.path.join(REPO_DIR, "packages.x86_64")
         with open(pkg_file) as f:
-            return [
-                line.strip() for line in f
-                if line.strip() and not line.strip().startswith("#")
-            ]
+            return [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
     def test_curl_included(self):
         """Live ISO must include curl (needed for opencode.ai/install)."""

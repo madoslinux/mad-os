@@ -151,9 +151,7 @@ class FileNavigator:
 
         # Filter to supported media files and sort case-insensitively
         media_files = [
-            f
-            for f in entries
-            if os.path.isfile(os.path.join(directory, f)) and is_media_file(f)
+            f for f in entries if os.path.isfile(os.path.join(directory, f)) and is_media_file(f)
         ]
         media_files.sort(key=lambda f: f.lower())
 

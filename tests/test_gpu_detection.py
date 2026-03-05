@@ -48,10 +48,12 @@ class TestDetectLegacyHardwareScript(unittest.TestCase):
         """detect-legacy-hardware must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
@@ -78,25 +80,27 @@ class TestDetect3DAcceleration(unittest.TestCase):
     def test_has_3d_acceleration_function(self):
         """Script must define a detect_3d_acceleration function."""
         self.assertIn(
-            "detect_3d_acceleration", self.content,
+            "detect_3d_acceleration",
+            self.content,
             "Must have a detect_3d_acceleration function",
         )
 
     def test_checks_drm_render_node(self):
         """3D detection must check for DRM render node (/dev/dri/renderD128)."""
         self.assertIn(
-            "/dev/dri/renderD128", self.content,
+            "/dev/dri/renderD128",
+            self.content,
             "Must check /dev/dri/renderD128 for GPU render node",
         )
 
     def test_checks_egl_support(self):
         """3D detection must verify EGL/OpenGL capability via eglinfo."""
         # Must use eglinfo to check for OpenGL support as a real 3D test
-        self.assertIn("eglinfo", self.content,
-                       "Must check eglinfo for EGL support")
+        self.assertIn("eglinfo", self.content, "Must check eglinfo for EGL support")
         # eglinfo output is piped through grep for OpenGL
         self.assertRegex(
-            self.content, r'eglinfo.*OpenGL',
+            self.content,
+            r"eglinfo.*OpenGL",
             "Must verify OpenGL support by parsing eglinfo output",
         )
 
@@ -105,17 +109,16 @@ class TestDetect3DAcceleration(unittest.TestCase):
         for driver in ["vmwgfx", "virtio-gpu", "virgl", "vboxvideo"]:
             with self.subTest(driver=driver):
                 self.assertIn(
-                    driver, self.content,
+                    driver,
+                    self.content,
                     f"Must check for {driver} DRM driver (3D-capable VM driver)",
                 )
 
     def test_returns_correct_exit_codes(self):
         """detect_3d_acceleration must return 0 for 3D present, 1 for absent."""
         # The function should have return 0 (3D found) and return 1 (no 3D)
-        self.assertIn("return 0", self.content,
-                       "Must return 0 when 3D acceleration is found")
-        self.assertIn("return 1", self.content,
-                       "Must return 1 when 3D acceleration is not found")
+        self.assertIn("return 0", self.content, "Must return 0 when 3D acceleration is found")
+        self.assertIn("return 1", self.content, "Must return 1 when 3D acceleration is not found")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -134,7 +137,8 @@ class TestVMDetection(unittest.TestCase):
     def test_detects_vm_environment(self):
         """Script must use systemd-detect-virt to identify VMs."""
         self.assertIn(
-            "systemd-detect-virt", self.content,
+            "systemd-detect-virt",
+            self.content,
             "Must use systemd-detect-virt for VM detection",
         )
 
@@ -142,25 +146,29 @@ class TestVMDetection(unittest.TestCase):
         """VMs with 3D acceleration must NOT be treated as legacy."""
         # The script should output a message about VM with 3D and return 1
         self.assertIn(
-            "VM with 3D acceleration", self.content,
+            "VM with 3D acceleration",
+            self.content,
             "Must identify VMs with 3D acceleration as modern (not legacy)",
         )
 
     def test_vm_without_3d_is_legacy(self):
         """VMs without 3D acceleration must be treated as legacy."""
         self.assertIn(
-            "VM without 3D acceleration", self.content,
+            "VM without 3D acceleration",
+            self.content,
             "Must identify VMs without 3D acceleration as legacy",
         )
 
     def test_nomodeset_is_always_legacy(self):
         """nomodeset kernel parameter must always trigger legacy mode."""
         self.assertIn(
-            "nomodeset", self.content,
+            "nomodeset",
+            self.content,
             "Must check for nomodeset kernel parameter",
         )
         self.assertIn(
-            "/proc/cmdline", self.content,
+            "/proc/cmdline",
+            self.content,
             "Must read /proc/cmdline to check for nomodeset",
         )
 
@@ -181,47 +189,55 @@ class TestLegacyGPUDetection(unittest.TestCase):
     def test_has_intel_gpu_detection(self):
         """Script must detect legacy Intel GPUs (GMA, i9xx, Atom PowerVR)."""
         self.assertIn(
-            "detect_legacy_intel_gpu", self.content,
+            "detect_legacy_intel_gpu",
+            self.content,
             "Must have Intel legacy GPU detection function",
         )
         # Must check for known legacy Intel GPU identifiers
         for pattern in ["GMA", "945", "Atom"]:
             with self.subTest(pattern=pattern):
                 self.assertIn(
-                    pattern, self.content,
+                    pattern,
+                    self.content,
                     f"Must detect legacy Intel GPU pattern: {pattern}",
                 )
 
     def test_has_nvidia_gpu_detection(self):
         """Script must detect legacy NVIDIA GPUs (GeForce FX, 6/7 series)."""
         self.assertIn(
-            "detect_legacy_nvidia_gpu", self.content,
+            "detect_legacy_nvidia_gpu",
+            self.content,
             "Must have NVIDIA legacy GPU detection function",
         )
         self.assertIn(
-            "GeForce", self.content,
+            "GeForce",
+            self.content,
             "Must detect legacy GeForce GPUs",
         )
 
     def test_has_amd_gpu_detection(self):
         """Script must detect legacy AMD/ATI GPUs (Radeon HD 2000-4000, Rage)."""
         self.assertIn(
-            "detect_legacy_amd_gpu", self.content,
+            "detect_legacy_amd_gpu",
+            self.content,
             "Must have AMD/ATI legacy GPU detection function",
         )
         self.assertIn(
-            "Radeon", self.content,
+            "Radeon",
+            self.content,
             "Must detect legacy Radeon GPUs",
         )
 
     def test_uses_lspci_for_gpu_info(self):
         """GPU detection must use lspci to identify installed GPUs."""
         self.assertIn(
-            "lspci", self.content,
+            "lspci",
+            self.content,
             "Must use lspci to query GPU information",
         )
         self.assertIn(
-            "VGA", self.content,
+            "VGA",
+            self.content,
             "Must filter lspci output for VGA controllers",
         )
 
@@ -265,7 +281,8 @@ class TestLegacyCPUDetection(unittest.TestCase):
     def test_has_legacy_cpu_function(self):
         """Script must define detect_legacy_cpu function."""
         self.assertIn(
-            "detect_legacy_cpu", self.content,
+            "detect_legacy_cpu",
+            self.content,
             "Must have detect_legacy_cpu function",
         )
 
@@ -291,31 +308,36 @@ class TestSelectCompositor(unittest.TestCase):
         """select-compositor must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
     def test_calls_detect_legacy_hardware(self):
         """select-compositor must use detect-legacy-hardware for detection."""
         self.assertIn(
-            "detect-legacy-hardware", self.content,
+            "detect-legacy-hardware",
+            self.content,
             "Must call detect-legacy-hardware script",
         )
 
     def test_outputs_sway_for_legacy(self):
         """Must output 'sway' when legacy hardware (no 3D) is detected."""
         self.assertIn(
-            'echo "sway"', self.content,
+            'echo "sway"',
+            self.content,
             "Must echo 'sway' for legacy/no-3D hardware",
         )
 
     def test_outputs_hyprland_for_modern(self):
         """Must output 'hyprland' when modern hardware (3D) is detected."""
         self.assertIn(
-            'echo "hyprland"', self.content,
+            'echo "hyprland"',
+            self.content,
             "Must echo 'hyprland' for modern/3D hardware",
         )
 
@@ -323,28 +345,32 @@ class TestSelectCompositor(unittest.TestCase):
         """Must have fallback logic when detect-legacy-hardware is missing."""
         # Should check for script existence before calling it
         self.assertIn(
-            "-x /usr/local/bin/detect-legacy-hardware", self.content,
+            "-x /usr/local/bin/detect-legacy-hardware",
+            self.content,
             "Must check if detect-legacy-hardware is executable before calling",
         )
 
     def test_fallback_checks_vm(self):
         """Fallback must check for VM environment."""
         self.assertIn(
-            "systemd-detect-virt", self.content,
+            "systemd-detect-virt",
+            self.content,
             "Fallback must use systemd-detect-virt for VM detection",
         )
 
     def test_fallback_checks_nomodeset(self):
         """Fallback must check for nomodeset kernel parameter."""
         self.assertIn(
-            "nomodeset", self.content,
+            "nomodeset",
+            self.content,
             "Fallback must check for nomodeset kernel parameter",
         )
 
     def test_verifies_hyprland_installed(self):
         """Must verify Hyprland binary exists before selecting it."""
         self.assertIn(
-            "command -v Hyprland", self.content,
+            "command -v Hyprland",
+            self.content,
             "Must verify Hyprland is installed before selecting it",
         )
 
@@ -354,8 +380,9 @@ class TestSelectCompositor(unittest.TestCase):
         hyprland_check = self.content.find("command -v Hyprland")
         self.assertNotEqual(hyprland_check, -1)
         after_check = self.content[hyprland_check:]
-        self.assertIn('echo "sway"', after_check,
-                       "Must fall back to sway if Hyprland is not installed")
+        self.assertIn(
+            'echo "sway"', after_check, "Must fall back to sway if Hyprland is not installed"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -372,14 +399,16 @@ class TestSessionWrappers(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         # Must set pixman renderer for software rendering
-        self.assertIn("WLR_RENDERER=pixman", content,
-                       "Sway session must use pixman software renderer")
-        self.assertIn("LIBGL_ALWAYS_SOFTWARE=1", content,
-                       "Sway session must force software OpenGL")
-        self.assertIn("WLR_NO_HARDWARE_CURSORS=1", content,
-                       "Sway session must disable hardware cursors")
-        self.assertIn("GSK_RENDERER=cairo", content,
-                       "Sway session must disable GTK Vulkan renderer")
+        self.assertIn(
+            "WLR_RENDERER=pixman", content, "Sway session must use pixman software renderer"
+        )
+        self.assertIn("LIBGL_ALWAYS_SOFTWARE=1", content, "Sway session must force software OpenGL")
+        self.assertIn(
+            "WLR_NO_HARDWARE_CURSORS=1", content, "Sway session must disable hardware cursors"
+        )
+        self.assertIn(
+            "GSK_RENDERER=cairo", content, "Sway session must disable GTK Vulkan renderer"
+        )
 
     def test_sway_session_uses_detect_legacy_hardware(self):
         """sway-session must use detect-legacy-hardware for conditional setup."""
@@ -388,8 +417,9 @@ class TestSessionWrappers(unittest.TestCase):
             self.skipTest("sway-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("detect-legacy-hardware", content,
-                       "sway-session must use detect-legacy-hardware script")
+        self.assertIn(
+            "detect-legacy-hardware", content, "sway-session must use detect-legacy-hardware script"
+        )
 
     def test_sway_session_execs_sway(self):
         """sway-session must exec sway compositor."""
@@ -398,8 +428,7 @@ class TestSessionWrappers(unittest.TestCase):
             self.skipTest("sway-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec sway", content,
-                       "sway-session must exec sway")
+        self.assertIn("exec sway", content, "sway-session must exec sway")
 
     def test_hyprland_session_sets_gpu_rendering(self):
         """hyprland-session must configure GPU-accelerated rendering."""
@@ -408,10 +437,12 @@ class TestSessionWrappers(unittest.TestCase):
             self.skipTest("hyprland-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("XDG_CURRENT_DESKTOP=Hyprland", content,
-                       "Hyprland session must set XDG_CURRENT_DESKTOP")
-        self.assertIn("XDG_SESSION_TYPE=wayland", content,
-                       "Hyprland session must set wayland session type")
+        self.assertIn(
+            "XDG_CURRENT_DESKTOP=Hyprland", content, "Hyprland session must set XDG_CURRENT_DESKTOP"
+        )
+        self.assertIn(
+            "XDG_SESSION_TYPE=wayland", content, "Hyprland session must set wayland session type"
+        )
 
     def test_hyprland_session_execs_hyprland(self):
         """hyprland-session must exec start-hyprland compositor."""
@@ -420,8 +451,7 @@ class TestSessionWrappers(unittest.TestCase):
             self.skipTest("hyprland-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec start-hyprland", content,
-                       "hyprland-session must exec start-hyprland")
+        self.assertIn("exec start-hyprland", content, "hyprland-session must exec start-hyprland")
 
     def test_sway_session_disables_gpu_for_chromium(self):
         """sway-session must disable GPU for Chromium on legacy hardware."""
@@ -430,8 +460,11 @@ class TestSessionWrappers(unittest.TestCase):
             self.skipTest("sway-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("--disable-gpu", content,
-                       "Sway session must disable GPU for Chromium on legacy hardware")
+        self.assertIn(
+            "--disable-gpu",
+            content,
+            "Sway session must disable GPU for Chromium on legacy hardware",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -445,21 +478,23 @@ class TestLoginShellIntegration(unittest.TestCase):
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("select-compositor", content,
-                       ".bash_profile must use select-compositor")
+        self.assertIn("select-compositor", content, ".bash_profile must use select-compositor")
 
     def test_bash_profile_sway_for_no_3d(self):
         """.bash_profile must launch sway when no 3D acceleration."""
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec sway", content,
-                       ".bash_profile must exec sway for no-3D/legacy hardware")
+        self.assertIn(
+            "exec sway", content, ".bash_profile must exec sway for no-3D/legacy hardware"
+        )
         # Must set software rendering vars before launching sway
-        self.assertIn("WLR_RENDERER=pixman", content,
-                       ".bash_profile must set pixman renderer for sway")
-        self.assertIn("GSK_RENDERER=cairo", content,
-                       ".bash_profile must disable GTK Vulkan renderer")
+        self.assertIn(
+            "WLR_RENDERER=pixman", content, ".bash_profile must set pixman renderer for sway"
+        )
+        self.assertIn(
+            "GSK_RENDERER=cairo", content, ".bash_profile must disable GTK Vulkan renderer"
+        )
 
     def test_bash_profile_hyprland_for_3d(self):
         """.bash_profile must launch Hyprland via start-hyprland when 3D acceleration is available."""
@@ -467,31 +502,33 @@ class TestLoginShellIntegration(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         # Hyprland is launched via start-hyprland without exec so fallback to sway works if it fails
-        self.assertIn("start-hyprland", content,
-                       ".bash_profile must launch Hyprland via start-hyprland for 3D-capable hardware")
+        self.assertIn(
+            "start-hyprland",
+            content,
+            ".bash_profile must launch Hyprland via start-hyprland for 3D-capable hardware",
+        )
         # Must have fallback to sway if Hyprland fails
-        self.assertIn("start-hyprland ||", content,
-                       ".bash_profile must fall back to sway if start-hyprland fails")
+        self.assertIn(
+            "start-hyprland ||",
+            content,
+            ".bash_profile must fall back to sway if start-hyprland fails",
+        )
 
     def test_zlogin_selects_compositor(self):
         """.zlogin must call select-compositor for hardware detection."""
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("select-compositor", content,
-                       ".zlogin must use select-compositor")
+        self.assertIn("select-compositor", content, ".zlogin must use select-compositor")
 
     def test_zlogin_sway_for_no_3d(self):
         """.zlogin must launch sway when no 3D acceleration."""
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec sway", content,
-                       ".zlogin must exec sway for no-3D/legacy hardware")
-        self.assertIn("WLR_RENDERER=pixman", content,
-                       ".zlogin must set pixman renderer for sway")
-        self.assertIn("GSK_RENDERER=cairo", content,
-                       ".zlogin must disable GTK Vulkan renderer")
+        self.assertIn("exec sway", content, ".zlogin must exec sway for no-3D/legacy hardware")
+        self.assertIn("WLR_RENDERER=pixman", content, ".zlogin must set pixman renderer for sway")
+        self.assertIn("GSK_RENDERER=cairo", content, ".zlogin must disable GTK Vulkan renderer")
 
     def test_zlogin_hyprland_for_3d(self):
         """.zlogin must launch Hyprland via start-hyprland when 3D acceleration is available."""
@@ -499,11 +536,15 @@ class TestLoginShellIntegration(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         # Hyprland is launched via start-hyprland without exec so fallback to sway works if it fails
-        self.assertIn("start-hyprland", content,
-                       ".zlogin must launch Hyprland via start-hyprland for 3D-capable hardware")
+        self.assertIn(
+            "start-hyprland",
+            content,
+            ".zlogin must launch Hyprland via start-hyprland for 3D-capable hardware",
+        )
         # Must have fallback to sway if Hyprland fails
-        self.assertIn("start-hyprland ||", content,
-                       ".zlogin must fall back to sway if start-hyprland fails")
+        self.assertIn(
+            "start-hyprland ||", content, ".zlogin must fall back to sway if start-hyprland fails"
+        )
 
     def test_bash_profile_compositor_before_exec(self):
         """.bash_profile must determine compositor before launching it."""
@@ -514,10 +555,14 @@ class TestLoginShellIntegration(unittest.TestCase):
         sway_pos = content.find("exec sway")
         # Hyprland is launched via start-hyprland without exec (fallback pattern: start-hyprland || { exec sway })
         hyprland_pos = content.find("start-hyprland ||")
-        self.assertLess(compositor_pos, sway_pos,
-                         "Compositor selection must happen before exec sway")
-        self.assertLess(compositor_pos, hyprland_pos,
-                         "Compositor selection must happen before launching Hyprland")
+        self.assertLess(
+            compositor_pos, sway_pos, "Compositor selection must happen before exec sway"
+        )
+        self.assertLess(
+            compositor_pos,
+            hyprland_pos,
+            "Compositor selection must happen before launching Hyprland",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -529,28 +574,25 @@ class TestGPUDetectionPackages(unittest.TestCase):
     def _read_packages(self):
         pkg_file = os.path.join(REPO_DIR, "packages.x86_64")
         with open(pkg_file) as f:
-            return [
-                line.strip() for line in f
-                if line.strip() and not line.strip().startswith("#")
-            ]
+            return [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
     def test_mesa_utils_included(self):
         """mesa-utils must be included for GPU detection tools (eglinfo)."""
-        self.assertIn("mesa-utils", self._read_packages(),
-                       "mesa-utils must be in packages.x86_64 for eglinfo")
+        self.assertIn(
+            "mesa-utils", self._read_packages(), "mesa-utils must be in packages.x86_64 for eglinfo"
+        )
 
     def test_mesa_included(self):
         """mesa must be included for OpenGL/EGL support."""
-        self.assertIn("mesa", self._read_packages(),
-                       "mesa must be in packages.x86_64 for GPU support")
+        self.assertIn(
+            "mesa", self._read_packages(), "mesa must be in packages.x86_64 for GPU support"
+        )
 
     def test_both_compositors_in_packages(self):
         """Both sway and hyprland must be in packages.x86_64."""
         packages = self._read_packages()
-        self.assertIn("sway", packages,
-                       "sway must be in packages.x86_64")
-        self.assertIn("hyprland", packages,
-                       "hyprland must be in packages.x86_64")
+        self.assertIn("sway", packages, "sway must be in packages.x86_64")
+        self.assertIn("hyprland", packages, "hyprland must be in packages.x86_64")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -588,10 +630,10 @@ rm -rf "$MOCK_DIR"
 """
         result = subprocess.run(
             ["bash", "-c", bash_code],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
-        self.assertEqual(result.stdout.strip(), "sway",
-                          "Legacy hardware (no 3D) must select sway")
+        self.assertEqual(result.stdout.strip(), "sway", "Legacy hardware (no 3D) must select sway")
 
     def test_modern_hardware_selects_hyprland(self):
         """When detect-legacy-hardware returns 1 (modern) and Hyprland is installed, select hyprland."""
@@ -620,10 +662,12 @@ rm -rf "$MOCK_DIR"
 """
         result = subprocess.run(
             ["bash", "-c", bash_code],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
-        self.assertEqual(result.stdout.strip(), "hyprland",
-                          "Modern hardware (with 3D) must select hyprland")
+        self.assertEqual(
+            result.stdout.strip(), "hyprland", "Modern hardware (with 3D) must select hyprland"
+        )
 
     def test_no_hyprland_falls_back_to_sway(self):
         """When Hyprland is not installed, must fall back to sway."""
@@ -647,10 +691,12 @@ rm -rf "$MOCK_DIR"
 """
         result = subprocess.run(
             ["bash", "-c", bash_code],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
-        self.assertEqual(result.stdout.strip(), "sway",
-                          "Must fall back to sway if Hyprland not installed")
+        self.assertEqual(
+            result.stdout.strip(), "sway", "Must fall back to sway if Hyprland not installed"
+        )
 
     def test_select_compositor_only_outputs_valid_values(self):
         """select-compositor must only ever output 'sway' or 'hyprland'."""
@@ -661,9 +707,9 @@ rm -rf "$MOCK_DIR"
         valid_values = {"sway", "hyprland"}
         for value in echo_matches:
             self.assertIn(
-                value, valid_values,
-                f"select-compositor must only output 'sway' or 'hyprland', "
-                f"found: '{value}'",
+                value,
+                valid_values,
+                f"select-compositor must only output 'sway' or 'hyprland', found: '{value}'",
             )
 
 
@@ -682,11 +728,13 @@ class TestDetectionToSessionChain(unittest.TestCase):
         # return 0 for legacy (multiple reasons)
         # return 1 for modern
         self.assertRegex(
-            content, r'return\s+0',
+            content,
+            r"return\s+0",
             "detect-legacy-hardware must return 0 for legacy hardware",
         )
         self.assertRegex(
-            content, r'return\s+1',
+            content,
+            r"return\s+1",
             "detect-legacy-hardware must return 1 for modern hardware",
         )
 
@@ -706,7 +754,8 @@ class TestDetectionToSessionChain(unittest.TestCase):
         detect_pos = content.find("detect-legacy-hardware")
         first_echo_after = content.find('echo "sway"', detect_pos)
         self.assertGreater(
-            first_echo_after, detect_pos,
+            first_echo_after,
+            detect_pos,
             "After detect-legacy-hardware (returns 0=legacy), first output must be sway",
         )
 
@@ -717,26 +766,32 @@ class TestDetectionToSessionChain(unittest.TestCase):
             self.skipTest("sway-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("WLR_DRM_NO_ATOMIC", content,
-                       "sway-session must set WLR_DRM_NO_ATOMIC for VM DRM workaround")
-        self.assertIn("WLR_DRM_NO_MODIFIERS", content,
-                       "sway-session must set WLR_DRM_NO_MODIFIERS for VM DRM workaround")
+        self.assertIn(
+            "WLR_DRM_NO_ATOMIC",
+            content,
+            "sway-session must set WLR_DRM_NO_ATOMIC for VM DRM workaround",
+        )
+        self.assertIn(
+            "WLR_DRM_NO_MODIFIERS",
+            content,
+            "sway-session must set WLR_DRM_NO_MODIFIERS for VM DRM workaround",
+        )
 
     def test_profiledef_includes_detect_legacy_hardware(self):
         """profiledef.sh must set permissions for detect-legacy-hardware."""
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")
         with open(profiledef) as f:
             content = f.read()
-        self.assertIn("detect-legacy-hardware", content,
-                       "profiledef.sh must include detect-legacy-hardware")
+        self.assertIn(
+            "detect-legacy-hardware", content, "profiledef.sh must include detect-legacy-hardware"
+        )
 
     def test_profiledef_includes_sway_session(self):
         """profiledef.sh must set permissions for sway-session."""
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")
         with open(profiledef) as f:
             content = f.read()
-        self.assertIn("sway-session", content,
-                       "profiledef.sh must include sway-session")
+        self.assertIn("sway-session", content, "profiledef.sh must include sway-session")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -757,7 +812,8 @@ class TestPhysicalHardware3DCheck(unittest.TestCase):
         # After legacy checks, if hardware is not detected as legacy,
         # must still verify 3D acceleration is available
         self.assertIn(
-            "No 3D acceleration detected", self.content,
+            "No 3D acceleration detected",
+            self.content,
             "Must detect and report when no 3D acceleration is available on physical hardware",
         )
 
@@ -767,10 +823,10 @@ class TestPhysicalHardware3DCheck(unittest.TestCase):
         # Find the section after legacy checks but before "Modern hardware"
         modern_pos = self.content.find("Modern hardware detected")
         no_3d_pos = self.content.find("No 3D acceleration detected")
-        self.assertGreater(no_3d_pos, -1,
-                            "Must have 'No 3D acceleration detected' message")
-        self.assertLess(no_3d_pos, modern_pos,
-                         "3D check must come before declaring modern hardware")
+        self.assertGreater(no_3d_pos, -1, "Must have 'No 3D acceleration detected' message")
+        self.assertLess(
+            no_3d_pos, modern_pos, "3D check must come before declaring modern hardware"
+        )
 
     def test_no_3d_simulated_selects_sway(self):
         """When no 3D acceleration on physical hardware, select-compositor must return sway."""
@@ -793,10 +849,12 @@ rm -rf "$MOCK_DIR"
 """
         result = subprocess.run(
             ["bash", "-c", bash_code],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
-        self.assertEqual(result.stdout.strip(), "sway",
-                          "Physical hardware without 3D must select sway")
+        self.assertEqual(
+            result.stdout.strip(), "sway", "Physical hardware without 3D must select sway"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -811,29 +869,33 @@ class TestHyprlandFallback(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         # Must use start-hyprland || { ... exec sway } pattern
-        self.assertIn("start-hyprland ||", content,
-                       ".bash_profile must try start-hyprland with fallback operator")
+        self.assertIn(
+            "start-hyprland ||",
+            content,
+            ".bash_profile must try start-hyprland with fallback operator",
+        )
         # Fallback block must set software rendering and exec sway
         fallback_pos = content.find("start-hyprland ||")
         after_fallback = content[fallback_pos:]
-        self.assertIn("exec sway", after_fallback,
-                       "Fallback block must exec sway")
-        self.assertIn("WLR_RENDERER=pixman", after_fallback,
-                       "Fallback block must set pixman renderer")
+        self.assertIn("exec sway", after_fallback, "Fallback block must exec sway")
+        self.assertIn(
+            "WLR_RENDERER=pixman", after_fallback, "Fallback block must set pixman renderer"
+        )
 
     def test_zlogin_has_hyprland_fallback(self):
         """.zlogin must have fallback to sway if Hyprland fails."""
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("start-hyprland ||", content,
-                       ".zlogin must try start-hyprland with fallback operator")
+        self.assertIn(
+            "start-hyprland ||", content, ".zlogin must try start-hyprland with fallback operator"
+        )
         fallback_pos = content.find("start-hyprland ||")
         after_fallback = content[fallback_pos:]
-        self.assertIn("exec sway", after_fallback,
-                       "Fallback block must exec sway")
-        self.assertIn("WLR_RENDERER=pixman", after_fallback,
-                       "Fallback block must set pixman renderer")
+        self.assertIn("exec sway", after_fallback, "Fallback block must exec sway")
+        self.assertIn(
+            "WLR_RENDERER=pixman", after_fallback, "Fallback block must set pixman renderer"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -847,60 +909,54 @@ class TestSessionLogging(unittest.TestCase):
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("logger", content,
-                       ".bash_profile must use logger for session logging")
-        self.assertIn("mados-session", content,
-                       ".bash_profile must log with mados-session tag")
+        self.assertIn("logger", content, ".bash_profile must use logger for session logging")
+        self.assertIn("mados-session", content, ".bash_profile must log with mados-session tag")
 
     def test_zlogin_logs_compositor_selection(self):
         """.zlogin must log compositor selection via logger."""
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("logger", content,
-                       ".zlogin must use logger for session logging")
-        self.assertIn("mados-session", content,
-                       ".zlogin must log with mados-session tag")
+        self.assertIn("logger", content, ".zlogin must use logger for session logging")
+        self.assertIn("mados-session", content, ".zlogin must log with mados-session tag")
 
     def test_select_compositor_logs(self):
         """select-compositor must log its decisions."""
         path = os.path.join(BIN_DIR, "select-compositor")
         with open(path) as f:
             content = f.read()
-        self.assertIn("logger", content,
-                       "select-compositor must use logger")
-        self.assertIn("mados-compositor", content,
-                       "select-compositor must log with mados-compositor tag")
+        self.assertIn("logger", content, "select-compositor must use logger")
+        self.assertIn(
+            "mados-compositor", content, "select-compositor must log with mados-compositor tag"
+        )
 
     def test_sway_session_logs(self):
         """sway-session must log its launch."""
         path = os.path.join(BIN_DIR, "sway-session")
         with open(path) as f:
             content = f.read()
-        self.assertIn("logger", content,
-                       "sway-session must use logger")
-        self.assertIn("mados-sway", content,
-                       "sway-session must log with mados-sway tag")
+        self.assertIn("logger", content, "sway-session must use logger")
+        self.assertIn("mados-sway", content, "sway-session must log with mados-sway tag")
 
     def test_hyprland_session_logs(self):
         """hyprland-session must log its launch."""
         path = os.path.join(BIN_DIR, "hyprland-session")
         with open(path) as f:
             content = f.read()
-        self.assertIn("logger", content,
-                       "hyprland-session must use logger")
-        self.assertIn("mados-hyprland", content,
-                       "hyprland-session must log with mados-hyprland tag")
+        self.assertIn("logger", content, "hyprland-session must use logger")
+        self.assertIn(
+            "mados-hyprland", content, "hyprland-session must log with mados-hyprland tag"
+        )
 
     def test_hyprland_fallback_logs_warning(self):
         """.bash_profile must log a warning when Hyprland fails."""
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("user.warning", content,
-                       ".bash_profile must log warning level when Hyprland fails")
-        self.assertIn("Hyprland failed", content,
-                       ".bash_profile must log Hyprland failure message")
+        self.assertIn(
+            "user.warning", content, ".bash_profile must log warning level when Hyprland fails"
+        )
+        self.assertIn("Hyprland failed", content, ".bash_profile must log Hyprland failure message")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -920,23 +976,21 @@ class TestGlobalLogging(unittest.TestCase):
 
     def test_volatile_storage(self):
         """Journal must use volatile (RAM) storage."""
-        self.assertIn("Storage=volatile", self.content,
-                       "Journal must use volatile storage")
+        self.assertIn("Storage=volatile", self.content, "Journal must use volatile storage")
 
     def test_max_level_warning(self):
         """Journal must only store warnings and errors (MaxLevelStore=warning)."""
-        self.assertIn("MaxLevelStore=warning", self.content,
-                       "Journal must limit stored log level to warning")
+        self.assertIn(
+            "MaxLevelStore=warning", self.content, "Journal must limit stored log level to warning"
+        )
 
     def test_runtime_size_limit(self):
         """Journal must have size limits to prevent RAM exhaustion."""
-        self.assertIn("RuntimeMaxUse=", self.content,
-                       "Journal must set RuntimeMaxUse size limit")
+        self.assertIn("RuntimeMaxUse=", self.content, "Journal must set RuntimeMaxUse size limit")
 
     def test_runtime_keep_free(self):
         """Journal must keep free RAM available."""
-        self.assertIn("RuntimeKeepFree=", self.content,
-                       "Journal must set RuntimeKeepFree")
+        self.assertIn("RuntimeKeepFree=", self.content, "Journal must set RuntimeKeepFree")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -960,42 +1014,38 @@ class TestMadosLogsScript(unittest.TestCase):
         """mados-logs must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
     def test_uses_journalctl(self):
         """mados-logs must use journalctl to access logs."""
-        self.assertIn("journalctl", self.content,
-                       "mados-logs must use journalctl")
+        self.assertIn("journalctl", self.content, "mados-logs must use journalctl")
 
     def test_filters_warning_level(self):
         """mados-logs must filter for warnings and errors by default."""
-        self.assertIn("-p warning", self.content,
-                       "mados-logs must filter by priority warning")
+        self.assertIn("-p warning", self.content, "mados-logs must filter by priority warning")
 
     def test_has_follow_mode(self):
         """mados-logs must support real-time log following."""
-        self.assertIn("-f", self.content,
-                       "mados-logs must support follow mode")
+        self.assertIn("-f", self.content, "mados-logs must support follow mode")
 
     def test_has_compositor_filter(self):
         """mados-logs must support filtering compositor-related logs."""
-        self.assertIn("--compositor", self.content,
-                       "mados-logs must support compositor log filter")
-        self.assertIn("mados-session", self.content,
-                       "mados-logs must filter for mados-session tag")
+        self.assertIn("--compositor", self.content, "mados-logs must support compositor log filter")
+        self.assertIn("mados-session", self.content, "mados-logs must filter for mados-session tag")
 
     def test_profiledef_includes_mados_logs(self):
         """profiledef.sh must set permissions for mados-logs."""
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")
         with open(profiledef) as f:
             content = f.read()
-        self.assertIn("mados-logs", content,
-                       "profiledef.sh must include mados-logs")
+        self.assertIn("mados-logs", content, "profiledef.sh must include mados-logs")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1009,20 +1059,28 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         path = os.path.join(BIN_DIR, "sway-session")
         with open(path) as f:
             content = f.read()
-        self.assertIn("99-vm-performance.conf", content,
-                       "sway-session must generate VM performance config")
-        self.assertIn("/etc/sway/config.d/99-vm-performance.conf", content,
-                       "sway-session must use correct config path")
+        self.assertIn(
+            "99-vm-performance.conf", content, "sway-session must generate VM performance config"
+        )
+        self.assertIn(
+            "/etc/sway/config.d/99-vm-performance.conf",
+            content,
+            "sway-session must use correct config path",
+        )
 
     def test_cage_greeter_generates_vm_config(self):
         """cage-greeter must generate VM performance config drop-in."""
         path = os.path.join(BIN_DIR, "cage-greeter")
         with open(path) as f:
             content = f.read()
-        self.assertIn("99-vm-performance.conf", content,
-                       "cage-greeter must generate VM performance config")
-        self.assertIn("/etc/sway/config.d/99-vm-performance.conf", content,
-                       "cage-greeter must use correct config path")
+        self.assertIn(
+            "99-vm-performance.conf", content, "cage-greeter must generate VM performance config"
+        )
+        self.assertIn(
+            "/etc/sway/config.d/99-vm-performance.conf",
+            content,
+            "cage-greeter must use correct config path",
+        )
 
     def test_bash_profile_generates_sway_vm_config(self):
         """.bash_profile must generate Sway VM performance config."""
@@ -1035,24 +1093,34 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         with self.subTest(location="sway_block"):
             # Find the sway block
             sway_block_start = content.find('if [ "$COMPOSITOR" = "sway" ]')
-            self.assertGreater(sway_block_start, -1, ".bash_profile must have sway compositor block")
+            self.assertGreater(
+                sway_block_start, -1, ".bash_profile must have sway compositor block"
+            )
             else_pos = content.find("else", sway_block_start)
             self.assertGreater(else_pos, -1, ".bash_profile must have else after sway block")
             sway_block = content[sway_block_start:else_pos]
-            self.assertIn("99-vm-performance.conf", sway_block,
-                           ".bash_profile sway block must generate VM performance config")
-        
+            self.assertIn(
+                "99-vm-performance.conf",
+                sway_block,
+                ".bash_profile sway block must generate VM performance config",
+            )
+
         with self.subTest(location="hyprland_fallback"):
             # Find the Hyprland fallback block
             fallback_start = content.find("start-hyprland || {")
-            self.assertGreater(fallback_start, -1, ".bash_profile must have Hyprland fallback block")
+            self.assertGreater(
+                fallback_start, -1, ".bash_profile must have Hyprland fallback block"
+            )
             # Find "exec sway" after the fallback start - the fallback ends after that
             exec_sway_pos = content.find("exec sway", fallback_start)
             self.assertGreater(exec_sway_pos, -1, ".bash_profile fallback must exec sway")
             # +20 to include "exec sway" and ensure we capture the full line
-            fallback_block = content[fallback_start:exec_sway_pos + 20]
-            self.assertIn("99-vm-performance.conf", fallback_block,
-                           ".bash_profile Hyprland fallback must generate VM performance config")
+            fallback_block = content[fallback_start : exec_sway_pos + 20]
+            self.assertIn(
+                "99-vm-performance.conf",
+                fallback_block,
+                ".bash_profile Hyprland fallback must generate VM performance config",
+            )
 
     def test_bash_profile_generates_hyprland_vm_config(self):
         """.bash_profile must generate Hyprland VM performance config."""
@@ -1065,10 +1133,16 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         start_hyprland_pos = content.find("start-hyprland ||")
         self.assertGreater(start_hyprland_pos, -1, ".bash_profile must have start-hyprland")
         hyprland_block = content[else_block:start_hyprland_pos]
-        self.assertIn("~/.config/hypr/vm-performance.conf", hyprland_block,
-                       ".bash_profile must generate Hyprland VM config")
-        self.assertIn("systemd-detect-virt --vm", hyprland_block,
-                       ".bash_profile must check for VM before generating Hyprland config")
+        self.assertIn(
+            "~/.config/hypr/vm-performance.conf",
+            hyprland_block,
+            ".bash_profile must generate Hyprland VM config",
+        )
+        self.assertIn(
+            "systemd-detect-virt --vm",
+            hyprland_block,
+            ".bash_profile must check for VM before generating Hyprland config",
+        )
 
     def test_zlogin_generates_sway_vm_config(self):
         """.zlogin must generate Sway VM performance config."""
@@ -1082,9 +1156,12 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
             else_pos = content.find("else", sway_block_start)
             self.assertGreater(else_pos, -1, ".zlogin must have else after sway block")
             sway_block = content[sway_block_start:else_pos]
-            self.assertIn("99-vm-performance.conf", sway_block,
-                           ".zlogin sway block must generate VM performance config")
-        
+            self.assertIn(
+                "99-vm-performance.conf",
+                sway_block,
+                ".zlogin sway block must generate VM performance config",
+            )
+
         with self.subTest(location="hyprland_fallback"):
             fallback_start = content.find("start-hyprland || {")
             self.assertGreater(fallback_start, -1, ".zlogin must have Hyprland fallback block")
@@ -1092,9 +1169,12 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
             exec_sway_pos = content.find("exec sway", fallback_start)
             self.assertGreater(exec_sway_pos, -1, ".zlogin fallback must exec sway")
             # +20 to include "exec sway" and ensure we capture the full line
-            fallback_block = content[fallback_start:exec_sway_pos + 20]
-            self.assertIn("99-vm-performance.conf", fallback_block,
-                           ".zlogin Hyprland fallback must generate VM performance config")
+            fallback_block = content[fallback_start : exec_sway_pos + 20]
+            self.assertIn(
+                "99-vm-performance.conf",
+                fallback_block,
+                ".zlogin Hyprland fallback must generate VM performance config",
+            )
 
     def test_zlogin_generates_hyprland_vm_config(self):
         """.zlogin must generate Hyprland VM performance config."""
@@ -1107,10 +1187,16 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         start_hyprland_pos = content.find("start-hyprland ||")
         self.assertGreater(start_hyprland_pos, -1, ".zlogin must have start-hyprland")
         hyprland_block = content[else_block:start_hyprland_pos]
-        self.assertIn("~/.config/hypr/vm-performance.conf", hyprland_block,
-                       ".zlogin must generate Hyprland VM config")
-        self.assertIn("systemd-detect-virt --vm", hyprland_block,
-                       ".zlogin must check for VM before generating Hyprland config")
+        self.assertIn(
+            "~/.config/hypr/vm-performance.conf",
+            hyprland_block,
+            ".zlogin must generate Hyprland VM config",
+        )
+        self.assertIn(
+            "systemd-detect-virt --vm",
+            hyprland_block,
+            ".zlogin must check for VM before generating Hyprland config",
+        )
 
     def test_sway_vm_config_delegates_wallpaper(self):
         """Sway VM config must NOT override wallpaper (managed by mados-sway-wallpapers)."""
@@ -1118,16 +1204,22 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         path = os.path.join(BIN_DIR, "sway-session")
         with open(path) as f:
             content = f.read()
-        self.assertIn("mados-sway-wallpapers", content,
-                       "sway-session VM config must reference mados-sway-wallpapers")
+        self.assertIn(
+            "mados-sway-wallpapers",
+            content,
+            "sway-session VM config must reference mados-sway-wallpapers",
+        )
         # The VM config should NOT contain 'output * bg' to avoid overriding wallpaper script
         # Find the VMCONF block and verify it doesn't set output bg
         vmconf_start = content.find("<< 'VMCONF'")
         vmconf_end = content.find("VMCONF", vmconf_start + 10) if vmconf_start >= 0 else -1
         if vmconf_start >= 0 and vmconf_end >= 0:
             vmconf_block = content[vmconf_start:vmconf_end]
-            self.assertNotIn("output * bg", vmconf_block,
-                           "VM config must not override wallpaper with output * bg")
+            self.assertNotIn(
+                "output * bg",
+                vmconf_block,
+                "VM config must not override wallpaper with output * bg",
+            )
 
     def test_sway_vm_config_has_no_gaps(self):
         """Sway VM config must disable gaps for better performance."""
@@ -1135,52 +1227,61 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         path = os.path.join(BIN_DIR, "sway-session")
         with open(path) as f:
             content = f.read()
-        self.assertIn("gaps inner 0", content,
-                       "sway-session VM config must set inner gaps to 0")
-        self.assertIn("gaps outer 0", content,
-                       "sway-session VM config must set outer gaps to 0")
+        self.assertIn("gaps inner 0", content, "sway-session VM config must set inner gaps to 0")
+        self.assertIn("gaps outer 0", content, "sway-session VM config must set outer gaps to 0")
 
     def test_bash_profile_sway_vm_config_content(self):
         """.bash_profile Sway VM config must have correct content."""
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("mados-sway-wallpapers", content,
-                       ".bash_profile VM config must reference mados-sway-wallpapers")
-        self.assertIn("gaps inner 0", content,
-                       ".bash_profile must generate gaps inner 0 in VM config")
-        self.assertIn("gaps outer 0", content,
-                       ".bash_profile must generate gaps outer 0 in VM config")
+        self.assertIn(
+            "mados-sway-wallpapers",
+            content,
+            ".bash_profile VM config must reference mados-sway-wallpapers",
+        )
+        self.assertIn(
+            "gaps inner 0", content, ".bash_profile must generate gaps inner 0 in VM config"
+        )
+        self.assertIn(
+            "gaps outer 0", content, ".bash_profile must generate gaps outer 0 in VM config"
+        )
 
     def test_zlogin_sway_vm_config_content(self):
         """.zlogin Sway VM config must have correct content."""
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("mados-sway-wallpapers", content,
-                       ".zlogin VM config must reference mados-sway-wallpapers")
-        self.assertIn("gaps inner 0", content,
-                       ".zlogin must generate gaps inner 0 in VM config")
-        self.assertIn("gaps outer 0", content,
-                       ".zlogin must generate gaps outer 0 in VM config")
+        self.assertIn(
+            "mados-sway-wallpapers",
+            content,
+            ".zlogin VM config must reference mados-sway-wallpapers",
+        )
+        self.assertIn("gaps inner 0", content, ".zlogin must generate gaps inner 0 in VM config")
+        self.assertIn("gaps outer 0", content, ".zlogin must generate gaps outer 0 in VM config")
 
     def test_bash_profile_hyprland_vm_config_disables_hardware_cursors(self):
         """.bash_profile Hyprland VM config must disable hardware cursors."""
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
-        self.assertIn("no_hardware_cursors", content,
-                       ".bash_profile must disable hardware cursors in Hyprland VM config")
+        self.assertIn(
+            "no_hardware_cursors",
+            content,
+            ".bash_profile must disable hardware cursors in Hyprland VM config",
+        )
         # Verify it's in the Hyprland VM config generation block
         hyprland_vm_start = content.find("cat > ~/.config/hypr/vm-performance.conf")
-        self.assertGreater(hyprland_vm_start, -1,
-                            ".bash_profile must generate Hyprland VM config")
+        self.assertGreater(hyprland_vm_start, -1, ".bash_profile must generate Hyprland VM config")
         # +50 to skip past the heredoc opener to find the first VMCONF delimiter
         vmconf_pos = content.find("VMCONF", hyprland_vm_start + 50)
         self.assertGreater(vmconf_pos, -1, "VMCONF delimiter must exist")
         hyprland_vm_block = content[hyprland_vm_start:vmconf_pos]
-        self.assertIn("no_hardware_cursors", hyprland_vm_block,
-                       "no_hardware_cursors must be in Hyprland VM config content")
+        self.assertIn(
+            "no_hardware_cursors",
+            hyprland_vm_block,
+            "no_hardware_cursors must be in Hyprland VM config content",
+        )
 
     def test_bash_profile_hyprland_vm_config_disables_animations(self):
         """.bash_profile Hyprland VM config must disable animations."""
@@ -1189,34 +1290,40 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
             content = f.read()
         # Find the Hyprland VM config generation
         hyprland_vm_start = content.find("cat > ~/.config/hypr/vm-performance.conf")
-        self.assertGreater(hyprland_vm_start, -1,
-                            ".bash_profile must generate Hyprland VM config")
+        self.assertGreater(hyprland_vm_start, -1, ".bash_profile must generate Hyprland VM config")
         # +50 to skip past the heredoc opener to find the first VMCONF delimiter
         vmconf_pos = content.find("VMCONF", hyprland_vm_start + 50)
         self.assertGreater(vmconf_pos, -1, "VMCONF delimiter must exist")
         hyprland_vm_block = content[hyprland_vm_start:vmconf_pos]
-        self.assertIn("animations", hyprland_vm_block,
-                       "Hyprland VM config must reference animations")
-        self.assertIn("enabled = false", hyprland_vm_block,
-                       "Hyprland VM config must disable animations")
+        self.assertIn(
+            "animations", hyprland_vm_block, "Hyprland VM config must reference animations"
+        )
+        self.assertIn(
+            "enabled = false", hyprland_vm_block, "Hyprland VM config must disable animations"
+        )
 
     def test_zlogin_hyprland_vm_config_disables_hardware_cursors(self):
         """.zlogin Hyprland VM config must disable hardware cursors."""
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("no_hardware_cursors", content,
-                       ".zlogin must disable hardware cursors in Hyprland VM config")
+        self.assertIn(
+            "no_hardware_cursors",
+            content,
+            ".zlogin must disable hardware cursors in Hyprland VM config",
+        )
         # Verify it's in the correct block
         hyprland_vm_start = content.find("cat > ~/.config/hypr/vm-performance.conf")
-        self.assertGreater(hyprland_vm_start, -1,
-                            ".zlogin must generate Hyprland VM config")
+        self.assertGreater(hyprland_vm_start, -1, ".zlogin must generate Hyprland VM config")
         # +50 to skip past the heredoc opener to find the first VMCONF delimiter
         vmconf_pos = content.find("VMCONF", hyprland_vm_start + 50)
         self.assertGreater(vmconf_pos, -1, "VMCONF delimiter must exist")
         hyprland_vm_block = content[hyprland_vm_start:vmconf_pos]
-        self.assertIn("no_hardware_cursors", hyprland_vm_block,
-                       "no_hardware_cursors must be in Hyprland VM config content")
+        self.assertIn(
+            "no_hardware_cursors",
+            hyprland_vm_block,
+            "no_hardware_cursors must be in Hyprland VM config content",
+        )
 
     def test_zlogin_hyprland_vm_config_disables_animations(self):
         """.zlogin Hyprland VM config must disable animations."""
@@ -1225,16 +1332,17 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
             content = f.read()
         # Find the Hyprland VM config generation
         hyprland_vm_start = content.find("cat > ~/.config/hypr/vm-performance.conf")
-        self.assertGreater(hyprland_vm_start, -1,
-                            ".zlogin must generate Hyprland VM config")
+        self.assertGreater(hyprland_vm_start, -1, ".zlogin must generate Hyprland VM config")
         # +50 to skip past the heredoc opener to find the first VMCONF delimiter
         vmconf_pos = content.find("VMCONF", hyprland_vm_start + 50)
         self.assertGreater(vmconf_pos, -1, "VMCONF delimiter must exist")
         hyprland_vm_block = content[hyprland_vm_start:vmconf_pos]
-        self.assertIn("animations", hyprland_vm_block,
-                       "Hyprland VM config must reference animations")
-        self.assertIn("enabled = false", hyprland_vm_block,
-                       "Hyprland VM config must disable animations")
+        self.assertIn(
+            "animations", hyprland_vm_block, "Hyprland VM config must reference animations"
+        )
+        self.assertIn(
+            "enabled = false", hyprland_vm_block, "Hyprland VM config must disable animations"
+        )
 
     def test_bash_profile_hyprland_vm_config_enables_vfr(self):
         """.bash_profile Hyprland VM config must enable VFR to prevent constant redraws."""
@@ -1242,15 +1350,20 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         hyprland_vm_start = content.find("cat > ~/.config/hypr/vm-performance.conf")
-        self.assertGreater(hyprland_vm_start, -1,
-                            ".bash_profile must generate Hyprland VM config")
+        self.assertGreater(hyprland_vm_start, -1, ".bash_profile must generate Hyprland VM config")
         vmconf_pos = content.find("VMCONF", hyprland_vm_start + 50)
         self.assertGreater(vmconf_pos, -1, "VMCONF delimiter must exist")
         hyprland_vm_block = content[hyprland_vm_start:vmconf_pos]
-        self.assertIn("vfr = true", hyprland_vm_block,
-                       "Hyprland VM config must enable VFR (variable frame rate)")
-        self.assertNotIn("vfr = false", hyprland_vm_block,
-                          "vfr = false causes constant screen redraws and mouse lag")
+        self.assertIn(
+            "vfr = true",
+            hyprland_vm_block,
+            "Hyprland VM config must enable VFR (variable frame rate)",
+        )
+        self.assertNotIn(
+            "vfr = false",
+            hyprland_vm_block,
+            "vfr = false causes constant screen redraws and mouse lag",
+        )
 
     def test_zlogin_hyprland_vm_config_enables_vfr(self):
         """.zlogin Hyprland VM config must enable VFR to prevent constant redraws."""
@@ -1258,33 +1371,43 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         hyprland_vm_start = content.find("cat > ~/.config/hypr/vm-performance.conf")
-        self.assertGreater(hyprland_vm_start, -1,
-                            ".zlogin must generate Hyprland VM config")
+        self.assertGreater(hyprland_vm_start, -1, ".zlogin must generate Hyprland VM config")
         vmconf_pos = content.find("VMCONF", hyprland_vm_start + 50)
         self.assertGreater(vmconf_pos, -1, "VMCONF delimiter must exist")
         hyprland_vm_block = content[hyprland_vm_start:vmconf_pos]
-        self.assertIn("vfr = true", hyprland_vm_block,
-                       "Hyprland VM config must enable VFR (variable frame rate)")
-        self.assertNotIn("vfr = false", hyprland_vm_block,
-                          "vfr = false causes constant screen redraws and mouse lag")
+        self.assertIn(
+            "vfr = true",
+            hyprland_vm_block,
+            "Hyprland VM config must enable VFR (variable frame rate)",
+        )
+        self.assertNotIn(
+            "vfr = false",
+            hyprland_vm_block,
+            "vfr = false causes constant screen redraws and mouse lag",
+        )
 
     def test_hyprland_conf_sources_vm_config(self):
         """hyprland.conf must source the VM performance config."""
         path = os.path.join(SKEL_DIR, ".config", "hypr", "hyprland.conf")
         with open(path) as f:
             content = f.read()
-        self.assertIn("source = ~/.config/hypr/vm-performance.conf", content,
-                       "hyprland.conf must source VM performance config")
+        self.assertIn(
+            "source = ~/.config/hypr/vm-performance.conf",
+            content,
+            "hyprland.conf must source VM performance config",
+        )
         # Verify it's at the end of the file (after other config)
         source_pos = content.find("source = ~/.config/hypr/vm-performance.conf")
-        self.assertGreater(source_pos, content.find("# ========="),
-                            "VM config source should be after main config sections")
+        self.assertGreater(
+            source_pos,
+            content.find("# ========="),
+            "VM config source should be after main config sections",
+        )
 
     def test_vm_performance_conf_placeholder_exists(self):
         """vm-performance.conf placeholder must exist in hypr config dir."""
         path = os.path.join(SKEL_DIR, ".config", "hypr", "vm-performance.conf")
-        self.assertTrue(os.path.isfile(path),
-                         "vm-performance.conf placeholder must exist")
+        self.assertTrue(os.path.isfile(path), "vm-performance.conf placeholder must exist")
 
     def test_vm_performance_conf_placeholder_is_safe(self):
         """vm-performance.conf placeholder must be empty or have safe comments."""
@@ -1292,20 +1415,24 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         # File should only contain comments or be empty (ignore blank lines)
-        non_empty_lines = [line.strip() for line in content.splitlines() 
-                           if line.strip() and not line.strip().startswith("#")]
-        self.assertEqual(len(non_empty_lines), 0,
-                          "vm-performance.conf placeholder must only contain comments")
+        non_empty_lines = [
+            line.strip()
+            for line in content.splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        self.assertEqual(
+            len(non_empty_lines), 0, "vm-performance.conf placeholder must only contain comments"
+        )
 
     def test_vm_performance_conf_has_documentation(self):
         """vm-performance.conf placeholder must have explanatory comments."""
         path = os.path.join(SKEL_DIR, ".config", "hypr", "vm-performance.conf")
         with open(path) as f:
             content = f.read()
-        self.assertIn("VM", content,
-                       "vm-performance.conf must mention VM in comments")
-        self.assertIn("auto-populated", content.lower(),
-                       "vm-performance.conf must explain auto-population")
+        self.assertIn("VM", content, "vm-performance.conf must mention VM in comments")
+        self.assertIn(
+            "auto-populated", content.lower(), "vm-performance.conf must explain auto-population"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1335,12 +1462,13 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             content,
             re.DOTALL,
         )
-        self.assertIsNotNone(match,
-                             "detect-legacy-hardware must contain vmwgfx case")
+        self.assertIsNotNone(match, "detect-legacy-hardware must contain vmwgfx case")
         vmwgfx_body = match.group(1)
-        self.assertNotIn("return 0", vmwgfx_body,
-                          "vmwgfx case must NOT return 0 — "
-                          "vmwgfx presence alone does not guarantee 3D")
+        self.assertNotIn(
+            "return 0",
+            vmwgfx_body,
+            "vmwgfx case must NOT return 0 — vmwgfx presence alone does not guarantee 3D",
+        )
 
     # --- sway-session software rendering fallback retry -------------------
 
@@ -1351,8 +1479,11 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             self.skipTest("sway-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("apply_software_rendering", content,
-                       "sway-session must contain apply_software_rendering function")
+        self.assertIn(
+            "apply_software_rendering",
+            content,
+            "sway-session must contain apply_software_rendering function",
+        )
 
     def test_sway_session_has_software_rendering_retry_logic(self):
         """sway-session must retry with software rendering on failure."""
@@ -1361,9 +1492,11 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             self.skipTest("sway-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("retrying with software rendering", content,
-                       "sway-session must contain retry logic message "
-                       "'retrying with software rendering'")
+        self.assertIn(
+            "retrying with software rendering",
+            content,
+            "sway-session must contain retry logic message 'retrying with software rendering'",
+        )
 
     def test_sway_session_still_execs_sway(self):
         """sway-session must still exec sway in the fallback path."""
@@ -1372,8 +1505,7 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             self.skipTest("sway-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec sway", content,
-                       "sway-session must exec sway for the fallback path")
+        self.assertIn("exec sway", content, "sway-session must exec sway for the fallback path")
 
     # --- hyprland-session legacy hardware detection -----------------------
 
@@ -1384,8 +1516,9 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             self.skipTest("hyprland-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("detect-legacy-hardware", content,
-                       "hyprland-session must call detect-legacy-hardware")
+        self.assertIn(
+            "detect-legacy-hardware", content, "hyprland-session must call detect-legacy-hardware"
+        )
 
     def test_hyprland_session_falls_back_to_sway_session(self):
         """hyprland-session must fall back to sway-session on legacy hardware."""
@@ -1394,8 +1527,9 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             self.skipTest("hyprland-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("sway-session", content,
-                       "hyprland-session must reference sway-session as fallback")
+        self.assertIn(
+            "sway-session", content, "hyprland-session must reference sway-session as fallback"
+        )
 
     def test_hyprland_session_still_execs_start_hyprland(self):
         """hyprland-session must exec start-hyprland for the non-legacy path."""
@@ -1404,9 +1538,11 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             self.skipTest("hyprland-session not found")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec start-hyprland", content,
-                       "hyprland-session must exec start-hyprland "
-                       "for non-legacy hardware")
+        self.assertIn(
+            "exec start-hyprland",
+            content,
+            "hyprland-session must exec start-hyprland for non-legacy hardware",
+        )
 
 
 if __name__ == "__main__":

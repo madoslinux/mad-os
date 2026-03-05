@@ -88,9 +88,7 @@ class PlaylistDB:
         Returns:
             List of (id, name) tuples.
         """
-        cur = self._conn.execute(
-            "SELECT id, name FROM playlists ORDER BY name"
-        )
+        cur = self._conn.execute("SELECT id, name FROM playlists ORDER BY name")
         return cur.fetchall()
 
     def save_playlist(self, name, filepaths):
@@ -112,9 +110,7 @@ class PlaylistDB:
             ).fetchone()[0]
 
             # Replace items
-            self._conn.execute(
-                "DELETE FROM playlist_items WHERE playlist_id=?", (playlist_id,)
-            )
+            self._conn.execute("DELETE FROM playlist_items WHERE playlist_id=?", (playlist_id,))
             self._conn.executemany(
                 "INSERT INTO playlist_items (playlist_id, position, filepath) VALUES (?, ?, ?)",
                 [(playlist_id, i, fp) for i, fp in enumerate(filepaths)],
@@ -129,9 +125,7 @@ class PlaylistDB:
         Returns:
             Ordered list of file paths, or None if not found.
         """
-        row = self._conn.execute(
-            "SELECT id FROM playlists WHERE name=?", (name,)
-        ).fetchone()
+        row = self._conn.execute("SELECT id FROM playlists WHERE name=?", (name,)).fetchone()
         if row is None:
             return None
         playlist_id = row[0]
@@ -151,9 +145,7 @@ class PlaylistDB:
             True if deleted, False if not found.
         """
         with self._transaction():
-            cur = self._conn.execute(
-                "DELETE FROM playlists WHERE name=?", (name,)
-            )
+            cur = self._conn.execute("DELETE FROM playlists WHERE name=?", (name,))
             return cur.rowcount > 0
 
     def rename_playlist(self, old_name, new_name):
@@ -203,9 +195,7 @@ class PlaylistDB:
         Returns:
             The stored value as a string, or *default*.
         """
-        row = self._conn.execute(
-            "SELECT value FROM session WHERE key=?", (key,)
-        ).fetchone()
+        row = self._conn.execute("SELECT value FROM session WHERE key=?", (key,)).fetchone()
         return row[0] if row else default
 
     # ------------------------------------------------------------------
@@ -214,8 +204,7 @@ class PlaylistDB:
 
     _SESSION_PLAYLIST_NAME = "__session__"
 
-    def save_session_playlist(self, filepaths, current_index=-1,
-                              repeat_mode="none", shuffle=False):
+    def save_session_playlist(self, filepaths, current_index=-1, repeat_mode="none", shuffle=False):
         """Persist the current session playlist and state.
 
         Called automatically when the player closes so the playlist

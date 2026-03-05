@@ -92,8 +92,12 @@ class TestVBoxGuestIntegration(unittest.TestCase):
 
     def test_vboxservice_enabled(self):
         link_path = os.path.join(
-            AIROOTFS, "etc", "systemd", "system",
-            "multi-user.target.wants", "vboxservice.service",
+            AIROOTFS,
+            "etc",
+            "systemd",
+            "system",
+            "multi-user.target.wants",
+            "vboxservice.service",
         )
         self.assertTrue(os.path.islink(link_path) or os.path.exists(link_path))
 

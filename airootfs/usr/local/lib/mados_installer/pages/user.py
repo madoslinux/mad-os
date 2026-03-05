@@ -94,9 +94,7 @@ def create_user_page(app):
     content.pack_start(form, False, False, 0)
 
     # Navigation
-    nav = create_nav_buttons(
-        app, lambda x: app.notebook.prev_page(), lambda x: _on_user_next(app)
-    )
+    nav = create_nav_buttons(app, lambda x: app.notebook.prev_page(), lambda x: _on_user_next(app))
     nav.set_hexpand(True)
     content.pack_start(nav, False, False, 0)
 
@@ -131,10 +129,7 @@ def _on_user_next(app):
         show_error(app, "Empty Hostname", "Hostname cannot be empty.")
         return
 
-    if (
-        not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$", hostname)
-        or len(hostname) > 63
-    ):
+    if not re.match(r"^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$", hostname) or len(hostname) > 63:
         show_error(
             app,
             "Invalid Hostname",

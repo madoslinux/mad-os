@@ -18,18 +18,31 @@ import os
 import subprocess
 
 import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('Gdk', '3.0')
-gi.require_version('GdkPixbuf', '2.0')
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("Gdk", "3.0")
+gi.require_version("GdkPixbuf", "2.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, GLib
 
 from . import __app_id__, __app_name__, __version__
 from .canvas import ImageCanvas
 from .tools import (
-    TOOL_NONE, TOOL_PAINT, TOOL_TEXT, TOOL_BLUR, TOOL_PIXELATE, TOOL_ERASER,
+    TOOL_NONE,
+    TOOL_PAINT,
+    TOOL_TEXT,
+    TOOL_BLUR,
+    TOOL_PIXELATE,
+    TOOL_ERASER,
     compose_edits_onto_pixbuf,
 )
-from .navigator import FileNavigator, is_image_file, is_video_file, IMAGE_EXTENSIONS, VIDEO_EXTENSIONS, ALL_EXTENSIONS
+from .navigator import (
+    FileNavigator,
+    is_image_file,
+    is_video_file,
+    IMAGE_EXTENSIONS,
+    VIDEO_EXTENSIONS,
+    ALL_EXTENSIONS,
+)
 from .video_player import VideoPlayer, GST_AVAILABLE
 from .translations import get_text, detect_system_language, DEFAULT_LANGUAGE
 from .theme import apply_theme, NORD
@@ -52,15 +65,15 @@ class PhotoViewerApp(Gtk.Window):
         # State
         self._language = detect_system_language()
         self._navigator = FileNavigator()
-        self._current_mode = 'image'  # 'image' or 'video'
+        self._current_mode = "image"  # 'image' or 'video'
 
         # Window properties
         self.set_default_size(900, 700)
         self.set_position(Gtk.WindowPosition.CENTER)
         # Set app_id for Sway/Wayland
         self.set_wmclass(__app_id__, __app_name__)
-        self.connect('delete-event', self._on_delete_event)
-        self.connect('key-press-event', self._on_key_press)
+        self.connect("delete-event", self._on_delete_event)
+        self.connect("key-press-event", self._on_key_press)
 
         # Main vertical layout
         self._main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -103,7 +116,7 @@ class PhotoViewerApp(Gtk.Window):
         btn = Gtk.ToolButton()
         btn.set_icon_name(icon_name)
         btn.set_tooltip_text(self._t(tooltip_key))
-        btn.connect('clicked', callback)
+        btn.connect("clicked", callback)
         toolbar.insert(btn, -1)
         return btn
 
@@ -122,16 +135,24 @@ class PhotoViewerApp(Gtk.Window):
         toolbar.insert(Gtk.SeparatorToolItem(), -1)
 
         # ── Navigation ────────────────────────────────────────────────
-        self._btn_prev = self._add_tool_button(toolbar, "go-previous", "prev_image", lambda w: self._on_prev())
-        self._btn_next = self._add_tool_button(toolbar, "go-next", "next_image", lambda w: self._on_next())
+        self._btn_prev = self._add_tool_button(
+            toolbar, "go-previous", "prev_image", lambda w: self._on_prev()
+        )
+        self._btn_next = self._add_tool_button(
+            toolbar, "go-next", "next_image", lambda w: self._on_next()
+        )
 
         toolbar.insert(Gtk.SeparatorToolItem(), -1)
 
         # ── Zoom ──────────────────────────────────────────────────────
         self._add_tool_button(toolbar, "zoom-out", "zoom_out", lambda w: self._canvas.zoom_out())
         self._add_tool_button(toolbar, "zoom-in", "zoom_in", lambda w: self._canvas.zoom_in())
-        self._add_tool_button(toolbar, "zoom-fit-best", "fit_window", lambda w: self._canvas.zoom_fit())
-        self._add_tool_button(toolbar, "zoom-original", "actual_size", lambda w: self._canvas.zoom_actual())
+        self._add_tool_button(
+            toolbar, "zoom-fit-best", "fit_window", lambda w: self._canvas.zoom_fit()
+        )
+        self._add_tool_button(
+            toolbar, "zoom-original", "actual_size", lambda w: self._canvas.zoom_actual()
+        )
 
         # Zoom label
         ti_zoom = Gtk.ToolItem()
@@ -157,7 +178,7 @@ class PhotoViewerApp(Gtk.Window):
             btn = Gtk.ToggleToolButton()
             btn.set_icon_name(icon_name)
             btn.set_tooltip_text(self._t(tooltip_key))
-            btn.connect('toggled', self._on_tool_toggled, tool_id)
+            btn.connect("toggled", self._on_tool_toggled, tool_id)
             toolbar.insert(btn, -1)
             self._tool_buttons[tool_id] = btn
 
@@ -166,14 +187,19 @@ class PhotoViewerApp(Gtk.Window):
         toolbar.insert(Gtk.SeparatorToolItem(), -1)
 
         # ── Wallpaper ─────────────────────────────────────────────────
-        self._add_tool_button(toolbar, "preferences-desktop-wallpaper", "set_wallpaper", lambda w: self._on_set_wallpaper())
+        self._add_tool_button(
+            toolbar,
+            "preferences-desktop-wallpaper",
+            "set_wallpaper",
+            lambda w: self._on_set_wallpaper(),
+        )
 
         self._toolbar = toolbar
 
     def _build_edit_options_bar(self):
         """Build a minimal edit options bar shown when an edit tool is active."""
         bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        bar.get_style_context().add_class('tool-bar')
+        bar.get_style_context().add_class("tool-bar")
         bar.set_margin_top(1)
         bar.set_margin_bottom(1)
         bar.set_margin_start(4)
@@ -182,34 +208,32 @@ class PhotoViewerApp(Gtk.Window):
         # Color picker
         self._color_button = Gtk.ColorButton()
         initial_color = Gdk.RGBA()
-        initial_color.parse('#ECEFF4')
+        initial_color.parse("#ECEFF4")
         self._color_button.set_rgba(initial_color)
         self._color_button.set_use_alpha(True)
-        self._color_button.set_tooltip_text(self._t('color'))
-        self._color_button.connect('color-set', self._on_color_set)
+        self._color_button.set_tooltip_text(self._t("color"))
+        self._color_button.connect("color-set", self._on_color_set)
         bar.pack_start(self._color_button, False, False, 0)
 
         # Size slider (brush or font size depending on active tool)
-        self._size_label = Gtk.Label(label=self._t('brush_size'))
+        self._size_label = Gtk.Label(label=self._t("brush_size"))
         bar.pack_start(self._size_label, False, False, 0)
 
-        self._size_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 1, 100, 1
-        )
+        self._size_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 1, 100, 1)
         self._size_scale.set_value(5)
         self._size_scale.set_size_request(80, -1)
         self._size_scale.set_hexpand(True)
         self._size_scale.set_draw_value(True)
         self._size_scale.set_value_pos(Gtk.PositionType.RIGHT)
-        self._size_scale.connect('value-changed', self._on_size_changed)
+        self._size_scale.connect("value-changed", self._on_size_changed)
         bar.pack_start(self._size_scale, False, False, 0)
 
         # Text entry (visible only for text tool)
         self._text_entry = Gtk.Entry()
-        self._text_entry.set_placeholder_text(self._t('text_placeholder'))
+        self._text_entry.set_placeholder_text(self._t("text_placeholder"))
         self._text_entry.set_width_chars(20)
         self._text_entry.set_hexpand(True)
-        self._text_entry.connect('changed', self._on_text_changed)
+        self._text_entry.connect("changed", self._on_text_changed)
         bar.pack_start(self._text_entry, True, True, 0)
 
         self._main_box.pack_start(bar, False, False, 0)
@@ -228,19 +252,19 @@ class PhotoViewerApp(Gtk.Window):
         canvas_frame = Gtk.Frame()
         canvas_frame.set_shadow_type(Gtk.ShadowType.NONE)
         canvas_frame.add(self._canvas)
-        self._content_stack.add_named(canvas_frame, 'image')
+        self._content_stack.add_named(canvas_frame, "image")
 
         # Video player
         self._video_player = VideoPlayer()
-        self._content_stack.add_named(self._video_player, 'video')
+        self._content_stack.add_named(self._video_player, "video")
 
-        self._content_stack.set_visible_child_name('image')
+        self._content_stack.set_visible_child_name("image")
         self._main_box.pack_start(self._content_stack, True, True, 0)
 
     def _build_status_bar(self):
         """Build the status bar at the bottom of the window."""
         status = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        status.get_style_context().add_class('status-bar')
+        status.get_style_context().add_class("status-bar")
 
         self._status_filename = Gtk.Label(label="")
         self._status_filename.set_xalign(0)
@@ -270,13 +294,15 @@ class PhotoViewerApp(Gtk.Window):
     def _on_open(self):
         """Show file chooser dialog and open the selected file."""
         dialog = Gtk.FileChooserDialog(
-            title=self._t('open_file'),
+            title=self._t("open_file"),
             parent=self,
             action=Gtk.FileChooserAction.OPEN,
         )
         dialog.add_buttons(
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OPEN, Gtk.ResponseType.OK,
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN,
+            Gtk.ResponseType.OK,
         )
 
         # Add filters
@@ -353,8 +379,8 @@ class PhotoViewerApp(Gtk.Window):
         """
         # Stop any video playback
         self._video_player.stop()
-        self._current_mode = 'image'
-        self._content_stack.set_visible_child_name('image')
+        self._current_mode = "image"
+        self._content_stack.set_visible_child_name("image")
 
         success = self._canvas.load_image(filepath)
         if not success:
@@ -370,8 +396,8 @@ class PhotoViewerApp(Gtk.Window):
             self._show_error("GStreamer is not available. Cannot play video files.")
             return
 
-        self._current_mode = 'video'
-        self._content_stack.set_visible_child_name('video')
+        self._current_mode = "video"
+        self._content_stack.set_visible_child_name("video")
         # Hide editing options for video mode
         self._edit_options_bar.set_visible(False)
         self._deactivate_all_tools()
@@ -381,7 +407,7 @@ class PhotoViewerApp(Gtk.Window):
 
     def _on_save(self):
         """Save the edited image to the original file path."""
-        if self._current_mode != 'image':
+        if self._current_mode != "image":
             return
         if not self._canvas.has_image():
             return
@@ -394,19 +420,21 @@ class PhotoViewerApp(Gtk.Window):
 
     def _on_save_as(self):
         """Show Save As dialog and save the edited image."""
-        if self._current_mode != 'image':
+        if self._current_mode != "image":
             return
         if not self._canvas.has_image():
             return
 
         dialog = Gtk.FileChooserDialog(
-            title=self._t('save_as'),
+            title=self._t("save_as"),
             parent=self,
             action=Gtk.FileChooserAction.SAVE,
         )
         dialog.add_buttons(
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_SAVE, Gtk.ResponseType.OK,
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_SAVE,
+            Gtk.ResponseType.OK,
         )
         dialog.set_do_overwrite_confirmation(True)
 
@@ -466,19 +494,19 @@ class PhotoViewerApp(Gtk.Window):
         ext = ext.lower()
 
         format_map = {
-            '.png': 'png',
-            '.jpg': 'jpeg',
-            '.jpeg': 'jpeg',
-            '.bmp': 'bmp',
-            '.tiff': 'tiff',
-            '.tif': 'tiff',
+            ".png": "png",
+            ".jpg": "jpeg",
+            ".jpeg": "jpeg",
+            ".bmp": "bmp",
+            ".tiff": "tiff",
+            ".tif": "tiff",
         }
 
-        fmt = format_map.get(ext, 'png')
+        fmt = format_map.get(ext, "png")
 
         try:
-            if fmt == 'jpeg':
-                result.savev(filepath, fmt, ['quality'], ['95'])
+            if fmt == "jpeg":
+                result.savev(filepath, fmt, ["quality"], ["95"])
             else:
                 result.savev(filepath, fmt, [], [])
             self._status_filename.set_text(
@@ -498,16 +526,16 @@ class PhotoViewerApp(Gtk.Window):
         Returns:
             'hyprland' if Hyprland is running, 'sway' otherwise.
         """
-        if os.environ.get('HYPRLAND_INSTANCE_SIGNATURE'):
-            return 'hyprland'
-        return 'sway'
+        if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+            return "hyprland"
+        return "sway"
 
     def _on_set_wallpaper(self):
         """Set the current image as the desktop wallpaper.
 
         Supports both Sway (via swaymsg) and Hyprland (via swaybg).
         """
-        if self._current_mode != 'image':
+        if self._current_mode != "image":
             return
 
         filepath = self._canvas.get_filepath()
@@ -518,10 +546,10 @@ class PhotoViewerApp(Gtk.Window):
         if self._canvas.history.has_edits:
             pixbuf = self._canvas.get_pixbuf()
             result = compose_edits_onto_pixbuf(pixbuf, self._canvas.history)
-            tmp_path = os.path.expanduser('~/.cache/mados-wallpaper.png')
+            tmp_path = os.path.expanduser("~/.cache/mados-wallpaper.png")
             os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
             try:
-                result.savev(tmp_path, 'png', [], [])
+                result.savev(tmp_path, "png", [], [])
                 filepath = tmp_path
             except GLib.Error:
                 pass  # Fall through to use original file
@@ -529,7 +557,7 @@ class PhotoViewerApp(Gtk.Window):
         filepath = os.path.abspath(filepath)
 
         compositor = self._detect_compositor()
-        if compositor == 'hyprland':
+        if compositor == "hyprland":
             self._set_wallpaper_hyprland(filepath)
         else:
             self._set_wallpaper_sway(filepath)
@@ -538,45 +566,45 @@ class PhotoViewerApp(Gtk.Window):
         """Set wallpaper on Sway using swaymsg."""
         try:
             result = subprocess.run(
-                ['swaymsg', 'output', '*', 'bg', filepath, 'fill'],
-                capture_output=True, text=True, timeout=5
+                ["swaymsg", "output", "*", "bg", filepath, "fill"],
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0:
-                self._status_filename.set_text(self._t('wallpaper_set'))
+                self._status_filename.set_text(self._t("wallpaper_set"))
                 self._update_sway_config(filepath)
                 self._update_wallpaper_db(filepath)
             else:
-                self._show_error(self._t('wallpaper_error') + f" ({result.stderr.strip()})")
+                self._show_error(self._t("wallpaper_error") + f" ({result.stderr.strip()})")
         except FileNotFoundError:
-            self._show_error(self._t('wallpaper_error') + " (swaymsg not found)")
+            self._show_error(self._t("wallpaper_error") + " (swaymsg not found)")
         except subprocess.TimeoutExpired:
-            self._show_error(self._t('wallpaper_error') + " (timeout)")
+            self._show_error(self._t("wallpaper_error") + " (timeout)")
 
     def _set_wallpaper_hyprland(self, filepath):
         """Set wallpaper on Hyprland by restarting swaybg."""
         try:
             # Kill any existing swaybg process (ignore errors — it may not
             # be running yet, or pkill may be absent on minimal systems)
-            subprocess.run(
-                ['pkill', '-x', 'swaybg'],
-                capture_output=True, timeout=5
-            )
+            subprocess.run(["pkill", "-x", "swaybg"], capture_output=True, timeout=5)
         except (FileNotFoundError, subprocess.TimeoutExpired):
             pass
         try:
             # Start swaybg with the new wallpaper
             subprocess.Popen(
-                ['swaybg', '-i', filepath, '-m', 'fill'],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                start_new_session=True
+                ["swaybg", "-i", filepath, "-m", "fill"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
             )
-            self._status_filename.set_text(self._t('wallpaper_set'))
+            self._status_filename.set_text(self._t("wallpaper_set"))
             self._update_hyprland_config(filepath)
             self._update_wallpaper_db(filepath)
         except FileNotFoundError:
-            self._show_error(self._t('wallpaper_error') + " (swaybg not found)")
+            self._show_error(self._t("wallpaper_error") + " (swaybg not found)")
         except subprocess.TimeoutExpired:
-            self._show_error(self._t('wallpaper_error') + " (timeout)")
+            self._show_error(self._t("wallpaper_error") + " (timeout)")
 
     def _update_wallpaper_db(self, filepath):
         """Update the wallpaper SQLite database with the new wallpaper assignment.
@@ -590,7 +618,7 @@ class PhotoViewerApp(Gtk.Window):
         """
         import sqlite3 as _sqlite3
 
-        db_path = os.path.expanduser('~/.local/share/mados/wallpapers.db')
+        db_path = os.path.expanduser("~/.local/share/mados/wallpapers.db")
         if not os.path.isfile(db_path):
             return
 
@@ -598,14 +626,14 @@ class PhotoViewerApp(Gtk.Window):
         current_ws = None
         try:
             result = subprocess.run(
-                ['swaymsg', '-t', 'get_workspaces'],
-                capture_output=True, text=True, timeout=3
+                ["swaymsg", "-t", "get_workspaces"], capture_output=True, text=True, timeout=3
             )
             if result.returncode == 0:
                 import json
+
                 for ws in json.loads(result.stdout):
-                    if ws.get('focused'):
-                        current_ws = ws.get('num')
+                    if ws.get("focused"):
+                        current_ws = ws.get("num")
                         break
         except Exception:
             pass
@@ -614,13 +642,13 @@ class PhotoViewerApp(Gtk.Window):
             # Try Hyprland
             try:
                 result = subprocess.run(
-                    ['hyprctl', 'activeworkspace', '-j'],
-                    capture_output=True, text=True, timeout=3
+                    ["hyprctl", "activeworkspace", "-j"], capture_output=True, text=True, timeout=3
                 )
                 if result.returncode == 0:
                     import json
+
                     data = json.loads(result.stdout)
-                    current_ws = data.get('id')
+                    current_ws = data.get("id")
             except Exception:
                 pass
 
@@ -631,19 +659,13 @@ class PhotoViewerApp(Gtk.Window):
             conn = _sqlite3.connect(db_path, timeout=5)
             conn.execute("PRAGMA journal_mode=WAL;")
             # Ensure the wallpaper is in the catalog
-            conn.execute(
-                "INSERT OR IGNORE INTO wallpapers(path) VALUES(?);",
-                (filepath,)
-            )
+            conn.execute("INSERT OR IGNORE INTO wallpapers(path) VALUES(?);", (filepath,))
             # Get its id
-            row = conn.execute(
-                "SELECT id FROM wallpapers WHERE path=?;",
-                (filepath,)
-            ).fetchone()
+            row = conn.execute("SELECT id FROM wallpapers WHERE path=?;", (filepath,)).fetchone()
             if row:
                 conn.execute(
                     "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id) VALUES(?, ?);",
-                    (current_ws, row[0])
+                    (current_ws, row[0]),
                 )
             conn.commit()
             conn.close()
@@ -659,27 +681,27 @@ class PhotoViewerApp(Gtk.Window):
         Args:
             filepath: Absolute path to the wallpaper image.
         """
-        config_path = os.path.expanduser('~/.config/sway/config')
+        config_path = os.path.expanduser("~/.config/sway/config")
         if not os.path.isfile(config_path):
             return
 
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 lines = f.readlines()
 
             new_line = f"output * bg {filepath} fill\n"
             found = False
             for i, line in enumerate(lines):
                 stripped = line.strip()
-                if stripped.startswith('output') and ' bg ' in stripped:
+                if stripped.startswith("output") and " bg " in stripped:
                     lines[i] = new_line
                     found = True
                     break
 
             if not found:
-                lines.append('\n' + new_line)
+                lines.append("\n" + new_line)
 
-            with open(config_path, 'w') as f:
+            with open(config_path, "w") as f:
                 f.writelines(lines)
         except (IOError, OSError):
             pass  # Silently fail if we can't update the config
@@ -693,27 +715,27 @@ class PhotoViewerApp(Gtk.Window):
         Args:
             filepath: Absolute path to the wallpaper image.
         """
-        config_path = os.path.expanduser('~/.config/hypr/hyprland.conf')
+        config_path = os.path.expanduser("~/.config/hypr/hyprland.conf")
         if not os.path.isfile(config_path):
             return
 
         try:
-            with open(config_path, 'r') as f:
+            with open(config_path, "r") as f:
                 lines = f.readlines()
 
             new_line = f"exec-once = swaybg -i {filepath} -m fill\n"
             found = False
             for i, line in enumerate(lines):
                 stripped = line.strip()
-                if stripped.startswith('exec-once') and 'swaybg' in stripped:
+                if stripped.startswith("exec-once") and "swaybg" in stripped:
                     lines[i] = new_line
                     found = True
                     break
 
             if not found:
-                lines.append('\n' + new_line)
+                lines.append("\n" + new_line)
 
-            with open(config_path, 'w') as f:
+            with open(config_path, "w") as f:
                 f.writelines(lines)
         except (IOError, OSError):
             pass  # Silently fail if we can't update the config
@@ -752,7 +774,7 @@ class PhotoViewerApp(Gtk.Window):
         Returns:
             True if the navigation should be cancelled, False to proceed.
         """
-        if self._current_mode != 'image':
+        if self._current_mode != "image":
             return False
         if not self._canvas.history.has_edits:
             return False
@@ -762,13 +784,16 @@ class PhotoViewerApp(Gtk.Window):
             flags=0,
             message_type=Gtk.MessageType.QUESTION,
             buttons=Gtk.ButtonsType.NONE,
-            text=self._t('unsaved_changes'),
+            text=self._t("unsaved_changes"),
         )
-        dialog.format_secondary_text(self._t('save_before_closing'))
+        dialog.format_secondary_text(self._t("save_before_closing"))
         dialog.add_buttons(
-            self._t('save'), Gtk.ResponseType.YES,
-            "Discard", Gtk.ResponseType.NO,
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+            self._t("save"),
+            Gtk.ResponseType.YES,
+            "Discard",
+            Gtk.ResponseType.NO,
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
         )
 
         response = dialog.run()
@@ -804,14 +829,14 @@ class PhotoViewerApp(Gtk.Window):
             self._canvas.set_tool(tool_id)
             # Show edit options bar and configure for the active tool
             self._edit_options_bar.set_visible(True)
-            is_text = (tool_id == TOOL_TEXT)
+            is_text = tool_id == TOOL_TEXT
             self._text_entry.set_visible(is_text)
             if is_text:
-                self._size_label.set_text(self._t('font_size'))
+                self._size_label.set_text(self._t("font_size"))
                 self._size_scale.set_range(8, 120)
                 self._size_scale.set_value(self._canvas._font_size)
             else:
-                self._size_label.set_text(self._t('brush_size'))
+                self._size_label.set_text(self._t("brush_size"))
                 self._size_scale.set_range(1, 100)
                 self._size_scale.set_value(self._canvas._brush_size)
         else:
@@ -872,22 +897,22 @@ class PhotoViewerApp(Gtk.Window):
         This is called after a language change. Rather than rebuilding the
         entire UI, we update the text of existing widgets.
         """
-        self.set_title(self._t('title'))
+        self.set_title(self._t("title"))
         self._update_title()
 
         # Update tool button tooltips
         tool_tooltips = {
-            TOOL_PAINT: 'paint',
-            TOOL_TEXT: 'text_tool',
-            TOOL_BLUR: 'blur_tool',
-            TOOL_ERASER: 'eraser',
+            TOOL_PAINT: "paint",
+            TOOL_TEXT: "text_tool",
+            TOOL_BLUR: "blur_tool",
+            TOOL_ERASER: "eraser",
         }
         for tool_id, tooltip_key in tool_tooltips.items():
             if tool_id in self._tool_buttons:
                 self._tool_buttons[tool_id].set_tooltip_text(self._t(tooltip_key))
 
         # Update text entry placeholder
-        self._text_entry.set_placeholder_text(self._t('text_placeholder'))
+        self._text_entry.set_placeholder_text(self._t("text_placeholder"))
 
         # Update status bar
         self._update_ui_state()
@@ -957,7 +982,7 @@ class PhotoViewerApp(Gtk.Window):
                 self._update_zoom_label()
                 return True
             elif key == Gdk.KEY_space:
-                if self._current_mode == 'video':
+                if self._current_mode == "video":
                     if self._video_player.is_playing:
                         self._video_player.pause()
                     else:
@@ -980,19 +1005,22 @@ class PhotoViewerApp(Gtk.Window):
         Returns:
             True to prevent closing, False to allow it.
         """
-        if self._current_mode == 'image' and self._canvas.history.has_edits:
+        if self._current_mode == "image" and self._canvas.history.has_edits:
             dialog = Gtk.MessageDialog(
                 transient_for=self,
                 flags=0,
                 message_type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.NONE,
-                text=self._t('unsaved_changes'),
+                text=self._t("unsaved_changes"),
             )
-            dialog.format_secondary_text(self._t('save_before_closing'))
+            dialog.format_secondary_text(self._t("save_before_closing"))
             dialog.add_buttons(
-                self._t('save'), Gtk.ResponseType.YES,
-                "Discard", Gtk.ResponseType.NO,
-                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                self._t("save"),
+                Gtk.ResponseType.YES,
+                "Discard",
+                Gtk.ResponseType.NO,
+                Gtk.STOCK_CANCEL,
+                Gtk.ResponseType.CANCEL,
             )
             response = dialog.run()
             dialog.destroy()
@@ -1013,7 +1041,7 @@ class PhotoViewerApp(Gtk.Window):
     def _on_quit(self):
         """Trigger window close via the delete-event path."""
         event = Gdk.Event.new(Gdk.EventType.DELETE)
-        self.emit('delete-event', event)
+        self.emit("delete-event", event)
 
     def _cleanup_and_quit(self):
         """Clean up resources and quit the GTK main loop."""
@@ -1033,17 +1061,19 @@ class PhotoViewerApp(Gtk.Window):
 
     def _update_title(self):
         """Update the window title with the current filename and edit state."""
-        title = self._t('title')
+        title = self._t("title")
         filename = self._navigator.current_filename
         if filename:
-            modified = '*' if (self._current_mode == 'image' and self._canvas.history.has_edits) else ''
+            modified = (
+                "*" if (self._current_mode == "image" and self._canvas.history.has_edits) else ""
+            )
             title = f"{modified}{filename} - {title}"
         self.set_title(title)
 
     def _update_status_bar(self):
         """Update the status bar labels."""
         filename = self._navigator.current_filename
-        self._status_filename.set_text(filename if filename else self._t('no_images'))
+        self._status_filename.set_text(filename if filename else self._t("no_images"))
 
         if self._navigator.has_files:
             idx = self._navigator.current_index
@@ -1052,7 +1082,7 @@ class PhotoViewerApp(Gtk.Window):
         else:
             self._status_index.set_text("")
 
-        if self._current_mode == 'image' and self._canvas.has_image():
+        if self._current_mode == "image" and self._canvas.has_image():
             pixbuf = self._canvas.get_pixbuf()
             if pixbuf:
                 w = pixbuf.get_width()
@@ -1067,7 +1097,7 @@ class PhotoViewerApp(Gtk.Window):
 
     def _update_zoom_label(self):
         """Update the zoom percentage display."""
-        if self._current_mode == 'image':
+        if self._current_mode == "image":
             pct = self._canvas.get_zoom_percent()
             self._zoom_label.set_text(f"{pct}%")
             self._status_zoom.set_text(f"{pct}%")
@@ -1096,7 +1126,7 @@ class PhotoViewerApp(Gtk.Window):
             flags=0,
             message_type=Gtk.MessageType.ERROR,
             buttons=Gtk.ButtonsType.OK,
-            text=self._t('error'),
+            text=self._t("error"),
         )
         dialog.format_secondary_text(message)
         dialog.run()

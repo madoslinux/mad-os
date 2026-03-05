@@ -98,9 +98,7 @@ class VideoPlayer(Gtk.Box):
         controls.pack_start(self._time_label, False, False, 0)
 
         # Seek slider
-        self._seek_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 0, 100, 1
-        )
+        self._seek_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self._seek_scale.set_draw_value(False)
         self._seek_scale.set_hexpand(True)
         self._seek_scale.connect("button-press-event", self._on_seek_press)
@@ -118,9 +116,7 @@ class VideoPlayer(Gtk.Box):
         controls.pack_start(vol_label, False, False, 0)
 
         # Volume slider
-        self._volume_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 0, 100, 1
-        )
+        self._volume_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self._volume_scale.set_draw_value(False)
         self._volume_scale.set_value(80)
         self._volume_scale.set_size_request(80, -1)

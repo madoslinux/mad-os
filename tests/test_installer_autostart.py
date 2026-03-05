@@ -43,10 +43,12 @@ class TestInstallerAutostartScript(unittest.TestCase):
         """Script must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error in mados-installer-autostart: {result.stderr}",
         )
 
@@ -59,23 +61,27 @@ class TestInstallerAutostartScript(unittest.TestCase):
             "mados-installer-autostart must start with #!",
         )
         self.assertIn(
-            "bash", first_line,
+            "bash",
+            first_line,
             "mados-installer-autostart must use bash shebang",
         )
 
     def test_contains_is_ventoy_boot_function(self):
         """Script must contain is_ventoy_boot function."""
         self.assertIn(
-            "is_ventoy_boot()", self.content,
+            "is_ventoy_boot()",
+            self.content,
             "Script must define is_ventoy_boot() function",
         )
         # Verify the function checks /proc/cmdline for ventoy
         self.assertIn(
-            "/proc/cmdline", self.content,
+            "/proc/cmdline",
+            self.content,
             "is_ventoy_boot must check /proc/cmdline",
         )
         self.assertIn(
-            "ventoy", self.content,
+            "ventoy",
+            self.content,
             "is_ventoy_boot must search for ventoy string",
         )
 
@@ -83,10 +89,11 @@ class TestInstallerAutostartScript(unittest.TestCase):
         """Script must use --preserve-env with sudo, NOT inline VAR=value syntax."""
         # Must have --preserve-env
         self.assertIn(
-            "--preserve-env", self.content,
+            "--preserve-env",
+            self.content,
             "Script must use sudo --preserve-env to pass environment variables",
         )
-        
+
         # Should NOT use inline environment variable syntax before sudo
         # Bad: sudo VAR=value command
         # Good: sudo --preserve-env=VAR command
@@ -97,7 +104,7 @@ class TestInstallerAutostartScript(unittest.TestCase):
                 continue
             # Check that we don't have VAR=value immediately after sudo (before --preserve-env)
             # Pattern: sudo followed by WORD= (but not if --preserve-env comes first)
-            if re.search(r'\bsudo\s+(?!--preserve-env)\w+=', line):
+            if re.search(r"\bsudo\s+(?!--preserve-env)\w+=", line):
                 self.fail(
                     f"Script must NOT use inline environment variables with sudo.\n"
                     f"Bad line: {line.strip()}\n"
@@ -107,33 +114,36 @@ class TestInstallerAutostartScript(unittest.TestCase):
     def test_exports_gdk_backend_wayland(self):
         """Script must export GDK_BACKEND=wayland."""
         self.assertIn(
-            "export GDK_BACKEND=wayland", self.content,
+            "export GDK_BACKEND=wayland",
+            self.content,
             "Script must export GDK_BACKEND=wayland for GTK Wayland support",
         )
 
     def test_checks_run_archiso_directory(self):
         """Script must check for /run/archiso directory."""
         self.assertIn(
-            "/run/archiso", self.content,
+            "/run/archiso",
+            self.content,
             "Script must check for /run/archiso to detect live environment",
         )
         # Verify it's used in a conditional check
         self.assertRegex(
             self.content,
-            r'if\s+\[\s+.*\s*/run/archiso',
+            r"if\s+\[\s+.*\s*/run/archiso",
             "Script must use /run/archiso in a conditional check",
         )
 
     def test_checks_install_mados_exists(self):
         """Script must check /usr/local/bin/install-mados exists before running."""
         self.assertIn(
-            "/usr/local/bin/install-mados", self.content,
+            "/usr/local/bin/install-mados",
+            self.content,
             "Script must reference /usr/local/bin/install-mados",
         )
         # Verify it checks executability with -x
         self.assertRegex(
             self.content,
-            r'\[\s+-x\s+/usr/local/bin/install-mados\s+\]',
+            r"\[\s+-x\s+/usr/local/bin/install-mados\s+\]",
             "Script must check if /usr/local/bin/install-mados is executable",
         )
 
@@ -142,17 +152,17 @@ class TestInstallerAutostartScript(unittest.TestCase):
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")
         with open(profiledef) as f:
             content = f.read()
-        
+
         self.assertIn(
-            "mados-installer-autostart", content,
+            "mados-installer-autostart",
+            content,
             "profiledef.sh must include mados-installer-autostart",
         )
-        
-        pattern = re.compile(
-            r'\["/usr/local/bin/mados-installer-autostart"\]="0:0:755"'
-        )
+
+        pattern = re.compile(r'\["/usr/local/bin/mados-installer-autostart"\]="0:0:755"')
         self.assertRegex(
-            content, pattern,
+            content,
+            pattern,
             "mados-installer-autostart must have 0:0:755 permissions in profiledef.sh",
         )
 
@@ -175,19 +185,21 @@ class TestSwayInstallerAutostart(unittest.TestCase):
     def test_references_mados_installer_autostart(self):
         """Config must exec mados-installer-autostart."""
         self.assertIn(
-            "mados-installer-autostart", self.content,
+            "mados-installer-autostart",
+            self.content,
             "Sway config must exec mados-installer-autostart",
         )
         self.assertRegex(
             self.content,
-            r'exec\s+/usr/local/bin/mados-installer-autostart',
+            r"exec\s+/usr/local/bin/mados-installer-autostart",
             "Sway config must exec /usr/local/bin/mados-installer-autostart",
         )
 
     def test_has_window_rules_for_title(self):
         """Config must have window rules matching 'madOS Installer' title."""
         self.assertIn(
-            'title="madOS Installer"', self.content,
+            'title="madOS Installer"',
+            self.content,
             "Sway config must match installer by title",
         )
 
@@ -196,8 +208,7 @@ class TestSwayInstallerAutostart(unittest.TestCase):
         # Look for a line with both title="madOS Installer" and floating enable
         lines = self.content.splitlines()
         has_floating_rule = any(
-            'title="madOS Installer"' in line and "floating enable" in line
-            for line in lines
+            'title="madOS Installer"' in line and "floating enable" in line for line in lines
         )
         self.assertTrue(
             has_floating_rule,
@@ -208,8 +219,7 @@ class TestSwayInstallerAutostart(unittest.TestCase):
         """Config must have resize set rule for installer."""
         lines = self.content.splitlines()
         has_resize_rule = any(
-            'title="madOS Installer"' in line and "resize set" in line
-            for line in lines
+            'title="madOS Installer"' in line and "resize set" in line for line in lines
         )
         self.assertTrue(
             has_resize_rule,
@@ -220,8 +230,7 @@ class TestSwayInstallerAutostart(unittest.TestCase):
         """Config must have move position center rule for installer."""
         lines = self.content.splitlines()
         has_center_rule = any(
-            'title="madOS Installer"' in line and "move position center" in line
-            for line in lines
+            'title="madOS Installer"' in line and "move position center" in line for line in lines
         )
         self.assertTrue(
             has_center_rule,
@@ -246,26 +255,28 @@ class TestHyprlandInstallerAutostart(unittest.TestCase):
     def test_references_mados_installer_autostart_in_exec_once(self):
         """Config must exec-once mados-installer-autostart."""
         self.assertIn(
-            "mados-installer-autostart", self.content,
+            "mados-installer-autostart",
+            self.content,
             "Hyprland config must reference mados-installer-autostart",
         )
         self.assertRegex(
             self.content,
-            r'exec-once\s*=\s*/usr/local/bin/mados-installer-autostart',
+            r"exec-once\s*=\s*/usr/local/bin/mados-installer-autostart",
             "Hyprland config must exec-once /usr/local/bin/mados-installer-autostart",
         )
 
     def test_has_window_rules_matching_title(self):
         """Config must have window rules matching 'madOS Installer' title."""
         self.assertIn(
-            "madOS Installer", self.content,
+            "madOS Installer",
+            self.content,
             "Hyprland config must reference madOS Installer window",
         )
-        
+
         # Check for window rules with title matching (comma separates rule from matcher)
         self.assertRegex(
             self.content,
-            r'windowrule\s*=.*,\s*match:title\s*\^\(madOS Installer\)',
+            r"windowrule\s*=.*,\s*match:title\s*\^\(madOS Installer\)",
             "Hyprland config must have windowrule matching madOS Installer title",
         )
 
@@ -274,8 +285,7 @@ class TestHyprlandInstallerAutostart(unittest.TestCase):
         # Look for windowrule with float and madOS Installer
         lines = self.content.splitlines()
         has_float_rule = any(
-            "windowrule" in line and "float" in line and "madOS Installer" in line
-            for line in lines
+            "windowrule" in line and "float" in line and "madOS Installer" in line for line in lines
         )
         self.assertTrue(
             has_float_rule,
@@ -286,8 +296,7 @@ class TestHyprlandInstallerAutostart(unittest.TestCase):
         """Config must have size window rule for installer."""
         lines = self.content.splitlines()
         has_size_rule = any(
-            "windowrule" in line and "size" in line and "madOS Installer" in line
-            for line in lines
+            "windowrule" in line and "size" in line and "madOS Installer" in line for line in lines
         )
         self.assertTrue(
             has_size_rule,

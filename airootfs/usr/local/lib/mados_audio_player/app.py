@@ -15,16 +15,19 @@ import sys
 import threading
 
 import gi
-gi.require_version('Gtk', '3.0')
-gi.require_version('PangoCairo', '1.0')
+
+gi.require_version("Gtk", "3.0")
+gi.require_version("PangoCairo", "1.0")
 from gi.repository import Gtk, Gdk, GLib, Pango, PangoCairo
 
 from . import __app_id__, __app_name__, __version__
 from .backend import MpvBackend
 from .playlist import Playlist, Track, format_time, REPEAT_OFF, REPEAT_ALL, REPEAT_ONE
 from .translations import (
-    TRANSLATIONS, DEFAULT_LANGUAGE,
-    get_text, detect_system_language,
+    TRANSLATIONS,
+    DEFAULT_LANGUAGE,
+    get_text,
+    detect_system_language,
 )
 from .theme import apply_theme, NORD
 from .spectrum import SpectrumAnalyzer
@@ -75,9 +78,7 @@ class AudioPlayerApp:
                 self._play_current()
 
         # Start periodic state updates
-        self._update_timer_id = GLib.timeout_add(
-            self.UPDATE_INTERVAL_MS, self._on_update_tick
-        )
+        self._update_timer_id = GLib.timeout_add(self.UPDATE_INTERVAL_MS, self._on_update_tick)
 
         # Refresh playlist view with any persisted tracks from DB
         if not self.playlist.is_empty:
@@ -109,9 +110,7 @@ class AudioPlayerApp:
 
         # Enable drag-and-drop for files
         self.window.drag_dest_set(
-            Gtk.DestDefaults.ALL,
-            [Gtk.TargetEntry.new("text/uri-list", 0, 0)],
-            Gdk.DragAction.COPY
+            Gtk.DestDefaults.ALL, [Gtk.TargetEntry.new("text/uri-list", 0, 0)], Gdk.DragAction.COPY
         )
         self.window.connect("drag-data-received", self._on_drag_data)
 
@@ -242,9 +241,7 @@ class AudioPlayerApp:
         box.set_margin_top(2)
         box.set_margin_bottom(2)
 
-        self.seek_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 0, 100, 0.5
-        )
+        self.seek_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 0.5)
         self.seek_scale.set_draw_value(False)
         self.seek_scale.get_style_context().add_class("seek-bar")
         self.seek_scale.connect("button-press-event", self._on_seek_start)
@@ -310,9 +307,7 @@ class AudioPlayerApp:
         box.pack_start(event_box, False, False, 0)
 
         # Volume slider
-        self.volume_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 0, 100, 1
-        )
+        self.volume_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self.volume_scale.set_value(100)
         self.volume_scale.set_draw_value(False)
         self.volume_scale.set_size_request(100, -1)
@@ -357,9 +352,7 @@ class AudioPlayerApp:
         header_event.add(header)
         header_event.connect("button-press-event", self._on_playlist_header_clicked)
 
-        self.playlist_toggle_label = Gtk.Label(
-            label=f"\U000f040a {self._t('playlist')}"
-        )
+        self.playlist_toggle_label = Gtk.Label(label=f"\U000f040a {self._t('playlist')}")
         self.playlist_toggle_label.get_style_context().add_class("playlist-header")
         header.pack_start(self.playlist_toggle_label, False, False, 4)
 
@@ -376,9 +369,7 @@ class AudioPlayerApp:
         vbox.pack_start(header_event, False, False, 0)
 
         # Collapsible content container
-        self.playlist_content = Gtk.Box(
-            orientation=Gtk.Orientation.VERTICAL, spacing=0
-        )
+        self.playlist_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
 
         # List store: index, display name, duration str, filepath, is_playing
         self.playlist_store = Gtk.ListStore(int, str, str, str, bool)
@@ -471,10 +462,10 @@ class AudioPlayerApp:
         """Cell data function to highlight the currently playing track."""
         is_playing = model.get_value(iter_, 4)
         if is_playing:
-            renderer.set_property("foreground", NORD['nord8'])
+            renderer.set_property("foreground", NORD["nord8"])
             renderer.set_property("weight", Pango.Weight.BOLD)
         else:
-            renderer.set_property("foreground", NORD['nord4'])
+            renderer.set_property("foreground", NORD["nord4"])
             renderer.set_property("weight", Pango.Weight.NORMAL)
 
     def _on_playlist_header_clicked(self, widget, event):
@@ -491,9 +482,7 @@ class AudioPlayerApp:
         self._playlist_visible = True
         self.playlist_content.set_no_show_all(False)
         self.playlist_content.show_all()
-        self.playlist_toggle_label.set_text(
-            f"\U000f0140 {self._t('playlist')}"
-        )
+        self.playlist_toggle_label.set_text(f"\U000f0140 {self._t('playlist')}")
         self.window.resize(480, 580)
 
     def _collapse_playlist(self):
@@ -503,9 +492,7 @@ class AudioPlayerApp:
         self._playlist_visible = False
         self.playlist_content.hide()
         self.playlist_content.set_no_show_all(True)
-        self.playlist_toggle_label.set_text(
-            f"\U000f040a {self._t('playlist')}"
-        )
+        self.playlist_toggle_label.set_text(f"\U000f040a {self._t('playlist')}")
         # Force window to shrink: temporarily set a small size request,
         # then resize and remove the constraint on the next idle cycle.
         self.window.set_size_request(480, 200)
@@ -696,8 +683,10 @@ class AudioPlayerApp:
             action=Gtk.FileChooserAction.OPEN,
         )
         dialog.add_buttons(
-            self._t("cancel"), Gtk.ResponseType.CANCEL,
-            self._t("open"), Gtk.ResponseType.OK,
+            self._t("cancel"),
+            Gtk.ResponseType.CANCEL,
+            self._t("open"),
+            Gtk.ResponseType.OK,
         )
         dialog.set_select_multiple(True)
 
@@ -728,8 +717,10 @@ class AudioPlayerApp:
             action=Gtk.FileChooserAction.SELECT_FOLDER,
         )
         dialog.add_buttons(
-            self._t("cancel"), Gtk.ResponseType.CANCEL,
-            self._t("open"), Gtk.ResponseType.OK,
+            self._t("cancel"),
+            Gtk.ResponseType.CANCEL,
+            self._t("open"),
+            Gtk.ResponseType.OK,
         )
 
         response = dialog.run()
@@ -738,9 +729,7 @@ class AudioPlayerApp:
             if folder:
                 count = self.playlist.add_directory(folder)
                 self._refresh_playlist_view()
-                self._update_status(
-                    f"{count} {self._t('tracks')}"
-                )
+                self._update_status(f"{count} {self._t('tracks')}")
                 # Auto-expand playlist to show added tracks
                 if count > 0:
                     self._expand_playlist()
@@ -789,22 +778,24 @@ class AudioPlayerApp:
         """Refresh the playlist TreeView from the playlist model."""
         self.playlist_store.clear()
         for i, track in enumerate(self.playlist.tracks):
-            is_current = (i == self.playlist.current_index)
+            is_current = i == self.playlist.current_index
             dur_str = format_time(track.duration) if track.duration > 0 else ""
-            self.playlist_store.append([
-                i + 1,
-                track.display_name(),
-                dur_str,
-                track.filepath,
-                is_current,
-            ])
+            self.playlist_store.append(
+                [
+                    i + 1,
+                    track.display_name(),
+                    dur_str,
+                    track.filepath,
+                    is_current,
+                ]
+            )
         self.playlist_count_label.set_text(f"({self.playlist.count})")
 
     def _update_playlist_highlight(self):
         """Update which row is highlighted as playing."""
         for row in self.playlist_store:
             idx = row[0] - 1  # 1-indexed display
-            row[4] = (idx == self.playlist.current_index)
+            row[4] = idx == self.playlist.current_index
         # Scroll to current track
         if 0 <= self.playlist.current_index < len(self.playlist_store):
             path = Gtk.TreePath.new_from_indices([self.playlist.current_index])
@@ -819,6 +810,7 @@ class AudioPlayerApp:
         for uri in uris:
             if uri.startswith("file://"):
                 from urllib.parse import unquote
+
                 path = unquote(uri[7:])
                 files.append(path)
         if files:
@@ -845,33 +837,29 @@ class AudioPlayerApp:
             fraction = (self.backend.position / self.backend.duration) * 100
             self.seek_scale.set_value(fraction)
             self.time_label.set_text(format_time(self.backend.position))
-            self.time_total_label.set_text(
-                f"/ {format_time(self.backend.duration)}"
-            )
+            self.time_total_label.set_text(f"/ {format_time(self.backend.duration)}")
 
         # Update audio info
         info = self.backend.get_audio_info()
-        if info.get('bitrate'):
-            parts = info['bitrate'].split(' ', 1)
+        if info.get("bitrate"):
+            parts = info["bitrate"].split(" ", 1)
             self.bitrate_value_label.set_text(parts[0])
             self.bitrate_unit_label.set_text(parts[1] if len(parts) > 1 else "")
-        if info.get('samplerate'):
-            parts = info['samplerate'].split(' ', 1)
+        if info.get("samplerate"):
+            parts = info["samplerate"].split(" ", 1)
             self.samplerate_value_label.set_text(parts[0])
             self.samplerate_unit_label.set_text(parts[1] if len(parts) > 1 else "")
 
         # Update metadata if changed
         meta = self.backend.get_formatted_metadata()
         current_track = self.playlist.get_current_track()
-        if current_track and meta.get('title'):
+        if current_track and meta.get("title"):
             self.playlist.update_track_metadata(current_track, meta)
             self._update_track_display(current_track)
 
         # Update track duration in playlist
         if current_track and self.backend.duration > 0:
-            self.playlist.update_track_duration(
-                current_track, self.backend.duration
-            )
+            self.playlist.update_track_duration(current_track, self.backend.duration)
             self._update_playlist_highlight()
 
         # Check if track finished
@@ -900,8 +888,7 @@ class AudioPlayerApp:
             self._marquee_offset = 0
         if track.artist:
             self.artist_label.set_text(
-                f"{track.artist}"
-                + (f" — {track.album}" if track.album else "")
+                f"{track.artist}" + (f" — {track.album}" if track.album else "")
             )
         else:
             self.artist_label.set_text("")
@@ -950,8 +937,8 @@ class AudioPlayerApp:
         usable_h = h - padding_bottom - 4  # top margin
 
         # LED segment dimensions
-        led_h = 3       # height of each LED segment
-        led_gap = 1     # gap between segments
+        led_h = 3  # height of each LED segment
+        led_gap = 1  # gap between segments
         led_step = led_h + led_gap  # total step per segment
 
         # Bar dimensions
@@ -964,9 +951,9 @@ class AudioPlayerApp:
         # Winamp-style LED colors (green → yellow → red)
         # Nord palette: nord14=green, nord13=yellow, nord11=red
         colors_rgb = {
-            'green':  (163 / 255, 190 / 255, 140 / 255),
-            'yellow': (235 / 255, 203 / 255, 139 / 255),
-            'red':    (191 / 255, 97 / 255, 106 / 255),
+            "green": (163 / 255, 190 / 255, 140 / 255),
+            "yellow": (235 / 255, 203 / 255, 139 / 255),
+            "red": (191 / 255, 97 / 255, 106 / 255),
         }
 
         for i, bar_val in enumerate(bars):
@@ -980,11 +967,11 @@ class AudioPlayerApp:
                 # Color based on segment height ratio
                 ratio = seg / max(1, max_segments - 1)
                 if ratio < 0.45:
-                    r, g, b = colors_rgb['green']
+                    r, g, b = colors_rgb["green"]
                 elif ratio < 0.75:
-                    r, g, b = colors_rgb['yellow']
+                    r, g, b = colors_rgb["yellow"]
                 else:
-                    r, g, b = colors_rgb['red']
+                    r, g, b = colors_rgb["red"]
 
                 # Opacity: very subtle background effect
                 alpha = 0.06 + 0.08 * (seg / max(1, max_segments))
@@ -1013,11 +1000,11 @@ class AudioPlayerApp:
 
             ratio = peak_seg / max(1, max_segments - 1)
             if ratio < 0.45:
-                r, g, b = colors_rgb['green']
+                r, g, b = colors_rgb["green"]
             elif ratio < 0.75:
-                r, g, b = colors_rgb['yellow']
+                r, g, b = colors_rgb["yellow"]
             else:
-                r, g, b = colors_rgb['red']
+                r, g, b = colors_rgb["red"]
 
             cr.set_source_rgba(r, g, b, 0.2)
             cr.rectangle(x, y, bar_w, led_h)
@@ -1037,7 +1024,7 @@ class AudioPlayerApp:
         # Update spectrum bars every tick (30 FPS)
         self.spectrum.update()
         # Redraw the track-display frame for spectrum bars
-        if hasattr(self, '_spectrum_frame'):
+        if hasattr(self, "_spectrum_frame"):
             self._spectrum_frame.queue_draw()
         return True
 
@@ -1049,9 +1036,7 @@ class AudioPlayerApp:
 
         # Create Pango layout for measuring and drawing
         layout = PangoCairo.create_layout(cr)
-        font_desc = Pango.FontDescription.from_string(
-            "Doto 17"
-        )
+        font_desc = Pango.FontDescription.from_string("Doto 17")
         layout.set_font_description(font_desc)
 
         text = self._marquee_text

@@ -33,9 +33,7 @@ SKEL_DIR = os.path.join(AIROOTFS, "etc", "skel")
 
 AUDIO_QUALITY_SCRIPT = os.path.join(BIN_DIR, "mados-audio-quality.sh")
 AUDIO_QUALITY_SERVICE = os.path.join(SYSTEMD_DIR, "mados-audio-quality.service")
-USER_SERVICE = os.path.join(
-    SKEL_DIR, ".config", "systemd", "user", "mados-audio-quality.service"
-)
+USER_SERVICE = os.path.join(SKEL_DIR, ".config", "systemd", "user", "mados-audio-quality.service")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -218,14 +216,14 @@ class TestPipeWireConfigFormat(unittest.TestCase):
         # The pipewire.conf.d heredoc should end before stream.properties
         # Find the pipewire.conf.d heredoc and verify it only has context.properties
         import re
-        pw_conf_blocks = re.findall(
-            r'pipewire\.conf\.d/99-mados.*?\nEOF',
-            content,
-            re.DOTALL
-        )
+
+        pw_conf_blocks = re.findall(r"pipewire\.conf\.d/99-mados.*?\nEOF", content, re.DOTALL)
         for block in pw_conf_blocks:
-            self.assertNotIn("stream.properties", block,
-                "stream.properties must not be in pipewire.conf.d (use client.conf.d)")
+            self.assertNotIn(
+                "stream.properties",
+                block,
+                "stream.properties must not be in pipewire.conf.d (use client.conf.d)",
+            )
 
     def test_uses_high_quality_resampling(self):
         """Config should set high quality resampling (quality=10)."""
@@ -271,8 +269,8 @@ class TestWirePlumberConfig(unittest.TestCase):
         with open(AUDIO_QUALITY_SCRIPT) as f:
             content = f.read()
         # Must have separate wireplumber directory
-        self.assertIn('/etc/wireplumber', content)
-        self.assertIn('.config/wireplumber', content)
+        self.assertIn("/etc/wireplumber", content)
+        self.assertIn(".config/wireplumber", content)
 
     def test_wireplumber_dir_separate_from_pipewire(self):
         """SYSTEM_WIREPLUMBER_DIR must not be under /etc/pipewire."""
@@ -319,9 +317,7 @@ class TestSystemdServices(unittest.TestCase):
         """Service should be enabled in multi-user.target.wants."""
         wants_dir = os.path.join(SYSTEMD_DIR, "multi-user.target.wants")
         service_link = os.path.join(wants_dir, "mados-audio-quality.service")
-        self.assertTrue(
-            os.path.islink(service_link), "mados-audio-quality.service not enabled"
-        )
+        self.assertTrue(os.path.islink(service_link), "mados-audio-quality.service not enabled")
 
     def test_user_service_exists(self):
         """User service must exist in skel."""
@@ -344,9 +340,7 @@ class TestAudioQualityIntegration(unittest.TestCase):
 
     def test_script_in_path(self):
         """Script must be in /usr/local/bin."""
-        self.assertTrue(
-            AUDIO_QUALITY_SCRIPT.endswith("usr/local/bin/mados-audio-quality.sh")
-        )
+        self.assertTrue(AUDIO_QUALITY_SCRIPT.endswith("usr/local/bin/mados-audio-quality.sh"))
 
     def test_works_with_existing_audio_init(self):
         """Should work alongside existing mados-audio-init.sh."""
@@ -483,9 +477,7 @@ class TestUserServiceEnabled(unittest.TestCase):
 
     def test_user_service_enabled_in_default_target(self):
         """User service must be enabled in default.target.wants."""
-        wants_dir = os.path.join(
-            SKEL_DIR, ".config", "systemd", "user", "default.target.wants"
-        )
+        wants_dir = os.path.join(SKEL_DIR, ".config", "systemd", "user", "default.target.wants")
         service_link = os.path.join(wants_dir, "mados-audio-quality.service")
         self.assertTrue(
             os.path.islink(service_link),
@@ -494,9 +486,7 @@ class TestUserServiceEnabled(unittest.TestCase):
 
     def test_user_service_symlink_target(self):
         """User service symlink must point to the correct service file."""
-        wants_dir = os.path.join(
-            SKEL_DIR, ".config", "systemd", "user", "default.target.wants"
-        )
+        wants_dir = os.path.join(SKEL_DIR, ".config", "systemd", "user", "default.target.wants")
         service_link = os.path.join(wants_dir, "mados-audio-quality.service")
         target = os.readlink(service_link)
         self.assertIn("mados-audio-quality.service", target)
@@ -532,7 +522,10 @@ class TestInstallerAudioQualityIntegration(unittest.TestCase):
     def test_installer_creates_system_service(self):
         """System service must be pre-installed on the live USB."""
         service = os.path.join(
-            AIROOTFS, "etc", "systemd", "system",
+            AIROOTFS,
+            "etc",
+            "systemd",
+            "system",
             "mados-audio-quality.service",
         )
         self.assertTrue(
@@ -543,7 +536,12 @@ class TestInstallerAudioQualityIntegration(unittest.TestCase):
     def test_installer_creates_user_service(self):
         """User-level audio quality service must be in /etc/skel."""
         skel_svc = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "systemd", "user",
+            AIROOTFS,
+            "etc",
+            "skel",
+            ".config",
+            "systemd",
+            "user",
             "mados-audio-quality.service",
         )
         self.assertTrue(
@@ -554,7 +552,10 @@ class TestInstallerAudioQualityIntegration(unittest.TestCase):
     def test_system_service_runs_after_audio_init(self):
         """System service must depend on mados-audio-init."""
         service = os.path.join(
-            AIROOTFS, "etc", "systemd", "system",
+            AIROOTFS,
+            "etc",
+            "systemd",
+            "system",
             "mados-audio-quality.service",
         )
         with open(service) as f:
@@ -568,7 +569,12 @@ class TestInstallerAudioQualityIntegration(unittest.TestCase):
     def test_user_service_runs_before_pipewire(self):
         """User service must run before PipeWire starts."""
         skel_svc = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "systemd", "user",
+            AIROOTFS,
+            "etc",
+            "skel",
+            ".config",
+            "systemd",
+            "user",
             "mados-audio-quality.service",
         )
         with open(skel_svc) as f:

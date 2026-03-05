@@ -17,6 +17,7 @@ import unittest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 # ---------------------------------------------------------------------------
@@ -27,14 +28,21 @@ LIB_DIR = os.path.join(REPO_DIR, "airootfs", "usr", "local", "lib")
 sys.path.insert(0, LIB_DIR)
 
 from mados_audio_player.playlist import (
-    Playlist, Track, format_time,
-    REPEAT_OFF, REPEAT_ALL, REPEAT_ONE,
+    Playlist,
+    Track,
+    format_time,
+    REPEAT_OFF,
+    REPEAT_ALL,
+    REPEAT_ONE,
 )
 from mados_audio_player.database import PlaylistDB, DEFAULT_PLAYLIST
 from mados_audio_player.backend import MpvBackend
 from mados_audio_player.translations import (
-    TRANSLATIONS, AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE,
-    get_text, detect_system_language,
+    TRANSLATIONS,
+    AVAILABLE_LANGUAGES,
+    DEFAULT_LANGUAGE,
+    get_text,
+    detect_system_language,
 )
 from mados_audio_player import __version__, __app_id__, __app_name__
 
@@ -93,11 +101,13 @@ class TestTrack(unittest.TestCase):
 
     def test_update_metadata(self):
         t = Track("/music/test.mp3")
-        t.update_metadata({
-            "title": "Real Title",
-            "artist": "Real Artist",
-            "album": "Real Album",
-        })
+        t.update_metadata(
+            {
+                "title": "Real Title",
+                "artist": "Real Artist",
+                "album": "Real Album",
+            }
+        )
         self.assertEqual(t.title, "Real Title")
         self.assertEqual(t.artist, "Real Artist")
         self.assertEqual(t.album, "Real Album")
@@ -149,7 +159,7 @@ class TestFormatTime(unittest.TestCase):
         self.assertEqual(format_time(3600), "1:00:00")
 
     def test_nan(self):
-        self.assertEqual(format_time(float('nan')), "0:00")
+        self.assertEqual(format_time(float("nan")), "0:00")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -171,6 +181,7 @@ class TestPlaylist(unittest.TestCase):
     def tearDown(self):
         self.pl.close()
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_empty_by_default(self):
@@ -328,12 +339,8 @@ class TestPlaylist(unittest.TestCase):
         self.pl.toggle_shuffle()
         self.pl.cycle_repeat()
         # Read state directly from DB
-        self.assertEqual(
-            self.pl._db.get_bool_setting("shuffle"), True
-        )
-        self.assertEqual(
-            self.pl._db.get_int_setting("repeat_mode"), REPEAT_ALL
-        )
+        self.assertEqual(self.pl._db.get_bool_setting("shuffle"), True)
+        self.assertEqual(self.pl._db.get_int_setting("repeat_mode"), REPEAT_ALL)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -515,6 +522,7 @@ class TestPlaylistPersistence(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def test_tracks_persist_across_instances(self):
@@ -612,10 +620,7 @@ class TestPlaylistPersistence(unittest.TestCase):
         db_file = os.path.join(self.tmpdir, "test.db")
         pl1 = Playlist(db_path=db_file)
         pl1.add_file(self.files[0])
-        pl1.update_track_metadata(
-            pl1.tracks[0],
-            {"title": "Persisted", "artist": "Test Artist"}
-        )
+        pl1.update_track_metadata(pl1.tracks[0], {"title": "Persisted", "artist": "Test Artist"})
         pl1.update_track_duration(pl1.tracks[0], 240.0)
         pl1.close()
 
@@ -667,8 +672,8 @@ class TestMpvBackendHelpers(unittest.TestCase):
 
     def test_audio_extensions_set(self):
         self.assertIsInstance(MpvBackend.AUDIO_EXTENSIONS, set)
-        self.assertIn('.mp3', MpvBackend.AUDIO_EXTENSIONS)
-        self.assertIn('.flac', MpvBackend.AUDIO_EXTENSIONS)
+        self.assertIn(".mp3", MpvBackend.AUDIO_EXTENSIONS)
+        self.assertIn(".flac", MpvBackend.AUDIO_EXTENSIONS)
 
     def test_scan_directory(self):
         tmpdir = tempfile.mkdtemp()
@@ -682,6 +687,7 @@ class TestMpvBackendHelpers(unittest.TestCase):
                 self.assertTrue(MpvBackend.is_audio_file(path))
         finally:
             import shutil
+
             shutil.rmtree(tmpdir, ignore_errors=True)
 
     def test_scan_directory_nonexistent(self):
@@ -701,6 +707,7 @@ class TestMpvBackendHelpers(unittest.TestCase):
             self.assertEqual(len(result), 1)
         finally:
             import shutil
+
             shutil.rmtree(tmpdir, ignore_errors=True)
 
 
@@ -723,29 +730,29 @@ class TestMpvBackendState(unittest.TestCase):
     def test_formatted_metadata_no_file(self):
         b = MpvBackend()
         meta = b.get_formatted_metadata()
-        self.assertEqual(meta['title'], '')
-        self.assertEqual(meta['artist'], '')
-        self.assertEqual(meta['album'], '')
+        self.assertEqual(meta["title"], "")
+        self.assertEqual(meta["artist"], "")
+        self.assertEqual(meta["album"], "")
 
     def test_formatted_metadata_with_file(self):
         b = MpvBackend()
         b.current_file = "/music/My Song.mp3"
         b.metadata = {}
         meta = b.get_formatted_metadata()
-        self.assertEqual(meta['title'], 'My Song')
+        self.assertEqual(meta["title"], "My Song")
 
     def test_formatted_metadata_with_tags(self):
         b = MpvBackend()
         b.current_file = "/music/file.mp3"
         b.metadata = {
-            'title': 'Tagged Title',
-            'artist': 'Tagged Artist',
-            'album': 'Tagged Album',
+            "title": "Tagged Title",
+            "artist": "Tagged Artist",
+            "album": "Tagged Album",
         }
         meta = b.get_formatted_metadata()
-        self.assertEqual(meta['title'], 'Tagged Title')
-        self.assertEqual(meta['artist'], 'Tagged Artist')
-        self.assertEqual(meta['album'], 'Tagged Album')
+        self.assertEqual(meta["title"], "Tagged Title")
+        self.assertEqual(meta["artist"], "Tagged Artist")
+        self.assertEqual(meta["album"], "Tagged Album")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -822,17 +829,18 @@ class TestTranslations(unittest.TestCase):
         for lang in AVAILABLE_LANGUAGES:
             with self.subTest(lang=lang):
                 lang_keys = set(TRANSLATIONS[lang].keys())
-                self.assertEqual(lang_keys, en_keys,
-                                 f"{lang} missing: {en_keys - lang_keys}, "
-                                 f"extra: {lang_keys - en_keys}")
+                self.assertEqual(
+                    lang_keys,
+                    en_keys,
+                    f"{lang} missing: {en_keys - lang_keys}, extra: {lang_keys - en_keys}",
+                )
 
     def test_no_empty_values(self):
         """No translation value should be empty string."""
         for lang in AVAILABLE_LANGUAGES:
             for key, value in TRANSLATIONS[lang].items():
                 with self.subTest(lang=lang, key=key):
-                    self.assertTrue(len(value) > 0,
-                                    f"{lang}[{key}] is empty")
+                    self.assertTrue(len(value) > 0, f"{lang}[{key}] is empty")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -843,18 +851,21 @@ class TestTheme(unittest.TestCase):
 
     def test_import_theme(self):
         from mados_audio_player.theme import THEME_CSS, NORD
+
         self.assertIsInstance(THEME_CSS, str)
         self.assertGreater(len(THEME_CSS), 100)
 
     def test_nord_colors(self):
         from mados_audio_player.theme import NORD
-        self.assertIn('nord0', NORD)
-        self.assertIn('nord8', NORD)
-        self.assertIn('nord14', NORD)
+
+        self.assertIn("nord0", NORD)
+        self.assertIn("nord8", NORD)
+        self.assertIn("nord14", NORD)
         self.assertEqual(len(NORD), 16)
 
     def test_css_contains_player_classes(self):
         from mados_audio_player.theme import THEME_CSS
+
         self.assertIn("track-display", THEME_CSS)
         self.assertIn("transport-btn", THEME_CSS)
         self.assertIn("seek-bar", THEME_CSS)
@@ -886,10 +897,12 @@ class TestSpectrumAnalyzer(unittest.TestCase):
 
     def test_import_spectrum(self):
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         self.assertTrue(callable(SpectrumAnalyzer))
 
     def test_default_num_bars(self):
         from mados_audio_player.spectrum import SpectrumAnalyzer, NUM_BARS
+
         sa = SpectrumAnalyzer()
         self.assertEqual(sa.num_bars, NUM_BARS)
         self.assertEqual(len(sa.bars), NUM_BARS)
@@ -897,6 +910,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
 
     def test_custom_num_bars(self):
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer(num_bars=16)
         self.assertEqual(sa.num_bars, 16)
         self.assertEqual(len(sa.bars), 16)
@@ -904,6 +918,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
 
     def test_initial_bars_zero(self):
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer()
         for v in sa.bars:
             self.assertEqual(v, 0.0)
@@ -912,12 +927,14 @@ class TestSpectrumAnalyzer(unittest.TestCase):
 
     def test_is_active_initially_false(self):
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer()
         self.assertFalse(sa.is_active)
 
     def test_update_with_zero_bars(self):
         """update() should not crash when all bars are zero."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer()
         sa.update()
         for v in sa.bars:
@@ -926,6 +943,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
     def test_update_with_target_bars(self):
         """update() should move bars toward target values."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer(num_bars=4)
         # Simulate cava data
         sa._target_bars = [0.8, 0.5, 0.3, 0.0]
@@ -938,6 +956,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
     def test_peaks_track_bars(self):
         """Peaks should rise to match bars."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer(num_bars=2)
         sa._target_bars = [1.0, 0.5]
         sa.update()
@@ -947,6 +966,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
     def test_peaks_decay(self):
         """Peaks should decay when bars drop."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer(num_bars=1)
         # Set peak high
         sa._target_bars = [1.0]
@@ -962,6 +982,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
     def test_bars_gravity_decay(self):
         """Bars should fall with gravity when target drops."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer(num_bars=1)
         sa._target_bars = [1.0]
         sa.update()
@@ -975,6 +996,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
     def test_bars_never_negative(self):
         """Bars should never go below zero."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer(num_bars=1)
         sa._target_bars = [0.0]
         for _ in range(100):
@@ -984,6 +1006,7 @@ class TestSpectrumAnalyzer(unittest.TestCase):
     def test_peaks_never_negative(self):
         """Peaks should never go below zero."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer(num_bars=1)
         sa._target_bars = [0.5]
         sa.update()
@@ -995,17 +1018,20 @@ class TestSpectrumAnalyzer(unittest.TestCase):
     def test_stop_without_start(self):
         """stop() should not crash when not started."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer()
         sa.stop()  # Should not raise
 
     def test_cleanup_alias(self):
         """cleanup() should be an alias for stop()."""
         from mados_audio_player.spectrum import SpectrumAnalyzer
+
         sa = SpectrumAnalyzer()
         sa.cleanup()  # Should not raise
 
     def test_constants_exported(self):
         from mados_audio_player.spectrum import NUM_BARS, PEAK_DECAY, BAR_GRAVITY
+
         self.assertIsInstance(NUM_BARS, int)
         self.assertGreater(NUM_BARS, 0)
         self.assertIsInstance(PEAK_DECAY, float)

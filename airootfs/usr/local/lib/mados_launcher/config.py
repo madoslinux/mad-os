@@ -27,33 +27,33 @@ NORD = {
 }
 
 # --- Dock Dimensions ---
-ICON_SIZE = 24          # Icon pixel size
-TAB_WIDTH = 14          # Width of the grip tab in pixels
-DOCK_WIDTH = 35         # Width of the icon area (icon + padding)
-TAB_HEIGHT = 54         # Height of the grip tab
-ICON_PADDING = 3        # Padding around each icon button
-ICON_SPACING = 2        # Spacing between icon buttons
+ICON_SIZE = 24  # Icon pixel size
+TAB_WIDTH = 14  # Width of the grip tab in pixels
+DOCK_WIDTH = 35  # Width of the icon area (icon + padding)
+TAB_HEIGHT = 54  # Height of the grip tab
+ICON_PADDING = 3  # Padding around each icon button
+ICON_SPACING = 2  # Spacing between icon buttons
 
 # --- Animation ---
 ANIMATION_DURATION = 250  # Revealer transition in milliseconds
 
 # --- Grip Visual ---
-GRIP_DOT_RADIUS = 1.5     # Cairo dot radius
-GRIP_DOT_SPACING = 7      # Vertical spacing between grip dot pairs
-GRIP_DOT_COLS = 2         # Number of dot columns
-GRIP_DOT_COL_GAP = 4      # Horizontal gap between dot columns
+GRIP_DOT_RADIUS = 1.5  # Cairo dot radius
+GRIP_DOT_SPACING = 7  # Vertical spacing between grip dot pairs
+GRIP_DOT_COLS = 2  # Number of dot columns
+GRIP_DOT_COL_GAP = 4  # Horizontal gap between dot columns
 
 # --- Drag Behavior ---
-DRAG_THRESHOLD = 5        # Pixels moved before a drag is recognized
-MIN_MARGIN_TOP = 0        # Minimum top margin
+DRAG_THRESHOLD = 5  # Pixels moved before a drag is recognized
+MIN_MARGIN_TOP = 0  # Minimum top margin
 DEFAULT_MARGIN_TOP = 200  # Default vertical position
 
 # --- Shadow ---
-SHADOW_SIZE = 8            # Shadow spread in pixels
-SHADOW_OFFSET_X = 2        # Horizontal shadow offset
-SHADOW_OFFSET_Y = 3        # Vertical shadow offset
-SHADOW_LAYERS = 5          # Number of blur layers for shadow
-SHADOW_BASE_ALPHA = 0.4    # Maximum combined shadow opacity
+SHADOW_SIZE = 8  # Shadow spread in pixels
+SHADOW_OFFSET_X = 2  # Horizontal shadow offset
+SHADOW_OFFSET_Y = 3  # Vertical shadow offset
+SHADOW_LAYERS = 5  # Number of blur layers for shadow
+SHADOW_BASE_ALPHA = 0.4  # Maximum combined shadow opacity
 
 # --- Desktop Entry Scanning ---
 DESKTOP_DIRS = [
@@ -79,9 +79,9 @@ CONFIG_DIR = os.path.expanduser("~/.config/mados-launcher")
 STATE_FILE = os.path.join(CONFIG_DIR, "state.json")
 
 # --- Icon Zoom on Hover ---
-ICON_ZOOM_SIZE = 32            # Target icon size on hover (pixels)
-ICON_ZOOM_STEP = 2             # Pixels per animation frame
-ICON_ZOOM_INTERVAL_MS = 25     # Milliseconds between animation frames
+ICON_ZOOM_SIZE = 32  # Target icon size on hover (pixels)
+ICON_ZOOM_STEP = 2  # Pixels per animation frame
+ICON_ZOOM_INTERVAL_MS = 25  # Milliseconds between animation frames
 
 # --- Service-Dependent Filtering ---
 # Desktop entry filenames to hide when avahi-daemon is not running

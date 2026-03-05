@@ -175,22 +175,14 @@ def _step_partition_disk(app, disk, separate_home, disk_size_gb):
         log_message(app, f"Unmounting existing partitions on {disk}...")
         for part in globmod.glob(f"{disk}[0-9]*") + globmod.glob(f"{disk}p[0-9]*"):
             subprocess.run(["swapoff", part], stderr=subprocess.DEVNULL, check=False)
-            subprocess.run(
-                ["umount", "-l", part], stderr=subprocess.DEVNULL, check=False
-            )
+            subprocess.run(["umount", "-l", part], stderr=subprocess.DEVNULL, check=False)
         time.sleep(1)
         subprocess.run(["sgdisk", "--zap-all", disk], check=False)
         subprocess.run(["wipefs", "-a", "-f", disk], check=True)
         subprocess.run(["parted", "-s", disk, "mklabel", "gpt"], check=True)
-        subprocess.run(
-            ["parted", "-s", disk, "mkpart", "bios_boot", "1MiB", "2MiB"], check=True
-        )
-        subprocess.run(
-            ["parted", "-s", disk, "set", "1", "bios_grub", "on"], check=True
-        )
-        subprocess.run(
-            ["parted", "-s", disk, "mkpart", "EFI", "fat32", "2MiB", "1GiB"], check=True
-        )
+        subprocess.run(["parted", "-s", disk, "mkpart", "bios_boot", "1MiB", "2MiB"], check=True)
+        subprocess.run(["parted", "-s", disk, "set", "1", "bios_grub", "on"], check=True)
+        subprocess.run(["parted", "-s", disk, "mkpart", "EFI", "fat32", "2MiB", "1GiB"], check=True)
         subprocess.run(["parted", "-s", disk, "set", "2", "esp", "on"], check=True)
 
     _create_root_partition(app, disk, separate_home, disk_size_gb)
@@ -269,9 +261,7 @@ def _format_partitions_real(boot_part, root_part, home_part, separate_home):
         partitions.append(("home", home_part))
     for part_name, part_dev in partitions:
         if not os.path.exists(part_dev):
-            raise RuntimeError(
-                f"Partition device {part_dev} ({part_name}) does not exist!"
-            )
+            raise RuntimeError(f"Partition device {part_dev} ({part_name}) does not exist!")
     subprocess.run(["mkfs.fat", "-F32", boot_part], check=True)
     subprocess.run(["mkfs.ext4", "-F", root_part], check=True)
     if separate_home and home_part:
@@ -350,17 +340,13 @@ def _ensure_kernel_in_target(app):
             return
 
     # Fallback: try /boot/vmlinuz-linux from the live system
-    if os.path.isfile("/boot/vmlinuz-linux") and os.access(
-        "/boot/vmlinuz-linux", os.R_OK
-    ):
+    if os.path.isfile("/boot/vmlinuz-linux") and os.access("/boot/vmlinuz-linux", os.R_OK):
         subprocess.run(["cp", "/boot/vmlinuz-linux", target_kernel], check=True)
         log_message(app, "  Copied kernel from /boot/vmlinuz-linux")
         return
 
     # Also try inside the target's own modules (rsync may have copied them)
-    for vmlinuz in sorted(
-        globmod.glob("/mnt/usr/lib/modules/*/vmlinuz"), reverse=True
-    ):
+    for vmlinuz in sorted(globmod.glob("/mnt/usr/lib/modules/*/vmlinuz"), reverse=True):
         if os.path.isfile(vmlinuz) and os.access(vmlinuz, os.R_OK):
             subprocess.run(["cp", vmlinuz, target_kernel], check=True)
             log_message(app, f"  Copied kernel from {vmlinuz}")
@@ -368,8 +354,7 @@ def _ensure_kernel_in_target(app):
 
     log_message(
         app,
-        "  WARNING: Could not find kernel in live system, "
-        "chroot will attempt recovery",
+        "  WARNING: Could not find kernel in live system, chroot will attempt recovery",
     )
 
 
@@ -456,9 +441,7 @@ def _step_copy_desktop_files(app):
     set_progress(app, 0.54, "Copying session files...")
     log_message(app, "Copying session files...")
     subprocess.run(["mkdir", "-p", "/mnt/usr/share/wayland-sessions"], check=False)
-    _copy_item(
-        "/usr/share/wayland-sessions/sway.desktop", "/mnt/usr/share/wayland-sessions/"
-    )
+    _copy_item("/usr/share/wayland-sessions/sway.desktop", "/mnt/usr/share/wayland-sessions/")
     _copy_item(
         "/usr/share/wayland-sessions/hyprland.desktop",
         "/mnt/usr/share/wayland-sessions/",
@@ -548,9 +531,7 @@ def _run_installation(app):
         config_script = _build_config_script(data)
 
         if DEMO_MODE:
-            log_message(
-                app, "[DEMO] Would write configuration script to /mnt/root/configure.sh"
-            )
+            log_message(app, "[DEMO] Would write configuration script to /mnt/root/configure.sh")
             time.sleep(0.5)
             log_message(app, "[DEMO] Configuration would include:")
             log_message(app, "[DEMO]   - Timezone setup")
@@ -561,9 +542,7 @@ def _run_installation(app):
             log_message(app, "[DEMO]   - Graphical environment verification")
             time.sleep(1)
         else:
-            fd = os.open(
-                "/mnt/root/configure.sh", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o700
-            )
+            fd = os.open("/mnt/root/configure.sh", os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o700)
             with os.fdopen(fd, "w") as f:
                 f.write(config_script)
 
@@ -659,9 +638,9 @@ def _post_rsync_cleanup(app):
             subprocess.run(["rm", "-rf", path], check=False)
     # Remove scattered __pycache__ directories
     subprocess.run(
-        ["find", "/mnt/usr", "-type", "d", "-name", "__pycache__",
-         "-exec", "rm", "-rf", "{}", "+"],
-        check=False, capture_output=True,
+        ["find", "/mnt/usr", "-type", "d", "-name", "__pycache__", "-exec", "rm", "-rf", "{}", "+"],
+        check=False,
+        capture_output=True,
     )
     log_message(app, "  Disk footprint reduced")
 
@@ -683,8 +662,7 @@ def _rsync_rootfs_with_progress(app):
     log_message(app, "Copying live system to target disk (rsync)...")
     log_message(app, "  (Packages already installed in the ISO – no download needed)")
 
-    cmd = ["rsync", "-aAXHWS", "--info=progress2", "--no-inc-recursive",
-           "--numeric-ids"]
+    cmd = ["rsync", "-aAXHWS", "--info=progress2", "--no-inc-recursive", "--numeric-ids"]
     for exc in RSYNC_EXCLUDES:
         cmd.extend(["--exclude", exc])
     cmd.extend(["/", "/mnt/"])
@@ -737,8 +715,7 @@ def _rsync_rootfs_with_progress(app):
     set_progress(app, 0.45, "Cleaning archiso artifacts...")
     log_message(app, "Removing archiso-specific packages...")
     subprocess.run(
-        ["arch-chroot", "/mnt", "pacman", "-Rdd", "--noconfirm"]
-        + list(ARCHISO_PACKAGES),
+        ["arch-chroot", "/mnt", "pacman", "-Rdd", "--noconfirm"] + list(ARCHISO_PACKAGES),
         capture_output=True,
     )
     # Ensure machine-id is regenerated on first boot
@@ -803,9 +780,7 @@ def _prepare_pacman(app):
             # Show periodic feedback so the user knows it's not stuck
             if poll_count % 6 == 0:  # every ~30 seconds
                 elapsed = poll_count * 5
-                log_message(
-                    app, f"  Still initializing keyring... ({elapsed}s elapsed)"
-                )
+                log_message(app, f"  Still initializing keyring... ({elapsed}s elapsed)")
 
     # systemctl is-active returns: active, activating, inactive, failed, or
     # deactivating.  We already waited for "activating" above; "active" means
@@ -840,9 +815,7 @@ def _prepare_pacman(app):
             log_message(app, f"  {line}")
     proc.wait()
     if proc.returncode != 0:
-        log_message(
-            app, "  Warning: database sync returned non-zero, pacstrap will retry"
-        )
+        log_message(app, "  Warning: database sync returned non-zero, pacstrap will retry")
     else:
         log_message(app, "  Package databases synchronized")
 
@@ -900,9 +873,7 @@ def _download_packages_with_progress(app, packages):
             )
 
         downloaded = end
-        progress = progress_start + (progress_end - progress_start) * (
-            downloaded / total
-        )
+        progress = progress_start + (progress_end - progress_start) * (downloaded / total)
         set_progress(app, progress, f"Downloading packages ({downloaded}/{total})...")
 
     set_progress(app, progress_end, "All packages downloaded")
@@ -971,14 +942,10 @@ def _run_single_pacstrap(app, packages):
 
     # Patterns to detect package installation progress from pacman output
     # Match "(N/M) installing pkg-name" format used by pacman
-    numbered_pkg_pattern = re.compile(
-        r"\((\d+)/(\d+)\)\s+installing\s+(\S+)", re.IGNORECASE
-    )
+    numbered_pkg_pattern = re.compile(r"\((\d+)/(\d+)\)\s+installing\s+(\S+)", re.IGNORECASE)
     pkg_pattern = re.compile(r"installing\s+(\S+)", re.IGNORECASE)
     downloading_pattern = re.compile(r"downloading\s+(\S+)", re.IGNORECASE)
-    resolving_pattern = re.compile(
-        r"resolving dependencies|looking for conflicting", re.IGNORECASE
-    )
+    resolving_pattern = re.compile(r"resolving dependencies|looking for conflicting", re.IGNORECASE)
     total_pattern = re.compile(r"Packages\s+\((\d+)\)", re.IGNORECASE)
     # Detect section markers like ":: Processing package changes..."
     section_pattern = re.compile(r"^::")
@@ -1097,14 +1064,10 @@ def _run_chroot_with_progress(app):
     script_path = "/mnt/root/configure.sh"
     if not os.path.isfile(script_path):
         raise FileNotFoundError(
-            f"Configuration script not found at {script_path} — "
-            "disk may be full or write failed"
+            f"Configuration script not found at {script_path} — disk may be full or write failed"
         )
     if os.path.getsize(script_path) == 0:
-        raise ValueError(
-            f"Configuration script at {script_path} is empty — "
-            "write may have failed"
-        )
+        raise ValueError(f"Configuration script at {script_path} is empty — write may have failed")
 
     proc = subprocess.Popen(
         ["arch-chroot", "/mnt", "/root/configure.sh"],
@@ -1131,9 +1094,7 @@ def _run_chroot_with_progress(app):
             step = int(progress_match.group(1))
             total = int(progress_match.group(2))
             description = progress_match.group(3)
-            progress = progress_start + (progress_end - progress_start) * (
-                step / max(total, 1)
-            )
+            progress = progress_start + (progress_end - progress_start) * (step / max(total, 1))
             progress = min(progress, progress_end)
             set_progress(app, progress, description)
             log_message(app, f"  {description}")
@@ -1799,5 +1760,3 @@ fi
 
 echo "Graphical environment verification complete."
 '''
-
-

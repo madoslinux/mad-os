@@ -32,18 +32,47 @@ class MpvBackend:
 
     # Audio file extensions supported by mpv/ffmpeg
     AUDIO_EXTENSIONS = {
-        '.mp3', '.flac', '.ogg', '.opus', '.wav', '.aac', '.m4a',
-        '.wma', '.ape', '.mka', '.webm', '.mp4', '.aiff', '.aif',
-        '.alac', '.tta', '.wv', '.dsd', '.dsf', '.dff', '.ac3',
-        '.amr', '.au', '.mid', '.midi', '.mod', '.s3m', '.xm',
-        '.it', '.spc', '.vgm', '.nsf', '.snd', '.ra', '.rm',
+        ".mp3",
+        ".flac",
+        ".ogg",
+        ".opus",
+        ".wav",
+        ".aac",
+        ".m4a",
+        ".wma",
+        ".ape",
+        ".mka",
+        ".webm",
+        ".mp4",
+        ".aiff",
+        ".aif",
+        ".alac",
+        ".tta",
+        ".wv",
+        ".dsd",
+        ".dsf",
+        ".dff",
+        ".ac3",
+        ".amr",
+        ".au",
+        ".mid",
+        ".midi",
+        ".mod",
+        ".s3m",
+        ".xm",
+        ".it",
+        ".spc",
+        ".vgm",
+        ".nsf",
+        ".snd",
+        ".ra",
+        ".rm",
     }
 
     def __init__(self):
         self._process = None
         self._socket_path = os.path.join(
-            tempfile.gettempdir(),
-            f"mados-audio-player-{os.getpid()}.sock"
+            tempfile.gettempdir(), f"mados-audio-player-{os.getpid()}.sock"
         )
         self._sock = None
         self._lock = threading.Lock()
@@ -69,16 +98,18 @@ class MpvBackend:
         """
         try:
             r = subprocess.run(
-                ['pactl', 'info'],
-                capture_output=True, text=True, timeout=3,
+                ["pactl", "info"],
+                capture_output=True,
+                text=True,
+                timeout=3,
             )
             if r.returncode == 0:
-                if 'PipeWire' in r.stdout:
-                    return 'pipewire'
-                return 'pulse'
+                if "PipeWire" in r.stdout:
+                    return "pipewire"
+                return "pulse"
         except Exception:
             pass
-        return 'alsa'
+        return "alsa"
 
     def start(self):
         """Start the mpv process with JSON IPC socket."""
@@ -93,22 +124,22 @@ class MpvBackend:
                 pass
 
         cmd = [
-            'mpv',
-            '--idle=yes',
-            '--no-video',
-            '--no-terminal',
-            '--really-quiet',
-            f'--input-ipc-server={self._socket_path}',
-            '--volume=100',
-            '--audio-display=no',
-            f'--ao={self._detect_audio_output()}',
+            "mpv",
+            "--idle=yes",
+            "--no-video",
+            "--no-terminal",
+            "--really-quiet",
+            f"--input-ipc-server={self._socket_path}",
+            "--volume=100",
+            "--audio-display=no",
+            f"--ao={self._detect_audio_output()}",
             # Audio buffer: 1 second to prevent choppy playback on slow CPUs
-            '--audio-buffer=1.0',
+            "--audio-buffer=1.0",
             # Demuxer readahead: 5 seconds of data buffered ahead
-            '--demuxer-max-bytes=512KiB',
-            '--demuxer-readahead-secs=5',
+            "--demuxer-max-bytes=512KiB",
+            "--demuxer-readahead-secs=5",
             # Enable gapless audio for smooth track transitions
-            '--gapless-audio=yes',
+            "--gapless-audio=yes",
         ]
 
         try:
@@ -158,14 +189,14 @@ class MpvBackend:
 
         with self._lock:
             try:
-                self._sock.sendall(msg.encode('utf-8'))
+                self._sock.sendall(msg.encode("utf-8"))
                 response = self._read_response()
                 if response is None:
                     return None
                 # Check if command succeeded
-                if response.get('error') == 'success':
+                if response.get("error") == "success":
                     # Return data if present, otherwise True to signal success
-                    data = response.get('data')
+                    data = response.get("data")
                     return data if data is not None else True
                 return response
             except (socket.error, OSError, json.JSONDecodeError):
@@ -182,7 +213,7 @@ class MpvBackend:
                     break
                 data += chunk
                 # Look for complete JSON lines
-                lines = data.split(b'\n')
+                lines = data.split(b"\n")
                 for line in lines:
                     line = line.strip()
                     if not line:
@@ -190,9 +221,9 @@ class MpvBackend:
                     try:
                         parsed = json.loads(line)
                         # Skip event messages, look for command response
-                        if 'error' in parsed and parsed.get('error') == 'success':
+                        if "error" in parsed and parsed.get("error") == "success":
                             return parsed
-                        if 'error' in parsed:
+                        if "error" in parsed:
                             return parsed
                     except json.JSONDecodeError:
                         continue
@@ -202,13 +233,13 @@ class MpvBackend:
         except socket.timeout:
             # Parse whatever we have
             if data:
-                for line in data.split(b'\n'):
+                for line in data.split(b"\n"):
                     line = line.strip()
                     if not line:
                         continue
                     try:
                         parsed = json.loads(line)
-                        if 'error' in parsed:
+                        if "error" in parsed:
                             return parsed
                     except json.JSONDecodeError:
                         continue
@@ -335,21 +366,18 @@ class MpvBackend:
             dict with 'title', 'artist', 'album' keys.
         """
         meta = self.metadata or {}
-        title = (meta.get('title') or meta.get('TITLE')
-                 or meta.get('Title') or '')
-        artist = (meta.get('artist') or meta.get('ARTIST')
-                  or meta.get('Artist') or '')
-        album = (meta.get('album') or meta.get('ALBUM')
-                 or meta.get('Album') or '')
+        title = meta.get("title") or meta.get("TITLE") or meta.get("Title") or ""
+        artist = meta.get("artist") or meta.get("ARTIST") or meta.get("Artist") or ""
+        album = meta.get("album") or meta.get("ALBUM") or meta.get("Album") or ""
 
         # Fallback to filename for title
         if not title and self.current_file:
             title = os.path.splitext(os.path.basename(self.current_file))[0]
 
         return {
-            'title': title,
-            'artist': artist,
-            'album': album,
+            "title": title,
+            "artist": artist,
+            "album": album,
         }
 
     def get_audio_info(self):
@@ -362,15 +390,15 @@ class MpvBackend:
         try:
             codec = self.get_property("audio-codec-name")
             if codec:
-                info['format'] = str(codec).upper()
+                info["format"] = str(codec).upper()
 
             bitrate = self.get_property("audio-bitrate")
             if bitrate and isinstance(bitrate, (int, float)):
-                info['bitrate'] = f"{int(bitrate / 1000)} kbps"
+                info["bitrate"] = f"{int(bitrate / 1000)} kbps"
 
             samplerate = self.get_property("audio-params/samplerate")
             if samplerate and isinstance(samplerate, (int, float)):
-                info['samplerate'] = f"{int(samplerate)} Hz"
+                info["samplerate"] = f"{int(samplerate)} Hz"
         except Exception:
             pass
         return info

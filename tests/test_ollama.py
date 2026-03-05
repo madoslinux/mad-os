@@ -21,6 +21,7 @@ import unittest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks(use_setdefault=True)
 
 # ---------------------------------------------------------------------------
@@ -63,6 +64,7 @@ class TestLiveUSBOllamaNoService(unittest.TestCase):
 # Live USB – Ollama is pre-installed during ISO build
 # No setup script needed
 
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Post-installation – Ollama is copied by rsync from live USB
 # ═══════════════════════════════════════════════════════════════════════════
@@ -75,9 +77,7 @@ class TestPostInstallOllama(unittest.TestCase):
     """
 
     def setUp(self):
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
         with open(install_py) as f:
@@ -140,11 +140,7 @@ class TestLiveUSBOllamaDependencies(unittest.TestCase):
     def _read_packages(self):
         pkg_file = os.path.join(REPO_DIR, "packages.x86_64")
         with open(pkg_file) as f:
-            return [
-                line.strip()
-                for line in f
-                if line.strip() and not line.strip().startswith("#")
-            ]
+            return [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
     def test_curl_included(self):
         """Live ISO must include curl (needed for ollama.com/install.sh)."""

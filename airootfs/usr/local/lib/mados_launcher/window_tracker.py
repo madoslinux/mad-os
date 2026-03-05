@@ -32,7 +32,9 @@ def _query_sway_windows():
     try:
         result = subprocess.run(
             ["swaymsg", "-t", "get_tree"],
-            capture_output=True, text=True, timeout=2,
+            capture_output=True,
+            text=True,
+            timeout=2,
         )
         if result.returncode != 0:
             return []
@@ -54,14 +56,16 @@ def _extract_sway_nodes(node):
     pid = node.get("pid", 0)
 
     if (app_id or wm_class) and node.get("type") == "con" and not node.get("nodes"):
-        windows.append({
-            "app_id": app_id.lower(),
-            "wm_class": wm_class.lower(),
-            "name": name,
-            "urgent": urgent,
-            "pid": pid,
-            "focused": node.get("focused", False),
-        })
+        windows.append(
+            {
+                "app_id": app_id.lower(),
+                "wm_class": wm_class.lower(),
+                "name": name,
+                "urgent": urgent,
+                "pid": pid,
+                "focused": node.get("focused", False),
+            }
+        )
 
     # Recurse into child nodes
     for child in node.get("nodes", []):
@@ -77,21 +81,25 @@ def _query_hyprland_windows():
     try:
         result = subprocess.run(
             ["hyprctl", "clients", "-j"],
-            capture_output=True, text=True, timeout=2,
+            capture_output=True,
+            text=True,
+            timeout=2,
         )
         if result.returncode != 0:
             return []
         clients = json.loads(result.stdout)
         windows = []
         for c in clients:
-            windows.append({
-                "app_id": (c.get("class") or "").lower(),
-                "wm_class": (c.get("class") or "").lower(),
-                "name": c.get("title", ""),
-                "urgent": c.get("urgent", False),
-                "pid": c.get("pid", 0),
-                "focused": c.get("focusHistoryID", -1) == 0,
-            })
+            windows.append(
+                {
+                    "app_id": (c.get("class") or "").lower(),
+                    "wm_class": (c.get("class") or "").lower(),
+                    "name": c.get("title", ""),
+                    "urgent": c.get("urgent", False),
+                    "pid": c.get("pid", 0),
+                    "focused": c.get("focusHistoryID", -1) == 0,
+                }
+            )
         return windows
     except Exception:
         return []
@@ -136,9 +144,9 @@ class WindowTracker:
 
     def __init__(self):
         self._compositor = _detect_compositor()
-        self._running = set()     # Set of match keys that are running
-        self._urgent = set()      # Set of match keys that are urgent
-        self._focused = set()     # Set of match keys that are focused
+        self._running = set()  # Set of match keys that are running
+        self._urgent = set()  # Set of match keys that are urgent
+        self._focused = set()  # Set of match keys that are focused
 
     @property
     def compositor(self):
@@ -171,9 +179,11 @@ class WindowTracker:
                 if w.get("focused"):
                     self._focused.add(key)
 
-        return (self._running != old_running
-                or self._urgent != old_urgent
-                or self._focused != old_focused)
+        return (
+            self._running != old_running
+            or self._urgent != old_urgent
+            or self._focused != old_focused
+        )
 
     def is_running(self, exec_cmd, desktop_filename=""):
         """Check if an application appears to be running."""

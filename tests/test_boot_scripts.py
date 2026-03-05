@@ -45,10 +45,12 @@ class TestBootScriptSyntax(unittest.TestCase):
             with self.subTest(script=script):
                 result = subprocess.run(
                     ["bash", "-n", path],
-                    capture_output=True, text=True,
+                    capture_output=True,
+                    text=True,
                 )
                 self.assertEqual(
-                    result.returncode, 0,
+                    result.returncode,
+                    0,
                     f"Bash syntax error in {script}: {result.stderr}",
                 )
 
@@ -62,7 +64,8 @@ class TestBootScriptSyntax(unittest.TestCase):
                 with open(path) as f:
                     first_line = f.readline().strip()
                 self.assertIn(
-                    "bash", first_line,
+                    "bash",
+                    first_line,
                     f"{script} must start with a bash shebang",
                 )
                 self.assertTrue(
@@ -88,7 +91,8 @@ class TestBootScriptSyntax(unittest.TestCase):
                 with open(path) as f:
                     content = f.read()
                 self.assertIn(
-                    "set -euo pipefail", content,
+                    "set -euo pipefail",
+                    content,
                     f"{script} must use strict mode (set -euo pipefail)",
                 )
 
@@ -123,7 +127,8 @@ class TestSystemdServices(unittest.TestCase):
                 with open(path) as f:
                     content = f.read()
                 self.assertIn(
-                    f"ExecStart={expected['exec']}", content,
+                    f"ExecStart={expected['exec']}",
+                    content,
                     f"{service} must run {expected['exec']}",
                 )
 
@@ -137,7 +142,8 @@ class TestSystemdServices(unittest.TestCase):
                 with open(path) as f:
                     content = f.read()
                 self.assertIn(
-                    f"Type={expected['type']}", content,
+                    f"Type={expected['type']}",
+                    content,
                     f"{service} must be Type={expected['type']}",
                 )
 
@@ -151,7 +157,8 @@ class TestSystemdServices(unittest.TestCase):
                 with open(path) as f:
                     content = f.read()
                 self.assertIn(
-                    expected["after"], content,
+                    expected["after"],
+                    content,
                     f"{service} must run after {expected['after']}",
                 )
 
@@ -165,7 +172,8 @@ class TestSystemdServices(unittest.TestCase):
                 with open(path) as f:
                     content = f.read()
                 self.assertIn(
-                    "WantedBy=multi-user.target", content,
+                    "WantedBy=multi-user.target",
+                    content,
                     f"{service} must be wanted by multi-user.target",
                 )
 
@@ -179,7 +187,8 @@ class TestSystemdServices(unittest.TestCase):
                 with open(path) as f:
                     content = f.read()
                 self.assertIn(
-                    "TimeoutStartSec=", content,
+                    "TimeoutStartSec=",
+                    content,
                     f"{service} must have a TimeoutStartSec",
                 )
 
@@ -198,11 +207,13 @@ class TestSystemdServices(unittest.TestCase):
                 with open(path) as f:
                     content = f.read()
                 self.assertIn(
-                    "Environment=HOME=", content,
+                    "Environment=HOME=",
+                    content,
                     f"{service} must set HOME environment",
                 )
                 self.assertIn(
-                    "Environment=PATH=", content,
+                    "Environment=PATH=",
+                    content,
                     f"{service} must set PATH environment",
                 )
 
@@ -225,14 +236,15 @@ class TestSysusersConfig(unittest.TestCase):
     def test_creates_mados_user(self):
         """Config should create the mados user."""
         self.assertIsNotNone(
-            re.search(r'^u\s+mados\s', self.content, re.MULTILINE),
+            re.search(r"^u\s+mados\s", self.content, re.MULTILINE),
             "Must create mados user with 'u mados ...'",
         )
 
     def test_mados_in_wheel_group(self):
         """mados user should be a member of the wheel group."""
         self.assertIn(
-            "m mados wheel", self.content,
+            "m mados wheel",
+            self.content,
             "mados must be added to wheel group",
         )
 
@@ -241,14 +253,16 @@ class TestSysusersConfig(unittest.TestCase):
         for group in ("video", "audio", "input"):
             with self.subTest(group=group):
                 self.assertIn(
-                    f"m mados {group}", self.content,
+                    f"m mados {group}",
+                    self.content,
                     f"mados must be added to {group} group",
                 )
 
     def test_mados_uses_zsh(self):
         """mados user should use /usr/bin/zsh as default shell."""
         self.assertIn(
-            "/usr/bin/zsh", self.content,
+            "/usr/bin/zsh",
+            self.content,
             "mados user must use zsh as default shell",
         )
 
@@ -268,7 +282,8 @@ class TestPasswdConfig(unittest.TestCase):
         """mados user must be defined in /etc/passwd."""
         mados_lines = [l for l in self.lines if l.startswith("mados:")]
         self.assertEqual(
-            len(mados_lines), 1,
+            len(mados_lines),
+            1,
             "Exactly one mados entry must exist in /etc/passwd",
         )
 
@@ -286,7 +301,8 @@ class TestPasswdConfig(unittest.TestCase):
             if line.startswith("mados:"):
                 fields = line.split(":")
                 self.assertEqual(
-                    fields[6], "/usr/bin/zsh",
+                    fields[6],
+                    "/usr/bin/zsh",
                     "mados shell must be /usr/bin/zsh in /etc/passwd",
                 )
 
@@ -313,7 +329,8 @@ class TestProfiledefPermissions(unittest.TestCase):
         for script in self.BOOT_SCRIPTS:
             with self.subTest(script=script):
                 self.assertIn(
-                    script, self.content,
+                    script,
+                    self.content,
                     f"profiledef.sh must include permissions for {script}",
                 )
 
@@ -322,11 +339,10 @@ class TestProfiledefPermissions(unittest.TestCase):
         for script in self.BOOT_SCRIPTS:
             with self.subTest(script=script):
                 # Find the line with the script and verify it has 755 permissions
-                pattern = re.compile(
-                    rf'\["/usr/local/bin/{re.escape(script)}"\]="0:0:755"'
-                )
+                pattern = re.compile(rf'\["/usr/local/bin/{re.escape(script)}"\]="0:0:755"')
                 self.assertRegex(
-                    self.content, pattern,
+                    self.content,
+                    pattern,
                     f"{script} must have 0:0:755 permissions in profiledef.sh",
                 )
 
@@ -360,10 +376,12 @@ class TestCustomizeAirootfs(unittest.TestCase):
         """customize_airootfs.sh must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 

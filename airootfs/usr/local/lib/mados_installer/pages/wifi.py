@@ -38,9 +38,7 @@ def _get_wifi_interfaces():
     if DEMO_MODE:
         return ["wlan0"]
     try:
-        result = subprocess.run(
-            ["iw", "dev"], capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["iw", "dev"], capture_output=True, text=True, timeout=5)
         interfaces = []
         for line in result.stdout.splitlines():
             line = line.strip()
@@ -114,9 +112,7 @@ def _scan_networks(interface):
 
     networks = []
     try:
-        subprocess.run(
-            ["iwctl", "station", interface, "scan"], capture_output=True, timeout=10
-        )
+        subprocess.run(["iwctl", "station", interface, "scan"], capture_output=True, timeout=10)
         time.sleep(3)
 
         result = subprocess.run(
@@ -128,11 +124,7 @@ def _scan_networks(interface):
 
         for line in result.stdout.splitlines():
             line_stripped = line.strip()
-            if (
-                not line_stripped
-                or "---" in line_stripped
-                or "Available" in line_stripped
-            ):
+            if not line_stripped or "---" in line_stripped or "Available" in line_stripped:
                 continue
             network = _parse_network_line(line_stripped)
             if network:
@@ -200,9 +192,7 @@ def create_wifi_page(app):
     app.wifi_listbox = Gtk.ListBox()
     app.wifi_listbox.set_selection_mode(Gtk.SelectionMode.SINGLE)
     app.wifi_listbox.get_style_context().add_class("wifi-listbox")
-    app.wifi_listbox.connect(
-        "row-selected", lambda lb, row: _on_network_selected(app, row)
-    )
+    app.wifi_listbox.connect("row-selected", lambda lb, row: _on_network_selected(app, row))
     net_scroll.add(app.wifi_listbox)
 
     net_card.pack_start(net_scroll, True, True, 0)
@@ -231,9 +221,7 @@ def create_wifi_page(app):
     # Show/hide password toggle
     show_pass_btn = Gtk.ToggleButton(label="👁")
     show_pass_btn.set_tooltip_text("Show/Hide password")
-    show_pass_btn.connect(
-        "toggled", lambda b: app.wifi_pass_entry.set_visibility(b.get_active())
-    )
+    show_pass_btn.connect("toggled", lambda b: app.wifi_pass_entry.set_visibility(b.get_active()))
     pass_row.pack_start(show_pass_btn, False, False, 0)
 
     app.wifi_pass_box.pack_start(pass_row, False, False, 0)
@@ -502,8 +490,7 @@ def _on_connect_result(app, success, ssid):
         )
     else:
         app.wifi_result_label.set_markup(
-            f'<span foreground="{NORD_AURORA["nord11"]}">'
-            f"✗ {app.t('wifi_failed')}</span>"
+            f'<span foreground="{NORD_AURORA["nord11"]}">✗ {app.t("wifi_failed")}</span>'
         )
     return False
 

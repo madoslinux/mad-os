@@ -19,6 +19,7 @@ import unittest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 # ---------------------------------------------------------------------------
@@ -123,9 +124,7 @@ class TestTimezones(unittest.TestCase):
             if tz == "UTC":
                 continue
             with self.subTest(timezone=tz):
-                self.assertIn(
-                    "/", tz, f"Timezone '{tz}' should have Region/City format"
-                )
+                self.assertIn("/", tz, f"Timezone '{tz}' should have Region/City format")
 
 
 class TestNordColors(unittest.TestCase):
@@ -215,9 +214,7 @@ class TestPackageLists(unittest.TestCase):
         pattern = re.compile(r"^[a-z0-9][a-z0-9._+-]*$")
         for pkg in PACKAGES:
             with self.subTest(package=pkg):
-                self.assertRegex(
-                    pkg, pattern, f"Package name '{pkg}' contains invalid characters"
-                )
+                self.assertRegex(pkg, pattern, f"Package name '{pkg}' contains invalid characters")
 
     def test_gtk_dependencies_in_phase1(self):
         """GTK dependencies needed for installer must be in Phase 1."""
@@ -275,9 +272,7 @@ class TestTranslations(unittest.TestCase):
             with self.subTest(lang=lang):
                 trans_keys = set(trans.keys())
                 missing = reference_keys - trans_keys
-                self.assertEqual(
-                    missing, set(), f"Language '{lang}' is missing keys: {missing}"
-                )
+                self.assertEqual(missing, set(), f"Language '{lang}' is missing keys: {missing}")
 
     def test_no_empty_translations(self):
         """No translation value should be an empty string."""
@@ -296,9 +291,7 @@ class TestTranslations(unittest.TestCase):
                 features = trans.get("features", [])
                 self.assertIsInstance(features, list)
                 for i, feat in enumerate(features):
-                    self.assertIsInstance(
-                        feat, str, f"Feature {i} in '{lang}' is not a string"
-                    )
+                    self.assertIsInstance(feat, str, f"Feature {i} in '{lang}' is not a string")
 
     def test_title_consistent(self):
         """Title should be 'madOS' in all languages."""
@@ -376,9 +369,7 @@ class TestRsyncConfig(unittest.TestCase):
     def test_rsync_excludes_not_empty(self):
         """RSYNC_EXCLUDES must be a non-empty list."""
         self.assertIsInstance(RSYNC_EXCLUDES, list)
-        self.assertGreater(
-            len(RSYNC_EXCLUDES), 0, "RSYNC_EXCLUDES must not be empty"
-        )
+        self.assertGreater(len(RSYNC_EXCLUDES), 0, "RSYNC_EXCLUDES must not be empty")
 
     def test_rsync_excludes_start_with_slash(self):
         """All RSYNC_EXCLUDES entries must start with '/'."""

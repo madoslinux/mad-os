@@ -52,12 +52,12 @@ class Track:
         Args:
             metadata: dict with optional 'title', 'artist', 'album' keys.
         """
-        if metadata.get('title'):
-            self.title = metadata['title']
-        if metadata.get('artist'):
-            self.artist = metadata['artist']
-        if metadata.get('album'):
-            self.album = metadata['album']
+        if metadata.get("title"):
+            self.title = metadata["title"]
+        if metadata.get("artist"):
+            self.artist = metadata["artist"]
+        if metadata.get("album"):
+            self.album = metadata["album"]
 
     def display_name(self):
         """Get a formatted display string for the track.
@@ -83,9 +83,7 @@ class Track:
             A Track instance populated from the row.
         """
         t = cls(row["filepath"], db_id=row["id"])
-        t.title = row["title"] or os.path.splitext(
-            os.path.basename(row["filepath"])
-        )[0]
+        t.title = row["title"] or os.path.splitext(os.path.basename(row["filepath"]))[0]
         t.artist = row["artist"] or ""
         t.album = row["album"] or ""
         t.duration = row["duration"] or 0.0
@@ -218,8 +216,12 @@ class Playlist:
         new_id = self._db.create_playlist(name)
         for track in self.tracks:
             self._db.add_track(
-                new_id, track.filepath, track.title,
-                track.artist, track.album, track.duration,
+                new_id,
+                track.filepath,
+                track.title,
+                track.artist,
+                track.album,
+                track.duration,
             )
         return True
 
@@ -242,7 +244,9 @@ class Playlist:
                 return None
         title = os.path.splitext(os.path.basename(filepath))[0]
         db_id = self._db.add_track(
-            self._playlist_id, filepath, title=title,
+            self._playlist_id,
+            filepath,
+            title=title,
         )
         track = Track(filepath, db_id=db_id)
         self.tracks.append(track)
@@ -276,6 +280,7 @@ class Playlist:
         """
         if audio_extensions is None:
             from .backend import MpvBackend
+
             audio_extensions = MpvBackend.AUDIO_EXTENSIONS
 
         added = 0

@@ -30,6 +30,7 @@ sys.path.insert(0, LIB_DIR)
 # Install GTK mocks so that importing mados_installer works headlessly
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 
@@ -39,11 +40,7 @@ class TestBluetoothPackages(unittest.TestCase):
     def _read_packages(self):
         pkg_file = os.path.join(REPO_DIR, "packages.x86_64")
         with open(pkg_file) as f:
-            return [
-                line.strip()
-                for line in f
-                if line.strip() and not line.strip().startswith("#")
-            ]
+            return [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
 
     def test_packages_has_bluez(self):
         """packages.x86_64 should include bluez."""
@@ -94,18 +91,14 @@ class TestBluetoothService(unittest.TestCase):
 
     def test_post_install_enables_bluetooth(self):
         """installation.py should enable bluetooth.service."""
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         with open(install_py) as f:
             content = f.read()
         self.assertIn("systemctl enable bluetooth", content)
 
     def test_phase1_enables_bluetooth(self):
         """installation.py Phase 1 essential services should enable bluetooth."""
-        install_py = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "installation.py"
-        )
+        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
         with open(install_py) as f:
             content = f.read()
         # bluetooth should be enabled alongside other essential services
@@ -184,16 +177,12 @@ class TestNetworkManagerService(unittest.TestCase):
 
     def test_wifi_backend_conf_exists(self):
         """NetworkManager wifi-backend.conf should exist for iwd backend."""
-        conf_path = os.path.join(
-            AIROOTFS, "etc", "NetworkManager", "conf.d", "wifi-backend.conf"
-        )
+        conf_path = os.path.join(AIROOTFS, "etc", "NetworkManager", "conf.d", "wifi-backend.conf")
         self.assertTrue(os.path.isfile(conf_path))
 
     def test_wifi_backend_conf_uses_iwd(self):
         """wifi-backend.conf should configure iwd as Wi-Fi backend."""
-        conf_path = os.path.join(
-            AIROOTFS, "etc", "NetworkManager", "conf.d", "wifi-backend.conf"
-        )
+        conf_path = os.path.join(AIROOTFS, "etc", "NetworkManager", "conf.d", "wifi-backend.conf")
         with open(conf_path) as f:
             content = f.read()
         self.assertIn("wifi.backend=iwd", content)
@@ -203,9 +192,7 @@ class TestSwayTrayApplets(unittest.TestCase):
     """Verify Sway config autostarts native WiFi and Bluetooth tray applets."""
 
     def _read_sway_config(self):
-        sway_config = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "sway", "config"
-        )
+        sway_config = os.path.join(AIROOTFS, "etc", "skel", ".config", "sway", "config")
         with open(sway_config) as f:
             return f.read()
 
@@ -234,9 +221,7 @@ class TestHyprlandTrayApplets(unittest.TestCase):
     """Verify Hyprland config autostarts native WiFi and Bluetooth tray applets."""
 
     def _read_hyprland_config(self):
-        hyprland_config = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "hypr", "hyprland.conf"
-        )
+        hyprland_config = os.path.join(AIROOTFS, "etc", "skel", ".config", "hypr", "hyprland.conf")
         with open(hyprland_config) as f:
             return f.read()
 
@@ -265,9 +250,7 @@ class TestWaybarConfig(unittest.TestCase):
     """Verify Waybar configuration uses native applets and tray."""
 
     def _read_waybar_config(self):
-        config_path = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "waybar", "config"
-        )
+        config_path = os.path.join(AIROOTFS, "etc", "skel", ".config", "waybar", "config")
         with open(config_path) as f:
             return json.load(f)
 
@@ -299,18 +282,14 @@ class TestWaybarConfig(unittest.TestCase):
 
     def test_waybar_no_mados_wifi_reference(self):
         """Waybar config should not reference mados-wifi."""
-        config_path = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "waybar", "config"
-        )
+        config_path = os.path.join(AIROOTFS, "etc", "skel", ".config", "waybar", "config")
         with open(config_path) as f:
             content = f.read()
         self.assertNotIn("mados-wifi", content)
 
     def test_waybar_no_mados_bluetooth_reference(self):
         """Waybar config should not reference mados-bluetooth."""
-        config_path = os.path.join(
-            AIROOTFS, "etc", "skel", ".config", "waybar", "config"
-        )
+        config_path = os.path.join(AIROOTFS, "etc", "skel", ".config", "waybar", "config")
         with open(config_path) as f:
             content = f.read()
         self.assertNotIn("mados-bluetooth", content)
@@ -394,34 +373,26 @@ class TestUdevWirelessRules(unittest.TestCase):
 
     def test_udev_rules_file_exists(self):
         """90-mados-wireless.rules should exist."""
-        rules_path = os.path.join(
-            AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules"
-        )
+        rules_path = os.path.join(AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules")
         self.assertTrue(os.path.isfile(rules_path))
 
     def test_udev_rules_has_rfkill_unblock_wifi(self):
         """udev rules should unblock WiFi via rfkill."""
-        rules_path = os.path.join(
-            AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules"
-        )
+        rules_path = os.path.join(AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules")
         with open(rules_path) as f:
             content = f.read()
         self.assertIn("rfkill unblock wifi", content)
 
     def test_udev_rules_has_rfkill_unblock_bluetooth(self):
         """udev rules should unblock Bluetooth via rfkill."""
-        rules_path = os.path.join(
-            AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules"
-        )
+        rules_path = os.path.join(AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules")
         with open(rules_path) as f:
             content = f.read()
         self.assertIn("rfkill unblock bluetooth", content)
 
     def test_udev_rules_starts_bluetooth_service(self):
         """udev rules should start bluetooth.service on hardware detection."""
-        rules_path = os.path.join(
-            AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules"
-        )
+        rules_path = os.path.join(AIROOTFS, "etc", "udev", "rules.d", "90-mados-wireless.rules")
         with open(rules_path) as f:
             content = f.read()
         self.assertIn(

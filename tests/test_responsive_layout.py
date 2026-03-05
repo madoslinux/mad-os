@@ -19,6 +19,7 @@ LIB_DIR = os.path.join(AIROOTFS, "usr", "local", "lib")
 # Mock gi/GTK modules (must be done before any GTK imports)
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 
@@ -28,9 +29,7 @@ class TestInstallerResponsiveLayout(unittest.TestCase):
     def test_user_page_no_fixed_width(self):
         """User page should not use fixed-width set_size_request."""
         user_page_path = os.path.join(LIB_DIR, "mados_installer", "pages", "user.py")
-        self.assertTrue(
-            os.path.exists(user_page_path), f"User page not found at {user_page_path}"
-        )
+        self.assertTrue(os.path.exists(user_page_path), f"User page not found at {user_page_path}")
 
         with open(user_page_path, "r") as f:
             content = f.read()
@@ -55,9 +54,7 @@ class TestInstallerResponsiveLayout(unittest.TestCase):
             content = f.read()
 
         # Should use set_hexpand(True)
-        self.assertIn(
-            "set_hexpand(True)", content, "User page should use set_hexpand(True)"
-        )
+        self.assertIn("set_hexpand(True)", content, "User page should use set_hexpand(True)")
 
     def test_user_page_uses_fill_alignment(self):
         """User page should use Gtk.Align.FILL instead of CENTER."""
@@ -75,9 +72,7 @@ class TestInstallerResponsiveLayout(unittest.TestCase):
 
     def test_locale_page_no_fixed_width(self):
         """Locale page should not use fixed-width set_size_request."""
-        locale_page_path = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "locale.py"
-        )
+        locale_page_path = os.path.join(LIB_DIR, "mados_installer", "pages", "locale.py")
         self.assertTrue(
             os.path.exists(locale_page_path),
             f"Locale page not found at {locale_page_path}",
@@ -100,23 +95,17 @@ class TestInstallerResponsiveLayout(unittest.TestCase):
 
     def test_locale_page_uses_hexpand(self):
         """Locale page should use set_hexpand(True) for responsive layout."""
-        locale_page_path = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "locale.py"
-        )
+        locale_page_path = os.path.join(LIB_DIR, "mados_installer", "pages", "locale.py")
 
         with open(locale_page_path, "r") as f:
             content = f.read()
 
         # Should use set_hexpand(True)
-        self.assertIn(
-            "set_hexpand(True)", content, "Locale page should use set_hexpand(True)"
-        )
+        self.assertIn("set_hexpand(True)", content, "Locale page should use set_hexpand(True)")
 
     def test_completion_page_no_fixed_width(self):
         """Completion page should not use fixed-width set_size_request."""
-        completion_page_path = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "completion.py"
-        )
+        completion_page_path = os.path.join(LIB_DIR, "mados_installer", "pages", "completion.py")
         self.assertTrue(
             os.path.exists(completion_page_path),
             f"Completion page not found at {completion_page_path}",
@@ -144,23 +133,17 @@ class TestInstallerResponsiveLayout(unittest.TestCase):
 
     def test_completion_page_uses_hexpand(self):
         """Completion page should use set_hexpand(True) for responsive layout."""
-        completion_page_path = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "completion.py"
-        )
+        completion_page_path = os.path.join(LIB_DIR, "mados_installer", "pages", "completion.py")
 
         with open(completion_page_path, "r") as f:
             content = f.read()
 
         # Should use set_hexpand(True)
-        self.assertIn(
-            "set_hexpand(True)", content, "Completion page should use set_hexpand(True)"
-        )
+        self.assertIn("set_hexpand(True)", content, "Completion page should use set_hexpand(True)")
 
     def test_welcome_page_uses_flowbox(self):
         """Welcome page should use FlowBox for features instead of horizontal Box."""
-        welcome_page_path = os.path.join(
-            LIB_DIR, "mados_installer", "pages", "welcome.py"
-        )
+        welcome_page_path = os.path.join(LIB_DIR, "mados_installer", "pages", "welcome.py")
         self.assertTrue(
             os.path.exists(welcome_page_path),
             f"Welcome page not found at {welcome_page_path}",
@@ -262,9 +245,7 @@ class TestEqualizerResponsiveLayout(unittest.TestCase):
         # Look for volume_box directly followed by set_size_request (within 300 chars)
         # This pattern matches "volume_box = Gtk.Box..." then "volume_box.set_size_request"
         # Limited search range to avoid performance issues and false matches
-        volume_box_pattern = (
-            r"volume_box\s*=.{0,300}?volume_box\.set_size_request\s*\(\s*(\d+)\s*,"
-        )
+        volume_box_pattern = r"volume_box\s*=.{0,300}?volume_box\.set_size_request\s*\(\s*(\d+)\s*,"
         matches = re.findall(volume_box_pattern, content, re.DOTALL)
 
         # Should find at least one volume_box size request
@@ -272,9 +253,7 @@ class TestEqualizerResponsiveLayout(unittest.TestCase):
 
         for width_str in matches:
             width = int(width_str)
-            self.assertLessEqual(
-                width, 60, f"Volume box should use width 60 or less, not {width}"
-            )
+            self.assertLessEqual(width, 60, f"Volume box should use width 60 or less, not {width}")
 
 
 class TestPhotoViewerResponsiveLayout(unittest.TestCase):
@@ -298,9 +277,7 @@ class TestPhotoViewerResponsiveLayout(unittest.TestCase):
 
         for match in size_matches:
             width = int(match)
-            self.assertLessEqual(
-                width, 80, f"Size scale width should be 80 or less, not {width}"
-            )
+            self.assertLessEqual(width, 80, f"Size scale width should be 80 or less, not {width}")
 
     def test_photo_viewer_uses_icon_toolbar(self):
         """Photo viewer should use a single Gtk.Toolbar with icon style."""
@@ -337,9 +314,7 @@ class TestPhotoViewerResponsiveLayout(unittest.TestCase):
 
     def test_video_player_smaller_minimum_size(self):
         """Video player should use smaller minimum size 320x180 instead of 640x360."""
-        video_player_path = os.path.join(
-            LIB_DIR, "mados_photo_viewer", "video_player.py"
-        )
+        video_player_path = os.path.join(LIB_DIR, "mados_photo_viewer", "video_player.py")
         self.assertTrue(
             os.path.exists(video_player_path),
             f"Video player not found at {video_player_path}",
@@ -364,9 +339,7 @@ class TestPhotoViewerResponsiveLayout(unittest.TestCase):
 
     def test_video_player_volume_smaller(self):
         """Video player volume should use width 80 instead of 100."""
-        video_player_path = os.path.join(
-            LIB_DIR, "mados_photo_viewer", "video_player.py"
-        )
+        video_player_path = os.path.join(LIB_DIR, "mados_photo_viewer", "video_player.py")
 
         with open(video_player_path, "r") as f:
             content = f.read()

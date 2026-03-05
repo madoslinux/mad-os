@@ -1,6 +1,7 @@
 """Nord-themed CSS for the madOS Launcher dock."""
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 
@@ -24,21 +25,21 @@ THEME_CSS = f"""
 }}
 
 #dock-bg {{
-    background-color: {NORD['nord0']};
+    background-color: {NORD["nord0"]};
     border-radius: 0 8px 8px 0;
     border-left: none;
-    border-top: 1px solid {NORD['nord3']};
-    border-right: 1px solid {NORD['nord3']};
-    border-bottom: 1px solid {NORD['nord3']};
+    border-top: 1px solid {NORD["nord3"]};
+    border-right: 1px solid {NORD["nord3"]};
+    border-bottom: 1px solid {NORD["nord3"]};
 }}
 
 #icons-bg {{
-    background-color: {NORD['nord0']};
+    background-color: {NORD["nord0"]};
 }}
 
 /* ===== Grip Tab ===== */
 #grip-tab {{
-    background-color: {NORD['nord1']};
+    background-color: {NORD["nord1"]};
     border-radius: 0 7px 7px 0;
     min-width: 14px;
     padding: 0;
@@ -46,19 +47,19 @@ THEME_CSS = f"""
 }}
 
 #grip-tab:hover {{
-    background-color: {NORD['nord2']};
+    background-color: {NORD["nord2"]};
 }}
 
 /* ===== Left Grip ===== */
 #left-grip {{
-    background-color: {NORD['nord1']};
+    background-color: {NORD["nord1"]};
     min-width: 14px;
     padding: 0;
     transition: background-color 200ms ease;
 }}
 
 #left-grip:hover {{
-    background-color: {NORD['nord2']};
+    background-color: {NORD["nord2"]};
 }}
 
 /* ===== Icons Scroll Area ===== */
@@ -68,19 +69,19 @@ THEME_CSS = f"""
 }}
 
 #icons-scroll scrollbar {{
-    background-color: {NORD['nord0']};
+    background-color: {NORD["nord0"]};
     min-height: 4px;
 }}
 
 #icons-scroll scrollbar slider {{
-    background-color: {NORD['nord3']};
+    background-color: {NORD["nord3"]};
     border-radius: 2px;
     min-height: 4px;
     min-width: 20px;
 }}
 
 #icons-scroll scrollbar slider:hover {{
-    background-color: {NORD['nord9']};
+    background-color: {NORD["nord9"]};
 }}
 
 /* ===== Icons Container ===== */
@@ -99,12 +100,12 @@ THEME_CSS = f"""
 }}
 
 .launcher-icon:hover {{
-    background-color: {NORD['nord2']};
+    background-color: {NORD["nord2"]};
     box-shadow: 0 0 4px rgba(136, 192, 208, 0.3);
 }}
 
 .launcher-icon:active {{
-    background-color: {NORD['nord3']};
+    background-color: {NORD["nord3"]};
 }}
 
 /* ===== Running App Indicator ===== */
@@ -134,74 +135,74 @@ THEME_CSS = f"""
 
 /* ===== Tooltip Styling ===== */
 tooltip {{
-    background-color: {NORD['nord1']};
-    border: 1px solid {NORD['nord3']};
+    background-color: {NORD["nord1"]};
+    border: 1px solid {NORD["nord3"]};
     border-radius: 4px;
     padding: 2px 4px;
 }}
 
 tooltip label {{
-    color: {NORD['nord6']};
+    color: {NORD["nord6"]};
     font-size: 10px;
     font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
 }}
 
 /* ===== Separator ===== */
 #dock-separator {{
-    background-color: {NORD['nord3']};
+    background-color: {NORD["nord3"]};
     min-width: 1px;
     margin: 8px 0;
 }}
 
 /* ===== Group Icon Badge ===== */
 .launcher-group {{
-    border-bottom: 2px solid {NORD['nord9']};
+    border-bottom: 2px solid {NORD["nord9"]};
 }}
 
 /* ===== Popup Menu (group submenu via Popover) ===== */
 .launcher-popup {{
-    background-color: {NORD['nord0']};
-    border: 1px solid {NORD['nord3']};
+    background-color: {NORD["nord0"]};
+    border: 1px solid {NORD["nord3"]};
     border-radius: 6px;
     padding: 4px;
 }}
 
 /* Override popover's default background/arrow */
 popover.background.launcher-popup {{
-    background-color: {NORD['nord0']};
-    border: 1px solid {NORD['nord3']};
+    background-color: {NORD["nord0"]};
+    border: 1px solid {NORD["nord3"]};
 }}
 
 popover.background.launcher-popup > contents {{
-    background-color: {NORD['nord0']};
+    background-color: {NORD["nord0"]};
     border-radius: 6px;
     padding: 2px;
 }}
 
 .popup-row {{
     background-color: transparent;
-    color: {NORD['nord4']};
+    color: {NORD["nord4"]};
     padding: 4px 8px;
     border-radius: 4px;
     transition: background-color 150ms ease;
 }}
 
 .popup-row:hover {{
-    background-color: {NORD['nord2']};
+    background-color: {NORD["nord2"]};
 }}
 
 .popup-row label {{
-    color: {NORD['nord4']};
+    color: {NORD["nord4"]};
     font-size: 10px;
     font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
 }}
 
 .popup-row:hover label {{
-    color: {NORD['nord6']};
+    color: {NORD["nord6"]};
 }}
 
 .running-dot {{
-    color: {NORD['nord8']};
+    color: {NORD["nord8"]};
     font-size: 10px;
 }}
 """

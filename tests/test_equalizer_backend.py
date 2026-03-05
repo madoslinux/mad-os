@@ -22,6 +22,7 @@ from unittest.mock import patch, MagicMock, mock_open
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 # ---------------------------------------------------------------------------
@@ -493,7 +494,9 @@ class TestApplyEq(unittest.TestCase):
     @patch("mados_equalizer.backend.AudioBackend._set_default_sink_to_eq")
     @patch("mados_equalizer.backend.AudioBackend._write_config")
     @patch("mados_equalizer.backend.AudioBackend._start_eq_process")
-    def test_apply_eq_succeeds_even_if_set_default_fails(self, mock_start, mock_write, mock_set_sink):
+    def test_apply_eq_succeeds_even_if_set_default_fails(
+        self, mock_start, mock_write, mock_set_sink
+    ):
         """apply_eq should succeed even if setting default sink fails (warning only)."""
         self.backend.enabled = True
         self.backend.has_pipewire = True
@@ -552,7 +555,7 @@ class TestDefaultSinkRouting(unittest.TestCase):
         mock_run.return_value = (
             0,
             "id 42, type PipeWire:Interface:Node/3\n"
-            "  node.name = \"alsa_output.pci-0000_00_1b.0.analog-stereo\"\n",
+            '  node.name = "alsa_output.pci-0000_00_1b.0.analog-stereo"\n',
             "",
         )
 
@@ -589,9 +592,7 @@ class TestDefaultSinkRouting(unittest.TestCase):
         result = self.backend._set_default_sink_to_eq()
 
         self.assertTrue(result)
-        mock_run.assert_called_once_with(
-            ["wpctl", "set-default", "99"]
-        )
+        mock_run.assert_called_once_with(["wpctl", "set-default", "99"])
 
     @patch("mados_equalizer.backend.AudioBackend._find_eq_sink_node_id")
     def test_set_default_sink_to_eq_returns_false_when_not_found(self, mock_find):
@@ -616,11 +617,11 @@ class TestDefaultSinkRouting(unittest.TestCase):
         """_find_eq_sink_node_id should find the mados-eq-capture node."""
         self.backend.has_pipewire = True
         pw_output = (
-            'id 10, type PipeWire:Interface:Node/3\n'
+            "id 10, type PipeWire:Interface:Node/3\n"
             '\tnode.name = "alsa_output.pci-0000_00_1b.0.analog-stereo"\n'
-            'id 42, type PipeWire:Interface:Node/3\n'
+            "id 42, type PipeWire:Interface:Node/3\n"
             '\tnode.name = "mados-eq-capture"\n'
-            'id 43, type PipeWire:Interface:Node/3\n'
+            "id 43, type PipeWire:Interface:Node/3\n"
             '\tnode.name = "mados-eq-playback"\n'
         )
         mock_run.return_value = (0, pw_output, "")
@@ -634,7 +635,7 @@ class TestDefaultSinkRouting(unittest.TestCase):
         """_find_eq_sink_node_id should return None if EQ node not present."""
         self.backend.has_pipewire = True
         pw_output = (
-            'id 10, type PipeWire:Interface:Node/3\n'
+            "id 10, type PipeWire:Interface:Node/3\n"
             '\tnode.name = "alsa_output.pci-0000_00_1b.0.analog-stereo"\n'
         )
         mock_run.return_value = (0, pw_output, "")
@@ -660,9 +661,7 @@ class TestDefaultSinkRouting(unittest.TestCase):
 
         self.backend._restore_default_sink()
 
-        mock_run.assert_called_once_with(
-            ["wpctl", "set-default", "42"]
-        )
+        mock_run.assert_called_once_with(["wpctl", "set-default", "42"])
         self.assertIsNone(self.backend._original_default_sink_id)
 
     def test_restore_default_sink_noop_when_no_saved_id(self):

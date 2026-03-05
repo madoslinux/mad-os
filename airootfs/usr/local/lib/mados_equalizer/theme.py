@@ -14,36 +14,37 @@ Nord Palette Reference:
 """
 
 import gi
-gi.require_version('Gtk', '3.0')
+
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk
 
 # Nord Color Palette
 NORD_POLAR_NIGHT = {
-    'nord0': '#2E3440',
-    'nord1': '#3B4252',
-    'nord2': '#434C5E',
-    'nord3': '#4C566A',
+    "nord0": "#2E3440",
+    "nord1": "#3B4252",
+    "nord2": "#434C5E",
+    "nord3": "#4C566A",
 }
 
 NORD_SNOW_STORM = {
-    'nord4': '#D8DEE9',
-    'nord5': '#E5E9F0',
-    'nord6': '#ECEFF4',
+    "nord4": "#D8DEE9",
+    "nord5": "#E5E9F0",
+    "nord6": "#ECEFF4",
 }
 
 NORD_FROST = {
-    'nord7': '#8FBCBB',
-    'nord8': '#88C0D0',
-    'nord9': '#81A1C1',
-    'nord10': '#5E81AC',
+    "nord7": "#8FBCBB",
+    "nord8": "#88C0D0",
+    "nord9": "#81A1C1",
+    "nord10": "#5E81AC",
 }
 
 NORD_AURORA = {
-    'nord11': '#BF616A',
-    'nord12': '#D08770',
-    'nord13': '#EBCB8B',
-    'nord14': '#A3BE8C',
-    'nord15': '#B48EAD',
+    "nord11": "#BF616A",
+    "nord12": "#D08770",
+    "nord13": "#EBCB8B",
+    "nord14": "#A3BE8C",
+    "nord15": "#B48EAD",
 }
 
 # Convenience flat dictionary with all colors
@@ -458,7 +459,7 @@ def apply_theme():
     """
     try:
         css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(THEME_CSS.encode('utf-8'))
+        css_provider.load_from_data(THEME_CSS.encode("utf-8"))
 
         screen = Gdk.Screen.get_default()
         if screen is None:
@@ -467,9 +468,7 @@ def apply_theme():
 
         style_context = Gtk.StyleContext()
         style_context.add_provider_for_screen(
-            screen,
-            css_provider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+            screen, css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
         return True
     except Exception as e:
@@ -493,7 +492,7 @@ def get_gain_color(gain_db):
 
     if abs(gain_db) < 0.1:
         # Zero / near-zero: gray
-        color.parse('#4C566A')
+        color.parse("#4C566A")
     elif gain_db > 0:
         # Positive: interpolate from green to yellow based on intensity
         ratio = min(gain_db / 12.0, 1.0)
@@ -532,16 +531,16 @@ def get_gain_color_hex(gain_db):
         A hex color string (e.g., '#A3BE8C').
     """
     if abs(gain_db) < 0.1:
-        return '#4C566A'
+        return "#4C566A"
     elif gain_db > 0:
         ratio = min(gain_db / 12.0, 1.0)
         r = int(163 + (235 - 163) * ratio)
         g = int(190 + (203 - 190) * ratio)
         b = int(140 + (139 - 140) * ratio)
-        return f'#{r:02X}{g:02X}{b:02X}'
+        return f"#{r:02X}{g:02X}{b:02X}"
     else:
         ratio = min(abs(gain_db) / 12.0, 1.0)
         r = int(94 + (129 - 94) * (1.0 - ratio))
         g = int(129 + (161 - 129) * (1.0 - ratio))
         b = int(172 + (193 - 172) * (1.0 - ratio))
-        return f'#{r:02X}{g:02X}{b:02X}'
+        return f"#{r:02X}{g:02X}{b:02X}"

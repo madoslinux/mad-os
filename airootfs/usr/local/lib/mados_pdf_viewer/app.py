@@ -135,9 +135,7 @@ class PDFViewerApp:
         self._add_tool_button(toolbar, "document-save", "save", self._on_save)
         self._add_tool_button(toolbar, "document-save-as", "save_as", self._on_save_as)
         self._add_tool_button(toolbar, "document-print", "print_doc", self._on_print)
-        self._add_tool_button(
-            toolbar, "image-x-generic", "export_images", self._on_export_images
-        )
+        self._add_tool_button(toolbar, "image-x-generic", "export_images", self._on_export_images)
 
         toolbar.insert(Gtk.SeparatorToolItem(), -1)
 
@@ -174,9 +172,7 @@ class PDFViewerApp:
         self._add_tool_button(toolbar, "zoom-out", "zoom_out", self._on_zoom_out)
         self._add_tool_button(toolbar, "zoom-in", "zoom_in", self._on_zoom_in)
         self._add_tool_button(toolbar, "zoom-fit-best", "fit_page", self._on_fit_page)
-        self._add_tool_button(
-            toolbar, "zoom-original", "actual_size", self._on_actual_size
-        )
+        self._add_tool_button(toolbar, "zoom-original", "actual_size", self._on_actual_size)
 
         # Zoom label
         ti_zoom = Gtk.ToolItem()
@@ -190,9 +186,7 @@ class PDFViewerApp:
         toolbar.insert(Gtk.SeparatorToolItem(), -1)
 
         # ── Annotations ───────────────────────────────────────────────────
-        self._add_tool_button(
-            toolbar, "format-text-bold", "add_text", self._on_add_text_mode
-        )
+        self._add_tool_button(toolbar, "format-text-bold", "add_text", self._on_add_text_mode)
         self._add_tool_button(
             toolbar, "edit-clear", "clear_annotations", self._on_clear_annotations
         )
@@ -200,9 +194,7 @@ class PDFViewerApp:
         toolbar.insert(Gtk.SeparatorToolItem(), -1)
 
         # ── Signature ─────────────────────────────────────────────────────
-        self._add_tool_button(
-            toolbar, "document-edit", "draw_signature", self._on_draw_signature
-        )
+        self._add_tool_button(toolbar, "document-edit", "draw_signature", self._on_draw_signature)
         self._add_tool_button(
             toolbar, "insert-image", "place_signature", self._on_place_signature_mode
         )
@@ -212,9 +204,7 @@ class PDFViewerApp:
         # ── Form fields ───────────────────────────────────────────────────
         self.highlight_fields_btn = Gtk.ToggleToolButton()
         self.highlight_fields_btn.set_icon_name("edit-find")
-        self.highlight_fields_btn.set_tooltip_text(
-            get_text("highlight_fields", self.lang)
-        )
+        self.highlight_fields_btn.set_tooltip_text(get_text("highlight_fields", self.lang))
         self.highlight_fields_btn.connect("toggled", self._on_toggle_highlight_fields)
         toolbar.insert(self.highlight_fields_btn, -1)
 
@@ -225,9 +215,7 @@ class PDFViewerApp:
         toolbar.insert(Gtk.SeparatorToolItem(), -1)
 
         # ── Fit Width button ──────────────────────────────────────────────
-        self._add_tool_button(
-            toolbar, "view-fullscreen", "fit_width", self._on_fit_width
-        )
+        self._add_tool_button(toolbar, "view-fullscreen", "fit_width", self._on_fit_width)
 
     def _build_canvas(self):
         """Create the scrollable PDF drawing canvas."""
@@ -487,9 +475,7 @@ class PDFViewerApp:
 
         if chooser.run() == Gtk.ResponseType.OK:
             folder = chooser.get_filename()
-            base_name = os.path.splitext(
-                os.path.basename(self.pdf_doc.filepath or "page")
-            )[0]
+            base_name = os.path.splitext(os.path.basename(self.pdf_doc.filepath or "page"))[0]
             for i in range(self.pdf_doc.n_pages):
                 path = os.path.join(folder, f"{base_name}_page_{i + 1:04d}.png")
                 self.renderer.export_page_as_image(i, scale=2.0, filepath=path)
@@ -541,9 +527,7 @@ class PDFViewerApp:
             return
 
         self.page_entry.set_text(str(self.current_page + 1))
-        self.page_label.set_text(
-            f" {get_text('of_pages', self.lang)} {self.pdf_doc.n_pages}"
-        )
+        self.page_label.set_text(f" {get_text('of_pages', self.lang)} {self.pdf_doc.n_pages}")
 
     def _scroll_to_page(self, page_index):
         """Scroll the view so that the given page is visible."""
@@ -698,9 +682,7 @@ class PDFViewerApp:
             ctx.fill()
 
             ctx.set_source_rgb(*hex_to_rgb_float("#4C566A"))
-            ctx.select_font_face(
-                "Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL
-            )
+            ctx.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             ctx.set_font_size(16)
             text = get_text("no_file", self.lang)
             extents = ctx.text_extents(text)
@@ -1057,9 +1039,7 @@ class PDFViewerApp:
             self._update_status(f"{get_text('draw_signature', self.lang)} first.")
             return
         self.mode = InteractionMode.PLACE_SIGNATURE
-        self._update_status(
-            f"{get_text('place_signature', self.lang)}: Click on the page."
-        )
+        self._update_status(f"{get_text('place_signature', self.lang)}: Click on the page.")
 
     def _place_signature(self, page_idx, lx, ly):
         """Place the pending signature surface at the clicked location."""

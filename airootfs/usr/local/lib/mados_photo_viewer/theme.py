@@ -54,11 +54,11 @@ NORD.update(NORD_SNOW_STORM)
 NORD.update(NORD_FROST)
 NORD.update(NORD_AURORA)
 
-_CSS_END_COLOR = ';\n    color: '
-_CSS_END_COLOR_CLOSE = ');\n    color: '
-_CSS_END_BORDER = ';\n    border: 1px solid '
-_CSS_END_BORDER_COLOR = ';\n    border-color: '
-_CSS_END_BORDER_COLOR_CLOSE = ');\n    border-color: '
+_CSS_END_COLOR = ";\n    color: "
+_CSS_END_COLOR_CLOSE = ");\n    color: "
+_CSS_END_BORDER = ";\n    border: 1px solid "
+_CSS_END_BORDER_COLOR = ";\n    border-color: "
+_CSS_END_BORDER_COLOR_CLOSE = ");\n    border-color: "
 
 NORD_CSS = (
     """

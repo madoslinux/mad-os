@@ -21,6 +21,7 @@ import unittest
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 # ---------------------------------------------------------------------------
@@ -393,20 +394,27 @@ class TestDatabaseModuleStructure(unittest.TestCase):
 
     def test_module_has_default_db_path(self):
         from mados_equalizer import database
+
         self.assertTrue(hasattr(database, "DEFAULT_DB_PATH"))
 
     def test_module_has_default_db_dir(self):
         from mados_equalizer import database
+
         self.assertTrue(hasattr(database, "DEFAULT_DB_DIR"))
 
     def test_class_has_public_api(self):
         """EqualizerStateDB must expose the required public methods."""
         required = [
-            "save_gains", "load_gains",
-            "save_enabled", "load_enabled",
-            "save_preset", "load_preset",
-            "save_language", "load_language",
-            "save_state", "load_state",
+            "save_gains",
+            "load_gains",
+            "save_enabled",
+            "load_enabled",
+            "save_preset",
+            "load_preset",
+            "save_language",
+            "load_language",
+            "save_state",
+            "load_state",
             "close",
         ]
         for method_name in required:
@@ -419,6 +427,7 @@ class TestDatabaseModuleStructure(unittest.TestCase):
         """Database module must use sqlite3."""
         import inspect
         from mados_equalizer import database
+
         source = inspect.getsource(database)
         self.assertIn("sqlite3", source)
 

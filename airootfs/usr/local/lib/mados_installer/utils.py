@@ -14,15 +14,17 @@ from .config import NORD_FROST
 
 def random_suffix(length=4):
     """Generate random hostname suffix"""
-    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+    return "".join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
 def load_logo(size=160):
     """Load logo from multiple possible paths, returns Gtk.Image or None"""
     logo_paths = [
-        '/usr/share/pixmaps/mados-logo.png',
-        'airootfs/usr/share/pixmaps/mados-logo.png',
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../share/pixmaps/mados-logo.png')
+        "/usr/share/pixmaps/mados-logo.png",
+        "airootfs/usr/share/pixmaps/mados-logo.png",
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "../../share/pixmaps/mados-logo.png"
+        ),
     ]
     for logo_path in logo_paths:
         try:
@@ -77,7 +79,7 @@ def show_error(parent, title, message):
         flags=0,
         message_type=Gtk.MessageType.ERROR,
         buttons=Gtk.ButtonsType.OK,
-        text=title
+        text=title,
     )
     dialog.format_secondary_text(message)
     style_dialog(dialog)
@@ -88,8 +90,11 @@ def show_error(parent, title, message):
 def style_dialog(dialog):
     """Apply dark theme to a dialog"""
     dialog.get_content_area().foreach(
-        lambda w: w.get_style_context().add_class('dialog-content')
-        if hasattr(w, 'get_style_context') else None
+        lambda w: (
+            w.get_style_context().add_class("dialog-content")
+            if hasattr(w, "get_style_context")
+            else None
+        )
     )
 
 
@@ -102,7 +107,7 @@ def _log_idle(app, message):
     """Idle callback for logging"""
     app.log_buffer.insert_at_cursor(message + "\n")
     # Auto-scroll log viewer to the bottom using the built-in insert mark
-    if hasattr(app, 'log_scrolled'):
+    if hasattr(app, "log_scrolled"):
         text_view = app.log_scrolled.get_child()
         if text_view:
             insert_mark = app.log_buffer.get_insert()

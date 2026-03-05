@@ -13,13 +13,13 @@ from .installation import create_installation_page
 from .completion import create_completion_page
 
 __all__ = [
-    'create_welcome_page',
-    'create_wifi_page',
-    'create_disk_page',
-    'create_partitioning_page',
-    'create_user_page',
-    'create_locale_page',
-    'create_summary_page',
-    'create_installation_page',
-    'create_completion_page',
+    "create_welcome_page",
+    "create_wifi_page",
+    "create_disk_page",
+    "create_partitioning_page",
+    "create_user_page",
+    "create_locale_page",
+    "create_summary_page",
+    "create_installation_page",
+    "create_completion_page",
 ]

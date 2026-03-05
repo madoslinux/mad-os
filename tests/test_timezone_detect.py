@@ -40,10 +40,12 @@ class TestTimezoneDetectScript(unittest.TestCase):
         """Script must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.SCRIPT],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
@@ -59,7 +61,8 @@ class TestTimezoneDetectScript(unittest.TestCase):
         with open(self.SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "set -euo pipefail", content,
+            "set -euo pipefail",
+            content,
             "Must use strict mode (set -euo pipefail)",
         )
 
@@ -129,9 +132,7 @@ class TestTimezoneService(unittest.TestCase):
     """Validate mados-timezone.service systemd unit."""
 
     SERVICE = os.path.join(SYSTEMD_DIR, "mados-timezone.service")
-    WANTS_LINK = os.path.join(
-        SYSTEMD_DIR, "multi-user.target.wants", "mados-timezone.service"
-    )
+    WANTS_LINK = os.path.join(SYSTEMD_DIR, "multi-user.target.wants", "mados-timezone.service")
 
     def test_service_file_exists(self):
         """Systemd service file must exist."""
@@ -152,7 +153,8 @@ class TestTimezoneService(unittest.TestCase):
         with open(self.SERVICE) as f:
             content = f.read()
         self.assertIn(
-            "ExecStart=/usr/local/bin/mados-timezone-detect.sh", content,
+            "ExecStart=/usr/local/bin/mados-timezone-detect.sh",
+            content,
         )
 
     def test_service_is_oneshot(self):
@@ -185,7 +187,8 @@ class TestTimezoneProfiledef(unittest.TestCase):
         with open(PROFILEDEF) as f:
             content = f.read()
         self.assertIn(
-            "mados-timezone-detect.sh", content,
+            "mados-timezone-detect.sh",
+            content,
             "mados-timezone-detect.sh must be listed in profiledef.sh",
         )
 
@@ -193,9 +196,7 @@ class TestTimezoneProfiledef(unittest.TestCase):
         """Script must be set as executable (755) in profiledef.sh."""
         with open(PROFILEDEF) as f:
             content = f.read()
-        match = re.search(
-            r'mados-timezone-detect\.sh.*"0:0:755"', content
-        )
+        match = re.search(r'mados-timezone-detect\.sh.*"0:0:755"', content)
         self.assertIsNotNone(
             match,
             "mados-timezone-detect.sh must have 0:0:755 permissions",

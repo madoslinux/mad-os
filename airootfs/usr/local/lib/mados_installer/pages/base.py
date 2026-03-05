@@ -32,25 +32,17 @@ def create_page_header(app, title, step_num, total_steps=7):
                 f'<span foreground="{NORD_FROST["nord8"]}" size="9000" weight="bold"> ● </span>'
             )
         elif i < step_num:
-            dot.set_markup(
-                f'<span foreground="{NORD_AURORA["nord14"]}" size="9000"> ● </span>'
-            )
+            dot.set_markup(f'<span foreground="{NORD_AURORA["nord14"]}" size="9000"> ● </span>')
         else:
-            dot.set_markup(
-                f'<span foreground="{NORD_POLAR_NIGHT["nord3"]}" size="9000"> ● </span>'
-            )
+            dot.set_markup(f'<span foreground="{NORD_POLAR_NIGHT["nord3"]}" size="9000"> ● </span>')
         steps_box.pack_start(dot, False, False, 0)
 
         if i < total_steps:
             line = Gtk.Label()
             if i < step_num:
-                line.set_markup(
-                    f'<span foreground="{NORD_AURORA["nord14"]}"> ── </span>'
-                )
+                line.set_markup(f'<span foreground="{NORD_AURORA["nord14"]}"> ── </span>')
             else:
-                line.set_markup(
-                    f'<span foreground="{NORD_POLAR_NIGHT["nord3"]}"> ── </span>'
-                )
+                line.set_markup(f'<span foreground="{NORD_POLAR_NIGHT["nord3"]}"> ── </span>')
             steps_box.pack_start(line, False, False, 0)
 
     header.pack_start(steps_box, False, False, 0)

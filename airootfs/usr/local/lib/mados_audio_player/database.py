@@ -116,9 +116,7 @@ class PlaylistDB:
                 )
                 return cur.lastrowid
         except sqlite3.IntegrityError:
-            row = self._conn.execute(
-                "SELECT id FROM playlists WHERE name = ?", (name,)
-            ).fetchone()
+            row = self._conn.execute("SELECT id FROM playlists WHERE name = ?", (name,)).fetchone()
             return row["id"] if row else None
 
     def get_playlist_id(self, name=DEFAULT_PLAYLIST):
@@ -130,9 +128,7 @@ class PlaylistDB:
         Returns:
             Integer playlist id.
         """
-        row = self._conn.execute(
-            "SELECT id FROM playlists WHERE name = ?", (name,)
-        ).fetchone()
+        row = self._conn.execute("SELECT id FROM playlists WHERE name = ?", (name,)).fetchone()
         if row:
             return row["id"]
         return self.create_playlist(name)
@@ -143,9 +139,7 @@ class PlaylistDB:
         Returns:
             List of (id, name) tuples ordered by creation time.
         """
-        rows = self._conn.execute(
-            "SELECT id, name FROM playlists ORDER BY created_at"
-        ).fetchall()
+        rows = self._conn.execute("SELECT id, name FROM playlists ORDER BY created_at").fetchall()
         return [(r["id"], r["name"]) for r in rows]
 
     def rename_playlist(self, playlist_id, new_name):
@@ -175,9 +169,7 @@ class PlaylistDB:
             playlist_id: The playlist row id.
         """
         with self._conn:
-            self._conn.execute(
-                "DELETE FROM playlists WHERE id = ?", (playlist_id,)
-            )
+            self._conn.execute("DELETE FROM playlists WHERE id = ?", (playlist_id,))
 
     def playlist_exists(self, name):
         """Check if a playlist with the given name exists.
@@ -188,15 +180,12 @@ class PlaylistDB:
         Returns:
             True if exists.
         """
-        row = self._conn.execute(
-            "SELECT 1 FROM playlists WHERE name = ?", (name,)
-        ).fetchone()
+        row = self._conn.execute("SELECT 1 FROM playlists WHERE name = ?", (name,)).fetchone()
         return row is not None
 
     # ─── Track Operations ───────────────────────────────────────
 
-    def add_track(self, playlist_id, filepath, title="", artist="",
-                  album="", duration=0.0):
+    def add_track(self, playlist_id, filepath, title="", artist="", album="", duration=0.0):
         """Append a track to a playlist.
 
         Args:
@@ -257,8 +246,7 @@ class PlaylistDB:
         ).fetchone()
         return row["cnt"]
 
-    def update_track_metadata(self, track_id, title=None, artist=None,
-                              album=None, duration=None):
+    def update_track_metadata(self, track_id, title=None, artist=None, album=None, duration=None):
         """Update metadata for a specific track.
 
         Args:
@@ -325,8 +313,7 @@ class PlaylistDB:
         with self._conn:
             placeholders = ",".join("?" for _ in positions)
             self._conn.execute(
-                f"DELETE FROM tracks WHERE playlist_id = ? "
-                f"AND position IN ({placeholders})",
+                f"DELETE FROM tracks WHERE playlist_id = ? AND position IN ({placeholders})",
                 [playlist_id] + list(positions),
             )
             self._reindex(playlist_id)
@@ -338,9 +325,7 @@ class PlaylistDB:
             playlist_id: The playlist id.
         """
         with self._conn:
-            self._conn.execute(
-                "DELETE FROM tracks WHERE playlist_id = ?", (playlist_id,)
-            )
+            self._conn.execute("DELETE FROM tracks WHERE playlist_id = ?", (playlist_id,))
 
     def _reindex(self, playlist_id):
         """Reindex track positions after removals (0-based contiguous)."""
@@ -366,9 +351,7 @@ class PlaylistDB:
         Returns:
             Setting value as string, or default.
         """
-        row = self._conn.execute(
-            "SELECT value FROM settings WHERE key = ?", (key,)
-        ).fetchone()
+        row = self._conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
         if row is not None:
             return row["value"]
         return default

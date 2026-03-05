@@ -351,9 +351,7 @@ class VideoPlayerApp(Gtk.Window):
         seek_box.pack_start(self._time_label, False, False, 0)
 
         # Seek slider
-        self._seek_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 0, 1000, 1
-        )
+        self._seek_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 1000, 1)
         self._seek_scale.set_draw_value(False)
         self._seek_scale.set_hexpand(True)
         self._seek_scale.get_style_context().add_class("seek-slider")
@@ -445,9 +443,7 @@ class VideoPlayerApp(Gtk.Window):
         controls.pack_start(self._mute_btn, False, False, 0)
 
         # Volume slider
-        self._volume_scale = Gtk.Scale.new_with_range(
-            Gtk.Orientation.HORIZONTAL, 0, 100, 1
-        )
+        self._volume_scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, 0, 100, 1)
         self._volume_scale.set_draw_value(False)
         self._volume_scale.set_value(80)
         self._volume_scale.set_size_request(100, -1)
@@ -680,9 +676,7 @@ class VideoPlayerApp(Gtk.Window):
             # Debounce: cancel previous pending seek and schedule new one
             if self._seek_debounce_id is not None:
                 GLib.source_remove(self._seek_debounce_id)
-            self._seek_debounce_id = GLib.timeout_add(
-                50, self._do_debounced_seek, position
-            )
+            self._seek_debounce_id = GLib.timeout_add(50, self._do_debounced_seek, position)
 
     def _do_debounced_seek(self, position_ns):
         """Execute a debounced seek operation."""
@@ -812,8 +806,10 @@ class VideoPlayerApp(Gtk.Window):
             action=Gtk.FileChooserAction.OPEN,
         )
         dialog.add_buttons(
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OPEN, Gtk.ResponseType.OK,
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN,
+            Gtk.ResponseType.OK,
         )
         dialog.set_select_multiple(True)
 
@@ -850,8 +846,10 @@ class VideoPlayerApp(Gtk.Window):
             action=Gtk.FileChooserAction.SELECT_FOLDER,
         )
         dialog.add_buttons(
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OPEN, Gtk.ResponseType.OK,
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN,
+            Gtk.ResponseType.OK,
         )
 
         response = dialog.run()
@@ -872,8 +870,10 @@ class VideoPlayerApp(Gtk.Window):
             action=Gtk.FileChooserAction.OPEN,
         )
         dialog.add_buttons(
-            Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-            Gtk.STOCK_OPEN, Gtk.ResponseType.OK,
+            Gtk.STOCK_CANCEL,
+            Gtk.ResponseType.CANCEL,
+            Gtk.STOCK_OPEN,
+            Gtk.ResponseType.OK,
         )
 
         sub_filter = Gtk.FileFilter()

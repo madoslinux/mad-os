@@ -24,9 +24,7 @@ REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 AIROOTFS = os.path.join(REPO_DIR, "airootfs")
 BIN_DIR = os.path.join(AIROOTFS, "usr", "local", "bin")
 SWAY_CONFIG = os.path.join(AIROOTFS, "etc", "skel", ".config", "sway", "config")
-HYPRLAND_CONFIG = os.path.join(
-    AIROOTFS, "etc", "skel", ".config", "hypr", "hyprland.conf"
-)
+HYPRLAND_CONFIG = os.path.join(AIROOTFS, "etc", "skel", ".config", "hypr", "hyprland.conf")
 PROFILEDEF = os.path.join(REPO_DIR, "profiledef.sh")
 PACKAGES = os.path.join(REPO_DIR, "packages.x86_64")
 SQUEEKBOARD_SCRIPT = os.path.join(BIN_DIR, "mados-squeekboard")
@@ -53,14 +51,10 @@ class TestSqueekboardScript(unittest.TestCase):
     def test_script_has_shebang(self):
         with open(SQUEEKBOARD_SCRIPT) as f:
             first_line = f.readline()
-        self.assertTrue(
-            first_line.startswith("#!/"), "Script should start with a shebang line"
-        )
+        self.assertTrue(first_line.startswith("#!/"), "Script should start with a shebang line")
 
     def test_script_valid_bash_syntax(self):
-        result = subprocess.run(
-            ["bash", "-n", SQUEEKBOARD_SCRIPT], capture_output=True, text=True
-        )
+        result = subprocess.run(["bash", "-n", SQUEEKBOARD_SCRIPT], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, f"Syntax error: {result.stderr}")
 
     def test_script_has_auto_command(self):
@@ -94,7 +88,8 @@ class TestSqueekboardScript(unittest.TestCase):
         with open(SQUEEKBOARD_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "has_physical_keyboard", content,
+            "has_physical_keyboard",
+            content,
             "Script must have keyboard detection function",
         )
 
@@ -102,7 +97,8 @@ class TestSqueekboardScript(unittest.TestCase):
         with open(SQUEEKBOARD_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "/sys/class/input", content,
+            "/sys/class/input",
+            content,
             "Script should check /sys/class/input for keyboard devices",
         )
 
@@ -111,7 +107,8 @@ class TestSqueekboardScript(unittest.TestCase):
             content = f.read()
         for device in ["Power Button", "Sleep Button", "gamepad"]:
             self.assertIn(
-                device, content,
+                device,
+                content,
                 f"Script should filter out '{device}' from keyboard detection",
             )
 
@@ -119,7 +116,8 @@ class TestSqueekboardScript(unittest.TestCase):
         with open(SQUEEKBOARD_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "udevadm monitor", content,
+            "udevadm monitor",
+            content,
             "Script should use udevadm monitor for hotplug detection",
         )
 
@@ -135,7 +133,8 @@ class TestSqueekboardScript(unittest.TestCase):
         self.assertIn("squeekboard", content.lower())
         # The filter section should mention squeekboard/Virtual
         self.assertIn(
-            "Virtual", content,
+            "Virtual",
+            content,
             "Script should skip virtual keyboard devices in detection",
         )
 
@@ -147,7 +146,8 @@ class TestSqueekboardProfiledef(unittest.TestCase):
         with open(PROFILEDEF) as f:
             content = f.read()
         self.assertIn(
-            "mados-squeekboard", content,
+            "mados-squeekboard",
+            content,
             "profiledef.sh must include mados-squeekboard permissions",
         )
 
@@ -155,7 +155,8 @@ class TestSqueekboardProfiledef(unittest.TestCase):
         with open(PROFILEDEF) as f:
             content = f.read()
         self.assertIn(
-            '["/usr/local/bin/mados-squeekboard"]="0:0:755"', content,
+            '["/usr/local/bin/mados-squeekboard"]="0:0:755"',
+            content,
             "mados-squeekboard must have 0:0:755 permissions",
         )
 
@@ -167,7 +168,8 @@ class TestSqueekboardSwayIntegration(unittest.TestCase):
         with open(SWAY_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "mados-squeekboard", content,
+            "mados-squeekboard",
+            content,
             "Sway config must launch mados-squeekboard",
         )
 
@@ -175,7 +177,8 @@ class TestSqueekboardSwayIntegration(unittest.TestCase):
         with open(SWAY_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "mados-squeekboard auto", content,
+            "mados-squeekboard auto",
+            content,
             "Sway should launch squeekboard in auto-detect mode",
         )
 
@@ -183,7 +186,8 @@ class TestSqueekboardSwayIntegration(unittest.TestCase):
         with open(SWAY_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "sm.puri.Squeekboard", content,
+            "sm.puri.Squeekboard",
+            content,
             "Sway should have window rules for squeekboard app_id",
         )
 
@@ -191,7 +195,8 @@ class TestSqueekboardSwayIntegration(unittest.TestCase):
         with open(SWAY_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            'no_focus [app_id="sm.puri.Squeekboard"]', content,
+            'no_focus [app_id="sm.puri.Squeekboard"]',
+            content,
             "Sway should use no_focus to prevent squeekboard from stealing focus",
         )
 
@@ -199,7 +204,8 @@ class TestSqueekboardSwayIntegration(unittest.TestCase):
         with open(SWAY_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "mados-squeekboard toggle", content,
+            "mados-squeekboard toggle",
+            content,
             "Sway should have a keybinding to toggle squeekboard",
         )
 
@@ -211,7 +217,8 @@ class TestSqueekboardHyprlandIntegration(unittest.TestCase):
         with open(HYPRLAND_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "mados-squeekboard", content,
+            "mados-squeekboard",
+            content,
             "Hyprland config must launch mados-squeekboard",
         )
 
@@ -219,7 +226,8 @@ class TestSqueekboardHyprlandIntegration(unittest.TestCase):
         with open(HYPRLAND_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "mados-squeekboard auto", content,
+            "mados-squeekboard auto",
+            content,
             "Hyprland should launch squeekboard in auto-detect mode",
         )
 
@@ -227,7 +235,8 @@ class TestSqueekboardHyprlandIntegration(unittest.TestCase):
         with open(HYPRLAND_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "sm.puri.Squeekboard", content,
+            "sm.puri.Squeekboard",
+            content,
             "Hyprland should have window rules for squeekboard class",
         )
 
@@ -235,11 +244,13 @@ class TestSqueekboardHyprlandIntegration(unittest.TestCase):
         with open(HYPRLAND_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "no_initial_focus", content,
+            "no_initial_focus",
+            content,
             "Hyprland should use no_initial_focus for squeekboard (not nofocus)",
         )
         self.assertNotIn(
-            "nofocus", content,
+            "nofocus",
+            content,
             "Hyprland config must not use invalid 'nofocus' field type",
         )
 
@@ -247,7 +258,8 @@ class TestSqueekboardHyprlandIntegration(unittest.TestCase):
         with open(HYPRLAND_CONFIG) as f:
             content = f.read()
         self.assertIn(
-            "mados-squeekboard toggle", content,
+            "mados-squeekboard toggle",
+            content,
             "Hyprland should have a keybinding to toggle squeekboard",
         )
 

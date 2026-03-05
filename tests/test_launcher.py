@@ -9,15 +9,14 @@ import unittest
 
 # ---- Determine REPO_DIR relative to this test file ----
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LAUNCHER_LIB = os.path.join(
-    REPO_DIR, "airootfs", "usr", "local", "lib"
-)
+LAUNCHER_LIB = os.path.join(REPO_DIR, "airootfs", "usr", "local", "lib")
 
 # ======================================================================
 # GTK / GI Mock Setup — allows headless testing without GTK or Wayland
 # ======================================================================
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 
 def _setup_gi_mocks():
     """Install mock gi modules so we can import mados_launcher headlessly."""
@@ -66,6 +65,7 @@ from mados_launcher import __version__, __app_id__, __app_name__
 # ======================================================================
 # Test: Configuration Constants
 # ======================================================================
+
 
 class TestConfig(unittest.TestCase):
     """Validate configuration constants are sensible."""
@@ -135,6 +135,7 @@ class TestConfig(unittest.TestCase):
 # Test: Package Metadata
 # ======================================================================
 
+
 class TestMetadata(unittest.TestCase):
     """Validate package metadata."""
 
@@ -154,6 +155,7 @@ class TestMetadata(unittest.TestCase):
 # ======================================================================
 # Test: Exec Field Cleaning
 # ======================================================================
+
 
 class TestCleanExec(unittest.TestCase):
     """Test cleaning of Exec field values from .desktop files."""
@@ -195,6 +197,7 @@ class TestCleanExec(unittest.TestCase):
 # ======================================================================
 # Test: Desktop File Parsing
 # ======================================================================
+
 
 class TestDesktopParsing(unittest.TestCase):
     """Test parsing of individual .desktop files."""
@@ -309,6 +312,7 @@ class TestDesktopParsing(unittest.TestCase):
 # Test: Desktop Entry Scanning
 # ======================================================================
 
+
 class TestDesktopScanning(unittest.TestCase):
     """Test scanning directories for .desktop files."""
 
@@ -319,41 +323,49 @@ class TestDesktopScanning(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create a valid .desktop file
             with open(os.path.join(tmpdir, "app1.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Bravo App
                     Exec=bravo
                     Icon=utilities-terminal
-                """))
+                """)
+                )
 
             with open(os.path.join(tmpdir, "app2.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Alpha App
                     Exec=alpha
-                """))
+                """)
+                )
 
             # Create a NoDisplay entry that should be filtered
             with open(os.path.join(tmpdir, "hidden.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Hidden
                     Exec=hidden
                     NoDisplay=true
-                """))
+                """)
+                )
 
             # Create self-exclusion entry
             with open(os.path.join(tmpdir, "mados-launcher.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=madOS Launcher
                     Exec=mados-launcher
                     NoDisplay=true
-                """))
+                """)
+                )
 
             # Temporarily override DESKTOP_DIRS on the config module
             orig_dirs = de_mod._config.DESKTOP_DIRS
@@ -395,6 +407,7 @@ class TestDesktopScanning(unittest.TestCase):
 # Test: State Persistence
 # ======================================================================
 
+
 class TestStatePersistence(unittest.TestCase):
     """Test state save/load functionality."""
 
@@ -433,6 +446,7 @@ class TestStatePersistence(unittest.TestCase):
 # Test: File Structure Validation
 # ======================================================================
 
+
 class TestFileStructure(unittest.TestCase):
     """Validate all expected launcher files exist in the repo."""
 
@@ -447,9 +461,7 @@ class TestFileStructure(unittest.TestCase):
             "theme.py",
             "window_tracker.py",
         ]
-        lib_dir = os.path.join(
-            REPO_DIR, "airootfs", "usr", "local", "lib", "mados_launcher"
-        )
+        lib_dir = os.path.join(REPO_DIR, "airootfs", "usr", "local", "lib", "mados_launcher")
         for fname in expected_files:
             fpath = os.path.join(lib_dir, fname)
             self.assertTrue(
@@ -458,9 +470,7 @@ class TestFileStructure(unittest.TestCase):
             )
 
     def test_bash_launcher_exists(self):
-        launcher = os.path.join(
-            REPO_DIR, "airootfs", "usr", "local", "bin", "mados-launcher"
-        )
+        launcher = os.path.join(REPO_DIR, "airootfs", "usr", "local", "bin", "mados-launcher")
         self.assertTrue(os.path.isfile(launcher), "Bash launcher script missing")
 
     def test_desktop_file_exists(self):
@@ -482,6 +492,7 @@ class TestFileStructure(unittest.TestCase):
 # ======================================================================
 # Test: Integration with project configuration
 # ======================================================================
+
 
 class TestProjectIntegration(unittest.TestCase):
     """Verify the launcher is properly integrated into the project configs."""
@@ -509,9 +520,7 @@ class TestProjectIntegration(unittest.TestCase):
 
     def test_sway_autostart_configured(self):
         """Sway config should autostart mados-launcher."""
-        sway_config = os.path.join(
-            REPO_DIR, "airootfs", "etc", "skel", ".config", "sway", "config"
-        )
+        sway_config = os.path.join(REPO_DIR, "airootfs", "etc", "skel", ".config", "sway", "config")
         with open(sway_config, "r") as f:
             content = f.read()
         self.assertIn("mados-launcher", content)
@@ -530,13 +539,18 @@ class TestProjectIntegration(unittest.TestCase):
 # Test: Entry Grouping by Category
 # ======================================================================
 
+
 class TestEntryGrouping(unittest.TestCase):
     """Test grouping of desktop entries by shared icon."""
 
     def _make_entry(self, name, icon_name="", exec_cmd="app", filename="app.desktop"):
         return DesktopEntry(
-            name=name, icon_name=icon_name, exec_cmd=exec_cmd,
-            comment="", categories="", filename=filename,
+            name=name,
+            icon_name=icon_name,
+            exec_cmd=exec_cmd,
+            comment="",
+            categories="",
+            filename=filename,
         )
 
     def test_icon_group_key_normal(self):
@@ -715,9 +729,7 @@ class TestWindowTracker(unittest.TestCase):
         self.assertFalse(tracker.is_running("firefox"))
         # If app_id matches the desktop filename base
         tracker._running = {"firefox"}
-        self.assertTrue(
-            tracker.is_running("something-else", "firefox.desktop")
-        )
+        self.assertTrue(tracker.is_running("something-else", "firefox.desktop"))
 
     def test_is_urgent(self):
         tracker = WindowTracker()
@@ -736,14 +748,13 @@ class TestWindowTracker(unittest.TestCase):
     def test_python_module_match(self):
         tracker = WindowTracker()
         tracker._running = {"mados-equalizer"}
-        self.assertTrue(
-            tracker.is_running("python3 -m mados_equalizer")
-        )
+        self.assertTrue(tracker.is_running("python3 -m mados_equalizer"))
 
 
 # ======================================================================
 # Test: Avahi Filtering
 # ======================================================================
+
 
 class TestAvahiFiltering(unittest.TestCase):
     """Test filtering of Avahi-related desktop entries."""
@@ -761,38 +772,44 @@ class TestAvahiFiltering(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create avahi desktop files
             with open(os.path.join(tmpdir, "avahi-discover.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Avahi Discover
                     Exec=avahi-discover
                     Icon=network-wired
-                """))
+                """)
+                )
 
             with open(os.path.join(tmpdir, "bvnc.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Avahi VNC Browser
                     Exec=bvnc
                     Icon=network-wired
-                """))
+                """)
+                )
 
             # Create a normal desktop file
             with open(os.path.join(tmpdir, "normal-app.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Normal App
                     Exec=normal-app
                     Icon=utilities-terminal
-                """))
+                """)
+                )
 
             # Mock avahi as not running
             orig_dirs = de_mod._config.DESKTOP_DIRS
             de_mod._config.DESKTOP_DIRS = [tmpdir]
             try:
-                with patch.object(de_mod, '_is_avahi_running', return_value=False):
+                with patch.object(de_mod, "_is_avahi_running", return_value=False):
                     entries = scan_desktop_entries()
                     names = [e.name for e in entries]
                     self.assertEqual(names, ["Normal App"])
@@ -809,38 +826,44 @@ class TestAvahiFiltering(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             # Create avahi desktop files
             with open(os.path.join(tmpdir, "avahi-discover.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Avahi Discover
                     Exec=avahi-discover
                     Icon=network-wired
-                """))
+                """)
+                )
 
             with open(os.path.join(tmpdir, "bssh.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Avahi SSH Browser
                     Exec=bssh
                     Icon=network-wired
-                """))
+                """)
+                )
 
             # Create a normal desktop file
             with open(os.path.join(tmpdir, "normal-app.desktop"), "w") as f:
-                f.write(textwrap.dedent("""\
+                f.write(
+                    textwrap.dedent("""\
                     [Desktop Entry]
                     Type=Application
                     Name=Normal App
                     Exec=normal-app
                     Icon=utilities-terminal
-                """))
+                """)
+                )
 
             # Mock avahi as running
             orig_dirs = de_mod._config.DESKTOP_DIRS
             de_mod._config.DESKTOP_DIRS = [tmpdir]
             try:
-                with patch.object(de_mod, '_is_avahi_running', return_value=True):
+                with patch.object(de_mod, "_is_avahi_running", return_value=True):
                     entries = scan_desktop_entries()
                     names = [e.name for e in entries]
                     self.assertIn("Avahi Discover", names)
@@ -854,6 +877,7 @@ class TestAvahiFiltering(unittest.TestCase):
 # Test: Icon Zoom Configuration
 # ======================================================================
 
+
 class TestIconZoomConfig(unittest.TestCase):
     """Validate icon zoom animation configuration."""
 
@@ -861,7 +885,7 @@ class TestIconZoomConfig(unittest.TestCase):
         """ICON_ZOOM_SIZE should be reachable within reasonable steps from ICON_SIZE."""
         zoom_delta = ICON_ZOOM_SIZE - ICON_SIZE
         self.assertGreater(zoom_delta, 0, "ICON_ZOOM_SIZE must be larger than ICON_SIZE")
-        
+
         # Verify the delta is reachable with the step size
         # (it doesn't have to be perfectly divisible, just reasonable)
         max_steps = zoom_delta / ICON_ZOOM_STEP
@@ -873,14 +897,12 @@ class TestIconZoomConfig(unittest.TestCase):
         zoom_delta = ICON_ZOOM_SIZE - ICON_SIZE
         steps = zoom_delta / ICON_ZOOM_STEP
         total_time_ms = steps * ICON_ZOOM_INTERVAL_MS
-        
+
         self.assertGreaterEqual(
-            total_time_ms, 50,
-            f"Animation too fast: {total_time_ms}ms (should be >= 50ms)"
+            total_time_ms, 50, f"Animation too fast: {total_time_ms}ms (should be >= 50ms)"
         )
         self.assertLessEqual(
-            total_time_ms, 500,
-            f"Animation too slow: {total_time_ms}ms (should be <= 500ms)"
+            total_time_ms, 500, f"Animation too slow: {total_time_ms}ms (should be <= 500ms)"
         )
 
 

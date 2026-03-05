@@ -52,21 +52,15 @@ class TestPersistenceScriptsExecutable(unittest.TestCase):
 
     def test_mados_persist_sync_is_executable(self):
         path = os.path.join(BIN_DIR, "mados-persist-sync.sh")
-        self.assertTrue(
-            os.access(path, os.X_OK), "mados-persist-sync.sh not executable"
-        )
+        self.assertTrue(os.access(path, os.X_OK), "mados-persist-sync.sh not executable")
 
     def test_mados_persist_detect_is_executable(self):
         path = os.path.join(BIN_DIR, "mados-persist-detect.sh")
-        self.assertTrue(
-            os.access(path, os.X_OK), "mados-persist-detect.sh not executable"
-        )
+        self.assertTrue(os.access(path, os.X_OK), "mados-persist-detect.sh not executable")
 
     def test_mados_ventoy_setup_is_executable(self):
         path = os.path.join(BIN_DIR, "mados-ventoy-setup.sh")
-        self.assertTrue(
-            os.access(path, os.X_OK), "mados-ventoy-setup.sh not executable"
-        )
+        self.assertTrue(os.access(path, os.X_OK), "mados-ventoy-setup.sh not executable")
 
 
 class TestPersistenceScriptsSyntax(unittest.TestCase):
@@ -102,15 +96,11 @@ class TestPersistenceServicesExist(unittest.TestCase):
 
     def test_mados_persistence_detect_service_exists(self):
         path = os.path.join(SYSTEMD_DIR, "mados-persistence-detect.service")
-        self.assertTrue(
-            os.path.exists(path), "mados-persistence-detect.service not found"
-        )
+        self.assertTrue(os.path.exists(path), "mados-persistence-detect.service not found")
 
     def test_mados_ventoy_setup_service_exists(self):
         path = os.path.join(SYSTEMD_DIR, "mados-ventoy-setup.service")
-        self.assertTrue(
-            os.path.exists(path), "mados-ventoy-setup.service not found"
-        )
+        self.assertTrue(os.path.exists(path), "mados-ventoy-setup.service not found")
 
 
 class TestPersistenceServiceReferences(unittest.TestCase):
@@ -377,7 +367,7 @@ class TestGrubPersistenceEntries(unittest.TestCase):
                     self.assertIn(
                         "cow_label",
                         block,
-                        f"Persistence entry at line {i+1} uses cow_spacesize without cow_label",
+                        f"Persistence entry at line {i + 1} uses cow_spacesize without cow_label",
                     )
 
 

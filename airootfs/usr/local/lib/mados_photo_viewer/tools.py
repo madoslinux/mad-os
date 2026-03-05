@@ -149,9 +149,7 @@ class BlurStroke:
                 continue
 
             # Extract sub-region
-            sub = GdkPixbuf.Pixbuf.new(
-                GdkPixbuf.Colorspace.RGB, pixbuf.get_has_alpha(), 8, rw, rh
-            )
+            sub = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, pixbuf.get_has_alpha(), 8, rw, rh)
             pixbuf.copy_area(x0, y0, rw, rh, sub, 0, 0)
 
             # Scale down
@@ -217,9 +215,7 @@ class PixelateStroke:
             if rw < 2 or rh < 2:
                 continue
 
-            sub = GdkPixbuf.Pixbuf.new(
-                GdkPixbuf.Colorspace.RGB, pixbuf.get_has_alpha(), 8, rw, rh
-            )
+            sub = GdkPixbuf.Pixbuf.new(GdkPixbuf.Colorspace.RGB, pixbuf.get_has_alpha(), 8, rw, rh)
             pixbuf.copy_area(x0, y0, rw, rh, sub, 0, 0)
 
             # Scale down to tiny (creates pixelation on scale-up)

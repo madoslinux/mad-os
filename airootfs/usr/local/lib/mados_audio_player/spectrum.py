@@ -22,8 +22,8 @@ import time
 NUM_BARS = 28
 
 # Bar peak hold and decay settings (tuned for 30 FPS update rate)
-PEAK_DECAY = 0.4       # Peak indicator falls this much per tick
-BAR_GRAVITY = 0.6      # Bar gravity (how fast bars fall)
+PEAK_DECAY = 0.4  # Peak indicator falls this much per tick
+BAR_GRAVITY = 0.6  # Bar gravity (how fast bars fall)
 
 
 class SpectrumAnalyzer:
@@ -132,10 +132,7 @@ class SpectrumAnalyzer:
     def _find_cava(self):
         """Check if cava binary is available."""
         try:
-            result = subprocess.run(
-                ["which", "cava"],
-                capture_output=True, timeout=2
-            )
+            result = subprocess.run(["which", "cava"], capture_output=True, timeout=2)
             return result.returncode == 0
         except Exception:
             return False
@@ -150,10 +147,7 @@ class SpectrumAnalyzer:
         """Detect the best audio input method for cava."""
         # Check for PipeWire first (preferred on madOS)
         try:
-            r = subprocess.run(
-                ["pactl", "info"],
-                capture_output=True, text=True, timeout=3
-            )
+            r = subprocess.run(["pactl", "info"], capture_output=True, text=True, timeout=3)
             if r.returncode == 0 and "PipeWire" in r.stdout:
                 return "pipewire"
         except Exception:
@@ -161,10 +155,7 @@ class SpectrumAnalyzer:
 
         # Check for PulseAudio
         try:
-            r = subprocess.run(
-                ["pactl", "info"],
-                capture_output=True, text=True, timeout=3
-            )
+            r = subprocess.run(["pactl", "info"], capture_output=True, text=True, timeout=3)
             if r.returncode == 0:
                 return "pulse"
         except Exception:
@@ -175,9 +166,7 @@ class SpectrumAnalyzer:
 
     def _write_config(self):
         """Write cava configuration for raw output mode."""
-        self._config_path = os.path.join(
-            os.path.dirname(self._fifo_path), "cava.conf"
-        )
+        self._config_path = os.path.join(os.path.dirname(self._fifo_path), "cava.conf")
         audio_method = self._detect_audio_method()
         config = f"""
 [general]
@@ -199,7 +188,7 @@ data_format = binary
 bit_format = 8bit
 channels = mono
 """
-        with open(self._config_path, 'w') as f:
+        with open(self._config_path, "w") as f:
             f.write(config)
 
     def _start_cava(self):
@@ -213,16 +202,14 @@ channels = mono
     def _start_reader(self):
         """Start the FIFO reader thread."""
         self._running = True
-        self._reader_thread = threading.Thread(
-            target=self._read_fifo, daemon=True
-        )
+        self._reader_thread = threading.Thread(target=self._read_fifo, daemon=True)
         self._reader_thread.start()
 
     def _read_fifo(self):
         """Read raw bar data from cava FIFO (runs in background thread)."""
         try:
             # Open FIFO (blocks until cava connects)
-            with open(self._fifo_path, 'rb') as fifo:
+            with open(self._fifo_path, "rb") as fifo:
                 self.is_active = True
                 while self._running:
                     data = fifo.read(self.num_bars)

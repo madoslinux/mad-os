@@ -757,9 +757,7 @@ class TestHyprlandAnimations(unittest.TestCase):
                         try:
                             float(val)
                         except ValueError:
-                            self.fail(
-                                f"Bezier field {i} is not a number: '{val}' in {line}"
-                            )
+                            self.fail(f"Bezier field {i} is not a number: '{val}' in {line}")
 
     def test_animation_has_minimum_fields(self):
         """animation = name, onoff, speed, curve[, style] (at least 4 fields)."""
@@ -2079,8 +2077,7 @@ class TestWorkspaceCountConsistency(unittest.TestCase):
         with open(self.HYPRLAND_CONF) as f:
             content = f.read()
         for ws in range(6, 11):
-            for pattern in [f"workspace, {ws}", f"workspace {ws}",
-                            f"movetoworkspace, {ws}"]:
+            for pattern in [f"workspace, {ws}", f"workspace {ws}", f"movetoworkspace, {ws}"]:
                 for line in content.splitlines():
                     stripped = line.strip()
                     if stripped.startswith("#"):
@@ -2088,8 +2085,7 @@ class TestWorkspaceCountConsistency(unittest.TestCase):
                     self.assertNotIn(
                         pattern,
                         stripped,
-                        f"Hyprland config must not bind workspace {ws} "
-                        f"(only 5 workspaces allowed)",
+                        f"Hyprland config must not bind workspace {ws} (only 5 workspaces allowed)",
                     )
 
     def test_sway_no_workspace_6_to_10(self):
@@ -2097,8 +2093,7 @@ class TestWorkspaceCountConsistency(unittest.TestCase):
         with open(self.SWAY_CONF) as f:
             content = f.read()
         for ws in range(6, 11):
-            for pattern in [f"workspace number {ws}",
-                            f"to workspace number {ws}"]:
+            for pattern in [f"workspace number {ws}", f"to workspace number {ws}"]:
                 for line in content.splitlines():
                     stripped = line.strip()
                     if stripped.startswith("#"):
@@ -2106,8 +2101,7 @@ class TestWorkspaceCountConsistency(unittest.TestCase):
                     self.assertNotIn(
                         pattern,
                         stripped,
-                        f"Sway config must not bind workspace {ws} "
-                        f"(only 5 workspaces allowed)",
+                        f"Sway config must not bind workspace {ws} (only 5 workspaces allowed)",
                     )
 
     def test_glitch_script_max_workspaces_5(self):
@@ -2135,7 +2129,7 @@ class TestWorkspaceCountConsistency(unittest.TestCase):
         with open(self.GLITCH_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            'workspace>>',
+            "workspace>>",
             content,
             "IPC event parsing must use workspace>> (double >) per Hyprland socket2 format",
         )

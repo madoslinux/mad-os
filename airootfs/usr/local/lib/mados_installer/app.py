@@ -31,9 +31,7 @@ class MadOSInstaller(Gtk.Window):
     """Main installer window — orchestrates pages and holds shared state."""
 
     def __init__(self):
-        super().__init__(
-            title="madOS Installer" + (" (DEMO MODE)" if DEMO_MODE else "")
-        )
+        super().__init__(title="madOS Installer" + (" (DEMO MODE)" if DEMO_MODE else ""))
 
         # Check root (skip in demo mode)
         if not DEMO_MODE and os.geteuid() != 0:
@@ -116,9 +114,7 @@ class MadOSInstaller(Gtk.Window):
         # Recreate
         self._build_pages()
 
-        self.notebook.set_current_page(
-            min(current_page, self.notebook.get_n_pages() - 1)
-        )
+        self.notebook.set_current_page(min(current_page, self.notebook.get_n_pages() - 1))
         self.show_all()
 
     # ── Page construction ───────────────────────────────────────────────

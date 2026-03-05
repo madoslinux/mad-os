@@ -12,7 +12,8 @@ and an app_id of "mados-equalizer" for window management rules.
 """
 
 import gi
-gi.require_version('Gtk', '3.0')
+
+gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GLib, Pango
 import cairo
 import threading
@@ -21,11 +22,21 @@ from . import __app_id__, __app_name__, __version__
 from .backend import AudioBackend
 from .database import EqualizerStateDB
 from .presets import (
-    PresetManager, FREQUENCY_BANDS, BAND_LABELS, BAND_KEYS,
-    GAIN_MIN, GAIN_MAX, GAIN_DEFAULT, BUILTIN_PRESET_ORDER,
+    PresetManager,
+    FREQUENCY_BANDS,
+    BAND_LABELS,
+    BAND_KEYS,
+    GAIN_MIN,
+    GAIN_MAX,
+    GAIN_DEFAULT,
+    BUILTIN_PRESET_ORDER,
 )
 from .translations import (
-    TRANSLATIONS, AVAILABLE_LANGUAGES, DEFAULT_LANGUAGE, get_text, detect_system_language,
+    TRANSLATIONS,
+    AVAILABLE_LANGUAGES,
+    DEFAULT_LANGUAGE,
+    get_text,
+    detect_system_language,
 )
 from .theme import apply_theme, get_gain_color, get_gain_color_hex, NORD
 
@@ -47,7 +58,7 @@ class GainIndicator(Gtk.DrawingArea):
         super().__init__()
         self.gain = 0.0
         self.set_size_request(20, 80)
-        self.connect('draw', self._on_draw)
+        self.connect("draw", self._on_draw)
 
     def set_gain(self, gain_db):
         """Update the displayed gain value and redraw.
@@ -229,7 +240,7 @@ class EqualizerApp:
     def _build_window(self):
         """Create and configure the main application window."""
         self.window = Gtk.Window()
-        self.window.set_title(self._t('title'))
+        self.window.set_title(self._t("title"))
         self.window.set_default_size(750, 450)
         self.window.set_resizable(True)
         self.window.set_position(Gtk.WindowPosition.CENTER)
@@ -240,8 +251,8 @@ class EqualizerApp:
         # Also set the role for additional identification
         self.window.set_role(__app_id__)
 
-        self.window.connect('destroy', self._on_destroy)
-        self.window.connect('delete-event', self._on_delete)
+        self.window.connect("destroy", self._on_destroy)
+        self.window.connect("delete-event", self._on_delete)
 
     def _build_ui(self):
         """Build the complete user interface."""
@@ -310,7 +321,7 @@ class EqualizerApp:
         title_label = Gtk.Label()
         title_label.set_markup(
             f'<span font_weight="bold" font_size="large" foreground="#ECEFF4">'
-            f'{self._t("audio_equalizer")}</span>'
+            f"{self._t('audio_equalizer')}</span>"
         )
         title_label.set_halign(Gtk.Align.START)
         top_bar.pack_start(title_label, False, False, 0)
@@ -321,9 +332,9 @@ class EqualizerApp:
         top_bar.pack_start(spacer, True, True, 0)
 
         # Enable/Disable toggle button
-        self.enable_button = Gtk.Button(label=self._t('enable'))
-        self.enable_button.get_style_context().add_class('toggle-disabled')
-        self.enable_button.connect('clicked', self._on_toggle_eq)
+        self.enable_button = Gtk.Button(label=self._t("enable"))
+        self.enable_button.get_style_context().add_class("toggle-disabled")
+        self.enable_button.connect("clicked", self._on_toggle_eq)
         self.enable_button.set_size_request(80, -1)
         top_bar.pack_start(self.enable_button, False, False, 0)
 
@@ -336,15 +347,15 @@ class EqualizerApp:
             A Gtk.Box containing preset controls.
         """
         preset_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        preset_bar.get_style_context().add_class('preset-bar')
+        preset_bar.get_style_context().add_class("preset-bar")
         preset_bar.set_margin_start(12)
         preset_bar.set_margin_end(12)
         preset_bar.set_margin_top(4)
         preset_bar.set_margin_bottom(4)
 
         # Preset label
-        preset_label = Gtk.Label(label=self._t('preset') + ':')
-        preset_label.get_style_context().add_class('section-label')
+        preset_label = Gtk.Label(label=self._t("preset") + ":")
+        preset_label.get_style_context().add_class("section-label")
         preset_bar.pack_start(preset_label, False, False, 0)
         self.preset_label_widget = preset_label
 
@@ -352,21 +363,21 @@ class EqualizerApp:
         self.preset_combo = Gtk.ComboBoxText()
         self._populate_preset_combo()
         self.preset_combo.set_active(0)  # Start with "Flat"
-        self.preset_combo.connect('changed', self._on_preset_changed)
+        self.preset_combo.connect("changed", self._on_preset_changed)
         self.preset_combo.set_size_request(120, -1)
         self.preset_combo.set_hexpand(True)
         preset_bar.pack_start(self.preset_combo, True, True, 0)
 
         # Save preset button
-        self.save_button = Gtk.Button(label=self._t('save_preset'))
-        self.save_button.get_style_context().add_class('primary-button')
-        self.save_button.connect('clicked', self._on_save_preset)
+        self.save_button = Gtk.Button(label=self._t("save_preset"))
+        self.save_button.get_style_context().add_class("primary-button")
+        self.save_button.connect("clicked", self._on_save_preset)
         preset_bar.pack_start(self.save_button, False, False, 0)
 
         # Delete preset button
-        self.delete_button = Gtk.Button(label=self._t('delete_preset'))
-        self.delete_button.get_style_context().add_class('danger-button')
-        self.delete_button.connect('clicked', self._on_delete_preset)
+        self.delete_button = Gtk.Button(label=self._t("delete_preset"))
+        self.delete_button.get_style_context().add_class("danger-button")
+        self.delete_button.connect("clicked", self._on_delete_preset)
         self.delete_button.set_sensitive(False)
         preset_bar.pack_start(self.delete_button, False, False, 0)
 
@@ -375,8 +386,8 @@ class EqualizerApp:
         preset_bar.pack_start(spacer, True, True, 0)
 
         # Reset button
-        self.reset_button = Gtk.Button(label=self._t('reset'))
-        self.reset_button.connect('clicked', self._on_reset)
+        self.reset_button = Gtk.Button(label=self._t("reset"))
+        self.reset_button.connect("clicked", self._on_reset)
         preset_bar.pack_start(self.reset_button, False, False, 0)
 
         return preset_bar
@@ -402,15 +413,15 @@ class EqualizerApp:
 
         for i in range(8):
             band_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-            band_box.get_style_context().add_class('eq-band-box')
+            band_box.get_style_context().add_class("eq-band-box")
             band_box.set_margin_start(2)
             band_box.set_margin_end(2)
             band_box.set_margin_top(4)
             band_box.set_margin_bottom(4)
 
             # dB value label at the top
-            db_label = Gtk.Label(label='0 dB')
-            db_label.get_style_context().add_class('db-label')
+            db_label = Gtk.Label(label="0 dB")
+            db_label.get_style_context().add_class("db-label")
             db_label.set_size_request(-1, 16)
             band_box.pack_start(db_label, False, False, 2)
             self.band_labels.append(db_label)
@@ -450,7 +461,7 @@ class EqualizerApp:
             scale.add_mark(-12.0, Gtk.PositionType.RIGHT, None)
 
             # Connect signal
-            scale.connect('value-changed', self._on_band_changed, i)
+            scale.connect("value-changed", self._on_band_changed, i)
             self.band_scales.append(scale)
 
             # Horizontal box for indicator and slider side by side
@@ -465,7 +476,7 @@ class EqualizerApp:
             # Frequency label at the bottom
             freq_text = self._t(BAND_KEYS[i])
             freq_label = Gtk.Label(label=freq_text)
-            freq_label.get_style_context().add_class('freq-label')
+            freq_label.get_style_context().add_class("freq-label")
             freq_label.set_size_request(-1, 16)
             band_box.pack_start(freq_label, False, False, 2)
 
@@ -488,14 +499,14 @@ class EqualizerApp:
             A Gtk.Box containing the volume slider and mute button.
         """
         volume_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        volume_box.get_style_context().add_class('volume-box')
+        volume_box.get_style_context().add_class("volume-box")
         volume_box.set_size_request(60, -1)
 
         # Volume title
         vol_title = Gtk.Label()
         vol_title.set_markup(
             f'<span font_size="small" foreground="#81A1C1" font_weight="bold">'
-            f'{self._t("master_volume")}</span>'
+            f"{self._t('master_volume')}</span>"
         )
         vol_title.set_line_wrap(True)
         vol_title.set_max_width_chars(10)
@@ -504,8 +515,8 @@ class EqualizerApp:
         self.vol_title_label = vol_title
 
         # Volume percentage label
-        self.volume_label = Gtk.Label(label='100%')
-        self.volume_label.get_style_context().add_class('db-label')
+        self.volume_label = Gtk.Label(label="100%")
+        self.volume_label.get_style_context().add_class("db-label")
         volume_box.pack_start(self.volume_label, False, False, 2)
 
         # Volume slider (vertical)
@@ -526,7 +537,7 @@ class EqualizerApp:
         self.volume_scale.set_draw_value(False)
         self.volume_scale.set_digits(0)
         self.volume_scale.set_vexpand(True)
-        self.volume_scale.get_style_context().add_class('master-volume')
+        self.volume_scale.get_style_context().add_class("master-volume")
 
         # Add marks at key positions
         self.volume_scale.add_mark(150.0, Gtk.PositionType.LEFT, None)
@@ -534,12 +545,12 @@ class EqualizerApp:
         self.volume_scale.add_mark(50.0, Gtk.PositionType.LEFT, None)
         self.volume_scale.add_mark(0.0, Gtk.PositionType.LEFT, None)
 
-        self.volume_scale.connect('value-changed', self._on_volume_changed)
+        self.volume_scale.connect("value-changed", self._on_volume_changed)
         volume_box.pack_start(self.volume_scale, True, True, 0)
 
         # Mute button
-        self.mute_button = Gtk.Button(label=self._t('mute'))
-        self.mute_button.connect('clicked', self._on_mute_toggle)
+        self.mute_button = Gtk.Button(label=self._t("mute"))
+        self.mute_button.connect("clicked", self._on_mute_toggle)
         volume_box.pack_start(self.mute_button, False, False, 4)
 
         return volume_box
@@ -551,15 +562,15 @@ class EqualizerApp:
             A Gtk.Box containing status and device information.
         """
         status_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        status_bar.get_style_context().add_class('status-bar')
+        status_bar.get_style_context().add_class("status-bar")
         status_bar.set_margin_start(12)
         status_bar.set_margin_end(12)
         status_bar.set_margin_top(4)
         status_bar.set_margin_bottom(4)
 
         # Status message
-        self.status_label = Gtk.Label(label=self._t('disabled'))
-        self.status_label.get_style_context().add_class('status-label')
+        self.status_label = Gtk.Label(label=self._t("disabled"))
+        self.status_label.get_style_context().add_class("status-label")
         self.status_label.set_halign(Gtk.Align.START)
         status_bar.pack_start(self.status_label, False, False, 0)
 
@@ -568,13 +579,13 @@ class EqualizerApp:
         status_bar.pack_start(spacer, True, True, 0)
 
         # Output device
-        device_prefix = Gtk.Label(label=self._t('active_output') + ': ')
-        device_prefix.get_style_context().add_class('subtitle-label')
+        device_prefix = Gtk.Label(label=self._t("active_output") + ": ")
+        device_prefix.get_style_context().add_class("subtitle-label")
         status_bar.pack_start(device_prefix, False, False, 0)
         self.device_prefix_label = device_prefix
 
-        self.device_label = Gtk.Label(label=self._t('no_device'))
-        self.device_label.get_style_context().add_class('device-label')
+        self.device_label = Gtk.Label(label=self._t("no_device"))
+        self.device_label.get_style_context().add_class("device-label")
         self.device_label.set_halign(Gtk.Align.END)
         self.device_label.set_ellipsize(Pango.EllipsizeMode.END)
         self.device_label.set_max_width_chars(40)
@@ -595,9 +606,9 @@ class EqualizerApp:
         # Add separator text if there are custom presets
         custom_presets = self.preset_manager.get_custom_presets()
         if custom_presets:
-            self.preset_combo.append('__separator__', '--- ' + self._t('custom_preset') + ' ---')
+            self.preset_combo.append("__separator__", "--- " + self._t("custom_preset") + " ---")
             for preset in custom_presets:
-                self.preset_combo.append(preset['key'], preset['name'])
+                self.preset_combo.append(preset["key"], preset["name"])
 
         self._updating_preset = False
 
@@ -616,7 +627,7 @@ class EqualizerApp:
             return
 
         value = scale.get_value()
-        self.band_labels[band_index].set_text(f'{value:+.1f} dB')
+        self.band_labels[band_index].set_text(f"{value:+.1f} dB")
         self.gain_indicators[band_index].set_gain(value)
 
         if self.backend.enabled:
@@ -625,7 +636,8 @@ class EqualizerApp:
                 GLib.source_remove(self._eq_apply_timeout_id)
             # Schedule a new apply after 150 ms of inactivity
             self._eq_apply_timeout_id = GLib.timeout_add(
-                150, self._apply_eq_debounced,
+                150,
+                self._apply_eq_debounced,
             )
 
     def _apply_eq_debounced(self):
@@ -660,7 +672,7 @@ class EqualizerApp:
             return
 
         active_id = combo.get_active_id()
-        if not active_id or active_id == '__separator__':
+        if not active_id or active_id == "__separator__":
             return
 
         preset = self.preset_manager.get_preset(active_id)
@@ -668,14 +680,14 @@ class EqualizerApp:
             return
 
         # Update delete button sensitivity
-        self.delete_button.set_sensitive(not preset.get('builtin', True))
+        self.delete_button.set_sensitive(not preset.get("builtin", True))
 
         # Apply preset gains to sliders
-        self._set_slider_values(preset['gains'])
+        self._set_slider_values(preset["gains"])
 
         # Persist preset selection and gains
         self.state_db.save_preset(active_id)
-        self.state_db.save_gains(preset['gains'])
+        self.state_db.save_gains(preset["gains"])
 
     def _set_slider_values(self, gains):
         """Set all 8 band sliders to the given gain values.
@@ -686,7 +698,7 @@ class EqualizerApp:
         self._updating_sliders = True
         for i, gain in enumerate(gains):
             self.band_scales[i].set_value(float(gain))
-            self.band_labels[i].set_text(f'{gain:+.1f} dB')
+            self.band_labels[i].set_text(f"{gain:+.1f} dB")
             self.gain_indicators[i].set_gain(float(gain))
         self._updating_sliders = False
 
@@ -694,7 +706,7 @@ class EqualizerApp:
         if self.backend.enabled:
             self.backend.apply_eq_async(
                 gains=[float(g) for g in gains],
-                callback=lambda ok, msg: GLib.idle_add(self._on_eq_applied, ok, msg)
+                callback=lambda ok, msg: GLib.idle_add(self._on_eq_applied, ok, msg),
             )
 
     def _on_toggle_eq(self, button):
@@ -709,7 +721,7 @@ class EqualizerApp:
             # Disable EQ
             success, message = self.backend.disable_eq()
             self._update_enable_button(False)
-            self._set_status(self._t('eq_disabled'))
+            self._set_status(self._t("eq_disabled"))
             self.state_db.save_enabled(False)
         else:
             # Enable EQ with current slider values
@@ -718,11 +730,13 @@ class EqualizerApp:
             success, message = self.backend.enable_eq()
             if success:
                 self._update_enable_button(True)
-                self._set_status(self._t('eq_applied'))
+                self._set_status(self._t("eq_applied"))
                 self.state_db.save_enabled(True)
             else:
                 self._update_enable_button(False)
-                self._set_status(self._t(message) if message in TRANSLATIONS.get(self.language, {}) else message)
+                self._set_status(
+                    self._t(message) if message in TRANSLATIONS.get(self.language, {}) else message
+                )
 
     def _update_enable_button(self, enabled):
         """Update the enable/disable button appearance.
@@ -732,13 +746,13 @@ class EqualizerApp:
         """
         ctx = self.enable_button.get_style_context()
         if enabled:
-            self.enable_button.set_label(self._t('enabled'))
-            ctx.remove_class('toggle-disabled')
-            ctx.add_class('toggle-enabled')
+            self.enable_button.set_label(self._t("enabled"))
+            ctx.remove_class("toggle-disabled")
+            ctx.add_class("toggle-enabled")
         else:
-            self.enable_button.set_label(self._t('enable'))
-            ctx.remove_class('toggle-enabled')
-            ctx.add_class('toggle-disabled')
+            self.enable_button.set_label(self._t("enable"))
+            ctx.remove_class("toggle-enabled")
+            ctx.add_class("toggle-disabled")
 
     def _on_save_preset(self, button):
         """Handle the save preset button click.
@@ -750,12 +764,12 @@ class EqualizerApp:
             button: The Gtk.Button that was clicked.
         """
         dialog = Gtk.Dialog(
-            title=self._t('save_preset'),
+            title=self._t("save_preset"),
             parent=self.window,
             flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT,
         )
-        dialog.add_button(self._t('cancel'), Gtk.ResponseType.CANCEL)
-        dialog.add_button(self._t('save'), Gtk.ResponseType.OK)
+        dialog.add_button(self._t("cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(self._t("save"), Gtk.ResponseType.OK)
 
         content = dialog.get_content_area()
         content.set_margin_start(16)
@@ -764,12 +778,12 @@ class EqualizerApp:
         content.set_margin_bottom(12)
         content.set_spacing(8)
 
-        label = Gtk.Label(label=self._t('preset_name') + ':')
+        label = Gtk.Label(label=self._t("preset_name") + ":")
         label.set_halign(Gtk.Align.START)
         content.pack_start(label, False, False, 0)
 
         entry = Gtk.Entry()
-        entry.set_placeholder_text(self._t('custom_preset'))
+        entry.set_placeholder_text(self._t("custom_preset"))
         entry.set_activates_default(True)
         content.pack_start(entry, False, False, 0)
 
@@ -784,25 +798,22 @@ class EqualizerApp:
             # Check if preset already exists
             if self.preset_manager.preset_exists(preset_name):
                 # Ask to overwrite
-                confirm = self._show_confirm_dialog(
-                    self._t('preset_exists'),
-                    f'{self._t("save")}?'
-                )
+                confirm = self._show_confirm_dialog(self._t("preset_exists"), f"{self._t('save')}?")
                 if not confirm:
                     return
 
             gains = [s.get_value() for s in self.band_scales]
-            success, message, key = self.preset_manager.save_custom_preset(
-                preset_name, gains
-            )
+            success, message, key = self.preset_manager.save_custom_preset(preset_name, gains)
 
             if success:
                 self._populate_preset_combo()
                 # Select the newly saved preset
                 self.preset_combo.set_active_id(key)
-                self._set_status(self._t('preset_saved'))
+                self._set_status(self._t("preset_saved"))
             else:
-                self._set_status(self._t(message) if message in TRANSLATIONS.get(self.language, {}) else message)
+                self._set_status(
+                    self._t(message) if message in TRANSLATIONS.get(self.language, {}) else message
+                )
 
     def _on_delete_preset(self, button):
         """Handle the delete preset button click.
@@ -821,10 +832,7 @@ class EqualizerApp:
             return
 
         # Confirm deletion
-        confirm = self._show_confirm_dialog(
-            self._t('delete_preset'),
-            f'"{preset["name"]}"?'
-        )
+        confirm = self._show_confirm_dialog(self._t("delete_preset"), f'"{preset["name"]}"?')
         if not confirm:
             return
 
@@ -832,9 +840,11 @@ class EqualizerApp:
         if success:
             self._populate_preset_combo()
             self.preset_combo.set_active(0)  # Reset to Flat
-            self._set_status(self._t('preset_deleted'))
+            self._set_status(self._t("preset_deleted"))
         else:
-            self._set_status(self._t(message) if message in TRANSLATIONS.get(self.language, {}) else message)
+            self._set_status(
+                self._t(message) if message in TRANSLATIONS.get(self.language, {}) else message
+            )
 
     def _on_reset(self, button):
         """Handle the reset button click. Resets all bands to 0 dB.
@@ -858,7 +868,7 @@ class EqualizerApp:
             scale: The Gtk.Scale that changed.
         """
         value = scale.get_value()
-        self.volume_label.set_text(f'{value:.0f}%')
+        self.volume_label.set_text(f"{value:.0f}%")
 
         # Apply volume in background thread
         volume_float = value / 100.0
@@ -874,6 +884,7 @@ class EqualizerApp:
         Args:
             button: The Gtk.Button that was clicked.
         """
+
         def _toggle():
             muted = self.backend.toggle_mute()
             GLib.idle_add(self._update_mute_button, muted)
@@ -887,14 +898,15 @@ class EqualizerApp:
             muted: True if currently muted.
         """
         if muted:
-            self.mute_button.set_label(self._t('unmute'))
-            self.mute_button.get_style_context().add_class('danger-button')
+            self.mute_button.set_label(self._t("unmute"))
+            self.mute_button.get_style_context().add_class("danger-button")
         else:
-            self.mute_button.set_label(self._t('mute'))
-            self.mute_button.get_style_context().remove_class('danger-button')
+            self.mute_button.set_label(self._t("mute"))
+            self.mute_button.get_style_context().remove_class("danger-button")
 
     def _refresh_device_info(self):
         """Refresh the displayed audio output device information."""
+
         def _detect():
             device_name = self.backend.refresh_output_device()
             GLib.idle_add(self._update_device_label, device_name)
@@ -910,10 +922,11 @@ class EqualizerApp:
         if device_name:
             self.device_label.set_text(device_name)
         else:
-            self.device_label.set_text(self._t('no_device'))
+            self.device_label.set_text(self._t("no_device"))
 
     def _refresh_volume(self):
         """Refresh the displayed master volume level."""
+
         def _get_vol():
             volume, muted = self.backend.get_volume()
             GLib.idle_add(self._update_volume_display, volume, muted)
@@ -929,7 +942,7 @@ class EqualizerApp:
         """
         pct = volume * 100.0
         self.volume_scale.set_value(pct)
-        self.volume_label.set_text(f'{pct:.0f}%')
+        self.volume_label.set_text(f"{pct:.0f}%")
         self._update_mute_button(muted)
 
     def _on_eq_applied(self, success, message):

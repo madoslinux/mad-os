@@ -151,27 +151,69 @@ class TestSwayKeywords(unittest.TestCase):
     # Top-level config commands from Sway v1.11 commands.c handlers array
     VALID_TOP_LEVEL_KEYWORDS = {
         # From handlers array (config-time AND runtime)
-        "assign", "bar", "bindcode", "bindgesture", "bindswitch", "bindsym",
-        "client.background", "client.focused", "client.focused_inactive",
-        "client.focused_tab_title", "client.placeholder",
-        "client.unfocused", "client.urgent",
-        "default_border", "default_floating_border",
-        "exec", "exec_always",
-        "floating_maximum_size", "floating_minimum_size", "floating_modifier",
-        "focus", "focus_follows_mouse", "focus_on_window_activation",
+        "assign",
+        "bar",
+        "bindcode",
+        "bindgesture",
+        "bindswitch",
+        "bindsym",
+        "client.background",
+        "client.focused",
+        "client.focused_inactive",
+        "client.focused_tab_title",
+        "client.placeholder",
+        "client.unfocused",
+        "client.urgent",
+        "default_border",
+        "default_floating_border",
+        "exec",
+        "exec_always",
+        "floating_maximum_size",
+        "floating_minimum_size",
+        "floating_modifier",
+        "focus",
+        "focus_follows_mouse",
+        "focus_on_window_activation",
         "focus_wrapping",
-        "font", "for_window", "force_display_urgency_hint",
-        "force_focus_wrapping", "fullscreen",
-        "gaps", "hide_edge_borders", "input", "mode", "mouse_warping",
-        "new_float", "new_window", "no_focus", "output",
-        "popup_during_fullscreen", "seat", "set", "show_marks",
-        "smart_borders", "smart_gaps", "tiling_drag", "tiling_drag_threshold",
-        "title_align", "titlebar_border_thickness", "titlebar_padding",
-        "unbindcode", "unbindgesture", "unbindswitch", "unbindsym",
-        "workspace", "workspace_auto_back_and_forth",
+        "font",
+        "for_window",
+        "force_display_urgency_hint",
+        "force_focus_wrapping",
+        "fullscreen",
+        "gaps",
+        "hide_edge_borders",
+        "input",
+        "mode",
+        "mouse_warping",
+        "new_float",
+        "new_window",
+        "no_focus",
+        "output",
+        "popup_during_fullscreen",
+        "seat",
+        "set",
+        "show_marks",
+        "smart_borders",
+        "smart_gaps",
+        "tiling_drag",
+        "tiling_drag_threshold",
+        "title_align",
+        "titlebar_border_thickness",
+        "titlebar_padding",
+        "unbindcode",
+        "unbindgesture",
+        "unbindswitch",
+        "unbindsym",
+        "workspace",
+        "workspace_auto_back_and_forth",
         # Config-only commands (config_handlers)
-        "default_orientation", "include", "primary_selection",
-        "swaybg_command", "swaynag_command", "workspace_layout", "xwayland",
+        "default_orientation",
+        "include",
+        "primary_selection",
+        "swaybg_command",
+        "swaynag_command",
+        "workspace_layout",
+        "xwayland",
     }
 
     def _get_top_level_keywords(self):
@@ -386,10 +428,19 @@ class TestSwayBindsymSyntax(unittest.TestCase):
 
     def test_bindsym_uses_valid_flags(self):
         """bindsym flags must be valid Sway flags."""
-        valid_flags = {"--locked", "--to-code", "--no-warn",
-                       "--no-repeat", "--release", "--no-startup-id",
-                       "--inhibited", "--border", "--whole-window",
-                       "--exclude-titlebar", "--input-device"}
+        valid_flags = {
+            "--locked",
+            "--to-code",
+            "--no-warn",
+            "--no-repeat",
+            "--release",
+            "--no-startup-id",
+            "--inhibited",
+            "--border",
+            "--whole-window",
+            "--exclude-titlebar",
+            "--input-device",
+        }
         bind_lines = self._get_bindsym_lines()
         for value, line in bind_lines:
             flags = re.findall(r"(--\S+)", value)
@@ -466,10 +517,23 @@ class TestSwayWindowRules(unittest.TestCase):
 
     # Valid criteria keys for Sway for_window rules
     VALID_CRITERIA = {
-        "app_id", "class", "instance", "title", "window_role",
-        "window_type", "con_id", "con_mark", "floating", "tiling",
-        "urgent", "workspace", "shell", "pid",
-        "floating_from", "tiling_from", "all",
+        "app_id",
+        "class",
+        "instance",
+        "title",
+        "window_role",
+        "window_type",
+        "con_id",
+        "con_mark",
+        "floating",
+        "tiling",
+        "urgent",
+        "workspace",
+        "shell",
+        "pid",
+        "floating_from",
+        "tiling_from",
+        "all",
     }
 
     def _get_for_window_rules(self):
@@ -515,11 +579,7 @@ class TestSwayWindowRules(unittest.TestCase):
         for criteria, _, line in rules:
             # Parse key=value pairs from criteria (string split to avoid
             # backtracking-vulnerable regex)
-            keys = [
-                tok.split("=")[0]
-                for tok in criteria.split()
-                if "=" in tok
-            ]
+            keys = [tok.split("=")[0] for tok in criteria.split() if "=" in tok]
             for key in keys:
                 with self.subTest(line=line[:80], key=key):
                     self.assertIn(
@@ -532,11 +592,7 @@ class TestSwayWindowRules(unittest.TestCase):
         """Criteria keys in no_focus must be valid Sway criteria."""
         rules = self._get_no_focus_rules()
         for criteria, line in rules:
-            keys = [
-                tok.split("=")[0]
-                for tok in criteria.split()
-                if "=" in tok
-            ]
+            keys = [tok.split("=")[0] for tok in criteria.split() if "=" in tok]
             for key in keys:
                 with self.subTest(line=line[:80], key=key):
                     self.assertIn(
@@ -594,7 +650,8 @@ class TestSwayColors(unittest.TestCase):
         content = _read_config()
         # Find client.* lines (they use color variables)
         client_lines = [
-            line.strip() for line in content.splitlines()
+            line.strip()
+            for line in content.splitlines()
             if line.strip().startswith("client.") and not line.strip().startswith("#")
         ]
         self.assertGreater(
@@ -630,15 +687,40 @@ class TestSwayInputSubcommands(unittest.TestCase):
 
     # Valid input subcommands from sway/commands/input/ directory (v1.11)
     VALID_INPUT_SUBCOMMANDS = {
-        "accel_profile", "calibration_matrix", "click_method",
-        "clickfinger_button_map", "drag", "drag_lock", "dwt", "dwtp",
-        "events", "left_handed", "map_from_region", "map_to_output",
-        "map_to_region", "middle_emulation", "natural_scroll",
-        "pointer_accel", "repeat_delay", "repeat_rate", "rotation_angle",
-        "scroll_button", "scroll_button_lock", "scroll_factor",
-        "scroll_method", "tap", "tap_button_map", "tool_mode",
-        "xkb_capslock", "xkb_file", "xkb_layout", "xkb_model",
-        "xkb_numlock", "xkb_options", "xkb_rules", "xkb_switch_layout",
+        "accel_profile",
+        "calibration_matrix",
+        "click_method",
+        "clickfinger_button_map",
+        "drag",
+        "drag_lock",
+        "dwt",
+        "dwtp",
+        "events",
+        "left_handed",
+        "map_from_region",
+        "map_to_output",
+        "map_to_region",
+        "middle_emulation",
+        "natural_scroll",
+        "pointer_accel",
+        "repeat_delay",
+        "repeat_rate",
+        "rotation_angle",
+        "scroll_button",
+        "scroll_button_lock",
+        "scroll_factor",
+        "scroll_method",
+        "tap",
+        "tap_button_map",
+        "tool_mode",
+        "xkb_capslock",
+        "xkb_file",
+        "xkb_layout",
+        "xkb_model",
+        "xkb_numlock",
+        "xkb_options",
+        "xkb_rules",
+        "xkb_switch_layout",
         "xkb_variant",
     }
 
@@ -803,9 +885,7 @@ class TestSwayModeBlocks(unittest.TestCase):
         content = _read_config()
         clean = re.sub(r"#.*$", "", content, flags=re.MULTILINE)
         # Find mode blocks
-        mode_blocks = re.findall(
-            r'mode\s+"([^"]+)"\s*\{([^}]*)\}', clean, re.DOTALL
-        )
+        mode_blocks = re.findall(r'mode\s+"([^"]+)"\s*\{([^}]*)\}', clean, re.DOTALL)
         for name, body in mode_blocks:
             with self.subTest(mode=name):
                 self.assertIn(
@@ -818,9 +898,7 @@ class TestSwayModeBlocks(unittest.TestCase):
         """Each mode block must have a binding that returns to mode 'default'."""
         content = _read_config()
         clean = re.sub(r"#.*$", "", content, flags=re.MULTILINE)
-        mode_blocks = re.findall(
-            r'mode\s+"([^"]+)"\s*\{([^}]*)\}', clean, re.DOTALL
-        )
+        mode_blocks = re.findall(r'mode\s+"([^"]+)"\s*\{([^}]*)\}', clean, re.DOTALL)
         for name, body in mode_blocks:
             with self.subTest(mode=name):
                 self.assertIn(

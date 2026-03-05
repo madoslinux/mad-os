@@ -139,9 +139,7 @@ def update_summary(app):
         )
 
     part_info = Gtk.Label()
-    part_info.set_markup(
-        f'<span size="9000" font_family="monospace">{part_text}</span>'
-    )
+    part_info.set_markup(f'<span size="9000" font_family="monospace">{part_text}</span>')
     part_info.set_halign(Gtk.Align.START)
     part_info.set_line_wrap(True)
     part_card.pack_start(part_info, False, False, 0)

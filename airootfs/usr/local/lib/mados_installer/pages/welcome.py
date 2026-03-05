@@ -4,9 +4,7 @@ madOS Installer - Welcome page
 
 from gi.repository import Gtk
 
-from ..config import (
-    NORD_POLAR_NIGHT, NORD_SNOW_STORM, NORD_FROST
-)
+from ..config import NORD_POLAR_NIGHT, NORD_SNOW_STORM, NORD_FROST
 from ..translations import TRANSLATIONS
 from ..utils import load_logo
 
@@ -14,7 +12,7 @@ from ..utils import load_logo
 def create_welcome_page(app):
     """Welcome page with centered design, logo, features and language selector"""
     page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    page.get_style_context().add_class('welcome-container')
+    page.get_style_context().add_class("welcome-container")
 
     content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     content.set_halign(Gtk.Align.CENTER)
@@ -46,7 +44,7 @@ def create_welcome_page(app):
 
     # ── Divider ──
     divider = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-    divider.get_style_context().add_class('welcome-divider')
+    divider.get_style_context().add_class("welcome-divider")
     divider.set_margin_start(40)
     divider.set_margin_end(40)
     divider.set_margin_bottom(10)
@@ -64,12 +62,14 @@ def create_welcome_page(app):
     features_box.set_margin_start(20)
     features_box.set_margin_end(20)
 
-    for feature in app.t('features'):
+    for feature in app.t("features"):
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        card.get_style_context().add_class('feature-card')
+        card.get_style_context().add_class("feature-card")
 
         lbl = Gtk.Label()
-        lbl.set_markup(f'<span foreground="{NORD_FROST["nord8"]}" weight="bold" size="small">{feature}</span>')
+        lbl.set_markup(
+            f'<span foreground="{NORD_FROST["nord8"]}" weight="bold" size="small">{feature}</span>'
+        )
         lbl.set_halign(Gtk.Align.CENTER)
         lbl.set_valign(Gtk.Align.CENTER)
         card.pack_start(lbl, True, True, 0)
@@ -97,7 +97,7 @@ def create_welcome_page(app):
         app.lang_combo.set_active(langs.index(app.current_lang))
     except ValueError:
         app.lang_combo.set_active(0)
-    app.lang_combo.connect('changed', app.on_language_changed)
+    app.lang_combo.connect("changed", app.on_language_changed)
     lang_box.pack_start(app.lang_combo, False, False, 0)
 
     content.pack_start(lang_box, False, False, 0)
@@ -107,14 +107,14 @@ def create_welcome_page(app):
     btn_box.set_halign(Gtk.Align.CENTER)
     btn_box.set_margin_top(14)
 
-    start_btn = Gtk.Button(label=app.t('start_install'))
-    start_btn.get_style_context().add_class('start-button')
-    start_btn.connect('clicked', lambda x: app.notebook.next_page())
+    start_btn = Gtk.Button(label=app.t("start_install"))
+    start_btn.get_style_context().add_class("start-button")
+    start_btn.connect("clicked", lambda x: app.notebook.next_page())
     btn_box.pack_start(start_btn, False, False, 0)
 
-    exit_btn = Gtk.Button(label=app.t('exit'))
-    exit_btn.get_style_context().add_class('exit-button')
-    exit_btn.connect('clicked', lambda x: Gtk.main_quit())
+    exit_btn = Gtk.Button(label=app.t("exit"))
+    exit_btn.get_style_context().add_class("exit-button")
+    exit_btn.connect("clicked", lambda x: Gtk.main_quit())
     btn_box.pack_start(exit_btn, False, False, 0)
 
     content.pack_start(btn_box, False, False, 0)

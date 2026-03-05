@@ -348,6 +348,7 @@ def detect_system_language():
         A string matching one of the keys in TRANSLATIONS.
     """
     import os
+
     lang = os.environ.get("LANG", "en_US.UTF-8")
     lang_prefix = lang.split("_")[0].split(".")[0].lower()
 

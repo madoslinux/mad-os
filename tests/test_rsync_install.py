@@ -21,14 +21,13 @@ from unittest.mock import patch, MagicMock, call
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 # ---------------------------------------------------------------------------
 # Add installer lib to path and import
 # ---------------------------------------------------------------------------
-sys.path.insert(
-    0, os.path.join(os.path.dirname(__file__), "..", "airootfs", "usr", "local", "lib")
-)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "airootfs", "usr", "local", "lib"))
 
 from mados_installer.pages.installation import _rsync_rootfs_with_progress
 from mados_installer.pages.installation import _post_rsync_cleanup
@@ -76,9 +75,9 @@ def _make_popen_dispatcher(mock_first, mock_rest):
     return dispatcher
 
 
-def _patched_rsync_run(app, *, popen_kw, run_kw,
-                       set_progress_kw=None, os_remove_kw=None,
-                       open_kw=None):
+def _patched_rsync_run(
+    app, *, popen_kw, run_kw, set_progress_kw=None, os_remove_kw=None, open_kw=None
+):
     """Execute ``_rsync_rootfs_with_progress`` with standard patches applied.
 
     Five configurable patch targets and one fixed target (``log_message``)
@@ -100,8 +99,11 @@ def _patched_rsync_run(app, *, popen_kw, run_kw,
         Optional kwargs for ``patch(builtins.open, ...)``.
         When *None*, ``builtins.open`` is replaced with a plain ``MagicMock()``.
     """
-    open_patch = (patch("builtins.open", **open_kw) if open_kw is not None
-                  else patch("builtins.open", MagicMock()))
+    open_patch = (
+        patch("builtins.open", **open_kw)
+        if open_kw is not None
+        else patch("builtins.open", MagicMock())
+    )
     with (
         patch(f"{_MOD}.subprocess.Popen", **popen_kw),
         patch(f"{_MOD}.subprocess.run", **run_kw),
@@ -232,9 +234,7 @@ class TestRsyncProgress(unittest.TestCase):
         ]
         progress_values = self._capture_progress(rsync_stdout_lines=lines)
 
-        self.assertGreater(
-            len(progress_values), 0, "Should have recorded progress values"
-        )
+        self.assertGreater(len(progress_values), 0, "Should have recorded progress values")
         for p in progress_values:
             self.assertGreaterEqual(p, 0.21, f"Progress {p} below start 0.21")
             self.assertLessEqual(p, 0.48, f"Progress {p} above end 0.48")
@@ -282,12 +282,10 @@ class TestArchisoCleanup(unittest.TestCase):
         )
 
         # Find the arch-chroot pacman -Rdd call
-        archiso_calls = [
-            c for c in run_calls
-            if "arch-chroot" in c and "mkinitcpio-archiso" in c
-        ]
+        archiso_calls = [c for c in run_calls if "arch-chroot" in c and "mkinitcpio-archiso" in c]
         self.assertEqual(
-            len(archiso_calls), 1,
+            len(archiso_calls),
+            1,
             "Must call arch-chroot to remove mkinitcpio-archiso exactly once",
         )
         cmd = archiso_calls[0]
@@ -304,8 +302,10 @@ class TestArchisoCleanup(unittest.TestCase):
 
         def mock_open(path, *args, **kwargs):
             open_calls.append(path)
-            return MagicMock(__enter__=MagicMock(return_value=MagicMock()),
-                             __exit__=MagicMock(return_value=False))
+            return MagicMock(
+                __enter__=MagicMock(return_value=MagicMock()),
+                __exit__=MagicMock(return_value=False),
+            )
 
         app = MockApp()
         _patched_rsync_run(
@@ -319,14 +319,16 @@ class TestArchisoCleanup(unittest.TestCase):
         # Verify os.remove was called for machine-id
         machine_id_removes = [p for p in os_remove_calls if "machine-id" in p]
         self.assertGreater(
-            len(machine_id_removes), 0,
+            len(machine_id_removes),
+            0,
             "Must call os.remove on /mnt/etc/machine-id",
         )
 
         # Verify open() was called to create an empty machine-id file
         machine_id_opens = [p for p in open_calls if "machine-id" in str(p)]
         self.assertGreater(
-            len(machine_id_opens), 0,
+            len(machine_id_opens),
+            0,
             "Must create an empty /mnt/etc/machine-id file",
         )
 
@@ -339,9 +341,7 @@ class TestRsyncExitCodes(unittest.TestCase):
 
     def _run_with_returncode(self, returncode):
         """Run _rsync_rootfs_with_progress with a specific rsync return code."""
-        dispatcher = _make_popen_dispatcher(
-            _make_mock_proc(returncode), _make_mock_proc()
-        )
+        dispatcher = _make_popen_dispatcher(_make_mock_proc(returncode), _make_mock_proc())
         app = MockApp()
         _patched_rsync_run(
             app,
@@ -398,8 +398,13 @@ class TestKernelPlacement(unittest.TestCase):
     @patch(f"{_MOD}.os.access", return_value=True)
     @patch(f"{_MOD}.os.path.isfile", return_value=True)
     def test_kernel_already_present(
-        self, mock_isfile, mock_access, mock_getsize,
-        mock_glob, mock_run, mock_log,
+        self,
+        mock_isfile,
+        mock_access,
+        mock_getsize,
+        mock_glob,
+        mock_run,
+        mock_log,
     ):
         """When /mnt/boot/vmlinuz-linux exists and is readable, no copy occurs."""
         _ensure_kernel_in_target(self.app)
@@ -422,15 +427,19 @@ class TestKernelPlacement(unittest.TestCase):
     @patch(f"{_MOD}.os.access", return_value=True)
     @patch(f"{_MOD}.os.path.isfile", return_value=True)
     def test_kernel_copied_from_modules(
-        self, mock_isfile, mock_access, mock_getsize,
-        mock_glob, mock_run, mock_log,
+        self,
+        mock_isfile,
+        mock_access,
+        mock_getsize,
+        mock_glob,
+        mock_run,
+        mock_log,
     ):
         """When kernel is missing, copy from /usr/lib/modules/*/vmlinuz (newest first)."""
         _ensure_kernel_in_target(self.app)
 
         mock_run.assert_called_once_with(
-            ["cp", "/usr/lib/modules/6.12.1-arch1/vmlinuz",
-             "/mnt/boot/vmlinuz-linux"],
+            ["cp", "/usr/lib/modules/6.12.1-arch1/vmlinuz", "/mnt/boot/vmlinuz-linux"],
             check=True,
         )
 
@@ -441,13 +450,19 @@ class TestKernelPlacement(unittest.TestCase):
     @patch(f"{_MOD}.os.access")
     @patch(f"{_MOD}.os.path.isfile")
     def test_kernel_copied_from_boot(
-        self, mock_isfile, mock_access, mock_getsize,
-        mock_glob, mock_run, mock_log,
+        self,
+        mock_isfile,
+        mock_access,
+        mock_getsize,
+        mock_glob,
+        mock_run,
+        mock_log,
     ):
         """Fallback: copy from /boot/vmlinuz-linux when modules dir has no vmlinuz."""
+
         def isfile_side_effect(path):
             if path == "/mnt/boot/vmlinuz-linux":
-                return True   # exists but empty (getsize=0)
+                return True  # exists but empty (getsize=0)
             if path == "/boot/vmlinuz-linux":
                 return True
             return False
@@ -478,20 +493,24 @@ class TestRsyncExcludes8GB(unittest.TestCase):
 
     def test_documentation_excluded(self):
         """Documentation directories must be excluded to save disk space."""
-        for path in ['/usr/share/doc/*', '/usr/share/man/*',
-                     '/usr/share/info/*', '/usr/share/gtk-doc/*',
-                     '/usr/share/help/*']:
+        for path in [
+            "/usr/share/doc/*",
+            "/usr/share/man/*",
+            "/usr/share/info/*",
+            "/usr/share/gtk-doc/*",
+            "/usr/share/help/*",
+        ]:
             with self.subTest(path=path):
                 self.assertIn(path, RSYNC_EXCLUDES)
 
     def test_gpu_firmware_not_excluded(self):
         """AMD and NVIDIA GPU firmware must NOT be excluded (broad hardware support)."""
-        self.assertNotIn('/usr/lib/firmware/amdgpu/*', RSYNC_EXCLUDES)
-        self.assertNotIn('/usr/lib/firmware/nvidia/*', RSYNC_EXCLUDES)
+        self.assertNotIn("/usr/lib/firmware/amdgpu/*", RSYNC_EXCLUDES)
+        self.assertNotIn("/usr/lib/firmware/nvidia/*", RSYNC_EXCLUDES)
 
     def test_archiso_initcpio_excluded(self):
         """Archiso-only initcpio configuration must be excluded."""
-        self.assertIn('/etc/initcpio/*', RSYNC_EXCLUDES)
+        self.assertIn("/etc/initcpio/*", RSYNC_EXCLUDES)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

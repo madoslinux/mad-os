@@ -20,15 +20,14 @@ from unittest.mock import patch, MagicMock, call
 # ---------------------------------------------------------------------------
 sys.path.insert(0, os.path.dirname(__file__))
 from test_helpers import install_gtk_mocks
+
 install_gtk_mocks()
 
 # ---------------------------------------------------------------------------
 # Add installer lib to path and import
 # ---------------------------------------------------------------------------
 
-sys.path.insert(
-    0, os.path.join(os.path.dirname(__file__), "..", "airootfs", "usr", "local", "lib")
-)
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "airootfs", "usr", "local", "lib"))
 
 from mados_installer.pages.installation import (
     _download_packages_with_progress,
@@ -81,9 +80,7 @@ class TestDownloadProgressRanges(unittest.TestCase):
             _download_packages_with_progress(app, list(PACKAGES))
 
         # Verify progress stays within the expected range
-        self.assertGreater(
-            len(progress_values), 0, "Should have recorded progress values"
-        )
+        self.assertGreater(len(progress_values), 0, "Should have recorded progress values")
         for p in progress_values:
             self.assertGreaterEqual(p, 0.25, f"Progress {p} below download start 0.25")
             self.assertLessEqual(p, 0.36, f"Progress {p} above download end 0.36")
@@ -132,9 +129,7 @@ class TestDownloadProgressRanges(unittest.TestCase):
             _run_pacstrap_with_progress(app, ["base", "linux", "grub"])
 
         # Verify progress stays within the expected range
-        self.assertGreater(
-            len(progress_values), 0, "Should have recorded progress values"
-        )
+        self.assertGreater(len(progress_values), 0, "Should have recorded progress values")
         for p in progress_values:
             self.assertGreaterEqual(p, 0.36, f"Progress {p} below install start 0.36")
             self.assertLessEqual(p, 0.48, f"Progress {p} above install end 0.48")
@@ -314,9 +309,7 @@ class TestProgressBarNoise(unittest.TestCase):
 
         # Progress-bar lines should be filtered out
         for msg in log_messages:
-            self.assertNotRegex(
-                msg, r"\d+%\s*\[", f"Progress bar line not filtered: {msg}"
-            )
+            self.assertNotRegex(msg, r"\d+%\s*\[", f"Progress bar line not filtered: {msg}")
 
 
 class TestDemoModeProgressMath(unittest.TestCase):
@@ -344,12 +337,8 @@ class TestDemoModeProgressMath(unittest.TestCase):
         group_size = 10
         end = min(group_size, len(PACKAGES))
         first_progress = 0.25 + (0.11 * end / len(PACKAGES))
-        self.assertGreater(
-            first_progress, 0.25, "First demo download progress should be > 0.25"
-        )
-        self.assertLess(
-            first_progress, 0.36, "First demo download progress should be < 0.36"
-        )
+        self.assertGreater(first_progress, 0.25, "First demo download progress should be > 0.25")
+        self.assertLess(first_progress, 0.36, "First demo download progress should be < 0.36")
 
 
 class TestPacstrapRetryLogic(unittest.TestCase):
@@ -481,9 +470,7 @@ class TestPacstrapRetryLogic(unittest.TestCase):
             _run_pacstrap_with_progress(app, ["base"], max_retries=3)
 
         # Should have called pacman -Sy twice (between attempt 1→2 and 2→3)
-        pacman_sy_calls = [
-            c for c in run_calls if c == ["pacman", "-Sy", "--noconfirm"]
-        ]
+        pacman_sy_calls = [c for c in run_calls if c == ["pacman", "-Sy", "--noconfirm"]]
         self.assertEqual(len(pacman_sy_calls), 2)
 
     def test_max_retries_parameter(self):
@@ -517,7 +504,6 @@ class TestPacstrapRetryLogic(unittest.TestCase):
 
         # Should have attempted exactly 2 times
         self.assertEqual(popen_count[0], 2)
-
 
 
 class MockLogBuffer:

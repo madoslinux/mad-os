@@ -12,15 +12,40 @@ import random
 
 # Supported video extensions
 VIDEO_EXTENSIONS = {
-    ".mp4", ".mkv", ".avi", ".mov", ".wmv", ".flv", ".webm",
-    ".m4v", ".mpg", ".mpeg", ".3gp", ".ogv", ".ts", ".vob",
-    ".divx", ".asf", ".rm", ".rmvb", ".m2ts", ".mts",
+    ".mp4",
+    ".mkv",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".m4v",
+    ".mpg",
+    ".mpeg",
+    ".3gp",
+    ".ogv",
+    ".ts",
+    ".vob",
+    ".divx",
+    ".asf",
+    ".rm",
+    ".rmvb",
+    ".m2ts",
+    ".mts",
 }
 
 # Supported audio extensions (player can handle audio-only too)
 AUDIO_EXTENSIONS = {
-    ".mp3", ".flac", ".ogg", ".opus", ".wav", ".aac", ".m4a",
-    ".wma", ".ape", ".alac",
+    ".mp3",
+    ".flac",
+    ".ogg",
+    ".opus",
+    ".wav",
+    ".aac",
+    ".m4a",
+    ".wma",
+    ".ape",
+    ".alac",
 }
 
 ALL_MEDIA_EXTENSIONS = VIDEO_EXTENSIONS | AUDIO_EXTENSIONS
@@ -84,6 +109,7 @@ def scan_directory(directory, recursive=False):
 
 class RepeatMode:
     """Enumeration for repeat modes."""
+
     NONE = "none"
     ALL = "all"
     ONE = "one"

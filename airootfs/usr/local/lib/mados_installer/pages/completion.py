@@ -12,7 +12,7 @@ from ..config import DEMO_MODE, NORD_AURORA, NORD_POLAR_NIGHT
 def create_completion_page(app):
     """Completion page with success message and reboot/exit buttons"""
     page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    page.get_style_context().add_class('page-container')
+    page.get_style_context().add_class("page-container")
 
     content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     content.set_halign(Gtk.Align.FILL)
@@ -41,19 +41,19 @@ def create_completion_page(app):
 
     # Info card
     info_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-    info_card.get_style_context().add_class('completion-card')
+    info_card.get_style_context().add_class("completion-card")
     info_card.set_hexpand(True)
 
     if DEMO_MODE:
         info = Gtk.Label()
         info.set_markup(
             '<span size="9000">This was a <b>DEMONSTRATION</b> of the madOS installer.\n\n'
-            'In real mode (DEMO_MODE = False):\n'
-            '  • System would be installed to disk\n'
-            '  • All configurations would be applied\n'
-            '  • System would be ready to boot\n\n'
-            '<b>Edit config.py and set DEMO_MODE = False\n'
-            'for real installation.</b></span>'
+            "In real mode (DEMO_MODE = False):\n"
+            "  • System would be installed to disk\n"
+            "  • All configurations would be applied\n"
+            "  • System would be ready to boot\n\n"
+            "<b>Edit config.py and set DEMO_MODE = False\n"
+            "for real installation.</b></span>"
         )
     else:
         info = Gtk.Label()
@@ -70,14 +70,14 @@ def create_completion_page(app):
     btn_box.set_margin_top(14)
 
     if not DEMO_MODE:
-        reboot_btn = Gtk.Button(label=app.t('reboot_now'))
-        reboot_btn.get_style_context().add_class('success-button')
-        reboot_btn.connect('clicked', lambda x: subprocess.run(['reboot']))
+        reboot_btn = Gtk.Button(label=app.t("reboot_now"))
+        reboot_btn.get_style_context().add_class("success-button")
+        reboot_btn.connect("clicked", lambda x: subprocess.run(["reboot"]))
         btn_box.pack_start(reboot_btn, False, False, 0)
 
-    exit_btn = Gtk.Button(label=app.t('exit_live'))
-    exit_btn.get_style_context().add_class('nav-back-button')
-    exit_btn.connect('clicked', lambda x: Gtk.main_quit())
+    exit_btn = Gtk.Button(label=app.t("exit_live"))
+    exit_btn.get_style_context().add_class("nav-back-button")
+    exit_btn.connect("clicked", lambda x: Gtk.main_quit())
     btn_box.pack_start(exit_btn, False, False, 0)
 
     content.pack_start(btn_box, False, False, 0)

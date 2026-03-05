@@ -39,11 +39,7 @@ def _get_custom_service_files():
         return services
     for fname in sorted(os.listdir(SYSTEMD_DIR)):
         fpath = os.path.join(SYSTEMD_DIR, fname)
-        if (
-            fname.endswith(".service")
-            and os.path.isfile(fpath)
-            and not os.path.islink(fpath)
-        ):
+        if fname.endswith(".service") and os.path.isfile(fpath) and not os.path.islink(fpath):
             services.append((fname, fpath))
     return services
 
@@ -132,8 +128,7 @@ class TestSystemdServicesReferenceExistingScripts(unittest.TestCase):
                     airootfs_path = os.path.join(AIROOTFS, exe.lstrip("/"))
                     self.assertTrue(
                         os.path.isfile(airootfs_path),
-                        f"{svc_name}: ExecStart script {exe} not found at "
-                        f"{airootfs_path}",
+                        f"{svc_name}: ExecStart script {exe} not found at {airootfs_path}",
                     )
 
 
@@ -154,17 +149,14 @@ class TestAllScriptsHavePermissions(unittest.TestCase):
                 self.assertIn(
                     expected,
                     self.profiledef,
-                    f"{name} is in /usr/local/bin/ but has no permissions "
-                    f"entry in profiledef.sh",
+                    f"{name} is in /usr/local/bin/ but has no permissions entry in profiledef.sh",
                 )
 
     def test_all_bin_scripts_are_executable(self):
         """All scripts in /usr/local/bin/ must have 755 permissions."""
         for name, _ in _get_bin_scripts():
             with self.subTest(script=name):
-                pattern = re.compile(
-                    rf'\["/usr/local/bin/{re.escape(name)}"\]="0:0:755"'
-                )
+                pattern = re.compile(rf'\["/usr/local/bin/{re.escape(name)}"\]="0:0:755"')
                 self.assertRegex(
                     self.profiledef,
                     pattern,
@@ -348,7 +340,7 @@ class TestLivecdSoundPickACard(unittest.TestCase):
         # Must use mapfile/readarray or declare -a to create a real array
         self.assertRegex(
             self.content,
-            r'(mapfile|readarray|local -a) .* usable_cards',
+            r"(mapfile|readarray|local -a) .* usable_cards",
             "usable_cards must be a proper bash array (mapfile or declare -a)",
         )
 
@@ -364,9 +356,11 @@ class TestLivecdSoundPickACard(unittest.TestCase):
         """livecd-sound must have valid bash syntax after fix."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )

@@ -5,6 +5,7 @@ import math
 import os
 
 import gi
+
 gi.require_version("Gtk", "3.0")
 gi.require_version("Gdk", "3.0")
 
@@ -12,6 +13,7 @@ gi.require_version("Gdk", "3.0")
 try:
     gi.require_version("GtkLayerShell", "0.1")
     from gi.repository import GtkLayerShell
+
     HAS_LAYER_SHELL = True
 except (ValueError, ImportError):
     GtkLayerShell = None
@@ -53,20 +55,20 @@ from .window_tracker import WindowTracker
 from .theme import apply_theme
 
 # --- Indicator constants ---
-INDICATOR_HEIGHT = 6       # Height of the running indicator area
-INDICATOR_DOT_RADIUS = 3   # Dot radius for running indicator
-WINDOW_POLL_MS = 2000      # Poll compositor every 2 seconds
+INDICATOR_HEIGHT = 6  # Height of the running indicator area
+INDICATOR_DOT_RADIUS = 3  # Dot radius for running indicator
+WINDOW_POLL_MS = 2000  # Poll compositor every 2 seconds
 
 # --- Bounce animation constants ---
-BOUNCE_AMPLITUDE = 3        # Pixels to jump up/down
-BOUNCE_DURATION_MS = 50   # Milliseconds per bounce frame
+BOUNCE_AMPLITUDE = 3  # Pixels to jump up/down
+BOUNCE_DURATION_MS = 50  # Milliseconds per bounce frame
 BOUNCE_TOTAL_SECONDS = 3  # Total duration of bounce animation
 
 
 def _hex_to_rgb(hex_color):
     """Convert hex color string to (r, g, b) floats 0-1."""
     h = hex_color.lstrip("#")
-    return tuple(int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4))
+    return tuple(int(h[i : i + 2], 16) / 255.0 for i in (0, 2, 4))
 
 
 class LauncherApp:
@@ -85,8 +87,8 @@ class LauncherApp:
         self._screen_height = 768  # Will be updated
         self._auto_collapse_id = None  # Timer ID for auto-collapse after launch
         self._entries = []
-        self._grouped = []         # list of DesktopEntry | EntryGroup
-        self._icon_buttons = []    # list of (btn, indicator_draw, entry)
+        self._grouped = []  # list of DesktopEntry | EntryGroup
+        self._icon_buttons = []  # list of (btn, indicator_draw, entry)
 
         # Icon zoom animation state: id(btn) -> {current_size, target_size, timer (GLib source ID or None), entry, btn}
         self._zoom_state = {}
@@ -171,9 +173,7 @@ class LauncherApp:
             GtkLayerShell.set_margin(self.window, GtkLayerShell.Edge.LEFT, 0)
 
             # No keyboard interactivity
-            GtkLayerShell.set_keyboard_mode(
-                self.window, GtkLayerShell.KeyboardMode.NONE
-            )
+            GtkLayerShell.set_keyboard_mode(self.window, GtkLayerShell.KeyboardMode.NONE)
         else:
             # Fallback: regular floating window pinned to left edge
             self.window.set_type_hint(Gdk.WindowTypeHint.DOCK)
@@ -258,8 +258,7 @@ class LauncherApp:
         self._left_grip_event_box = Gtk.EventBox()
         self._left_grip_event_box.set_above_child(True)
         self._left_grip_event_box.add_events(
-            Gdk.EventMask.BUTTON_PRESS_MASK
-            | Gdk.EventMask.BUTTON_RELEASE_MASK
+            Gdk.EventMask.BUTTON_PRESS_MASK | Gdk.EventMask.BUTTON_RELEASE_MASK
         )
 
         self._left_grip_draw = Gtk.DrawingArea()
@@ -437,9 +436,7 @@ class LauncherApp:
         self._drag_update_pending = False
         self._margin_top = self._pending_margin
         if HAS_LAYER_SHELL:
-            GtkLayerShell.set_margin(
-                self.window, GtkLayerShell.Edge.TOP, self._margin_top
-            )
+            GtkLayerShell.set_margin(self.window, GtkLayerShell.Edge.TOP, self._margin_top)
         else:
             self.window.move(0, self._margin_top)
         return False  # GLib.SOURCE_REMOVE
@@ -596,11 +593,11 @@ class LauncherApp:
         # Capa 3: contenedor de icono de 150px de alto
         item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         item_box.set_size_request(48, 150)
-        
+
         # Alignment para centrar el icono de 48px
         align = Gtk.Alignment(xalign=0.5, yalign=0.5, xscale=0, yscale=0)
         align.set_size_request(48, 48)
-        
+
         btn = Gtk.Button()
         btn.get_style_context().add_class("launcher-icon")
         btn.set_tooltip_text(entry.name)
@@ -613,14 +610,12 @@ class LauncherApp:
         btn.connect("clicked", self._on_icon_clicked, entry.exec_cmd)
 
         # Zoom on hover
-        btn.add_events(
-            Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK
-        )
+        btn.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
         btn.connect("enter-notify-event", self._on_icon_enter, entry)
         btn.connect("leave-notify-event", self._on_icon_leave, entry)
 
         align.add(btn)
-        
+
         # Indicator
         indicator = Gtk.DrawingArea()
         indicator.set_size_request(48, 4)
@@ -637,7 +632,7 @@ class LauncherApp:
         # Capa 3: contenedor de icono de 150px de alto
         item_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         item_box.set_size_request(48, 150)
-        
+
         # Alignment para centrar el icono
         align = Gtk.Alignment(xalign=0.5, yalign=0.5, xscale=0, yscale=0)
         align.set_size_request(48, 48)
@@ -655,9 +650,7 @@ class LauncherApp:
         btn.connect("clicked", self._on_group_clicked, group)
 
         # Zoom on hover
-        btn.add_events(
-            Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK
-        )
+        btn.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
         btn.connect("enter-notify-event", self._on_icon_enter, group.representative)
         btn.connect("leave-notify-event", self._on_icon_leave, group.representative)
 
@@ -681,9 +674,7 @@ class LauncherApp:
         if entry.pixbuf:
             pixbuf = entry.pixbuf
             if pixbuf.get_width() != ICON_SIZE or pixbuf.get_height() != ICON_SIZE:
-                pixbuf = pixbuf.scale_simple(
-                    ICON_SIZE, ICON_SIZE, GdkPixbuf.InterpType.BILINEAR
-                )
+                pixbuf = pixbuf.scale_simple(ICON_SIZE, ICON_SIZE, GdkPixbuf.InterpType.BILINEAR)
             return Gtk.Image.new_from_pixbuf(pixbuf)
         else:
             image = Gtk.Image.new_from_icon_name(
@@ -725,14 +716,10 @@ class LauncherApp:
                 pixbuf = entry.pixbuf
                 small = ICON_SIZE - 2
                 if pixbuf.get_width() != small or pixbuf.get_height() != small:
-                    pixbuf = pixbuf.scale_simple(
-                        small, small, GdkPixbuf.InterpType.BILINEAR
-                    )
+                    pixbuf = pixbuf.scale_simple(small, small, GdkPixbuf.InterpType.BILINEAR)
                 icon = Gtk.Image.new_from_pixbuf(pixbuf)
             else:
-                icon = Gtk.Image.new_from_icon_name(
-                    "application-x-executable", Gtk.IconSize.MENU
-                )
+                icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
                 icon.set_pixel_size(ICON_SIZE - 2)
 
             hbox.pack_start(icon, False, False, 0)
@@ -785,16 +772,16 @@ class LauncherApp:
         key = id(btn)
         if key in self._bounce_state:
             return
-        
+
         align = None
         for item in self._icon_buttons:
             if item[0] == btn:
                 align = item[3]
                 break
-        
+
         if not align:
             return
-        
+
         self._bounce_state[key] = {
             "start_time": GLib.get_monotonic_time(),
             "timer": GLib.timeout_add(16, self._bounce_tick, key),  # ~60fps
@@ -807,17 +794,17 @@ class LauncherApp:
         state = self._bounce_state.get(key)
         if not state:
             return False
-        
+
         elapsed = (GLib.get_monotonic_time() - state["start_time"]) / 1000000.0  # seconds
-        
+
         # Sinusoidal bounce going UP only, infinite loop until dock closes
         # Frequency: 1 bounce per second
         # 150px container - 48px icon = 102px available, use 64px
         bounce = abs(math.sin(elapsed * math.pi * 2))
         y_offset = bounce * 0.42  # ~64px of 150px
-        
+
         state["align"].set_property("yalign", 0.5 - y_offset)
-        
+
         return True
 
     def _schedule_auto_collapse(self):
@@ -825,7 +812,7 @@ class LauncherApp:
         if not self._expanded:
             return
         # Cancel any previous pending auto-collapse
-        if hasattr(self, '_auto_collapse_id') and self._auto_collapse_id:
+        if hasattr(self, "_auto_collapse_id") and self._auto_collapse_id:
             GLib.source_remove(self._auto_collapse_id)
         self._auto_collapse_id = GLib.timeout_add_seconds(3, self._auto_collapse)
 
@@ -839,7 +826,7 @@ class LauncherApp:
             if state.get("align"):
                 state["align"].set_property("yalign", 0.5)
         self._bounce_state.clear()
-        
+
         if self._expanded:
             self._expanded = False
             self._revealer.set_reveal_child(False)
@@ -894,10 +881,10 @@ class LauncherApp:
             GLib.source_remove(state["timer"])
 
         current = state["current_size"] if state else ICON_SIZE
-        
+
         # Find the Fixed container to get the image
         image = btn.get_child()
-        
+
         self._zoom_state[key] = {
             "current_size": current,
             "target_size": target_size,
@@ -941,9 +928,7 @@ class LauncherApp:
         if image is None:
             return
         if entry and entry.pixbuf:
-            pixbuf = entry.pixbuf.scale_simple(
-                size, size, GdkPixbuf.InterpType.BILINEAR
-            )
+            pixbuf = entry.pixbuf.scale_simple(size, size, GdkPixbuf.InterpType.BILINEAR)
             image.set_from_pixbuf(pixbuf)
         else:
             image.set_pixel_size(size)
@@ -1005,11 +990,11 @@ class LauncherApp:
             radius = INDICATOR_DOT_RADIUS + 0.5
         elif focused:
             # Focused: bright frost dot
-            color = _hex_to_rgb(NORD["nord8"])   # bright blue
+            color = _hex_to_rgb(NORD["nord8"])  # bright blue
             radius = INDICATOR_DOT_RADIUS + 0.5
         else:
             # Running: subtle frost dot
-            color = _hex_to_rgb(NORD["nord9"])   # muted blue
+            color = _hex_to_rgb(NORD["nord9"])  # muted blue
             radius = INDICATOR_DOT_RADIUS
 
         cr.set_source_rgb(*color)

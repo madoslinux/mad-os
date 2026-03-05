@@ -4,17 +4,14 @@ madOS Installer - Regional settings (locale/timezone) page
 
 from gi.repository import Gtk
 
-from ..config import (
-    TIMEZONES,
-    NORD_POLAR_NIGHT, NORD_SNOW_STORM, NORD_FROST
-)
+from ..config import TIMEZONES, NORD_POLAR_NIGHT, NORD_SNOW_STORM, NORD_FROST
 from .base import create_page_header, create_nav_buttons
 
 
 def create_locale_page(app):
     """Locale page with timezone selector (language already chosen on welcome)"""
     page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    page.get_style_context().add_class('page-container')
+    page.get_style_context().add_class("page-container")
 
     content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     content.set_margin_start(30)
@@ -25,19 +22,19 @@ def create_locale_page(app):
     content.set_hexpand(True)
 
     # Page header
-    header = create_page_header(app, app.t('regional'), 5)
+    header = create_page_header(app, app.t("regional"), 5)
     content.pack_start(header, False, False, 0)
 
     # Language info card (read-only, set on welcome page)
     lang_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    lang_card.get_style_context().add_class('content-card')
+    lang_card.get_style_context().add_class("content-card")
     lang_card.set_margin_top(10)
     lang_card.set_hexpand(True)
 
     lang_icon_label = Gtk.Label()
     lang_icon_label.set_markup(
         f'<span size="9000" weight="bold" foreground="{NORD_FROST["nord8"]}">'
-        f'{app.t("locale_label").rstrip(":")}</span>'
+        f"{app.t('locale_label').rstrip(':')}</span>"
     )
     lang_icon_label.set_halign(Gtk.Align.START)
     lang_card.pack_start(lang_icon_label, False, False, 0)
@@ -63,14 +60,14 @@ def create_locale_page(app):
 
     # Timezone card
     tz_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    tz_card.get_style_context().add_class('content-card')
+    tz_card.get_style_context().add_class("content-card")
     tz_card.set_margin_top(8)
     tz_card.set_hexpand(True)
 
     tz_label = Gtk.Label()
     tz_label.set_markup(
         f'<span size="9000" weight="bold" foreground="{NORD_FROST["nord8"]}">'
-        f'{app.t("timezone").rstrip(":")}</span>'
+        f"{app.t('timezone').rstrip(':')}</span>"
     )
     tz_label.set_halign(Gtk.Align.START)
     tz_card.pack_start(tz_label, False, False, 0)
@@ -87,9 +84,7 @@ def create_locale_page(app):
 
     # Navigation
     nav = create_nav_buttons(
-        app,
-        lambda x: app.notebook.prev_page(),
-        lambda x: _on_locale_next(app)
+        app, lambda x: app.notebook.prev_page(), lambda x: _on_locale_next(app)
     )
     nav.set_hexpand(True)
     content.pack_start(nav, False, False, 0)
@@ -100,8 +95,9 @@ def create_locale_page(app):
 
 def _on_locale_next(app):
     """Save locale data and advance to summary"""
-    app.install_data['timezone'] = app.timezone_combo.get_active_text()
+    app.install_data["timezone"] = app.timezone_combo.get_active_text()
     # Trigger summary update before showing the page
     from .summary import update_summary
+
     update_summary(app)
     app.notebook.next_page()

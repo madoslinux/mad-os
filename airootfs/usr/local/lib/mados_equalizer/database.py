@@ -80,9 +80,7 @@ class EqualizerStateDB:
         Returns:
             The stored value as a string, or *default*.
         """
-        cur = self._conn.execute(
-            "SELECT value FROM session WHERE key = ?", (key,)
-        )
+        cur = self._conn.execute("SELECT value FROM session WHERE key = ?", (key,))
         row = cur.fetchone()
         return row[0] if row else default
 
@@ -123,9 +121,7 @@ class EqualizerStateDB:
         Returns:
             List of 8 float gain values, or None if no saved state.
         """
-        cur = self._conn.execute(
-            "SELECT band, gain FROM band_gains ORDER BY band"
-        )
+        cur = self._conn.execute("SELECT band, gain FROM band_gains ORDER BY band")
         rows = cur.fetchall()
         if len(rows) != 8:
             return None

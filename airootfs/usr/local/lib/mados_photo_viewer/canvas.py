@@ -389,9 +389,7 @@ class ImageCanvas(Gtk.DrawingArea):
         if self._pixbuf is None:
             # No image - draw placeholder text
             cr.set_source_rgb(0.30, 0.34, 0.42)  # nord3
-            cr.select_font_face(
-                "Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL
-            )
+            cr.select_font_face("Sans", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
             cr.set_font_size(18)
             text = "Open an image to begin"
             extents = cr.text_extents(text)

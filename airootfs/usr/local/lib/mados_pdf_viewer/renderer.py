@@ -14,8 +14,9 @@ import math
 import cairo
 
 import gi
-gi.require_version('Poppler', '0.18')
-gi.require_version('Gtk', '3.0')
+
+gi.require_version("Poppler", "0.18")
+gi.require_version("Gtk", "3.0")
 from gi.repository import Poppler, GLib
 
 
@@ -114,7 +115,7 @@ class PDFDocument:
         """Return the document title or the filename."""
         if self.document is None:
             return ""
-        title = self.document.get_property('title')
+        title = self.document.get_property("title")
         if title:
             return title
         if self.filepath:
@@ -130,13 +131,13 @@ class PDFDocument:
         if self.document is None:
             return {}
         return {
-            'title': self.document.get_property('title') or '',
-            'author': self.document.get_property('author') or '',
-            'subject': self.document.get_property('subject') or '',
-            'creator': self.document.get_property('creator') or '',
-            'producer': self.document.get_property('producer') or '',
-            'n_pages': self.n_pages,
-            'filepath': self.filepath or '',
+            "title": self.document.get_property("title") or "",
+            "author": self.document.get_property("author") or "",
+            "subject": self.document.get_property("subject") or "",
+            "creator": self.document.get_property("creator") or "",
+            "producer": self.document.get_property("producer") or "",
+            "n_pages": self.n_pages,
+            "filepath": self.filepath or "",
         }
 
 
@@ -188,8 +189,9 @@ class PageRenderer:
 
         return surface
 
-    def render_page_with_annotations(self, page_index, scale, annotations,
-                                     signatures, form_data, highlight_fields):
+    def render_page_with_annotations(
+        self, page_index, scale, annotations, signatures, form_data, highlight_fields
+    ):
         """
         Render a page with all overlays composited on top.
 
@@ -255,7 +257,7 @@ class PageRenderer:
         ctx.set_font_size(font_size)
 
         # Draw each line of text
-        lines = annotation.text.split('\n')
+        lines = annotation.text.split("\n")
         for i, line in enumerate(lines):
             ctx.move_to(x, y + font_size + i * font_size * 1.3)
             ctx.show_text(line)
@@ -432,9 +434,14 @@ class PageRenderer:
             return filepath
         return surface
 
-    def save_annotated_pdf(self, output_path, annotations_by_page,
-                           signatures_by_page, form_data_by_page,
-                           progress_callback=None):
+    def save_annotated_pdf(
+        self,
+        output_path,
+        annotations_by_page,
+        signatures_by_page,
+        form_data_by_page,
+        progress_callback=None,
+    ):
         """
         Save the document as a new PDF with all annotations baked in.
 
@@ -499,7 +506,7 @@ def _hex_to_rgb(hex_color):
     Returns:
         Tuple of (r, g, b) floats.
     """
-    hex_color = hex_color.lstrip('#')
+    hex_color = hex_color.lstrip("#")
     if len(hex_color) != 6:
         return (0.0, 0.0, 0.0)
     r = int(hex_color[0:2], 16) / 255.0

@@ -59,101 +59,116 @@ class TestMeliDemoLauncher(unittest.TestCase):
         """Launcher must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
     def test_checks_vulkan_support(self):
         """Launcher must check for Vulkan/3D support before running."""
         self.assertIn(
-            "check_vulkan_support", self.content,
+            "check_vulkan_support",
+            self.content,
             "Must have a check_vulkan_support function",
         )
 
     def test_checks_drm_render_node(self):
         """Launcher must check for DRM render node (/dev/dri/renderD128)."""
         self.assertIn(
-            "/dev/dri/renderD128", self.content,
+            "/dev/dri/renderD128",
+            self.content,
             "Must check for DRM render node",
         )
 
     def test_checks_vulkan_icd(self):
         """Launcher must check for Vulkan ICD driver files."""
         self.assertIn(
-            "vulkan/icd.d", self.content,
+            "vulkan/icd.d",
+            self.content,
             "Must check for Vulkan ICD driver files",
         )
 
     def test_checks_nomodeset(self):
         """Launcher must check for nomodeset kernel parameter."""
         self.assertIn(
-            "nomodeset", self.content,
+            "nomodeset",
+            self.content,
             "Must detect nomodeset (disables GPU acceleration)",
         )
 
     def test_uses_detect_legacy_hardware(self):
         """Launcher should use detect-legacy-hardware for 3D detection."""
         self.assertIn(
-            "detect-legacy-hardware", self.content,
+            "detect-legacy-hardware",
+            self.content,
             "Must reference detect-legacy-hardware script",
         )
 
     def test_has_game_install_dir(self):
         """Launcher must define an installation directory."""
         self.assertRegex(
-            self.content, r'INSTALL_DIR=.*meli',
+            self.content,
+            r"INSTALL_DIR=.*meli",
             "Must define INSTALL_DIR for the game",
         )
 
     def test_has_persistence_support(self):
         """Launcher must check persistence storage for the game."""
         self.assertIn(
-            "/mnt/persistence", self.content,
+            "/mnt/persistence",
+            self.content,
             "Must support persistence storage location",
         )
 
     def test_offers_download_if_not_installed(self):
         """Launcher must offer to download the game if not installed."""
         self.assertIn(
-            "setup-meli-demo", self.content,
+            "setup-meli-demo",
+            self.content,
             "Must reference the setup/download script",
         )
 
     def test_sets_sdl_video_driver(self):
         """Launcher must set SDL_VIDEODRIVER for compatibility."""
         self.assertIn(
-            "SDL_VIDEODRIVER", self.content,
+            "SDL_VIDEODRIVER",
+            self.content,
             "Must configure SDL_VIDEODRIVER for Wayland/X11",
         )
 
     def test_find_game_dir_function(self):
         """Launcher must have a function to find the game directory."""
         self.assertIn(
-            "find_game_dir", self.content,
+            "find_game_dir",
+            self.content,
             "Must have find_game_dir function",
         )
 
     def test_shows_no_vulkan_message(self):
         """Launcher must show a message when Vulkan is not available."""
         self.assertIn(
-            "show_no_vulkan_message", self.content,
+            "show_no_vulkan_message",
+            self.content,
             "Must have show_no_vulkan_message function",
         )
 
     def test_uses_swaynag_for_notifications(self):
         """Launcher should use swaynag for graphical notifications."""
         self.assertIn(
-            "swaynag", self.content,
+            "swaynag",
+            self.content,
             "Must use swaynag for user notifications",
         )
 
     def test_uses_exec_for_launch(self):
         """Launcher must use exec to replace shell process with game."""
         self.assertRegex(
-            self.content, r'\bexec\b.*\$game_exe',
+            self.content,
+            r"\bexec\b.*\$game_exe",
             "Must exec the game executable (replace shell process)",
         )
 
@@ -185,66 +200,76 @@ class TestMeliDemoSetup(unittest.TestCase):
         """Setup script must have valid bash syntax."""
         result = subprocess.run(
             ["bash", "-n", self.script_path],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Bash syntax error: {result.stderr}",
         )
 
     def test_has_itch_io_url(self):
         """Setup script must contain the itch.io game URL."""
         self.assertIn(
-            "williamsmygl.itch.io", self.content,
+            "williamsmygl.itch.io",
+            self.content,
             "Must contain the itch.io game URL",
         )
 
     def test_checks_network_connectivity(self):
         """Setup script must verify network connectivity."""
         self.assertIn(
-            "curl", self.content,
+            "curl",
+            self.content,
             "Must use curl to check network connectivity",
         )
 
     def test_checks_read_only_media(self):
         """Setup script must check for read-only media (DVD/CD)."""
         self.assertIn(
-            "mados-media-helper.sh", self.content,
+            "mados-media-helper.sh",
+            self.content,
             "Must reference mados-media-helper.sh",
         )
 
     def test_checks_already_installed(self):
         """Setup script must check if game is already installed."""
         self.assertIn(
-            "check_already_installed", self.content,
+            "check_already_installed",
+            self.content,
             "Must have check_already_installed function",
         )
 
     def test_checks_disk_space(self):
         """Setup script must check available disk space."""
         self.assertIn(
-            "MIN_SPACE_MB", self.content,
+            "MIN_SPACE_MB",
+            self.content,
             "Must define minimum space requirement",
         )
 
     def test_prefers_persistence(self):
         """Setup script must prefer persistence storage."""
         self.assertIn(
-            "/mnt/persistence", self.content,
+            "/mnt/persistence",
+            self.content,
             "Must check for persistence storage",
         )
 
     def test_provides_manual_download_instructions(self):
         """Setup script must provide manual download instructions on failure."""
         self.assertIn(
-            "Descarga manual", self.content,
+            "Descarga manual",
+            self.content,
             "Must provide manual download instructions",
         )
 
     def test_uses_python_download_module(self):
         """Setup script must use the Python download module."""
         self.assertIn(
-            "mados_meli_demo", self.content,
+            "mados_meli_demo",
+            self.content,
             "Must use mados_meli_demo Python module",
         )
 
@@ -260,14 +285,16 @@ class TestMeliDemoSetup(unittest.TestCase):
     def test_makes_files_executable(self):
         """Setup script must make game files executable after extraction."""
         self.assertIn(
-            "chmod +x", self.content,
+            "chmod +x",
+            self.content,
             "Must chmod executable files after extraction",
         )
 
     def test_finds_game_executable(self):
         """Setup script must auto-detect the game executable."""
         self.assertIn(
-            "find_game_executable", self.content,
+            "find_game_executable",
+            self.content,
             "Must have find_game_executable function",
         )
 
@@ -276,7 +303,7 @@ class TestMeliDemoSetup(unittest.TestCase):
         # Check that network failures don't break the service
         self.assertRegex(
             self.content,
-            r'No hay conexión a Internet[\s\S]*?return 0',
+            r"No hay conexión a Internet[\s\S]*?return 0",
             "Must return 0 when network unavailable (systemd service safety)",
         )
 
@@ -318,10 +345,12 @@ class TestMeliDownloadModule(unittest.TestCase):
         mod_path = os.path.join(self.module_dir, "download_itch.py")
         result = subprocess.run(
             ["python3", "-c", f"import py_compile; py_compile.compile('{mod_path}', doraise=True)"],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         self.assertEqual(
-            result.returncode, 0,
+            result.returncode,
+            0,
             f"Python syntax error: {result.stderr}",
         )
 
@@ -331,7 +360,8 @@ class TestMeliDownloadModule(unittest.TestCase):
         with open(mod_path) as f:
             content = f.read()
         self.assertIn(
-            "def download_from_itch", content,
+            "def download_from_itch",
+            content,
             "Must define download_from_itch function",
         )
 
@@ -342,13 +372,29 @@ class TestMeliDownloadModule(unittest.TestCase):
             content = f.read()
         # Check that no third-party imports are used
         import_lines = [
-            line.strip() for line in content.splitlines()
+            line.strip()
+            for line in content.splitlines()
             if line.strip().startswith("import ") or line.strip().startswith("from ")
         ]
         stdlib_prefixes = {
-            "http", "json", "os", "re", "sys", "urllib", "zipfile",
-            "pathlib", "tempfile", "shutil", "io", "hashlib", "time",
-            "html", "ssl", "socket", "collections", "functools",
+            "http",
+            "json",
+            "os",
+            "re",
+            "sys",
+            "urllib",
+            "zipfile",
+            "pathlib",
+            "tempfile",
+            "shutil",
+            "io",
+            "hashlib",
+            "time",
+            "html",
+            "ssl",
+            "socket",
+            "collections",
+            "functools",
         }
         for imp in import_lines:
             # Extract module name
@@ -357,7 +403,8 @@ class TestMeliDownloadModule(unittest.TestCase):
             else:
                 mod_name = imp.split()[1].split(".")[0]
             self.assertIn(
-                mod_name, stdlib_prefixes,
+                mod_name,
+                stdlib_prefixes,
                 f"Import '{imp}' uses non-stdlib module '{mod_name}'. "
                 f"Only standard library is allowed.",
             )
@@ -368,7 +415,8 @@ class TestMeliDownloadModule(unittest.TestCase):
         with open(mod_path) as f:
             content = f.read()
         self.assertIn(
-            "progress", content.lower(),
+            "progress",
+            content.lower(),
             "Must have progress tracking during download",
         )
 
@@ -378,7 +426,8 @@ class TestMeliDownloadModule(unittest.TestCase):
         with open(mod_path) as f:
             content = f.read()
         self.assertIn(
-            "csrf", content.lower(),
+            "csrf",
+            content.lower(),
             "Must handle itch.io CSRF tokens",
         )
 
@@ -403,64 +452,73 @@ class TestMeliDemoService(unittest.TestCase):
     def test_service_is_oneshot(self):
         """Service must be Type=oneshot."""
         self.assertIn(
-            "Type=oneshot", self.content,
+            "Type=oneshot",
+            self.content,
             "Service must be Type=oneshot",
         )
 
     def test_service_after_network(self):
         """Service must start after network-online.target."""
         self.assertIn(
-            "network-online.target", self.content,
+            "network-online.target",
+            self.content,
             "Must start after network-online.target",
         )
 
     def test_service_after_persistence(self):
         """Service must start after persistence detection."""
         self.assertIn(
-            "mados-persistence-detect", self.content,
+            "mados-persistence-detect",
+            self.content,
             "Must start after mados-persistence-detect service",
         )
 
     def test_service_exec_start(self):
         """Service must call setup-meli-demo.sh."""
         self.assertIn(
-            "setup-meli-demo.sh", self.content,
+            "setup-meli-demo.sh",
+            self.content,
             "ExecStart must reference setup-meli-demo.sh",
         )
 
     def test_service_condition_drm(self):
         """Service must have a condition for DRM render node (3D present)."""
         self.assertIn(
-            "renderD128", self.content,
+            "renderD128",
+            self.content,
             "Must check for DRM render node as a launch condition",
         )
 
     def test_service_condition_persistence(self):
         """Service must require persistence directory."""
         self.assertIn(
-            "/mnt/persistence", self.content,
+            "/mnt/persistence",
+            self.content,
             "Must require persistence directory",
         )
 
     def test_service_has_timeout(self):
         """Service must have a generous timeout for download."""
         self.assertIn(
-            "TimeoutStartSec", self.content,
+            "TimeoutStartSec",
+            self.content,
             "Must set TimeoutStartSec for download time",
         )
         # Extract timeout value
-        match = re.search(r'TimeoutStartSec=(\d+)', self.content)
+        match = re.search(r"TimeoutStartSec=(\d+)", self.content)
         self.assertIsNotNone(match, "TimeoutStartSec must have a numeric value")
         timeout = int(match.group(1))
         self.assertGreaterEqual(
-            timeout, 300,
+            timeout,
+            300,
             "Timeout must be at least 300s (5min) for ~400MB download",
         )
 
     def test_service_includes_pythonpath(self):
         """Service must set PYTHONPATH for the download module."""
         self.assertIn(
-            "PYTHONPATH", self.content,
+            "PYTHONPATH",
+            self.content,
             "Must set PYTHONPATH for mados_meli_demo module",
         )
 
@@ -493,7 +551,8 @@ class TestMeliDemoDesktopEntry(unittest.TestCase):
     def test_has_desktop_entry_header(self):
         """Desktop file must have [Desktop Entry] header."""
         self.assertIn(
-            "[Desktop Entry]", self.content,
+            "[Desktop Entry]",
+            self.content,
             "Must have [Desktop Entry] section",
         )
 
@@ -505,28 +564,32 @@ class TestMeliDemoDesktopEntry(unittest.TestCase):
     def test_exec_is_launcher(self):
         """Desktop entry Exec must call mados-meli-demo."""
         self.assertRegex(
-            self.content, r'Exec=.*mados-meli-demo',
+            self.content,
+            r"Exec=.*mados-meli-demo",
             "Exec must call mados-meli-demo launcher",
         )
 
     def test_has_game_category(self):
         """Desktop entry must be categorized as a Game."""
         self.assertIn(
-            "Game", self.content,
+            "Game",
+            self.content,
             "Must be in Game category",
         )
 
     def test_terminal_false(self):
         """Desktop entry should not require a terminal."""
         self.assertIn(
-            "Terminal=false", self.content,
+            "Terminal=false",
+            self.content,
             "Terminal must be false (game has its own window)",
         )
 
     def test_has_spanish_translation(self):
         """Desktop entry should have Spanish translation."""
         self.assertIn(
-            "Name[es]=", self.content,
+            "Name[es]=",
+            self.content,
             "Should have Spanish name translation",
         )
 
@@ -546,29 +609,34 @@ class TestMeliDemoProfileDef(unittest.TestCase):
     def test_launcher_permissions(self):
         """mados-meli-demo must have 755 permissions in profiledef.sh."""
         self.assertIn(
-            'mados-meli-demo', self.content,
+            "mados-meli-demo",
+            self.content,
             "mados-meli-demo must be in profiledef.sh",
         )
         self.assertRegex(
-            self.content, r'mados-meli-demo.*755',
+            self.content,
+            r"mados-meli-demo.*755",
             "mados-meli-demo must have 755 permissions",
         )
 
     def test_setup_script_permissions(self):
         """setup-meli-demo.sh must have 755 permissions in profiledef.sh."""
         self.assertIn(
-            'setup-meli-demo.sh', self.content,
+            "setup-meli-demo.sh",
+            self.content,
             "setup-meli-demo.sh must be in profiledef.sh",
         )
         self.assertRegex(
-            self.content, r'setup-meli-demo\.sh.*755',
+            self.content,
+            r"setup-meli-demo\.sh.*755",
             "setup-meli-demo.sh must have 755 permissions",
         )
 
     def test_python_module_permissions(self):
         """mados_meli_demo module must have permissions in profiledef.sh."""
         self.assertIn(
-            'mados_meli_demo', self.content,
+            "mados_meli_demo",
+            self.content,
             "mados_meli_demo module must be in profiledef.sh",
         )
 
@@ -584,8 +652,7 @@ class TestMeliDemoPackages(unittest.TestCase):
             self.skipTest("packages.x86_64 not found")
         with open(PACKAGES) as f:
             self.packages = [
-                line.strip() for line in f
-                if line.strip() and not line.strip().startswith("#")
+                line.strip() for line in f if line.strip() and not line.strip().startswith("#")
             ]
 
     def test_vulkan_intel_present(self):
@@ -633,17 +700,28 @@ class TestMeliVulkanCheckLogic(unittest.TestCase):
         nomodeset_line = None
         vulkan_check_line = None
         for i, line in enumerate(lines):
-            if "check_nomodeset" in line and "main" not in line.lower() and "function" not in line.lower() and "show" not in line.lower():
+            if (
+                "check_nomodeset" in line
+                and "main" not in line.lower()
+                and "function" not in line.lower()
+                and "show" not in line.lower()
+            ):
                 if nomodeset_line is None:
                     nomodeset_line = i
-            if "check_vulkan_support" in line and "main" not in line.lower() and "function" not in line.lower() and "!" in line:
+            if (
+                "check_vulkan_support" in line
+                and "main" not in line.lower()
+                and "function" not in line.lower()
+                and "!" in line
+            ):
                 if vulkan_check_line is None:
                     vulkan_check_line = i
 
         self.assertIsNotNone(nomodeset_line, "Must have nomodeset check in main flow")
         self.assertIsNotNone(vulkan_check_line, "Must have vulkan check in main flow")
         self.assertLess(
-            nomodeset_line, vulkan_check_line,
+            nomodeset_line,
+            vulkan_check_line,
             "nomodeset check must come before Vulkan check",
         )
 
@@ -651,14 +729,15 @@ class TestMeliVulkanCheckLogic(unittest.TestCase):
         """check_vulkan_support must check render node as first step."""
         # Extract the function body
         func_match = re.search(
-            r'check_vulkan_support\(\)\s*\{(.*?)\n\}',
-            self.content, re.DOTALL,
+            r"check_vulkan_support\(\)\s*\{(.*?)\n\}",
+            self.content,
+            re.DOTALL,
         )
         self.assertIsNotNone(func_match, "Must define check_vulkan_support function")
         func_body = func_match.group(1)
 
         # First check should be renderD128
-        first_check = re.search(r'renderD128|dri', func_body)
+        first_check = re.search(r"renderD128|dri", func_body)
         self.assertIsNotNone(
             first_check,
             "First check in check_vulkan_support must be DRM render node",
@@ -681,7 +760,8 @@ class TestMeliVulkanCheckLogic(unittest.TestCase):
             methods_count += 1
 
         self.assertGreaterEqual(
-            methods_count, 3,
+            methods_count,
+            3,
             f"Must have at least 3 Vulkan/3D detection methods (found {methods_count})",
         )
 
@@ -689,7 +769,8 @@ class TestMeliVulkanCheckLogic(unittest.TestCase):
         """DRM driver check must include common GPU driver names."""
         for driver in ["i915", "amdgpu", "nouveau"]:
             self.assertIn(
-                driver, self.content,
+                driver,
+                self.content,
                 f"Must check for {driver} DRM driver",
             )
 
@@ -697,7 +778,8 @@ class TestMeliVulkanCheckLogic(unittest.TestCase):
         """Vulkan check must support VMs with 3D acceleration."""
         for vm_driver in ["vmwgfx", "virtio-gpu", "virgl"]:
             self.assertIn(
-                vm_driver, self.content,
+                vm_driver,
+                self.content,
                 f"Must recognize {vm_driver} as 3D-capable VM driver",
             )
 
@@ -739,7 +821,8 @@ class TestMeliDemoInstallerIntegration(unittest.TestCase):
         self.assertIsNotNone(launcher_match, "Launcher must define INSTALL_DIR")
         self.assertIsNotNone(setup_match, "Setup must define INSTALL_DIR")
         self.assertEqual(
-            launcher_match.group(1), setup_match.group(1),
+            launcher_match.group(1),
+            setup_match.group(1),
             "INSTALL_DIR must be the same in launcher and setup",
         )
 
@@ -759,7 +842,8 @@ class TestMeliDemoInstallerIntegration(unittest.TestCase):
         self.assertIsNotNone(launcher_match)
         self.assertIsNotNone(setup_match)
         self.assertEqual(
-            launcher_match.group(1), setup_match.group(1),
+            launcher_match.group(1),
+            setup_match.group(1),
             "EXECUTABLE_MARKER must match between launcher and setup",
         )
 

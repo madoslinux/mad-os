@@ -44,6 +44,7 @@ def _create_evdev_mock():
 
     class FakeEcodes:
         """Fake ecodes with standard gamepad codes."""
+
         BTN_SOUTH = 304
         BTN_EAST = 305
         BTN_NORTH = 307
@@ -78,14 +79,19 @@ def _create_evdev_mock():
         def capabilities(self, verbose=False):
             return {
                 FakeEcodes.EV_KEY: [
-                    FakeEcodes.BTN_SOUTH, FakeEcodes.BTN_EAST,
-                    FakeEcodes.BTN_NORTH, FakeEcodes.BTN_WEST,
-                    FakeEcodes.BTN_TL, FakeEcodes.BTN_TR,
-                    FakeEcodes.BTN_START, FakeEcodes.BTN_SELECT,
+                    FakeEcodes.BTN_SOUTH,
+                    FakeEcodes.BTN_EAST,
+                    FakeEcodes.BTN_NORTH,
+                    FakeEcodes.BTN_WEST,
+                    FakeEcodes.BTN_TL,
+                    FakeEcodes.BTN_TR,
+                    FakeEcodes.BTN_START,
+                    FakeEcodes.BTN_SELECT,
                     FakeEcodes.BTN_MODE,
                 ],
                 FakeEcodes.EV_ABS: [
-                    FakeEcodes.ABS_HAT0X, FakeEcodes.ABS_HAT0Y,
+                    FakeEcodes.ABS_HAT0X,
+                    FakeEcodes.ABS_HAT0Y,
                 ],
             }
 
@@ -107,10 +113,9 @@ def _import_gamepad_module():
 
     import importlib.util
     import importlib.machinery
+
     loader = importlib.machinery.SourceFileLoader("mados_gamepad_wm", GAMEPAD_SCRIPT)
-    spec = importlib.util.spec_from_file_location(
-        "mados_gamepad_wm", GAMEPAD_SCRIPT, loader=loader
-    )
+    spec = importlib.util.spec_from_file_location("mados_gamepad_wm", GAMEPAD_SCRIPT, loader=loader)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -124,15 +129,13 @@ class TestGamepadFileExists(unittest.TestCase):
 
     def test_gamepad_script_exists(self):
         """mados-gamepad-wm must exist in /usr/local/bin/."""
-        self.assertTrue(os.path.isfile(GAMEPAD_SCRIPT),
-                        "mados-gamepad-wm script missing")
+        self.assertTrue(os.path.isfile(GAMEPAD_SCRIPT), "mados-gamepad-wm script missing")
 
     def test_gamepad_script_has_shebang(self):
         """Script must start with Python3 shebang."""
         with open(GAMEPAD_SCRIPT) as f:
             first_line = f.readline()
-        self.assertIn("python3", first_line,
-                       "mados-gamepad-wm must have python3 shebang")
+        self.assertIn("python3", first_line, "mados-gamepad-wm must have python3 shebang")
 
     def test_python_syntax_valid(self):
         """Script must have valid Python syntax."""
@@ -151,8 +154,9 @@ class TestGamepadPackages(unittest.TestCase):
         """python-evdev must be listed in packages.x86_64."""
         with open(PACKAGES_FILE) as f:
             packages = f.read()
-        self.assertIn("python-evdev", packages,
-                       "python-evdev must be in packages.x86_64 for gamepad support")
+        self.assertIn(
+            "python-evdev", packages, "python-evdev must be in packages.x86_64 for gamepad support"
+        )
 
 
 class TestGamepadProfileDef(unittest.TestCase):
@@ -162,16 +166,18 @@ class TestGamepadProfileDef(unittest.TestCase):
         """mados-gamepad-wm must be in profiledef.sh file_permissions."""
         with open(PROFILEDEF) as f:
             content = f.read()
-        self.assertIn("mados-gamepad-wm", content,
-                       "mados-gamepad-wm must be in profiledef.sh file_permissions")
+        self.assertIn(
+            "mados-gamepad-wm",
+            content,
+            "mados-gamepad-wm must be in profiledef.sh file_permissions",
+        )
 
     def test_gamepad_permissions_755(self):
         """mados-gamepad-wm must have 0:0:755 permissions."""
         with open(PROFILEDEF) as f:
             content = f.read()
-        pattern = r'mados-gamepad-wm.*0:0:755'
-        self.assertRegex(content, pattern,
-                         "mados-gamepad-wm must have 0:0:755 permissions")
+        pattern = r"mados-gamepad-wm.*0:0:755"
+        self.assertRegex(content, pattern, "mados-gamepad-wm must have 0:0:755 permissions")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -184,15 +190,17 @@ class TestSwayIntegration(unittest.TestCase):
         """Sway config must exec mados-gamepad-wm."""
         with open(SWAY_CONFIG) as f:
             content = f.read()
-        self.assertIn("mados-gamepad-wm", content,
-                       "Sway config must start mados-gamepad-wm")
+        self.assertIn("mados-gamepad-wm", content, "Sway config must start mados-gamepad-wm")
 
     def test_sway_config_specifies_compositor(self):
         """Sway config must pass --compositor sway."""
         with open(SWAY_CONFIG) as f:
             content = f.read()
-        self.assertIn("--compositor sway", content,
-                       "Sway config must pass --compositor sway to mados-gamepad-wm")
+        self.assertIn(
+            "--compositor sway",
+            content,
+            "Sway config must pass --compositor sway to mados-gamepad-wm",
+        )
 
 
 class TestHyprlandIntegration(unittest.TestCase):
@@ -202,15 +210,15 @@ class TestHyprlandIntegration(unittest.TestCase):
         """Hyprland config must exec-once mados-gamepad-wm."""
         with open(HYPR_CONFIG) as f:
             content = f.read()
-        self.assertIn("mados-gamepad-wm", content,
-                       "Hyprland config must start mados-gamepad-wm")
+        self.assertIn("mados-gamepad-wm", content, "Hyprland config must start mados-gamepad-wm")
 
     def test_hyprland_config_specifies_compositor(self):
         """Hyprland config must pass --compositor hyprland."""
         with open(HYPR_CONFIG) as f:
             content = f.read()
-        self.assertIn("--compositor hyprland", content,
-                       "Hyprland config must pass --compositor hyprland")
+        self.assertIn(
+            "--compositor hyprland", content, "Hyprland config must pass --compositor hyprland"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -248,19 +256,41 @@ class TestSwayBackendActions(unittest.TestCase):
     """Verify SwayBackend has all required action methods."""
 
     REQUIRED_ACTIONS = [
-        "focus_left", "focus_right", "focus_up", "focus_down",
-        "move_left", "move_right", "move_up", "move_down",
-        "resize_shrink_w", "resize_grow_w", "resize_shrink_h", "resize_grow_h",
-        "workspace_prev", "workspace_next",
-        "move_to_workspace_prev", "move_to_workspace_next",
-        "close_window", "fullscreen", "toggle_floating",
-        "focus_mode_toggle", "scratchpad_show", "scratchpad_move",
+        "focus_left",
+        "focus_right",
+        "focus_up",
+        "focus_down",
+        "move_left",
+        "move_right",
+        "move_up",
+        "move_down",
+        "resize_shrink_w",
+        "resize_grow_w",
+        "resize_shrink_h",
+        "resize_grow_h",
+        "workspace_prev",
+        "workspace_next",
+        "move_to_workspace_prev",
+        "move_to_workspace_next",
+        "close_window",
+        "fullscreen",
+        "toggle_floating",
+        "focus_mode_toggle",
+        "scratchpad_show",
+        "scratchpad_move",
         "layout_toggle",
-        "terminal", "launcher", "file_manager",
-        "reload", "exit_wm",
-        "screenshot_region", "screenshot_full",
-        "volume_up", "volume_down", "volume_mute",
-        "brightness_up", "brightness_down",
+        "terminal",
+        "launcher",
+        "file_manager",
+        "reload",
+        "exit_wm",
+        "screenshot_region",
+        "screenshot_full",
+        "volume_up",
+        "volume_down",
+        "volume_mute",
+        "brightness_up",
+        "brightness_down",
     ]
 
     @classmethod
@@ -274,7 +304,7 @@ class TestSwayBackendActions(unittest.TestCase):
             with self.subTest(action=action):
                 self.assertTrue(
                     callable(getattr(self.backend, action, None)),
-                    f"SwayBackend missing method: {action}"
+                    f"SwayBackend missing method: {action}",
                 )
 
 
@@ -294,7 +324,7 @@ class TestHyprlandBackendActions(unittest.TestCase):
             with self.subTest(action=action):
                 self.assertTrue(
                     callable(getattr(self.backend, action, None)),
-                    f"HyprlandBackend missing method: {action}"
+                    f"HyprlandBackend missing method: {action}",
                 )
 
 
@@ -328,7 +358,7 @@ class TestGamepadStateDispatch(unittest.TestCase):
     def test_steam_a_opens_terminal(self):
         """Steam + A must call terminal()."""
         state, backend = self._make_state()
-        self._press(state, self.mod.BTN_MODE)   # Steam held
+        self._press(state, self.mod.BTN_MODE)  # Steam held
         self._press(state, self.mod.BTN_SOUTH)  # A pressed
         backend.terminal.assert_called_once()
 
@@ -506,8 +536,7 @@ class TestGamepadStateDispatch(unittest.TestCase):
         self._press(state, self.mod.BTN_MODE)
         self._press(state, self.mod.BTN_SOUTH)
         self._press(state, self.mod.BTN_SOUTH)  # re-press (shouldn't happen, but test)
-        self.assertEqual(backend.terminal.call_count, 1,
-                         "Combo should only fire once while held")
+        self.assertEqual(backend.terminal.call_count, 1, "Combo should only fire once while held")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -545,30 +574,30 @@ class TestButtonMappingCompleteness(unittest.TestCase):
     """Verify that the key Sway/Hyprland bindings are covered by gamepad combos."""
 
     EXPECTED_WM_ACTIONS = {
-        "terminal",        # Mod+Return
-        "close_window",    # Mod+Shift+q
-        "launcher",        # Mod+d
-        "file_manager",    # Mod+e
-        "fullscreen",      # Mod+f
-        "toggle_floating", # Mod+Shift+Space
-        "focus_left",      # Mod+Left
-        "focus_right",     # Mod+Right
-        "focus_up",        # Mod+Up
-        "focus_down",      # Mod+Down
-        "move_left",       # Mod+Shift+Left
-        "move_right",      # Mod+Shift+Right
-        "move_up",         # Mod+Shift+Up
-        "move_down",       # Mod+Shift+Down
+        "terminal",  # Mod+Return
+        "close_window",  # Mod+Shift+q
+        "launcher",  # Mod+d
+        "file_manager",  # Mod+e
+        "fullscreen",  # Mod+f
+        "toggle_floating",  # Mod+Shift+Space
+        "focus_left",  # Mod+Left
+        "focus_right",  # Mod+Right
+        "focus_up",  # Mod+Up
+        "focus_down",  # Mod+Down
+        "move_left",  # Mod+Shift+Left
+        "move_right",  # Mod+Shift+Right
+        "move_up",  # Mod+Shift+Up
+        "move_down",  # Mod+Shift+Down
         "workspace_prev",  # Mod+Alt+Left
         "workspace_next",  # Mod+Alt+Right
-        "reload",          # Mod+Shift+c
-        "exit_wm",         # Mod+Shift+e
-        "volume_up",       # XF86AudioRaiseVolume
-        "volume_down",     # XF86AudioLowerVolume
-        "brightness_up",   # XF86MonBrightnessUp
-        "brightness_down", # XF86MonBrightnessDown
-        "scratchpad_show", # Mod+minus
-        "resize_shrink_w", # resize mode
+        "reload",  # Mod+Shift+c
+        "exit_wm",  # Mod+Shift+e
+        "volume_up",  # XF86AudioRaiseVolume
+        "volume_down",  # XF86AudioLowerVolume
+        "brightness_up",  # XF86MonBrightnessUp
+        "brightness_down",  # XF86MonBrightnessDown
+        "scratchpad_show",  # Mod+minus
+        "resize_shrink_w",  # resize mode
         "resize_grow_w",
         "layout_toggle",
     }
@@ -584,7 +613,7 @@ class TestButtonMappingCompleteness(unittest.TestCase):
             with self.subTest(action=action):
                 self.assertTrue(
                     callable(getattr(backend, action, None)),
-                    f"SwayBackend missing WM action: {action}"
+                    f"SwayBackend missing WM action: {action}",
                 )
 
     def test_hyprland_backend_covers_all_actions(self):
@@ -594,7 +623,7 @@ class TestButtonMappingCompleteness(unittest.TestCase):
             with self.subTest(action=action):
                 self.assertTrue(
                     callable(getattr(backend, action, None)),
-                    f"HyprlandBackend missing WM action: {action}"
+                    f"HyprlandBackend missing WM action: {action}",
                 )
 
 
@@ -842,15 +871,18 @@ class TestGamepadProfileDetection(unittest.TestCase):
         dev = MagicMock()
         dev.name = name
         keys = [
-            self.mod.BTN_SOUTH, self.mod.BTN_EAST,
-            self.mod.BTN_NORTH, self.mod.BTN_WEST,
-            self.mod.BTN_TL, self.mod.BTN_TR,
-            self.mod.BTN_START, self.mod.BTN_SELECT,
+            self.mod.BTN_SOUTH,
+            self.mod.BTN_EAST,
+            self.mod.BTN_NORTH,
+            self.mod.BTN_WEST,
+            self.mod.BTN_TL,
+            self.mod.BTN_TR,
+            self.mod.BTN_START,
+            self.mod.BTN_SELECT,
             self.mod.BTN_MODE,
         ]
         if has_paddles:
-            keys.extend([self.mod.BTN_TH1, self.mod.BTN_TH2,
-                         self.mod.BTN_TH3, self.mod.BTN_TH4])
+            keys.extend([self.mod.BTN_TH1, self.mod.BTN_TH2, self.mod.BTN_TH3, self.mod.BTN_TH4])
         if has_share:
             keys.append(self.mod.KEY_RECORD)
         ecodes_mod = self.mod.evdev.ecodes
@@ -921,8 +953,9 @@ class TestXboxDispatch(unittest.TestCase):
     def _make_xbox_state(self, inhibit_checker=None):
         """Create a GamepadState with xbox profile and mock backend."""
         backend = MagicMock()
-        state = self.mod.GamepadState(backend, inhibit_checker=inhibit_checker,
-                                       profile=self.mod.PROFILE_XBOX)
+        state = self.mod.GamepadState(
+            backend, inhibit_checker=inhibit_checker, profile=self.mod.PROFILE_XBOX
+        )
         return state, backend
 
     def _press(self, state, code):
@@ -967,7 +1000,7 @@ class TestXboxDispatch(unittest.TestCase):
         """LT + D-pad Down should call volume_down on Xbox profile."""
         state, backend = self._make_xbox_state()
         state.on_trigger(self.mod.ABS_Z, 200)  # LT pressed
-        state.on_dpad(self.mod.ABS_HAT0Y, 1)   # D-pad Down
+        state.on_dpad(self.mod.ABS_HAT0Y, 1)  # D-pad Down
         backend.volume_down.assert_called()
 
     def test_lt_dpad_horizontal_no_volume(self):
@@ -983,22 +1016,22 @@ class TestXboxDispatch(unittest.TestCase):
     def test_rt_dpad_up_brightness_up(self):
         """RT + D-pad Up should call brightness_up on Xbox profile."""
         state, backend = self._make_xbox_state()
-        state.on_trigger(self.mod.ABS_RZ, 200) # RT pressed
+        state.on_trigger(self.mod.ABS_RZ, 200)  # RT pressed
         state.on_dpad(self.mod.ABS_HAT0Y, -1)  # D-pad Up
         backend.brightness_up.assert_called()
 
     def test_rt_dpad_down_brightness_down(self):
         """RT + D-pad Down should call brightness_down on Xbox profile."""
         state, backend = self._make_xbox_state()
-        state.on_trigger(self.mod.ABS_RZ, 200) # RT pressed
-        state.on_dpad(self.mod.ABS_HAT0Y, 1)   # D-pad Down
+        state.on_trigger(self.mod.ABS_RZ, 200)  # RT pressed
+        state.on_dpad(self.mod.ABS_HAT0Y, 1)  # D-pad Down
         backend.brightness_down.assert_called()
 
     def test_rt_dpad_horizontal_no_brightness(self):
         """RT + D-pad Left/Right should NOT trigger brightness on Xbox."""
         state, backend = self._make_xbox_state()
-        state.on_trigger(self.mod.ABS_RZ, 200) # RT pressed
-        state.on_dpad(self.mod.ABS_HAT0X, 1)   # D-pad Right
+        state.on_trigger(self.mod.ABS_RZ, 200)  # RT pressed
+        state.on_dpad(self.mod.ABS_HAT0X, 1)  # D-pad Right
         backend.brightness_up.assert_not_called()
         backend.brightness_down.assert_not_called()
 
@@ -1018,7 +1051,7 @@ class TestXboxDispatch(unittest.TestCase):
         checker = MagicMock()
         checker.is_inhibited.return_value = True
         state, backend = self._make_xbox_state(inhibit_checker=checker)
-        state.on_trigger(self.mod.ABS_RZ, 200) # RT pressed
+        state.on_trigger(self.mod.ABS_RZ, 200)  # RT pressed
         state.on_dpad(self.mod.ABS_HAT0Y, -1)  # D-pad Up
         backend.brightness_up.assert_called()
 
@@ -1205,8 +1238,9 @@ class TestProfileConstants(unittest.TestCase):
 
     def test_version_is_2(self):
         """VERSION must be 2.x for multi-controller support."""
-        self.assertTrue(self.mod.VERSION.startswith("2."),
-                        f"VERSION should be 2.x, got {self.mod.VERSION}")
+        self.assertTrue(
+            self.mod.VERSION.startswith("2."), f"VERSION should be 2.x, got {self.mod.VERSION}"
+        )
 
 
 if __name__ == "__main__":

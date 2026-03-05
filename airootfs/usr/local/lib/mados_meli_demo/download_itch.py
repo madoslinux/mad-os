@@ -53,9 +53,7 @@ def _fetch_page(opener, url):
 def _extract_csrf_token(html):
     """Extract CSRF token from itch.io page HTML."""
     # Try meta tag first
-    match = re.search(
-        r'<meta\s+name="csrf_token"\s+(?:value|content)="([^"]+)"', html
-    )
+    match = re.search(r'<meta\s+name="csrf_token"\s+(?:value|content)="([^"]+)"', html)
     if match:
         return match.group(1)
 
@@ -65,9 +63,7 @@ def _extract_csrf_token(html):
         return match.group(1)
 
     # Try hidden input form field
-    match = re.search(
-        r'<input[^>]+name="csrf_token"[^>]+value="([^"]+)"', html
-    )
+    match = re.search(r'<input[^>]+name="csrf_token"[^>]+value="([^"]+)"', html)
     if match:
         return match.group(1)
 
@@ -84,9 +80,7 @@ def _extract_uploads(html, platform_keyword):
     # Strategy 1: Find upload_id attributes with nearby platform text
     # itch.io HTML structure: <div class="upload" data-upload_id="XXXXX">
     #   ... <strong class="name">Game Name | For Linux</strong> ...
-    upload_sections = re.finditer(
-        r'data-upload_id="(\d+)"', html
-    )
+    upload_sections = re.finditer(r'data-upload_id="(\d+)"', html)
 
     for match in upload_sections:
         uid = match.group(1)
@@ -97,9 +91,7 @@ def _extract_uploads(html, platform_keyword):
 
         if platform_keyword.lower() in context.lower():
             # Try to extract the upload name
-            name_match = re.search(
-                r'class="[^"]*name[^"]*"[^>]*>([^<]+)', context
-            )
+            name_match = re.search(r'class="[^"]*name[^"]*"[^>]*>([^<]+)', context)
             name = name_match.group(1).strip() if name_match else f"Upload {uid}"
 
             # Avoid duplicates
@@ -108,9 +100,7 @@ def _extract_uploads(html, platform_keyword):
 
     # Strategy 2: Look for JSON data embedded in the page
     if not results:
-        json_match = re.search(
-            r'data-uploads_url="([^"]+)"', html
-        )
+        json_match = re.search(r'data-uploads_url="([^"]+)"', html)
         if json_match:
             # There's a URL to fetch uploads from
             pass  # We'll handle this in the main flow
@@ -129,10 +119,12 @@ def _get_download_url(opener, game_url, upload_id, csrf_token):
 
     # Try POST with CSRF token (standard itch.io method)
     if csrf_token:
-        data = urllib.parse.urlencode({
-            "csrf_token": csrf_token,
-            "source": "game_download",
-        }).encode("utf-8")
+        data = urllib.parse.urlencode(
+            {
+                "csrf_token": csrf_token,
+                "source": "game_download",
+            }
+        ).encode("utf-8")
 
         req = urllib.request.Request(
             file_url,
@@ -158,16 +150,12 @@ def _get_download_url(opener, game_url, upload_id, csrf_token):
                     pass
 
                 # Try HTML with redirect URL
-                url_match = re.search(
-                    r'(https://[^\s"\'<>]+\.zip[^\s"\'<>]*)', resp_body
-                )
+                url_match = re.search(r'(https://[^\s"\'<>]+\.zip[^\s"\'<>]*)', resp_body)
                 if url_match:
                     return url_match.group(1)
 
                 # Try meta refresh
-                refresh_match = re.search(
-                    r'url=(https://[^\s"\'<>]+)', resp_body, re.IGNORECASE
-                )
+                refresh_match = re.search(r'url=(https://[^\s"\'<>]+)', resp_body, re.IGNORECASE)
                 if refresh_match:
                     return refresh_match.group(1)
 
@@ -212,9 +200,7 @@ def _progress_hook(block_count, block_size, total_size):
         bar_len = 30
         filled = int(bar_len * percent / 100)
         bar = "█" * filled + "░" * (bar_len - filled)
-        sys.stdout.write(
-            f"\r  [{bar}] {percent:.1f}% ({mb_down:.1f}/{mb_total:.1f} MB)"
-        )
+        sys.stdout.write(f"\r  [{bar}] {percent:.1f}% ({mb_down:.1f}/{mb_total:.1f} MB)")
     else:
         mb_down = downloaded / (1024 * 1024)
         sys.stdout.write(f"\r  Descargado: {mb_down:.1f} MB")
