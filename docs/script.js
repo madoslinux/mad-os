@@ -137,26 +137,33 @@
     async function updateDownloadLinks() {
         try {
             const response = await fetch('download-info.json');
-            if (!response.ok) return;
+            if (!response.ok) {
+                const htmlResponse = await fetch('download-info.html');
+                if (!htmlResponse.ok) return;
+                const info = await htmlResponse.json();
+                updateLinks(info);
+                return;
+            }
             const info = await response.json();
-
-            // Update Beta
-            const betaLink = document.getElementById('beta-download-link');
-            const betaVersion = document.getElementById('beta-version-text');
-            if (betaLink && betaVersion && info.beta) {
-                betaLink.href = info.beta.url;
-                betaVersion.textContent = `Download v${info.beta.version}`;
-            }
-
-            // Update Stable
-            const stableLink = document.getElementById('stable-download-link');
-            const stableVersion = document.getElementById('stable-version-text');
-            if (stableLink && stableVersion && info.stable) {
-                stableLink.href = info.stable.url;
-                stableVersion.textContent = `Download v${info.stable.version}`;
-            }
+            updateLinks(info);
         } catch (e) {
             console.log('Using default download links');
+        }
+    }
+
+    function updateLinks(info) {
+        const betaLink = document.getElementById('beta-download-link');
+        const betaVersion = document.getElementById('beta-version-text');
+        if (betaLink && betaVersion && info.beta) {
+            betaLink.href = info.beta.url;
+            betaVersion.textContent = 'Download v' + info.beta.version;
+        }
+
+        const stableLink = document.getElementById('stable-download-link');
+        const stableVersion = document.getElementById('stable-version-text');
+        if (stableLink && stableVersion && info.stable) {
+            stableLink.href = info.stable.url;
+            stableVersion.textContent = 'Download v' + info.stable.version;
         }
     }
 

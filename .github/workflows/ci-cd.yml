@@ -498,7 +498,7 @@ jobs:
 
           FRONT_MATTER = "---\nlayout: null\n---\n"
 
-          with open('docs/download-info.json', 'r') as f:
+          with open('docs/download-info.html', 'r') as f:
               content = f.read()
           
           # Check if front matter exists
@@ -532,7 +532,7 @@ jobs:
               else:
                   full_content = json_str
               
-              with open('docs/download-info.json', 'w') as f:
+              with open('docs/download-info.html', 'w') as f:
                   f.write(full_content)
               print("Updated " + channel + ": v" + version)
           else:
@@ -542,7 +542,7 @@ jobs:
 
       - name: Commit and Push
         run: |
-          if git diff --quiet docs/download-info.json; then
+          if git diff --quiet docs/download-info.html; then
             echo "No changes to commit"
             exit 0
           fi
