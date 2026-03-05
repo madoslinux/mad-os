@@ -10,10 +10,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Arch Linux](https://img.shields.io/badge/Arch-Linux-blue?style=flat-square)](https://archlinux.org)
 
-[![Version](https://img.shields.io/github/v/release/madkoding/mad-os?logo=github)](https://github.com/madkoding/mad-os/releases) [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org)
+[![Version](https://img.shields.io/github/v/release/madkoding/mad-os?logo=github)](https://github.com/madkoding/mad-os/releases) 
+[![Beta](https://img.shields.io/badge/Beta-develop-purple)](https://madkoding.github.io/mad-os/)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://www.python.org)
 </div>
 
 madOS is a custom Arch Linux distribution optimized for low-RAM systems (1.9GB), featuring integrated OpenCode AI assistance for intelligent system management and orchestration.
+
+## Download
+
+- **Stable:** [madOS Website](https://madkoding.github.io/mad-os/) (recommended)
+- **Beta:** [Beta Downloads](https://madkoding.github.io/mad-os/) (latest development build)
 
 ## Quick Start
 
@@ -115,4 +122,4 @@ See [docs/CREDITS.md](docs/CREDITS.md) for full credits.
 
 ---
 
-**Última actualización:** 2026-02-24 21:26:08 -03
+**Última actualización:** 2026-03-05
