@@ -1,0 +1,15 @@
+# remove from airootfs!
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = *
+
+[Action]
+Description = madOS: Running post-installation customizations...
+When = PostTransaction
+Depends = sh
+Depends = coreutils
+Depends = git
+Depends = curl
+Exec = /root/customize_airootfs.sh

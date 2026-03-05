@@ -246,6 +246,35 @@ rm -rf /home/mados/.npm 2>/dev/null || true
 rm -rf /root/.cache/npm 2>/dev/null || true
 rm -rf /home/mados/.cache/npm 2>/dev/null || true
 
+echo "Removing package test files..."
+find /usr/lib/python3.*/site-packages -type d -name "test*" -exec rm -rf {} + 2>/dev/null || true
+find /usr/lib/python3.*/site-packages -type d -name "*_tests" -exec rm -rf {} + 2>/dev/null || true
+find /usr/lib/python3.*/site-packages -name "test_*.py" -delete 2>/dev/null || true
+find /usr/lib/python3.*/site-packages -name "*_test.py" -delete 2>/dev/null || true
+find /usr/lib/python3.*/site-packages -name "conftest.py" -delete 2>/dev/null || true
+
+echo "Removing debug symbols and unnecessary binaries..."
+find /usr -name "*.debug" -type f -delete 2>/dev/null || true
+find /usr -name "*.pyc" -type f -delete 2>/dev/null || true
+find /usr -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
+echo "Removing unused fonts and icons..."
+rm -rf /usr/share/fonts/truetype/hints 2>/dev/null || true
+rm -rf /usr/share/fonts/truetype/arphic 2>/dev/null || true
+rm -rf /usr/share/fonts/truetype/dejavu 2>/dev/null || true
+rm -rf /usr/share/fonts/truetype/liberation 2>/dev/null || true
+rm -rf /usr/share/icons/hicolor 2>/dev/null || true
+rm -rf /usr/share/icons/Adwaita 2>/dev/null || true
+rm -rf /usr/share/pixmaps/gnome 2>/dev/null || true
+
+echo "Removing unnecessary locales (keeping en_US, es_ES)..."
+for lang in /usr/share/locale/*; do
+    lang_name=$(basename "$lang")
+    if [[ "$lang_name" != "en_US" && "$lang_name" != "es_ES" && "$lang_name" != "locale.alias" ]]; then
+        rm -rf "$lang"
+    fi
+done
+
 echo "✓ Package cache cleaned"
 echo "✓ Unnecessary files removed"
 
