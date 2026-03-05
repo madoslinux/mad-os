@@ -430,20 +430,22 @@ jobs:
           EOF
           chmod 600 ~/.config/internetarchive/ia.ini
 
+          # Base identifier - single project for all versions
+          IDENTIFIER="mados"
+
+          # Target folder based on release type
           if [[ "$RELEASE_TYPE" == "stable" ]]; then
-            IDENTIFIER="mados-${VERSION}"
-            TITLE="madOS ${VERSION}"
+            TARGET="release/${ISO_NAME}"
           else
-            SHORT_SHA="${{ needs.build.outputs.short_sha }}"
-            IDENTIFIER="mados-${RELEASE_TYPE}-${VERSION}-${SHORT_SHA}"
-            TITLE="madOS ${RELEASE_TYPE^} ${VERSION}"
+            TARGET="beta/${ISO_NAME}"
           fi
 
           ia upload "$IDENTIFIER" \
             "$ISO_FILE" \
             out/SHA256SUMS \
+            --target "$TARGET" \
             --retries 3 \
-            --metadata="title:${TITLE}" \
+            --metadata="title:madOS ${RELEASE_TYPE^}" \
             --metadata="mediatype:software" \
             --metadata="collection:opensource" \
             --metadata="description:madOS - AI-Orchestrated Arch Linux Live ISO" \
@@ -451,9 +453,9 @@ jobs:
             --metadata="creator:madOS Project" \
             --metadata="date:${BUILD_DATE}"
 
-          echo "download_url=https://archive.org/download/${IDENTIFIER}/${ISO_NAME}" >> "$GITHUB_OUTPUT"
+          echo "download_url=https://archive.org/download/${IDENTIFIER}/${TARGET}" >> "$GITHUB_OUTPUT"
           echo "identifier=$IDENTIFIER" >> "$GITHUB_OUTPUT"
-          echo "iso_name=$ISO_NAME" >> "$GITHUB_OUTPUT"
+          echo "iso_name=$TARGET" >> "$GITHUB_OUTPUT"
 
   # ================================================================
   # Stage 5: Update Download Info (develop beta / main stable)
