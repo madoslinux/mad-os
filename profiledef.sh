@@ -15,8 +15,8 @@ bootmodes=('bios.syslinux'
             'uefi.systemd-boot')
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
-airootfs_image_tool_options=('-comp' 'xz' '-Xbcj' 'x86' '-Xdict-size' '100%' '-b' '1M')
-bootstrap_tarball_compression=('xz' '-c' '-T0' '--threads=0' '-9')
+airootfs_image_tool_options=('-comp' 'zstd' '-T0' '-b' '1M')
+bootstrap_tarball_compression=('zstd' '-c' '-T0' '-zstd-level=3')
 file_permissions=(
   ["/etc/shadow"]="0:0:400"
   ["/etc/profile.d/mados-welcome.sh"]="0:0:755"

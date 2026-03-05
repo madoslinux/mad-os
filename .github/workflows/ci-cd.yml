@@ -283,6 +283,13 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Download SFS cache
+        uses: actions/download-artifact@v4
+        with:
+          name: mados-sfs-cache
+          path: sfs_cache
+        continue-on-error: true
+
       - name: Cache pacman packages
         uses: actions/cache@v4
         with:
@@ -290,6 +297,15 @@ jobs:
           key: pacman-${{ runner.os }}-${{ hashFiles('packages.x86_64') }}
           restore-keys: |
             pacman-${{ runner.os }}-
+
+      - name: Cache SFS (squashfs)
+        id: cache-sfs
+        uses: actions/cache@v4
+        with:
+          path: sfs_cache/airootfs.sfs
+          key: airootfs-sfs-${{ hashFiles('packages.x86_64', 'profiledef.sh', 'airootfs/**') }}
+          restore-keys: |
+            airootfs-sfs-
 
       - name: Build ISO
         id: build
@@ -306,10 +322,20 @@ jobs:
             mkdir -p "$WORKSPACE/pacman_cache"
           fi
           
+          # Check if SFS cache exists and copy to workspace
+          SFS_CACHE_MOUNT=""
+          if [ -f "sfs_cache/airootfs.sfs" ]; then
+            echo "Restoring SFS cache..."
+            mkdir -p "$WORKSPACE/sfs_cache"
+            cp sfs_cache/airootfs.sfs "$WORKSPACE/sfs_cache/"
+            SFS_CACHE_MOUNT="-v $WORKSPACE/sfs_cache:/sfs_cache"
+          fi
+          
           docker run --privileged --rm \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
             -v "$WORKSPACE:/build" \
             -v "$WORKSPACE/pacman_cache:/var/cache/pacman/pkg" \
+            $SFS_CACHE_MOUNT \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
               echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
@@ -318,8 +344,27 @@ jobs:
               pacman -Syu --noconfirm archiso
               cd /build
               rm -rf out/*
+              
+              # Restore SFS cache if exists
+              if [ -f '/sfs_cache/airootfs.sfs' ]; then
+                echo 'Using cached SFS...'
+                mkdir -p /tmp/work/iso/arch/x86_64
+                cp /sfs_cache/airootfs.sfs /tmp/work/iso/arch/x86_64/
+              fi
+              
               mkarchiso -v -w /tmp/work -o out .
+              
+              # Save SFS cache for next build
+              if [ -f '/tmp/work/iso/arch/x86_64/airootfs.sfs' ]; then
+                mkdir -p /build/sfs_cache
+                cp /tmp/work/iso/arch/x86_64/airootfs.sfs /build/sfs_cache/
+              fi
             "
+          
+          # Save SFS cache for next build
+          if [ -d "sfs_cache" ]; then
+            echo "sfs_cache_restored=true" >> $GITHUB_OUTPUT
+          fi
           
           ISO_FILE=$(ls out/*.iso 2>/dev/null | head -1)
           if [ -z "$ISO_FILE" ]; then
@@ -353,6 +398,14 @@ jobs:
           path: |
             out/
           retention-days: 7
+
+      - name: Upload SFS cache
+        uses: actions/upload-artifact@v6
+        if: steps.cache-sfs.outputs.cache-hit != 'true'
+        with:
+          name: mados-sfs-cache
+          path: sfs_cache/
+          retention-days: 30
 
   # ================================================================
   # Stage 4: Upload to Internet Archive
