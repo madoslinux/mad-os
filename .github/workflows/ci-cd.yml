@@ -536,6 +536,45 @@ jobs:
           git push
 
   # ================================================================
+  # Deploy Website (beta on develop)
+  # ================================================================
+  deploy-website-beta:
+    name: "Deploy Beta Website"
+    needs: update-download-info
+    if: needs.update-download-info.result == 'success' && github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./_site
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: ./_site
+          branch: gh-pages
+          clean: true
+          single-commit: true
+          git-config-name: github-actions[bot]
+          git-config-email: github-actions[bot]@users.noreply.github.com
+
+  # ================================================================
   # Stage 5: GitHub Release (only stable)
   # ================================================================
   release:
