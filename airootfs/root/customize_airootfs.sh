@@ -240,6 +240,12 @@ rm -rf /usr/share/gtk-doc/*
 find /usr/share/gnome/help -type f -delete 2>/dev/null || true
 find /usr/share/gnome/parsers -type f -delete 2>/dev/null || true
 
+echo "Cleaning up npm cache..."
+rm -rf /root/.npm 2>/dev/null || true
+rm -rf /home/mados/.npm 2>/dev/null || true
+rm -rf /root/.cache/npm 2>/dev/null || true
+rm -rf /home/mados/.cache/npm 2>/dev/null || true
+
 echo "✓ Package cache cleaned"
 echo "✓ Unnecessary files removed"
 
