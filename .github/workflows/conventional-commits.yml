@@ -1,0 +1,36 @@
+name: Conventional Commits
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate commit messages
+        run: |
+          INVALID=0
+          while read -r commit; do
+            MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
+            # Skip merge commits
+            [[ "$MSG" =~ ^Merge ]] && continue
+            # Conventional commit pattern
+            if ! [[ "$MSG" =~ ^(feat|fix|hotfix|docs|refactor|test|ci|chore|revert)(\(.+\))?: ]]; then
+              echo "Invalid commit: $MSG"
+              INVALID=1
+            fi
+          done < <(git log --format="%H %s" origin/main..HEAD)
+          
+          if [ $INVALID -eq 1 ]; then
+            echo ""
+            echo "Commits must follow conventional commits format:"
+            echo "  <type>(<scope>): <description>"
+            echo ""
+            echo "Types: feat, fix, hotfix, docs, refactor, test, ci, chore, revert"
+            exit 1
+          fi
