@@ -283,6 +283,14 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Cache pacman packages
+        uses: actions/cache@v4
+        with:
+          path: pacman_cache
+          key: pacman-${{ runner.os }}-${{ hashFiles('packages.x86_64') }}
+          restore-keys: |
+            pacman-${{ runner.os }}-
+
       - name: Build ISO
         id: build
         run: |
@@ -292,9 +300,16 @@ jobs:
           mkdir -p out
           chmod 777 out
           
+          # Copy cached packages if exists (only if not empty)
+          if [ -d "pacman_cache" ] && [ "$(ls -A pacman_cache 2>/dev/null)" ]; then
+            echo "Restoring pacman cache..."
+            mkdir -p "$WORKSPACE/pacman_cache"
+          fi
+          
           docker run --privileged --rm \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
             -v "$WORKSPACE:/build" \
+            -v "$WORKSPACE/pacman_cache:/var/cache/pacman/pkg" \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
               echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
