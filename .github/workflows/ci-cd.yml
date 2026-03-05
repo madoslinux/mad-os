@@ -359,8 +359,8 @@ jobs:
           name: mados-iso
           path: out
 
-      - name: Install IA CLI
-        run: pip install internetarchive
+      - name: Install IA CLI & dependencies
+        run: pip install internetarchive requests
 
       - name: Upload to Archive
         id: upload_ia
@@ -374,37 +374,33 @@ jobs:
           BUILD_DATE="${{ needs.build.outputs.build_date }}"
           RELEASE_TYPE="${{ needs.build.outputs.release_type }}"
 
-          mkdir -p ~/.config/internetarchive
-          cat > ~/.config/internetarchive/ia.ini <<EOF
-          [s3]
-          access = ${IAS3_ACCESS_KEY}
-          secret = ${IAS3_SECRET_KEY}
-          EOF
-          chmod 600 ~/.config/internetarchive/ia.ini
-
-          IDENTIFIER="mados"
-
           if [[ "$RELEASE_TYPE" == "stable" ]]; then
             TARGET="release/${ISO_NAME}"
           else
             TARGET="beta/${ISO_NAME}"
           fi
 
-          ia upload "$IDENTIFIER" \
-            "$ISO_FILE" \
-            out/SHA256SUMS \
-            --target "$TARGET" \
-            --retries 3 \
-            --metadata="title:madOS ${RELEASE_TYPE^}" \
-            --metadata="mediatype:software" \
-            --metadata="collection:opensource" \
-            --metadata="description:madOS - AI-Orchestrated Arch Linux Live ISO" \
-            --metadata="subject:linux;arch;live-iso;open-source" \
-            --metadata="creator:madOS Project" \
-            --metadata="date:${BUILD_DATE}"
+          # Upload ISO using S3 API (for subfolder support)
+          curl -v -X PUT \
+            -H "x-amz-acl: public-read" \
+            -H "x-archive-meta-title:madOS ${RELEASE_TYPE^}" \
+            -H "x-archive-meta-mediatype:software" \
+            -H "x-archive-meta-collection:opensource" \
+            -H "x-archive-meta-description:madOS - AI-Orchestrated Arch Linux Live ISO" \
+            -H "x-archive-meta-subject:linux;arch;live-iso;open-source" \
+            -H "x-archive-meta-creator:madOS Project" \
+            -H "x-archive-meta-date:${BUILD_DATE}" \
+            --upload-file "$ISO_FILE" \
+            "https://s3.us.archive.org/mados/${TARGET}"
 
-          echo "download_url=https://archive.org/download/${IDENTIFIER}/${TARGET}" >> "$GITHUB_OUTPUT"
-          echo "identifier=$IDENTIFIER" >> "$GITHUB_OUTPUT"
+          # Upload SHA256SUMS
+          curl -v -X PUT \
+            -H "x-amz-acl: public-read" \
+            --upload-file out/SHA256SUMS \
+            "https://s3.us.archive.org/mados/${TARGET}/SHA256SUMS"
+
+          echo "download_url=https://archive.org/download/mados/${TARGET}" >> "$GITHUB_OUTPUT"
+          echo "identifier=mados" >> "$GITHUB_OUTPUT"
           echo "iso_name=$TARGET" >> "$GITHUB_OUTPUT"
 
   # ================================================================
