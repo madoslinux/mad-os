@@ -320,8 +320,17 @@ def apply_theme():
         
         .feature-card {{
             background-color: {NORD_POLAR_NIGHT['nord1']};
+            border: 1px solid {NORD_FROST['nord10']};
             border-radius: 8px;
             padding: 8px 12px;
+            min-width: 110px;
+            min-height: 36px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        }}
+        
+        .feature-card:hover {{
+            background-color: {NORD_POLAR_NIGHT['nord2']};
+            border-color: {NORD_FROST['nord8']};
         }}
         
         .feature-icon {{

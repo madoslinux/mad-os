@@ -290,17 +290,14 @@ class TestTranslations(unittest.TestCase):
                         )
 
     def test_features_structure(self):
-        """Features should be a list of tuples with 2 strings each."""
+        """Features should be a list of strings."""
         for lang, trans in TRANSLATIONS.items():
             with self.subTest(lang=lang):
                 features = trans.get("features", [])
                 self.assertIsInstance(features, list)
                 for i, feat in enumerate(features):
                     self.assertIsInstance(
-                        feat, tuple, f"Feature {i} in '{lang}' is not a tuple"
-                    )
-                    self.assertEqual(
-                        len(feat), 2, f"Feature {i} in '{lang}' should have 2 elements"
+                        feat, str, f"Feature {i} in '{lang}' is not a string"
                     )
 
     def test_title_consistent(self):

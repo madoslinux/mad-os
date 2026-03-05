@@ -20,14 +20,20 @@ THEME_CSS = f"""
 
 /* ===== Dock Container ===== */
 #dock-container {{
+    background-color: transparent;
+}}
+
+#dock-bg {{
     background-color: {NORD['nord0']};
     border-radius: 0 8px 8px 0;
     border-left: none;
     border-top: 1px solid {NORD['nord3']};
     border-right: 1px solid {NORD['nord3']};
     border-bottom: 1px solid {NORD['nord3']};
-    padding: 0;
-    box-shadow: none;  /* Shadow is rendered via Cairo */
+}}
+
+#icons-bg {{
+    background-color: {NORD['nord0']};
 }}
 
 /* ===== Grip Tab ===== */

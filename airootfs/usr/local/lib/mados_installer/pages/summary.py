@@ -75,16 +75,11 @@ def update_summary(app):
     sys_card.pack_start(sys_title, False, False, 0)
 
     sys_info = Gtk.Label()
-    ventoy_size = app.install_data.get("ventoy_persist_size", 4096)
-    ventoy_size_str = (
-        f"{ventoy_size // 1024} GB" if ventoy_size >= 1024 else f"{ventoy_size} MB"
-    )
     sys_info.set_markup(
         f'<span size="9000">'
         f"  {app.t('disk')}  <b>{disk}</b>\n"
         f"  {app.t('timezone')}  <b>{app.install_data['timezone']}</b>\n"
-        f"  Locale:  <b>{app.install_data['locale']}</b>\n"
-        f"  Ventoy:  <b>{ventoy_size_str} persistence</b>"
+        f"  Locale:  <b>{app.install_data['locale']}</b>"
         f"</span>"
     )
     sys_info.set_halign(Gtk.Align.START)
