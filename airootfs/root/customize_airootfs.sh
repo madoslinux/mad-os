@@ -226,4 +226,21 @@ for desktop_file in \
 done
 echo "✓ Unwanted desktop entries hidden"
 
+# ════════════════════════════════════════════════════════════════════════════
+# Clean up package cache to reduce ISO size
+# ════════════════════════════════════════════════════════════════════════════
+echo "Cleaning up package cache..."
+rm -rf /var/cache/pacman/pkg/*
+
+echo "Removing unnecessary files (docs, man pages, locales)..."
+rm -rf /usr/share/doc/*
+rm -rf /usr/share/man/*
+rm -rf /usr/share/locale/*
+rm -rf /usr/share/gtk-doc/*
+find /usr/share/gnome/help -type f -delete 2>/dev/null || true
+find /usr/share/gnome/parsers -type f -delete 2>/dev/null || true
+
+echo "✓ Package cache cleaned"
+echo "✓ Unnecessary files removed"
+
 echo "=== madOS: Pre-installation complete ==="
