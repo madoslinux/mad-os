@@ -141,7 +141,13 @@ class VideoPlayer(Gtk.Box):
             return
 
         # Try to use gtksink first (works well with Wayland)
-        gtksink = Gst.ElementFactory.make("gtksink", "videosink")
+        gtksink = None
+        try:
+            gtksink = Gst.ElementFactory.make("gtksink", "videosink")
+        except (Exception, Gst.MissingPluginError) as e:
+            print(f"gtksink not available: {e}")
+            gtksink = None
+
         if gtksink is not None:
             self._pipeline.set_property("video-sink", gtksink)
             # Replace the drawing area with gtksink's widget
