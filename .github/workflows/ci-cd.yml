@@ -606,16 +606,53 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./docs
-          destination: ./_site
+      - name: Build Pages
+        run: |
+          # Simply copy docs to _site
+          mkdir -p _site
+          cp -r docs/* _site/
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: ./_site
+          folder: _site
+          branch: gh-pages
+          clean: true
+          single-commit: true
+          git-config-name: github-actions[bot]
+          git-config-email: github-actions[bot]@users.noreply.github.com
+
+  # ================================================================
+  # Deploy Website (stable on main)
+  # ================================================================
+  deploy-website-stable:
+    name: "Deploy Stable Website"
+    needs: release
+    if: needs.release.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Build Pages
+        run: |
+          mkdir -p _site
+          cp -r docs/* _site/
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: _site
           branch: gh-pages
           clean: true
           single-commit: true
