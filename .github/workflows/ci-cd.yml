@@ -391,21 +391,12 @@ jobs:
           
           echo "Build successful!"
 
-      - name: Upload artifact
+      - name: Upload ISO artifact
         uses: actions/upload-artifact@v6
         with:
           name: mados-iso
-          path: |
-            out/
-          retention-days: 7
-
-      - name: Upload SFS cache
-        uses: actions/upload-artifact@v6
-        if: steps.cache-sfs.outputs.cache-hit != 'true'
-        with:
-          name: mados-sfs-cache
-          path: sfs_cache/
-          retention-days: 30
+          path: out/
+          retention-days: 1
 
   # ================================================================
   # Stage 4: Upload to Internet Archive
