@@ -189,6 +189,9 @@ PACKAGES_PHASE2 = [
     "gstreamer",
     "gst-plugins-base",
     "gst-plugins-good",
+    "gst-plugins-ugly",
+    "gst-plugins-bad",
+    "gst-libav",
     "gst-python",
 ]
 

@@ -152,10 +152,11 @@ squeekboard
 gstreamer
 gst-plugins-base
 gst-plugins-good
+gst-plugins-ugly
+gst-plugins-bad
+gst-libav
 gst-python
 python-pillow
-
-
 
 # madOS PDF Viewer - PDF rendering and annotations
 poppler-glib
