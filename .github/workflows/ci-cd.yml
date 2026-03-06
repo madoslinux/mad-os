@@ -58,6 +58,15 @@ jobs:
             python3 -m py_compile "$script"
           done
 
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff check
+        run: ruff check airootfs tests || true
+
+      - name: Run ruff format check
+        run: ruff format --check airootfs tests || true
+
   test-unit:
     name: "Unit: ${{ matrix.category }}"
     runs-on: ubuntu-latest
@@ -266,17 +275,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: auto-tag
     if: always() && !cancelled() && (needs.auto-tag.result == 'success' || needs.auto-tag.result == 'skipped')
-    outputs:
-      iso_name: ${{ steps.build.outputs.iso_name }}
-      version: ${{ steps.build.outputs.version }}
-      build_date: ${{ steps.build.outputs.build_date }}
-      iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
-      short_sha: ${{ steps.build.outputs.short_sha }}
-      is_release: ${{ needs.auto-tag.outputs.is_release }}
-      is_prerelease: ${{ needs.auto-tag.outputs.is_prerelease }}
-      release_type: ${{ needs.auto-tag.outputs.release_type }}
-      auto_tag: ${{ needs.auto-tag.outputs.new_tag }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -290,6 +288,15 @@ jobs:
           key: pacman-${{ runner.os }}-${{ hashFiles('packages.x86_64') }}
           restore-keys: |
             pacman-${{ runner.os }}-
+
+      - name: Cache SFS (squashfs)
+        id: cache-sfs
+        uses: actions/cache@v4
+        with:
+          path: sfs_cache/airootfs.sfs
+          key: airootfs-sfs-${{ hashFiles('packages.x86_64') }}-${{ hashFiles('profiledef.sh') }}
+          restore-keys: |
+            airootfs-sfs-
 
       - name: Build ISO
         id: build
@@ -306,10 +313,18 @@ jobs:
             mkdir -p "$WORKSPACE/pacman_cache"
           fi
           
+          # Mount SFS cache if it exists (actions/cache restores to sfs_cache/)
+          SFS_CACHE_MOUNT=""
+          if [ -f "sfs_cache/airootfs.sfs" ]; then
+            echo "SFS cache found, will use it..."
+            SFS_CACHE_MOUNT="-v $WORKSPACE/sfs_cache:/sfs_cache"
+          fi
+          
           docker run --privileged --rm \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
             -v "$WORKSPACE:/build" \
             -v "$WORKSPACE/pacman_cache:/var/cache/pacman/pkg" \
+            $SFS_CACHE_MOUNT \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
               echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
@@ -318,7 +333,21 @@ jobs:
               pacman -Syu --noconfirm archiso
               cd /build
               rm -rf out/*
+              
+              # Restore SFS cache if exists (actions/cache restores to sfs_cache/)
+              if [ -f 'sfs_cache/airootfs.sfs' ] && [ ! -f '/tmp/work/iso/arch/x86_64/airootfs.sfs' ]; then
+                echo 'Using cached SFS...'
+                mkdir -p /tmp/work/iso/arch/x86_64
+                cp sfs_cache/airootfs.sfs /tmp/work/iso/arch/x86_64/
+              fi
+              
               mkarchiso -v -w /tmp/work -o out .
+              
+              # Save SFS cache for next build (only if it was newly created)
+              if [ -f '/tmp/work/iso/arch/x86_64/airootfs.sfs' ] && [ ! -f 'sfs_cache/airootfs.sfs' ]; then
+                mkdir -p sfs_cache
+                cp /tmp/work/iso/arch/x86_64/airootfs.sfs sfs_cache/
+              fi
             "
           
           ISO_FILE=$(ls out/*.iso 2>/dev/null | head -1)
@@ -329,12 +358,21 @@ jobs:
           
           sha256sum out/*.iso > out/SHA256SUMS || true
           
-          ISO_NAME=$(basename "$ISO_FILE")
+          # Rename ISO to use version for predictable naming
           VERSION="${{ needs.auto-tag.outputs.version }}"
           [ -n "$VERSION" ] || VERSION="${GITHUB_REF_NAME#v}"
           [ -n "$VERSION" ] || VERSION="dev-$(date +%Y%m%d)"
+          
+          ISO_FILE=$(ls out/*.iso | head -1)
+          NEW_ISO_NAME="madOS-${VERSION}-x86_64.iso"
+          mv "$ISO_FILE" "out/${NEW_ISO_NAME}"
+          
+          # Update SHA256SUMS with new name
+          sed -i "s/$(basename "$ISO_FILE")/${NEW_ISO_NAME}/g" out/SHA256SUMS
+          
+          ISO_NAME="$NEW_ISO_NAME"
           BUILD_DATE=$(date +%Y.%m.%d)
-          ISO_SIZE=$(stat --format=%s "$ISO_FILE" 2>/dev/null || echo 0)
+          ISO_SIZE=$(stat --format=%s "out/${ISO_NAME}" 2>/dev/null || echo 0)
           ISO_SIZE_MB=$((ISO_SIZE / 1024 / 1024))
           SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
           
@@ -346,38 +384,10 @@ jobs:
           
           echo "Build successful!"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v6
-        with:
-          name: mados-iso
-          path: |
-            out/
-          retention-days: 7
-
-  # ================================================================
-  # Stage 4: Upload to Internet Archive
-  # ================================================================
-  upload-archive:
-    name: "Upload to Archive"
-    runs-on: ubuntu-latest
-    needs: build
-    if: needs.build.result == 'success'
-
-    outputs:
-      download_url: ${{ steps.upload_ia.outputs.download_url }}
-      identifier: ${{ steps.upload_ia.outputs.identifier }}
-
-    steps:
-      - name: Download ISO
-        uses: actions/download-artifact@v4
-        with:
-          name: mados-iso
-          path: out
-
       - name: Install IA CLI & dependencies
         run: pip install internetarchive requests
 
-      - name: Upload to Archive
+      - name: Upload to Internet Archive
         id: upload_ia
         env:
           IAS3_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
@@ -391,23 +401,41 @@ jobs:
             exit 1
           fi
           
+          # Verify ISO is a file, not a directory
+          if [ ! -f "$ISO_FILE" ]; then
+            echo "ERROR: $ISO_FILE is not a file, it's a directory!"
+            ls -la "$ISO_FILE"
+            exit 1
+          fi
+          
+          ISO_SIZE=$(stat --format=%s "$ISO_FILE" 2>/dev/null || echo 0)
+          if [ "$ISO_SIZE" -lt 1000000 ]; then
+            echo "ERROR: ISO file too small ($ISO_SIZE bytes), something is wrong"
+            ls -la "$ISO_FILE"
+            exit 1
+          fi
+          
+          echo "ISO file: $ISO_FILE ($(($ISO_SIZE / 1024 / 1024)) MB)"
+          
           ISO_NAME=$(basename "$ISO_FILE")
-          VERSION="${{ needs.build.outputs.version }}"
-          BUILD_DATE="${{ needs.build.outputs.build_date }}"
-          RELEASE_TYPE="${{ needs.build.outputs.release_type }}"
+          VERSION="${{ steps.build.outputs.version }}"
+          BUILD_DATE="${{ steps.build.outputs.build_date }}"
+          RELEASE_TYPE="${{ steps.build.outputs.release_type }}"
 
+          # Set identifier based on release type
           if [[ "$RELEASE_TYPE" == "stable" ]]; then
-            TARGET="madOS Release/${ISO_NAME}"
-            IDENTIFIER="mados-project"
+            IDENTIFIER="mados-stable"
           else
-            TARGET="madOS Beta/${ISO_NAME}"
-            IDENTIFIER="mados-project"
+            IDENTIFIER="mados-beta"
           fi
 
-          echo "Uploading ${ISO_NAME} to ${IDENTIFIER}/${TARGET}"
+          echo "Uploading ${ISO_NAME} to ${IDENTIFIER}"
 
           # Upload ISO using S3 API
-          curl -v -X PUT \
+          echo "Uploading ISO: $ISO_FILE (size: $(stat --format=%s "$ISO_FILE") bytes)"
+          ls -la "$ISO_FILE"
+          
+          ISO_RESPONSE=$(curl -s -w "%{http_code}" -X PUT \
             -H "Authorization: LOW ${IAS3_ACCESS_KEY}:${IAS3_SECRET_KEY}" \
             -H "x-amz-acl: public-read" \
             -H "x-archive-auto-make-bucket:1" \
@@ -419,40 +447,64 @@ jobs:
             -H "x-archive-meta-creator:madOS Project" \
             -H "x-archive-meta-date:${BUILD_DATE}" \
             --upload-file "$ISO_FILE" \
-            "https://s3.us.archive.org/${IDENTIFIER}/${TARGET}"
+            "https://s3.us.archive.org/${IDENTIFIER}/${ISO_NAME}")
+
+          if [ "$ISO_RESPONSE" != "200" ] && [ "$ISO_RESPONSE" != "201" ]; then
+            echo "ERROR: ISO upload failed with HTTP $ISO_RESPONSE"
+            exit 1
+          fi
 
           # Upload SHA256SUMS
-          curl -v -X PUT \
+          SHA_RESPONSE=$(curl -s -w "%{http_code}" -X PUT \
             -H "Authorization: LOW ${IAS3_ACCESS_KEY}:${IAS3_SECRET_KEY}" \
             -H "x-amz-acl: public-read" \
             --upload-file out/SHA256SUMS \
-            "https://s3.us.archive.org/${IDENTIFIER}/${TARGET}/SHA256SUMS"
+            "https://s3.us.archive.org/${IDENTIFIER}/SHA256SUMS")
 
-          echo "download_url=https://archive.org/download/${IDENTIFIER}/${TARGET}" >> "$GITHUB_OUTPUT"
+          if [ "$SHA_RESPONSE" != "200" ] && [ "$SHA_RESPONSE" != "201" ]; then
+            echo "ERROR: SHA256SUMS upload failed with HTTP $SHA_RESPONSE"
+            exit 1
+          fi
+
+          DOWNLOAD_URL="https://archive.org/download/${IDENTIFIER}/${ISO_NAME}"
+          echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
           echo "identifier=${IDENTIFIER}" >> "$GITHUB_OUTPUT"
-          echo "iso_name=${TARGET}" >> "$GITHUB_OUTPUT"
+          echo "iso_name=${ISO_NAME}" >> "$GITHUB_OUTPUT"
 
-  # ================================================================
-  # Stage 5: Update Download Info & Website
+    outputs:
+      iso_name: ${{ steps.build.outputs.iso_name }}
+      version: ${{ steps.build.outputs.version }}
+      build_date: ${{ steps.build.outputs.build_date }}
+      iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
+      short_sha: ${{ steps.build.outputs.short_sha }}
+      is_release: ${{ needs.auto-tag.outputs.is_release }}
+      is_prerelease: ${{ needs.auto-tag.outputs.is_prerelease }}
+      release_type: ${{ needs.auto-tag.outputs.release_type }}
+      auto_tag: ${{ needs.auto-tag.outputs.new_tag }}
+      download_url: ${{ steps.upload_ia.outputs.download_url }}
+      identifier: ${{ steps.upload_ia.outputs.identifier }}
+
+  # ================================================================  
+  # Stage 4: Update Download Info & Website (direct to gh-pages)
   # ================================================================
   update-download-info:
     name: "Update Download Info"
     runs-on: ubuntu-latest
-    needs: [build, upload-archive]
+    needs: build
     if: needs.build.result == 'success' && (github.ref == 'refs/heads/develop' || needs.build.outputs.is_release == 'true')
     permissions:
       contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: gh-pages
           fetch-depth: 0
 
       - name: Update download links
         env:
-          DOWNLOAD_URL: ${{ needs.upload-archive.outputs.download_url }}
+          DOWNLOAD_URL: ${{ needs.build.outputs.download_url }}
           VERSION: ${{ needs.build.outputs.version }}
           RELEASE_TYPE: ${{ needs.build.outputs.release_type }}
           BUILD_DATE: ${{ needs.build.outputs.build_date }}
@@ -470,7 +522,7 @@ jobs:
 
           FRONT_MATTER = "---\nlayout: null\n---\n"
 
-          with open('docs/download-info.html', 'r') as f:
+          with open('download-info.html', 'r') as f:
               content = f.read()
           
           if content.startswith('---'):
@@ -499,24 +551,25 @@ jobs:
               else:
                   full_content = json_str
               
-              with open('docs/download-info.html', 'w') as f:
+              with open('download-info.html', 'w') as f:
                   f.write(full_content)
               print("Updated " + channel + ": v" + version)
           EOF
 
-          # Update index.html
-          sed -i "s|<a id=\"${CHANNEL}-download-link\" href=\"[^\"]*\"|<a id=\"${CHANNEL}-download-link\" href=\"$DOWNLOAD_URL\"|g" docs/index.html
-          sed -i "s|data-version=\"[^\"]*\"|data-version=\"$VERSION\"|g" docs/index.html
-          
+          # Update index.html - specific to each channel
           if [[ "$CHANNEL" == "beta" ]]; then
-            sed -i "s|<span id=\"beta-version-text\">Download v[^<]*</span>|<span id=\"beta-version-text\">Download v$VERSION</span>|g" docs/index.html
+            sed -i "s|id=\"beta-download-link\" href=\"[^\"]*\"|id=\"beta-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
+            sed -i "s|id=\"beta-download-link\" data-version=\"[^\"]*\"|id=\"beta-download-link\" data-version=\"$VERSION\"|g" index.html
+            sed -i "s|<span id=\"beta-version-text\">Download v[^<]*</span>|<span id=\"beta-version-text\">Download v$VERSION</span>|g" index.html
           else
-            sed -i "s|<span id=\"stable-version-text\">Download v[^<]*</span>|<span id=\"stable-version-text\">Download v$VERSION</span>|g" docs/index.html
+            sed -i "s|id=\"stable-download-link\" href=\"[^\"]*\"|id=\"stable-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
+            sed -i "s|id=\"stable-download-link\" data-version=\"[^\"]*\"|id=\"stable-download-link\" data-version=\"$VERSION\"|g" index.html
+            sed -i "s|<span id=\"stable-version-text\">Download v[^<]*</span>|<span id=\"stable-version-text\">Download v$VERSION</span>|g" index.html
           fi
 
       - name: Commit and Push
         run: |
-          if git diff --quiet docs/download-info.html docs/index.html; then
+          if git diff --quiet download-info.html index.html; then
             echo "No changes to commit"
             exit 0
           fi
@@ -524,55 +577,17 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          git add docs/download-info.html docs/index.html
+          git add download-info.html index.html
           git commit -m "ci: update download links to ${{ needs.build.outputs.version }}"
-          git push
-
-  # ================================================================
-  # Deploy Website (beta on develop)
-  # ================================================================
-  deploy-website-beta:
-    name: "Deploy Beta Website"
-    needs: update-download-info
-    if: needs.update-download-info.result == 'success' && github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      contents: write
-      id-token: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: develop
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./docs
-          destination: ./_site
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: ./_site
-          branch: gh-pages
-          clean: true
-          single-commit: true
-          git-config-name: github-actions[bot]
-          git-config-email: github-actions[bot]@users.noreply.github.com
+          git push origin gh-pages
 
   # ================================================================
   # GitHub Release (only stable)
   # ================================================================
   release:
     name: "GitHub Release"
-    needs: upload-archive
-    if: needs.upload-archive.result == 'success' && needs.build.outputs.is_release == 'true'
+    needs: build
+    if: needs.build.result == 'success' && needs.build.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -581,11 +596,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download ISO
-        uses: actions/download-artifact@v4
-        with:
-          name: mados-iso
-          path: out
+      - name: Download SHA256SUMS from Internet Archive
+        run: |
+          IDENTIFIER="${{ needs.build.outputs.identifier }}"
+          mkdir -p out
+          curl -L "https://archive.org/download/${IDENTIFIER}/SHA256SUMS" -o out/SHA256SUMS
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -601,7 +616,7 @@ jobs:
 
             ### Download
 
-            **[Download from Internet Archive](${{ needs.upload-archive.outputs.download_url }})**
+            **[Download from Internet Archive](${{ needs.build.outputs.download_url }})**
 
             ### Verification
 
