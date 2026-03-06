@@ -50,90 +50,11 @@ else
 fi
 
 # ════════════════════════════════════════════════════════════════════════════
-# NVM (Node Version Manager) - para npm a nivel de usuario
+# NVM (Node Version Manager) y Node
+# NOTA: No se instala en la imagen ISO para reducir tamaño.
+# Se instalará automáticamente post-instalación para el usuario.
 # ════════════════════════════════════════════════════════════════════════════
-export NVM_DIR="/root/.nvm"
-
-install_nvm() {
-    if [[ -d "$NVM_DIR" ]]; then
-        echo "✓ NVM already installed"
-        return 0
-    fi
-    
-    echo "Installing NVM..."
-    if curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash 2>&1; then
-        echo "✓ NVM installed"
-        return 0
-    else
-        echo "⚠ NVM install failed"
-        return 1
-    fi
-}
-
-install_node_user() {
-    local user_home="$1"
-    local user_nvm_dir="$user_home/.nvm"
-    local user
-    
-    # Extract username from home path (e.g., /home/mados -> mados)
-    user=$(basename "$user_home")
-    
-    # Skip if user doesn't exist on the system
-    if ! id "$user" &>/dev/null; then
-        echo "  Skipping NVM install for $user (user does not exist)"
-        return 0
-    fi
-    
-    if [[ -d "$user_nvm_dir" ]]; then
-        echo "  ✓ NVM already installed for user"
-        return 0
-    fi
-    
-    echo "  Installing NVM for user $user..."
-    sudo -u "$user" curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | NVM_DIR="$user_nvm_dir" HOME="$user_home" bash 2>&1 || return 1
-    
-    if [[ -d "$user_nvm_dir" ]]; then
-        echo "  ✓ NVM installed for user"
-        return 0
-    fi
-    return 1
-}
-
-install_node_via_nvm() {
-    local nvm_dir="$1"
-    local node_version="24"
-    
-    if [[ -s "$nvm_dir/nvm.sh" ]]; then
-        # shellcheck source=/dev/null
-        source "$nvm_dir/nvm.sh" 2>/dev/null
-        
-        if nvm list "$node_version" 2>/dev/null | grep -q "$node_version"; then
-            echo "  ✓ Node $node_version already installed"
-            return 0
-        fi
-        
-        echo "  Installing Node $node_version..."
-        if nvm install "$node_version" 2>&1; then
-            echo "  ✓ Node $node_version installed"
-            nvm alias default "$node_version" 2>/dev/null || true
-            return 0
-        else
-            echo "  ⚠ Node install failed"
-            return 1
-        fi
-    fi
-    return 1
-}
-
-if install_nvm; then
-    # Install node for root
-    install_node_via_nvm "$NVM_DIR"
-    
-    # Install node for mados user if exists
-    if id mados &>/dev/null; then
-        install_node_user /home/mados
-    fi
-fi
+echo "NVM and Node installation skipped (will be installed post-installation)"
 
 # ── Oh My Zsh ────────────────────────────────────────────────────────────
 OMZ_DIR="/etc/skel/.oh-my-zsh"
