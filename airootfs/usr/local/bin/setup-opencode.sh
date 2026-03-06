@@ -39,8 +39,37 @@ check_already_installed() {
         return 0
     fi
     if [[ -x "$PERSIST_DIR/$OPENCODE_CMD" ]]; then
+        # Ensure symlink exists if using persistence
+        if [[ ! -e "$INSTALL_DIR/$OPENCODE_CMD" ]]; then
+            ln -sf "$PERSIST_DIR/$OPENCODE_CMD" "$INSTALL_DIR/$OPENCODE_CMD" 2>/dev/null || true
+        fi
         return 0
     fi
+    return 1
+}
+
+ensure_opencode_available() {
+    # Ensure opencode is in PATH by creating necessary symlinks
+    local found_opencode=""
+    
+    # Find opencode binary
+    if [[ -x "$INSTALL_DIR/$OPENCODE_CMD" ]]; then
+        found_opencode="$INSTALL_DIR/$OPENCODE_CMD"
+    elif [[ -x "$PERSIST_DIR/$OPENCODE_CMD" ]]; then
+        found_opencode="$PERSIST_DIR/$OPENCODE_CMD"
+    else
+        # Search for it
+        found_opencode=$(find "$INSTALL_DIR" "$PERSIST_DIR" /usr/local/lib/opencode -name "opencode" -type f -executable 2>/dev/null | head -1 || true)
+    fi
+    
+    if [[ -n "$found_opencode" ]]; then
+        # Ensure it's symlinked to INSTALL_DIR
+        if [[ "$found_opencode" != "$INSTALL_DIR/$OPENCODE_CMD" ]]; then
+            ln -sf "$found_opencode" "$INSTALL_DIR/$OPENCODE_CMD" 2>/dev/null || true
+        fi
+        return 0
+    fi
+    
     return 1
 }
 
@@ -60,17 +89,44 @@ install_via_curl() {
         mkdir -p "$target_dir"
     fi
 
-    if curl -fsSL https://opencode.ai/install | INSTALL_DIR="$target_dir" bash 2>&1; then
-        if [[ -x "$target_dir/$OPENCODE_CMD" ]] || command -v "$OPENCODE_CMD" &>/dev/null; then
-            log_ok "OpenCode instalado via curl"
-
+    # The opencode installer puts binary in ~/.opencode/bin/opencode
+    # We need to install it and then copy/symlink to our target
+    local opencode_install_dir="$HOME/.opencode"
+    
+    # Clean up any previous failed install
+    rm -rf "$opencode_install_dir"
+    
+    # Run the official installer
+    if curl -fsSL https://opencode.ai/install | bash 2>&1; then
+        # Find where it was installed (usually ~/.opencode/bin/opencode)
+        local opencode_binary=""
+        
+        if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
+            opencode_binary="$HOME/.opencode/bin/opencode"
+        else
+            # Search in common locations
+            opencode_binary=$(find "$HOME" -name "opencode" -type f -executable 2>/dev/null | head -1 || true)
+        fi
+        
+        if [[ -n "$opencode_binary" ]]; then
+            # Copy to target location (or symlink if same filesystem)
             if [[ "$using_persistence" == true ]]; then
+                cp "$opencode_binary" "$target_dir/$OPENCODE_CMD"
+                chmod +x "$target_dir/$OPENCODE_CMD"
                 ln -sf "$target_dir/$OPENCODE_CMD" "$INSTALL_DIR/$OPENCODE_CMD" 2>/dev/null || true
+            else
+                cp "$opencode_binary" "$INSTALL_DIR/$OPENCODE_CMD"
+                chmod +x "$INSTALL_DIR/$OPENCODE_CMD"
             fi
+            
+            log_ok "OpenCode instalado via curl"
             return 0
+        else
+            log_warn "Instalador completado pero no se encontró el binario"
+            return 1
         fi
     fi
-
+    
     return 1
 }
 
@@ -117,9 +173,12 @@ main() {
     echo "  ╚══════════════════════════════════════════╝"
     echo ""
 
+    # First ensure any existing opencode is properly linked
+    ensure_opencode_available
+
     if check_already_installed; then
         local version
-        version=$("$OPENCODE_CMD" --version 2>/dev/null || echo "desconocida")
+        version=$("$INSTALL_DIR/$OPENCODE_CMD" --version 2>/dev/null || echo "desconocida")
         log_ok "OpenCode ya está instalado (versión: $version)"
         return 0
     fi
@@ -159,10 +218,13 @@ main() {
         log_info "Intenta instalar manualmente y reporta el error."
         return 1
     fi
+    
+    # Ensure it's available after installation
+    ensure_opencode_available
 
     echo ""
     local final_version
-    final_version=$("$OPENCODE_CMD" --version 2>/dev/null || echo "desconocida")
+    final_version=$("$INSTALL_DIR/$OPENCODE_CMD" --version 2>/dev/null || echo "desconocida")
     log_ok "OpenCode instalado correctamente (versión: $final_version)"
     echo ""
     log_info "Para usar OpenCode, ejecuta: opencode"

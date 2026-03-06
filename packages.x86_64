@@ -1,6 +1,5 @@
 # Sistema base
 base
-base-devel
 linux
 linux-firmware
 mkinitcpio-archiso
@@ -29,8 +28,7 @@ xdg-desktop-portal-hyprland
 
 # Aplicaciones principales
 foot
-chromium
-code
+firefox
 vim
 nano
 pcmanfm
@@ -102,21 +100,13 @@ pipewire-alsa
 wireplumber
 alsa-utils
 pavucontrol
+flac
 
 # Reproductores multimedia
 mpv
 cava
-fftw
-chafa
-taglib
-faad2
-opus
-opusfile
-libvorbis
-libogg
 
 # Build tools
-gcc
 make
 pkgconf
 
@@ -124,7 +114,6 @@ pkgconf
 
 # Fuentes
 ttf-jetbrains-mono-nerd
-noto-fonts-emoji
 
 # Información del sistema
 fastfetch
@@ -164,14 +153,15 @@ squeekboard
 gstreamer
 gst-plugins-base
 gst-plugins-good
-gst-python
-python-pillow
-
-# madOS Video Player - full-format video playback
 gst-plugins-ugly
 gst-plugins-bad
 gst-libav
-gst-plugin-gtk
+gst-python
+python-pillow
+librsvg
+libwebp
+libheif
+libjxl
 
 # madOS PDF Viewer - PDF rendering and annotations
 poppler-glib

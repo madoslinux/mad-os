@@ -14,8 +14,8 @@ bootmodes=('bios.syslinux'
             'uefi.systemd-boot')
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
-airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '3')
-bootstrap_tarball_compression=('zstd' '-c' '-T0' '-zstd-level=3')
+airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '17')
+bootstrap_tarball_compression=('zstd' '-c' '-T0' '-zstd-level=17')
 file_permissions=(
   ["/etc/shadow"]="0:0:400"
   ["/etc/profile.d/mados-welcome.sh"]="0:0:755"
@@ -38,6 +38,7 @@ file_permissions=(
   ["/usr/local/bin/install-mados"]="0:0:755"
   ["/usr/local/lib/mados_installer/"]="0:0:755"
   ["/usr/local/bin/setup-opencode.sh"]="0:0:755"
+  ["/usr/local/bin/setup-nvm.sh"]="0:0:755"
   ["/usr/local/bin/setup-ollama.sh"]="0:0:755"
   ["/usr/local/bin/setup-ohmyzsh.sh"]="0:0:755"
   ["/usr/local/bin/toggle-demo-mode.sh"]="0:0:755"
@@ -68,6 +69,12 @@ file_permissions=(
   ["/usr/local/bin/mados-hyprland-workspace-cycle"]="0:0:755"
   ["/usr/local/bin/mados-audio-player"]="0:0:755"
   ["/usr/local/lib/mados_audio_player/"]="0:0:755"
+  ["/usr/local/bin/mados-photo-viewer"]="0:0:755"
+  ["/usr/local/lib/mados_photo_viewer/"]="0:0:755"
+  ["/usr/local/bin/mados-video-player"]="0:0:755"
+  ["/usr/local/lib/mados_video_player/"]="0:0:755"
+  ["/usr/local/bin/mados-pdf-viewer"]="0:0:755"
+  ["/usr/local/lib/mados_pdf_viewer/"]="0:0:755"
   ["/usr/local/lib/mados-media-helper.sh"]="0:0:755"
   ["/usr/local/bin/mados-persistence"]="0:0:755"
   ["/usr/local/bin/mados-installer-autostart"]="0:0:755"
@@ -78,9 +85,7 @@ file_permissions=(
   ["/usr/local/bin/mados-timezone-detect.sh"]="0:0:755"
   ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
-  ["/usr/local/bin/mados-meli-demo"]="0:0:755"
-  ["/usr/local/bin/setup-meli-demo.sh"]="0:0:755"
-  ["/usr/local/lib/mados_meli_demo/"]="0:0:755"
+
   ["/etc/mados/"]="0:0:755"
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
 )
