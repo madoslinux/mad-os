@@ -508,8 +508,8 @@ jobs:
           echo "identifier=${IDENTIFIER}" >> "$GITHUB_OUTPUT"
           echo "iso_name=${TARGET}" >> "$GITHUB_OUTPUT"
 
-  # ================================================================
-  # Stage 5: Update Download Info & Website
+  # ================================================================  
+  # Stage 5: Update Download Info & Website (direct to gh-pages)
   # ================================================================
   update-download-info:
     name: "Update Download Info"
@@ -520,10 +520,10 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout
+      - name: Checkout gh-pages
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: gh-pages
           fetch-depth: 0
 
       - name: Update download links
@@ -546,7 +546,7 @@ jobs:
 
           FRONT_MATTER = "---\nlayout: null\n---\n"
 
-          with open('docs/download-info.html', 'r') as f:
+          with open('download-info.html', 'r') as f:
               content = f.read()
           
           if content.startswith('---'):
@@ -575,25 +575,25 @@ jobs:
               else:
                   full_content = json_str
               
-              with open('docs/download-info.html', 'w') as f:
+              with open('download-info.html', 'w') as f:
                   f.write(full_content)
               print("Updated " + channel + ": v" + version)
           EOF
 
           # Update index.html - specific to each channel
           if [[ "$CHANNEL" == "beta" ]]; then
-            sed -i "s|id=\"beta-download-link\" href=\"[^\"]*\"|id=\"beta-download-link\" href=\"$DOWNLOAD_URL\"|g" docs/index.html
-            sed -i "s|id=\"beta-download-link\" data-version=\"[^\"]*\"|id=\"beta-download-link\" data-version=\"$VERSION\"|g" docs/index.html
-            sed -i "s|<span id=\"beta-version-text\">Download v[^<]*</span>|<span id=\"beta-version-text\">Download v$VERSION</span>|g" docs/index.html
+            sed -i "s|id=\"beta-download-link\" href=\"[^\"]*\"|id=\"beta-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
+            sed -i "s|id=\"beta-download-link\" data-version=\"[^\"]*\"|id=\"beta-download-link\" data-version=\"$VERSION\"|g" index.html
+            sed -i "s|<span id=\"beta-version-text\">Download v[^<]*</span>|<span id=\"beta-version-text\">Download v$VERSION</span>|g" index.html
           else
-            sed -i "s|id=\"stable-download-link\" href=\"[^\"]*\"|id=\"stable-download-link\" href=\"$DOWNLOAD_URL\"|g" docs/index.html
-            sed -i "s|id=\"stable-download-link\" data-version=\"[^\"]*\"|id=\"stable-download-link\" data-version=\"$VERSION\"|g" docs/index.html
-            sed -i "s|<span id=\"stable-version-text\">Download v[^<]*</span>|<span id=\"stable-version-text\">Download v$VERSION</span>|g" docs/index.html
+            sed -i "s|id=\"stable-download-link\" href=\"[^\"]*\"|id=\"stable-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
+            sed -i "s|id=\"stable-download-link\" data-version=\"[^\"]*\"|id=\"stable-download-link\" data-version=\"$VERSION\"|g" index.html
+            sed -i "s|<span id=\"stable-version-text\">Download v[^<]*</span>|<span id=\"stable-version-text\">Download v$VERSION</span>|g" index.html
           fi
 
       - name: Commit and Push
         run: |
-          if git diff --quiet docs/download-info.html docs/index.html; then
+          if git diff --quiet download-info.html index.html; then
             echo "No changes to commit"
             exit 0
           fi
@@ -601,90 +601,9 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          git add docs/download-info.html docs/index.html
+          git add download-info.html index.html
           git commit -m "ci: update download links to ${{ needs.build.outputs.version }}"
-          git push
-
-  # ================================================================
-  # Deploy Website (beta on develop)
-  # ================================================================
-  deploy-website-beta:
-    name: "Deploy Beta Website"
-    needs: update-download-info
-    if: needs.update-download-info.result == 'success' && github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      contents: write
-      id-token: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: develop
-
-      - name: Pull latest changes
-        run: git pull origin develop
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Build Pages
-        run: |
-          # Simply copy docs to _site
-          mkdir -p _site
-          cp -r docs/* _site/
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: _site
-          branch: gh-pages
-          clean: true
-          single-commit: true
-          git-config-name: github-actions[bot]
-          git-config-email: github-actions[bot]@users.noreply.github.com
-
-  # ================================================================
-  # Deploy Website (stable on main)
-  # ================================================================
-  deploy-website-stable:
-    name: "Deploy Stable Website"
-    needs: [update-download-info, release]
-    if: needs.update-download-info.result == 'success'
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      contents: write
-      id-token: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: main
-
-      - name: Pull latest changes
-        run: git pull origin main
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Build Pages
-        run: |
-          mkdir -p _site
-          cp -r docs/* _site/
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          folder: _site
-          branch: gh-pages
-          clean: true
-          single-commit: true
-          git-config-name: github-actions[bot]
-          git-config-email: github-actions[bot]@users.noreply.github.com
+          git push origin gh-pages
 
   # ================================================================
   # GitHub Release (only stable)
