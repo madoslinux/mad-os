@@ -303,7 +303,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: sfs_cache/airootfs.sfs
-          key: airootfs-sfs-${{ hashFiles('packages.x86_64', 'profiledef.sh', 'airootfs/**') }}
+          key: airootfs-sfs-${{ hashFiles('packages.x86_64') }}-${{ hashFiles('profiledef.sh') }}
           restore-keys: |
             airootfs-sfs-
 
