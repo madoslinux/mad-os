@@ -1,0 +1,17 @@
+[Unit]
+Description=madOS Adaptive Hardware Configuration
+Documentation=https://github.com/madkoding/mad-os
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+Wants=systemd-zram-setup@zram0.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-hardware-config
+RemainAfterExit=yes
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=sysinit.target

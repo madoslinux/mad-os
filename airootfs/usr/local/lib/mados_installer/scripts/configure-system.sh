@@ -189,6 +189,7 @@ systemctl enable greetd
 systemctl enable iwd
 systemctl enable bluetooth
 systemctl enable plymouth-quit-wait.service 2>/dev/null || true
+systemctl enable mados-hardware-config.service 2>/dev/null || true
 
 systemctl --global enable pipewire.socket pipewire-pulse.socket wireplumber.service 2>/dev/null || true
 
