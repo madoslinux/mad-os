@@ -36,8 +36,8 @@ detect_storage_type() {
     elif [[ "$root_dev" =~ ^/dev/sd ]]; then
         # Check if it's an SSD using rotational flag
         local disk_name
-        disk_name=$(echo "$root_dev" | sed 's/[0-9]*$//')
-        disk_name=$(echo "$disk_name" | sed 's|/dev/||')
+        disk_name="${root_dev//[0-9]*}"
+        disk_name="${disk_name#/dev/}"
         
         if [ -f "/sys/block/$disk_name/queue/rotational" ]; then
             local rotational
@@ -239,9 +239,11 @@ configure_io_scheduler() {
             
             # Check if scheduler is available
             if grep -q "$scheduler" "$block_dev" 2>/dev/null; then
-                echo "$scheduler" > "$block_dev" 2>/dev/null && \
-                    log "Applied '$scheduler' scheduler to $dev_name" || \
+                if echo "$scheduler" > "$block_dev" 2>/dev/null; then
+                    log "Applied '$scheduler' scheduler to $dev_name"
+                else
                     log "Warning: Could not apply scheduler to $dev_name"
+                fi
             fi
         fi
     done
