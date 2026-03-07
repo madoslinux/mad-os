@@ -30,6 +30,7 @@ install_gtk_mocks(use_setdefault=True)
 REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 AIROOTFS = os.path.join(REPO_DIR, "airootfs")
 BIN_DIR = os.path.join(AIROOTFS, "usr", "local", "bin")
+SCRIPTS_DIR = os.path.join(AIROOTFS, "usr", "local", "lib", "mados_installer", "scripts")
 LIB_DIR = os.path.join(AIROOTFS, "usr", "local", "lib")
 SYSTEMD_DIR = os.path.join(AIROOTFS, "etc", "systemd", "system")
 MULTI_USER_WANTS = os.path.join(SYSTEMD_DIR, "multi-user.target.wants")
@@ -85,10 +86,10 @@ class TestPostInstallOpenCode(unittest.TestCase):
     """
 
     def setUp(self):
-        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
-        if not os.path.isfile(install_py):
-            self.skipTest("installation.py not found")
-        with open(install_py) as f:
+        config_script = os.path.join(SCRIPTS_DIR, "configure-system.sh")
+        if not os.path.isfile(config_script):
+            self.skipTest("configure-system.sh not found")
+        with open(config_script) as f:
             self.content = f.read()
 
     def test_installer_does_not_create_service(self):

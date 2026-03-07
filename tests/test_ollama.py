@@ -32,6 +32,7 @@ AIROOTFS = os.path.join(REPO_DIR, "airootfs")
 BIN_DIR = os.path.join(AIROOTFS, "usr", "local", "bin")
 LIB_DIR = os.path.join(AIROOTFS, "usr", "local", "lib")
 SYSTEMD_DIR = os.path.join(AIROOTFS, "etc", "systemd", "system")
+SCRIPTS_DIR = os.path.join(AIROOTFS, "usr", "local", "lib", "mados_installer", "scripts")
 MULTI_USER_WANTS = os.path.join(SYSTEMD_DIR, "multi-user.target.wants")
 
 # Add lib dir to path for installer module imports
@@ -77,10 +78,10 @@ class TestPostInstallOllama(unittest.TestCase):
     """
 
     def setUp(self):
-        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
+        config_script = os.path.join(SCRIPTS_DIR, "configure-system.sh")
         if not os.path.isfile(install_py):
             self.skipTest("installation.py not found")
-        with open(install_py) as f:
+        with open(config_script) as f:
             self.content = f.read()
 
     def test_installer_does_not_create_service(self):
