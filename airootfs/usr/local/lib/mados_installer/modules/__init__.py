@@ -49,7 +49,7 @@ __all__ = [
     "format_partitions_demo",
     "format_partitions_real",
     "step_mount_filesystems",
-    # File copier
+    # File Copier
     "copy_item",
     "ensure_kernel_in_target",
     "step_copy_live_files",
@@ -62,7 +62,7 @@ __all__ = [
     "download_packages_with_progress",
     "run_pacstrap_with_progress",
     "run_single_pacstrap",
-    # Config generator
+    # Config Generator
     "run_chroot_with_progress",
     "build_config_script",
 ]
