@@ -1,0 +1,375 @@
+#!/bin/bash
+# madOS Adaptive Hardware Configuration
+# Dynamically tunes ZRAM, swappiness, and I/O scheduler based on detected hardware
+set -e
+
+SCRIPT_NAME="$(basename "$0")"
+LOG_FILE="/var/log/mados-hardware-config.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG_FILE"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Hardware Detection
+# ═══════════════════════════════════════════════════════════════════════════
+
+detect_ram_size() {
+    # Return RAM size in GB
+    local ram_kb
+    ram_kb=$(grep '^MemTotal:' /proc/meminfo | awk '{print $2}')
+    echo $((ram_kb / 1024 / 1024))
+}
+
+detect_cpu_cores() {
+    # Return number of CPU cores
+    nproc
+}
+
+detect_storage_type() {
+    # Detect primary storage type: nvme, ssd, or hdd
+    local root_dev
+    root_dev=$(findmnt -n -o SOURCE /)
+    
+    if [[ "$root_dev" =~ ^/dev/nvme ]]; then
+        echo "nvme"
+    elif [[ "$root_dev" =~ ^/dev/sd ]]; then
+        # Check if it's an SSD using rotational flag
+        local disk_name
+        disk_name=$(echo "$root_dev" | sed 's/[0-9]*$//')
+        disk_name=$(echo "$disk_name" | sed 's|/dev/||')
+        
+        if [ -f "/sys/block/$disk_name/queue/rotational" ]; then
+            local rotational
+            rotational=$(cat "/sys/block/$disk_name/queue/rotational")
+            if [ "$rotational" -eq 0 ]; then
+                echo "ssd"
+            else
+                echo "hdd"
+            fi
+        else
+            echo "unknown"
+        fi
+    else
+        echo "unknown"
+    fi
+}
+
+detect_low_end_hardware() {
+    # Detect if this is low-end hardware (< 4GB RAM or < 2 cores)
+    local ram_gb
+    local cores
+    
+    ram_gb=$(detect_ram_size)
+    cores=$(detect_cpu_cores)
+    
+    if [ "$ram_gb" -lt 4 ] || [ "$cores" -lt 2 ]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ZRAM Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+
+configure_zram() {
+    local ram_gb
+    ram_gb=$(detect_ram_size)
+    
+    log "Detected RAM: ${ram_gb}GB"
+    
+    # Calculate ZRAM size based on RAM
+    local zram_size_mb
+    
+    if [ "$ram_gb" -le 2 ]; then
+        # Low RAM: ZRAM = 100% of RAM (max 2GB)
+        zram_size_mb=$((ram_gb * 1024))
+        [ "$zram_size_mb" -gt 2048 ] && zram_size_mb=2048
+        log "Low RAM configuration: ZRAM = ${zram_size_mb}MB (100% of RAM)"
+    elif [ "$ram_gb" -le 4 ]; then
+        # Medium RAM: ZRAM = 50% of RAM (max 2GB)
+        zram_size_mb=$((ram_gb * 1024 / 2))
+        [ "$zram_size_mb" -gt 2048 ] && zram_size_mb=2048
+        log "Medium RAM configuration: ZRAM = ${zram_size_mb}MB (50% of RAM)"
+    elif [ "$ram_gb" -le 8 ]; then
+        # Standard RAM: ZRAM = 25% of RAM (max 4GB)
+        zram_size_mb=$((ram_gb * 1024 / 4))
+        [ "$zram_size_mb" -gt 4096 ] && zram_size_mb=4096
+        log "Standard RAM configuration: ZRAM = ${zram_size_mb}MB (25% of RAM)"
+    else
+        # High RAM: ZRAM = 12.5% of RAM (max 8GB)
+        zram_size_mb=$((ram_gb * 1024 / 8))
+        [ "$zram_size_mb" -gt 8192 ] && zram_size_mb=8192
+        log "High RAM configuration: ZRAM = ${zram_size_mb}MB (12.5% of RAM)"
+    fi
+    
+    # Stop existing ZRAM if any
+    if [ -f /etc/zram.conf ]; then
+        # Use zram-generator's built-in mechanism
+        log "ZRAM will be configured via zram-generator.conf"
+    fi
+    
+    # Create/Update zram-generator.conf
+    cat > /etc/systemd/zram-generator.conf <<EOF
+[zram0]
+zram-size = min($ram_gb * 512, $zram_size_mb)
+compression-algorithm = zstd
+fs-type = swap
+priority = 100
+EOF
+    
+    log "Created zram-generator.conf with ${zram_size_mb}MB ZRAM"
+    
+    # Reload systemd and restart zram
+    systemctl daemon-reload
+    systemctl restart systemd-zram-setup@zram0.service 2>/dev/null || true
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Swappiness Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+
+configure_swappiness() {
+    local ram_gb
+    local storage_type
+    local is_low_end
+    
+    ram_gb=$(detect_ram_size)
+    storage_type=$(detect_storage_type)
+    is_low_end=$(detect_low_end_hardware)
+    
+    log "Storage type: $storage_type"
+    log "Low-end hardware: $is_low_end"
+    
+    local swappiness_value
+    
+    # Calculate optimal swappiness
+    if [ "$is_low_end" = "true" ]; then
+        # Low-end hardware: Higher swappiness to avoid OOM
+        swappiness_value=100
+        log "Low-end hardware: swappiness = $swappiness_value"
+    elif [ "$ram_gb" -le 4 ]; then
+        # Low RAM: Higher swappiness
+        swappiness_value=80
+        log "Low RAM (4GB): swappiness = $swappiness_value"
+    elif [ "$ram_gb" -le 8 ]; then
+        # Standard RAM: Moderate swappiness
+        swappiness_value=60
+        log "Standard RAM (8GB): swappiness = $swappiness_value"
+    elif [ "$ram_gb" -le 16 ]; then
+        # Good RAM: Lower swappiness
+        swappiness_value=40
+        log "Good RAM (16GB): swappiness = $swappiness_value"
+    else
+        # High RAM: Minimal swappiness
+        swappiness_value=20
+        log "High RAM (32GB+): swappiness = $swappiness_value"
+    fi
+    
+    # Adjust for storage type
+    if [ "$storage_type" = "hdd" ]; then
+        # HDD: Reduce swappiness to minimize disk I/O
+        swappiness_value=$((swappiness_value - 10))
+        [ "$swappiness_value" -lt 1 ] && swappiness_value=1
+        log "HDD detected:adjusted swappiness to $swappiness_value"
+    elif [ "$storage_type" = "nvme" ]; then
+        # NVMe: Can afford higher swappiness
+        swappiness_value=$((swappiness_value + 10))
+        [ "$swappiness_value" -gt 100 ] && swappiness_value=100
+        log "NVMe detected: adjusted swappiness to $swappiness_value"
+    fi
+    
+    # Apply swappiness
+    echo "$swappiness_value" > /proc/sys/vm/swappiness
+    
+    # Make it persistent
+    if ! grep -q "^vm.swappiness" /etc/sysctl.d/99-mados-hardware.conf 2>/dev/null; then
+        echo "vm.swappiness = $swappiness_value" >> /etc/sysctl.d/99-mados-hardware.conf
+    else
+        sed -i "s/^vm.swappiness.*/vm.swappiness = $swappiness_value/" /etc/sysctl.d/99-mados-hardware.conf
+    fi
+    
+    log "Applied swappiness = $swappiness_value"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# I/O Scheduler Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+
+configure_io_scheduler() {
+    local storage_type
+    storage_type=$(detect_storage_type)
+    
+    log "Configuring I/O scheduler for $storage_type"
+    
+    local scheduler
+    
+    case "$storage_type" in
+        nvme|ssd)
+            # SSDs/NVMe: Use 'none' or 'mq-deadline' for better latency
+            scheduler="none"
+            log "SSD/NVMe detected: using '$scheduler' scheduler"
+            ;;
+        hdd)
+            # HDDs: Use 'bfq' for better interactive performance
+            scheduler="bfq"
+            log "HDD detected: using '$scheduler' scheduler"
+            ;;
+        *)
+            # Unknown: Use default
+            log "Unknown storage type: using default scheduler"
+            return 0
+            ;;
+    esac
+    
+    # Apply scheduler to all block devices
+    for block_dev in /sys/block/*/queue/scheduler; do
+        if [ -w "$block_dev" ]; then
+            local dev_name
+            dev_name=$(echo "$block_dev" | cut -d'/' -f4)
+            
+            # Skip virtual devices
+            case "$dev_name" in
+                loop*|ram*|sr*)
+                    continue
+                    ;;
+            esac
+            
+            # Check if scheduler is available
+            if grep -q "$scheduler" "$block_dev" 2>/dev/null; then
+                echo "$scheduler" > "$block_dev" 2>/dev/null && \
+                    log "Applied '$scheduler' scheduler to $dev_name" || \
+                    log "Warning: Could not apply scheduler to $dev_name"
+            fi
+        fi
+    done
+    
+    # Make it persistent via kernel parameter
+    if [ "$scheduler" = "bfq" ]; then
+        local default_scheduler="elevator=bfq"
+        if ! grep -q "$default_scheduler" /etc/default/grub 2>/dev/null; then
+            # Only add if not already present
+            if grep -q "^GRUB_CMDLINE_LINUX_DEFAULT" /etc/default/grub; then
+                if ! grep -q "elevator=" /etc/default/grub; then
+                    sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="/GRUB_CMDLINE_LINUX_DEFAULT="elevator=bfq /' /etc/default/grub
+                    log "Added elevator=bfq to GRUB cmdline"
+                    grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null || true
+                fi
+            fi
+        fi
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Dirty Page Writeback Tuning
+# ═══════════════════════════════════════════════════════════════════════════
+
+configure_dirty_writeback() {
+    local ram_gb
+    ram_gb=$(detect_ram_size)
+    
+    # Calculate dirty ratio based on RAM
+    # More RAM = higher dirty ratio allowed
+    local dirty_ratio
+    local dirty_background_ratio
+    
+    if [ "$ram_gb" -le 2 ]; then
+        dirty_ratio=10
+        dirty_background_ratio=5
+    elif [ "$ram_gb" -le 4 ]; then
+        dirty_ratio=15
+        dirty_background_ratio=10
+    elif [ "$ram_gb" -le 8 ]; then
+        dirty_ratio=20
+        dirty_background_ratio=10
+    else
+        dirty_ratio=30
+        dirty_background_ratio=15
+    fi
+    
+    log "Setting dirty_ratio=$dirty_ratio, dirty_background_ratio=$dirty_background_ratio"
+    
+    # Apply settings
+    echo "$dirty_ratio" > /proc/sys/vm/dirty_ratio
+    echo "$dirty_background_ratio" > /proc/sys/vm/dirty_background_ratio
+    
+    # Make persistent
+    cat > /etc/sysctl.d/99-mados-dirty-writeback.conf <<EOF
+# madOS dirty page writeback tuning
+vm.dirty_ratio = $dirty_ratio
+vm.dirty_background_ratio = $dirty_background_ratio
+EOF
+    
+    log "Applied dirty page writeback settings"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Transparent Huge Pages (THP) Configuration
+# ═══════════════════════════════════════════════════════════════════════════
+
+configure_thp() {
+    local ram_gb
+    ram_gb=$(detect_ram_size)
+    
+    # THP can improve performance for memory-intensive workloads
+    # but may cause latency spikes on low-end systems
+    
+    if [ "$ram_gb" -lt 4 ]; then
+        # Low RAM: Disable THP to reduce latency
+        echo "never" > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+        echo "never" > /sys/kernel/mm/transparent_hugepage/defrag 2>/dev/null || true
+        log "Low RAM: Disabled Transparent Huge Pages"
+    else
+        # Sufficient RAM: Enable THP (madvise mode)
+        echo "madvise" > /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || true
+        echo "madvise" > /sys/kernel/mm/transparent_hugepage/defrag 2>/dev/null || true
+        log "Sufficient RAM: Enabled Transparent Huge Pages (madvise mode)"
+    fi
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Main Execution
+# ═══════════════════════════════════════════════════════════════════════════
+
+main() {
+    log "Starting madOS Adaptive Hardware Configuration"
+    log "==============================================="
+    
+    # Print hardware summary
+    local ram_gb
+    local cores
+    local storage
+    
+    ram_gb=$(detect_ram_size)
+    cores=$(detect_cpu_cores)
+    storage=$(detect_storage_type)
+    
+    log "Hardware Summary:"
+    log "  - RAM: ${ram_gb}GB"
+    log "  - CPU Cores: $cores"
+    log "  - Storage Type: $storage"
+    log ""
+    
+    # Apply configurations
+    configure_zram
+    configure_swappiness
+    configure_io_scheduler
+    configure_dirty_writeback
+    configure_thp
+    
+    log ""
+    log "Hardware configuration complete!"
+    log "================================="
+    
+    # Print summary
+    log "Configuration Summary:"
+    log "  - ZRAM: Enabled (see /etc/systemd/zram-generator.conf)"
+    log "  - Swappiness: $(cat /proc/sys/vm/swappiness)"
+    log "  - Dirty Ratio: $(cat /proc/sys/vm/dirty_ratio)%"
+    log "  - THP: $(cat /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null | tr -d '[]' || echo 'unknown')"
+}
+
+# Run main function
+main "$@"
