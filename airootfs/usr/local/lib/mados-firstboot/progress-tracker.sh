@@ -21,17 +21,20 @@ init_progress() {
     for phase in "${PHASES[@]}"; do
         echo "pending" > "/var/lib/mados-firstboot/${phase}.status"
     done
+    return 0
 }
 
 set_phase_complete() {
     local phase="$1"
     echo "complete" > "/var/lib/mados-firstboot/${phase}.status"
     update_progress
+    return 0
 }
 
 set_phase_running() {
     local phase="$1"
     echo "running" > "/var/lib/mados-firstboot/${phase}.status"
+    return 0
 }
 
 update_progress() {
@@ -46,11 +49,13 @@ update_progress() {
         fi
     done
     
-    local percent=$((complete * 100 / total))
+    local percent
+    percent=$((complete * 100 / total))
     echo "$percent" > "$PROGRESS_FILE"
     echo "$percent" > "$WAYBAR_PROGRESS_FILE"
     
     update_motd "$percent"
+    return 0
 }
 
 update_motd() {
@@ -64,6 +69,7 @@ update_motd() {
 ║  You will be able to log in when setup is complete.      ║
 ╚══════════════════════════════════════════════════════════╝
 EOF
+    return 0
 }
 
 get_progress() {
@@ -72,21 +78,25 @@ get_progress() {
     else
         echo "0"
     fi
+    return 0
 }
 
 get_status() {
     local phase="$1"
     cat "/var/lib/mados-firstboot/${phase}.status" 2>/dev/null || echo "pending"
+    return 0
 }
 
 is_setup_complete() {
     local percent
     percent=$(get_progress)
     [[ "$percent" -ge 100 ]]
+    return $?
 }
 
 cleanup_motd() {
     rm -f "$MOTD_FILE"
+    return 0
 }
 
 case "${1:-}" in

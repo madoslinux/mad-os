@@ -59,7 +59,12 @@ def format_tooltip(phase_status):
     
     for phase in phase_status:
         status = phase_status[phase]
-        icon = "✓" if status == "complete" else ("⟳" if status == "running" else "○")
+        if status == "complete":
+            icon = "✓"
+        elif status == "running":
+            icon = "⟳"
+        else:
+            icon = "○"
         label = labels.get(phase, phase)
         lines.append(f"{icon} {label}")
     
