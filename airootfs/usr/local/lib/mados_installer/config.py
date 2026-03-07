@@ -186,9 +186,7 @@ PACKAGES_PHASE2 = [
     # madOS Native Apps Dependencies
     "python-pillow",
     "poppler-glib",
-    # GStreamer with gtksink support (requires gtk3/gtk4)
-    "gtk3",
-    "gtk4",
+    # GStreamer with gtksink support (from gst-plugin-gtk package)
     "gstreamer",
     "gst-plugins-base",
     "gst-plugins-good",
@@ -196,6 +194,7 @@ PACKAGES_PHASE2 = [
     "gst-plugins-bad",
     "gst-libav",
     "gst-python",
+    "gst-plugin-gtk",
     "librsvg",
     "libwebp",
     "libheif",
