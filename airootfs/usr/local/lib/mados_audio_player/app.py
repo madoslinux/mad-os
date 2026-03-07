@@ -138,44 +138,44 @@ class AudioPlayerApp:
 
     def _build_track_display(self):
         """Build the track information display area."""
-        frame = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        frame = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         frame.set_app_paintable(True)
         ctx = frame.get_style_context()
         ctx.add_class("track-display")
-        frame.set_margin_start(6)
-        frame.set_margin_end(6)
-        frame.set_margin_top(6)
-        frame.set_margin_bottom(2)
+        frame.set_margin_start(3)
+        frame.set_margin_end(3)
+        frame.set_margin_top(3)
+        frame.set_margin_bottom(1)
 
         # Top row: time display + logo
-        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
         frame.pack_start(top_row, False, False, 0)
 
         # Time display (large, left)
-        self.time_label = Gtk.Label(label="0:00")
+        self.time_label = Gtk.Label(label="000:00")
         self.time_label.get_style_context().add_class("time-display")
         self.time_label.set_halign(Gtk.Align.START)
-        top_row.pack_start(self.time_label, False, False, 4)
+        top_row.pack_start(self.time_label, False, False, 2)
 
         # Separator
-        self.time_total_label = Gtk.Label(label="/ 0:00")
+        self.time_total_label = Gtk.Label(label="/ 000:00")
         self.time_total_label.get_style_context().add_class("time-total")
         self.time_total_label.set_halign(Gtk.Align.START)
         self.time_total_label.set_valign(Gtk.Align.END)
-        self.time_total_label.set_margin_bottom(2)
+        self.time_total_label.set_margin_bottom(1)
         top_row.pack_start(self.time_total_label, False, False, 0)
 
         # Spacer
         top_row.pack_start(Gtk.Box(), True, True, 0)
 
         # Audio info (right side)
-        info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         info_box.get_style_context().add_class("audio-info-box")
         info_box.set_valign(Gtk.Align.CENTER)
-        top_row.pack_end(info_box, False, False, 4)
+        top_row.pack_end(info_box, False, False, 2)
 
         # Bitrate row: number + unit
-        bitrate_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        bitrate_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         bitrate_row.set_halign(Gtk.Align.END)
         self.bitrate_value_label = Gtk.Label(label="")
         self.bitrate_value_label.get_style_context().add_class("bitrate-label")
@@ -188,7 +188,7 @@ class AudioPlayerApp:
         info_box.pack_start(bitrate_row, False, False, 0)
 
         # Samplerate row: number + unit
-        samplerate_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        samplerate_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
         samplerate_row.set_halign(Gtk.Align.END)
         self.samplerate_value_label = Gtk.Label(label="")
         self.samplerate_value_label.get_style_context().add_class("samplerate-label")
@@ -206,16 +206,19 @@ class AudioPlayerApp:
         self._marquee_separator = "    ///    "
 
         self.title_area = Gtk.DrawingArea()
-        self.title_area.set_size_request(-1, 30)
-        self.title_area.set_margin_top(12)
-        self.title_area.set_margin_start(8)
-        self.title_area.set_margin_end(8)
+        self.title_area.set_size_request(-1, 20)
+        self.title_area.set_margin_top(15)
+        self.title_area.set_margin_start(10)
+        self.title_area.set_margin_end(2)
         self.title_area.connect("draw", self._on_title_draw)
         frame.pack_start(self.title_area, False, False, 0)
 
         # Animation timer (~33ms / 30 FPS to match cava framerate)
         self._tick_count = 0
         self._marquee_timer_id = GLib.timeout_add(33, self._on_marquee_tick)
+        
+        # Connect to window resize for dynamic spectrum bars
+        self.window.connect("size-allocate", self._on_window_resized)
 
         # Artist / Album
         self.artist_label = Gtk.Label(label="")
@@ -223,6 +226,7 @@ class AudioPlayerApp:
         self.artist_label.set_halign(Gtk.Align.START)
         self.artist_label.set_ellipsize(Pango.EllipsizeMode.END)
         self.artist_label.set_max_width_chars(60)
+        self.artist_label.set_margin_top(2)
         frame.pack_start(self.artist_label, False, False, 0)
 
         # Connect spectrum drawing (draws behind children)
@@ -560,8 +564,8 @@ class AudioPlayerApp:
         """Handle stop button click."""
         self.backend.stop()
         self.play_btn.set_label("\U000f040a")
-        self.time_label.set_text("0:00")
-        self.time_total_label.set_text("/ 0:00")
+        self.time_label.set_text("000:00")
+        self.time_total_label.set_text("/ 000:00")
         self.seek_scale.set_value(0)
         self.bitrate_value_label.set_text("")
         self.bitrate_unit_label.set_text("")
@@ -624,11 +628,17 @@ class AudioPlayerApp:
 
     def _on_seek_end(self, widget, event):
         """User finished seeking - apply the new position."""
-        self._seeking = False
         if self.backend.duration > 0:
             fraction = self.seek_scale.get_value() / 100.0
             target = fraction * self.backend.duration
             self.backend.seek(target)
+        # Wait 500ms before resuming position updates to avoid jump-back
+        GLib.timeout_add(500, self._resume_seek_updates)
+
+    def _resume_seek_updates(self):
+        """Resume position updates after seek."""
+        self._seeking = False
+        return False  # Don't repeat
 
     def _on_seek_change(self, widget, scroll_type, value):
         """Update time display during seek."""
@@ -753,8 +763,8 @@ class AudioPlayerApp:
         self._marquee_offset = 0
         self.title_area.queue_draw()
         self.artist_label.set_text("")
-        self.time_label.set_text("0:00")
-        self.time_total_label.set_text("/ 0:00")
+        self.time_label.set_text("000:00")
+        self.time_total_label.set_text("/ 000:00")
         self.seek_scale.set_value(0)
         self.bitrate_value_label.set_text("")
         self.bitrate_unit_label.set_text("")
@@ -899,6 +909,31 @@ class AudioPlayerApp:
 
     # ─── Spectrum Analyzer Drawing ──────────────────────────────
 
+    def _on_window_resized(self, window, allocation):
+        """Handle window resize to adjust number of spectrum bars."""
+        width = allocation.width
+        
+        # Dynamic bars based on window width
+        if width < 400:
+            target_bars = 24
+        elif width < 800:
+            target_bars = 48
+        elif width < 1200:
+            target_bars = 96
+        elif width < 1600:
+            target_bars = 128
+        elif width < 2400:
+            target_bars = 196
+        else:
+            target_bars = 196
+        
+        # Only update if bars changed
+        if hasattr(self, 'spectrum') and self.spectrum.num_bars != target_bars:
+            # Restart spectrum with new bar count
+            self.spectrum.stop()
+            self.spectrum = SpectrumAnalyzer(num_bars=target_bars)
+            self.spectrum.start()
+
     def _on_spectrum_draw(self, widget, cr):
         """Draw the FFT spectrum analyzer as background of track display.
 
@@ -1036,7 +1071,7 @@ class AudioPlayerApp:
 
         # Create Pango layout for measuring and drawing
         layout = PangoCairo.create_layout(cr)
-        font_desc = Pango.FontDescription.from_string("Doto 17")
+        font_desc = Pango.FontDescription.from_string("Doto 13")
         layout.set_font_description(font_desc)
 
         text = self._marquee_text
@@ -1046,7 +1081,7 @@ class AudioPlayerApp:
         # Nord8 cyan color
         r, g, b = 136 / 255, 192 / 255, 208 / 255
 
-        # Vertical center
+        # Vertical center in the container
         y = (height - text_height) / 2
 
         if text_width <= width:
