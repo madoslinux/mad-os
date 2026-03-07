@@ -230,6 +230,8 @@ class TestEnabledServicesValid(unittest.TestCase):
     OPTIONAL_SERVICES = {
         "mados-persist-sync.service",  # enabled at runtime if persistence detected
         "mados-persistence-detect.service",  # enabled at runtime if persistence detected
+        "mados-update-check.service",  # enabled manually by user or post-install
+        "mados-hardware-config.service",  # runs once at boot then exits
     }
 
     def test_custom_services_are_enabled(self):
