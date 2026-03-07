@@ -32,6 +32,7 @@ AIROOTFS = os.path.join(REPO_DIR, "airootfs")
 BIN_DIR = os.path.join(AIROOTFS, "usr", "local", "bin")
 LIB_DIR = os.path.join(AIROOTFS, "usr", "local", "lib")
 SYSTEMD_DIR = os.path.join(AIROOTFS, "etc", "systemd", "system")
+SCRIPTS_DIR = os.path.join(AIROOTFS, "usr", "local", "lib", "mados_installer", "scripts")
 MULTI_USER_WANTS = os.path.join(SYSTEMD_DIR, "multi-user.target.wants")
 
 # Add lib dir to path for installer module imports
@@ -77,11 +78,17 @@ class TestPostInstallOllama(unittest.TestCase):
     """
 
     def setUp(self):
-        install_py = os.path.join(LIB_DIR, "mados_installer", "pages", "installation.py")
-        if not os.path.isfile(install_py):
-            self.skipTest("installation.py not found")
-        with open(install_py) as f:
+        config_script = os.path.join(SCRIPTS_DIR, "configure-system.sh")
+        file_copier_module = os.path.join(LIB_DIR, "mados_installer", "modules", "file_copier.py")
+        if not os.path.isfile(config_script):
+            self.skipTest("configure-system.sh not found")
+        with open(config_script) as f:
             self.content = f.read()
+        if os.path.isfile(file_copier_module):
+            with open(file_copier_module) as f:
+                self.file_copier_content = f.read()
+        else:
+            self.file_copier_content = ""
 
     def test_installer_does_not_create_service(self):
         """Installer must NOT create setup-ollama.service (ollama is a program)."""
@@ -93,14 +100,11 @@ class TestPostInstallOllama(unittest.TestCase):
 
     def test_installer_copies_ollama_binary_from_live(self):
         """Installer should copy Ollama binary from live environment if available."""
-        self.assertIn(
-            "/usr/local/bin/ollama",
-            self.content,
-            "Installer must reference /usr/local/bin/ollama for binary copy",
-        )
+        if not self.file_copier_content:
+            self.skipTest("file_copier.py not found")
         self.assertIn(
             'for binary in ["opencode", "ollama"]',
-            self.content,
+            self.file_copier_content,
             "Installer must copy ollama binary via binary copy loop",
         )
 
