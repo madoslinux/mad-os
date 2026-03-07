@@ -47,10 +47,12 @@ jobs:
         run: |
           find airootfs/usr/local/bin -type f -executable | while read -r script; do
             if head -1 "$script" | grep -qE "(bash|sh)$"; then
-              shellcheck "$script" || true
+              shellcheck -s bash "$script"
             fi
           done
-        continue-on-error: true
+          find airootfs/usr/local/lib/mados_installer/scripts -type f -name "*.sh" | while read -r script; do
+            shellcheck -s bash "$script"
+          done
 
       - name: Validate Python syntax
         run: |
