@@ -150,6 +150,9 @@ squeekboard
 
 # madOS Native Apps Dependencies
 # madOS Photo Viewer - image viewing and video playback
+# GStreamer with gtksink support (requires gtk3/gtk4)
+gtk3
+gtk4
 gstreamer
 gst-plugins-base
 gst-plugins-good
