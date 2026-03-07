@@ -198,6 +198,14 @@ else
     exit 1
 fi
 
+# Copy installer scripts to chroot (required for config script execution)
+info "Copying installer scripts to chroot..."
+mkdir -p "$MOUNT_POINT/usr/local/lib/mados_installer/scripts"
+cp -r "$INSTALLER_LIB/mados_installer/scripts/"* "$MOUNT_POINT/usr/local/lib/mados_installer/scripts/"
+cp -r "$INSTALLER_LIB/mados_installer/modules/"* "$MOUNT_POINT/usr/local/lib/mados_installer/modules/"
+cp "$INSTALLER_LIB/mados_installer/config.py" "$MOUNT_POINT/usr/local/lib/mados_installer/"
+ok "Installer scripts copied to chroot"
+
 # =============================================================================
 # Phase 3: fstab generation
 # =============================================================================
