@@ -370,7 +370,7 @@ main() {
     log "  - ZRAM: Enabled (see /etc/systemd/zram-generator.conf)"
     log "  - Swappiness: $(cat /proc/sys/vm/swappiness)"
     log "  - Dirty Ratio: $(cat /proc/sys/vm/dirty_ratio)%"
-    log "  - THP: $(cat /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null | tr -d '[]' || echo 'unknown')"
+    log "  - THP: $(tr -d '[]' < /sys/kernel/mm/transparent_hugepage/enabled 2>/dev/null || echo 'unknown')"
 }
 
 # Run main function

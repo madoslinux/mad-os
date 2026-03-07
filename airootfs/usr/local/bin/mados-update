@@ -419,7 +419,7 @@ cmd_status() {
 cmd_clean() {
     if [ -d "$CACHE_DIR" ]; then
         info "Cleaning update cache..."
-        rm -rf "$CACHE_DIR"/*
+        rm -rf "${CACHE_DIR:?}"/*
         success "Cache cleaned"
     else
         info "Cache is already empty"
