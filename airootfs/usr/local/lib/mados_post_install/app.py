@@ -28,8 +28,7 @@ class PostInstallApp(Gtk.Window):
         super().__init__(title=title)
         
         self.set_default_size(850, 480)
-        self.set_max_size_request(850, 480)
-        self.set_min_size_request(850, 450)
+        self.set_size_request(850, 480)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_resizable(False)
         
