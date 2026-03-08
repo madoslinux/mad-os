@@ -6,9 +6,6 @@ on:
       - 'v*'
   workflow_dispatch:
 
-permissions:
-  contents: write
-
 concurrency:
   group: iso-release-${{ github.ref }}
   cancel-in-progress: true
@@ -30,7 +27,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           fetch-depth: 0
 
@@ -73,7 +70,7 @@ jobs:
         profile: [standard, minimal, developer, media]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           fetch-depth: 0
 
@@ -255,7 +252,7 @@ jobs:
 
     steps:
       - name: Checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           ref: gh-pages
           fetch-depth: 0
@@ -349,7 +346,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           fetch-depth: 0
 
@@ -360,7 +357,7 @@ jobs:
           curl -L "https://archive.org/download/${IDENTIFIER}/SHA256SUMS" -o out/SHA256SUMS
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@de2c0deb81c15680e39d697ed27f7c2b3f10b98b
         with:
           tag_name: ${{ github.ref_name }}
           name: "madOS ${{ needs.build.outputs.version }}"
