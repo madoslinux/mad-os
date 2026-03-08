@@ -598,6 +598,45 @@ def apply_theme():
         
         .log-toggle:hover {{
             opacity: 1.0;
+        }
+        
+        /* ── Notebook Tabs (Package Selection) ── */
+        notebook {
+            background-color: #2E3440;
+        }
+        
+        notebook tab {
+            background-color: #3B4252;
+            color: #E5E9F0;
+            border: 1px solid #4C566A;
+            padding: 6px 12px;
+        }
+        
+        notebook tab:hover {
+            background-color: #434C5E;
+        }
+        
+        notebook tab:checked {
+            background-color: #4C566A;
+            color: #ECEFF4;
+        }
+        
+        notebook tab label {
+            color: #E5E9F0;
+            font-size: 11px;
+        }
+        
+        notebook tab:checked label {
+            color: #ECEFF4;
+            font-weight: bold;
+        }
+        
+        notebook scrolledwindow {
+            background-color: #2E3440;
+        }
+        
+        notebook viewport {
+            background-color: #2E3440;
         }}
         """
     css_provider.load_from_data(css.encode())
