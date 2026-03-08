@@ -27,8 +27,8 @@ class PostInstallApp(Gtk.Window):
         title = "madOS - Package Installation" + (" (DEMO MODE)" if DEMO_MODE else "")
         super().__init__(title=title)
         
-        self.set_default_size(850, 480)
-        self.set_size_request(850, 480)
+        self.set_default_size(800, 420)
+        self.set_size_request(800, 420)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_resizable(False)
         
@@ -72,50 +72,50 @@ class PostInstallApp(Gtk.Window):
             self.packages_to_install = []
     
     def _build_ui(self):
-        """Build the UI - Compact design for 480px height"""
-        # Main container with reduced margins
+        """Build the UI - Ultra compact for 1024x600 screens (420px height)"""
+        # Main container - minimal margins
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-        main_box.set_margin_start(20)
-        main_box.set_margin_end(20)
-        main_box.set_margin_top(15)
-        main_box.set_margin_bottom(15)
+        main_box.set_margin_start(15)
+        main_box.set_margin_end(15)
+        main_box.set_margin_top(10)
+        main_box.set_margin_bottom(10)
         self.add(main_box)
         
-        # Header - compact
+        # Header - minimal
         header = Gtk.Label()
-        header.set_markup('<span size="14000" weight="bold">Installing Additional Packages</span>')
+        header.set_markup('<span size="12000" weight="bold">Installing Packages</span>')
         header.set_halign(Gtk.Align.CENTER)
-        header.set_margin_bottom(5)
+        header.set_margin_bottom(3)
         main_box.pack_start(header, False, False, 0)
         
         subtitle = Gtk.Label()
-        subtitle.set_markup(f'<span size="9000" foreground="{NORD["nord4"]}">Selected packages from madOS installer</span>')
+        subtitle.set_markup(f'<span size="8500" foreground="{NORD["nord4"]}">From madOS installer</span>')
         subtitle.set_halign(Gtk.Align.CENTER)
-        subtitle.set_margin_bottom(12)
+        subtitle.set_margin_bottom(8)
         main_box.pack_start(subtitle, False, False, 0)
         
-        # Packages section - compact with fixed height
+        # Packages section - very compact
         packages_frame = Gtk.Frame()
         packages_frame.get_style_context().add_class("content-card")
-        packages_frame.set_margin_bottom(8)
+        packages_frame.set_margin_bottom(6)
         main_box.pack_start(packages_frame, False, False, 0)
         
-        packages_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        packages_box.set_margin_top(8)
-        packages_box.set_margin_bottom(8)
-        packages_box.set_margin_start(10)
-        packages_box.set_margin_end(10)
+        packages_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        packages_box.set_margin_top(6)
+        packages_box.set_margin_bottom(6)
+        packages_box.set_margin_start(8)
+        packages_box.set_margin_end(8)
         packages_frame.add(packages_box)
         
         packages_label = Gtk.Label()
-        packages_label.set_markup(f'<span size="10000" weight="bold">Packages ({len(self.packages_to_install)})</span>')
+        packages_label.set_markup(f'<span size="9000" weight="bold">Packages ({len(self.packages_to_install)})</span>')
         packages_label.set_halign(Gtk.Align.START)
-        packages_box.pack_start(packages_label, False, False, 4)
+        packages_box.pack_start(packages_label, False, False, 2)
         
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scroll.set_min_content_height(140)
-        scroll.set_max_content_height(140)
+        scroll.set_min_content_height(100)
+        scroll.set_max_content_height(100)
         packages_box.pack_start(scroll, False, False, 0)
         
         self.packages_list = Gtk.ListBox()
@@ -125,21 +125,21 @@ class PostInstallApp(Gtk.Window):
         
         self._populate_packages_list()
         
-        # Progress section - compact
+        # Progress section - minimal
         progress_frame = Gtk.Frame()
         progress_frame.get_style_context().add_class("content-card")
-        progress_frame.set_margin_bottom(8)
+        progress_frame.set_margin_bottom(6)
         main_box.pack_start(progress_frame, False, False, 0)
         
-        progress_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        progress_box.set_margin_top(8)
-        progress_box.set_margin_bottom(8)
-        progress_box.set_margin_start(10)
-        progress_box.set_margin_end(10)
+        progress_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        progress_box.set_margin_top(6)
+        progress_box.set_margin_bottom(6)
+        progress_box.set_margin_start(8)
+        progress_box.set_margin_end(8)
         progress_frame.add(progress_box)
         
         self.status_label = Gtk.Label()
-        self.status_label.set_markup(f'<span size="10000">Ready to install {len(self.packages_to_install)} packages</span>')
+        self.status_label.set_markup(f'<span size="9000">Installing {len(self.packages_to_install)} packages</span>')
         self.status_label.set_halign(Gtk.Align.CENTER)
         progress_box.pack_start(self.status_label, False, False, 0)
         
@@ -147,48 +147,41 @@ class PostInstallApp(Gtk.Window):
         self.progress_bar.set_show_text(True)
         progress_box.pack_start(self.progress_bar, False, False, 0)
         
-        # Log section - compact
+        # Log section - minimal
         log_frame = Gtk.Frame()
         log_frame.get_style_context().add_class("content-card")
-        log_frame.set_margin_bottom(10)
+        log_frame.set_margin_bottom(6)
         main_box.pack_start(log_frame, False, False, 0)
         
-        log_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
-        log_box.set_margin_top(6)
-        log_box.set_margin_bottom(6)
-        log_box.set_margin_start(10)
-        log_box.set_margin_end(10)
+        log_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        log_box.set_margin_top(4)
+        log_box.set_margin_bottom(4)
+        log_box.set_margin_start(8)
+        log_box.set_margin_end(8)
         log_frame.add(log_box)
         
-        log_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
-        log_box.pack_start(log_header, False, False, 0)
-        
-        log_icon = Gtk.Label()
-        log_icon.set_markup(f'<span size="10000" foreground="{NORD["nord8"]}">📋</span>')
-        log_header.pack_start(log_icon, False, False, 0)
-        
         log_label = Gtk.Label()
-        log_label.set_markup(f'<span size="10000" weight="bold">Installation Log</span>')
+        log_label.set_markup(f'<span size="8500" weight="bold">📋 Log</span>')
         log_label.set_halign(Gtk.Align.START)
-        log_header.pack_start(log_label, False, False, 0)
+        log_box.pack_start(log_label, False, False, 0)
         
         log_scroll = Gtk.ScrolledWindow()
         log_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        log_scroll.set_min_content_height(80)
-        log_scroll.set_max_content_height(80)
+        log_scroll.set_min_content_height(60)
+        log_scroll.set_max_content_height(60)
         log_box.pack_start(log_scroll, True, True, 0)
         
         self.log_view = Gtk.TextView()
         self.log_view.set_editable(False)
         self.log_view.set_monospace(True)
-        self.log_view.set_size_request(-1, 80)
+        self.log_view.set_size_request(-1, 60)
         self.log_buffer = self.log_view.get_buffer()
         log_scroll.add(self.log_view)
         
-        # Action buttons
-        self.action_box = Gtk.Box(spacing=12)
+        # Action button
+        self.action_box = Gtk.Box(spacing=8)
         self.action_box.set_halign(Gtk.Align.CENTER)
-        self.action_box.set_margin_top(5)
+        self.action_box.set_margin_top(3)
         main_box.pack_start(self.action_box, False, False, 0)
         
         self.close_button = Gtk.Button(label="Close")
@@ -212,22 +205,22 @@ class PostInstallApp(Gtk.Window):
             return
         
         for pkg in self.packages_to_install:
-            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-            row.set_margin_start(4)
-            row.set_margin_end(4)
-            row.set_margin_top(2)
-            row.set_margin_bottom(2)
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            row.set_margin_start(3)
+            row.set_margin_end(3)
+            row.set_margin_top(1)
+            row.set_margin_bottom(1)
             
             pkg_name = Gtk.Label()
-            pkg_name.set_markup(f'<span size="9000">{pkg}</span>')
+            pkg_name.set_markup(f'<span size="8500">{pkg}</span>')
             pkg_name.set_halign(Gtk.Align.START)
-            pkg_name.set_ellipsize(3)  # Ellipsize long names
+            pkg_name.set_ellipsize(3)
             row.pack_start(pkg_name, True, True, 0)
             
             status = Gtk.Label()
-            status.set_markup(f'<span size="9000" foreground="{NORD["nord5"]}">Pending</span>')
+            status.set_markup(f'<span size="8500" foreground="{NORD["nord5"]}">Pending</span>')
             status.set_name(f"status-{pkg}")
-            status.set_margin_end(5)
+            status.set_margin_end(3)
             row.pack_start(status, False, False, 0)
             
             self.packages_list.add(row)
