@@ -3,8 +3,10 @@ madOS Post-Installer - Main application window
 """
 
 import os
+import random
 import subprocess
 import threading
+import time
 from pathlib import Path
 
 import gi
@@ -12,7 +14,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib
 
-from .config import NORD, PACKAGE_GROUPS
+from .config import DEMO_MODE, NORD, PACKAGE_GROUPS
 from .theme import apply_theme
 
 CONFIG_FILE = "/home/mados/.config/mados/package-selection.json"
@@ -22,7 +24,8 @@ class PostInstallApp(Gtk.Window):
     """Post-installation package installer window"""
 
     def __init__(self):
-        super().__init__(title="madOS - Package Installation")
+        title = "madOS - Package Installation" + (" (DEMO MODE)" if DEMO_MODE else "")
+        super().__init__(title=title)
         
         self.set_default_size(900, 600)
         self.set_position(Gtk.WindowPosition.CENTER)
@@ -40,6 +43,12 @@ class PostInstallApp(Gtk.Window):
         self.show_all()
         
         if self.packages_to_install:
+            GLib.idle_add(self._start_installation)
+        elif DEMO_MODE:
+            # In demo mode, use fake packages if none found
+            self.packages_to_install = ["git", "vim", "htop", "python-pip", "docker"]
+            self.log("DEMO MODE: Using sample package list")
+            GLib.idle_add(self._populate_packages_list)
             GLib.idle_add(self._start_installation)
     
     def _load_package_selection(self):
@@ -171,6 +180,10 @@ class PostInstallApp(Gtk.Window):
     
     def _populate_packages_list(self):
         """Populate the packages list"""
+        # Clear existing items
+        for child in self.packages_list.get_children():
+            self.packages_list.remove(child)
+        
         if not self.packages_to_install:
             label = Gtk.Label()
             label.set_markup('<span size="11000" style="italic">No packages selected for installation</span>')
@@ -215,22 +228,32 @@ class PostInstallApp(Gtk.Window):
             for i, package in enumerate(self.packages_to_install):
                 self.current_package = package
                 GLib.idle_add(self._update_status, f"Installing {package}...", i, len(self.packages_to_install))
-                self.log(f"Installing: {package}")
                 
-                result = subprocess.run(
-                    ["pacman", "-S", "--noconfirm", package],
-                    capture_output=True,
-                    text=True
-                )
-                
-                if result.returncode == 0:
-                    self.log(f"✓ {package} installed successfully")
+                if DEMO_MODE:
+                    # Demo mode: simulate installation with delays
+                    self.log(f"[DEMO] Would install: {package}")
+                    import random
+                    time.sleep(0.5 + random.random() * 0.5)
+                    self.log(f"[DEMO] ✓ {package} installed successfully (simulated)")
                     GLib.idle_add(self._mark_package_installed, package)
                 else:
-                    self.log(f"✗ Failed to install {package}: {result.stderr}")
-                    GLib.idle_add(self._mark_package_failed, package)
+                    # Real mode: actually install
+                    self.log(f"Installing: {package}")
+                    result = subprocess.run(
+                        ["pacman", "-S", "--noconfirm", package],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode == 0:
+                        self.log(f"✓ {package} installed successfully")
+                        GLib.idle_add(self._mark_package_installed, package)
+                    else:
+                        self.log(f"✗ Failed to install {package}: {result.stderr}")
+                        GLib.idle_add(self._mark_package_failed, package)
                 
                 self.installed_count = i + 1
+                GLib.idle_add(self._update_status, f"Installing...", self.installed_count, len(self.packages_to_install))
             
             GLib.idle_add(self._installation_complete)
             
@@ -281,16 +304,27 @@ class PostInstallApp(Gtk.Window):
     
     def _installation_complete(self):
         """Called when installation is complete"""
-        self.status_label.set_markup(f'<span size="12000" weight="bold" foreground="{NORD["nord10"]}">Installation Complete!</span>')
+        if DEMO_MODE:
+            self.status_label.set_markup(f'<span size="12000" weight="bold" foreground="{NORD["nord10"]}">✓ Demo Installation Complete!</span>')
+            self.log("[DEMO] Simulation completed successfully!")
+            self.log("[DEMO] In real mode, packages would be installed via pacman")
+        else:
+            self.status_label.set_markup(f'<span size="12000" weight="bold" foreground="{NORD["nord10"]}">Installation Complete!</span>')
+            self.log("Installation completed successfully!")
+        
         self.progress_bar.set_fraction(1.0)
         self.progress_bar.set_text("100%")
-        self.log("Installation completed successfully!")
         self.log("Running cleanup...")
         self._run_cleanup()
         self.close_button.set_sensitive(True)
     
     def _run_cleanup(self):
         """Run cleanup script to disable post-install service"""
+        if DEMO_MODE:
+            self.log("[DEMO] Would run cleanup script")
+            self.log("[DEMO] Service would be disabled for future boots")
+            return
+        
         try:
             subprocess.run(
                 ["/usr/local/bin/mados-post-install-cleanup"],

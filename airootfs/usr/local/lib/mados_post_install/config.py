@@ -2,6 +2,12 @@
 madOS Post-Installer - Configuration
 """
 
+# ========== DEMO MODE ==========
+# Set to True to run in demo mode (simulates installation)
+# Set to False for real package installation
+DEMO_MODE = True
+# ================================
+
 # Nord color palette
 NORD = {
     "nord0": "#2E3440",

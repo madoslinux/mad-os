@@ -2,12 +2,21 @@
 """
 madOS Post-Install Launcher
 Runs on first boot to install user-selected packages
+
+In DEMO_MODE, runs without requiring root or actual system changes
 """
 
 import sys
 import os
 
+# Add both system and development paths
 sys.path.insert(0, "/usr/local/lib")
+
+# Also try local development path
+dev_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 
+                        "proyectos", "mad-os", "airootfs", "usr", "local", "lib")
+if os.path.exists(dev_path):
+    sys.path.insert(0, dev_path)
 
 from mados_post_install import main
 
