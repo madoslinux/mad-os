@@ -193,20 +193,8 @@ class PostInstallApp(Gtk.Window):
         
         self.close_button = Gtk.Button(label="  Close  ")
         self.close_button.get_style_context().add_class("success-button")
-        self.close_button.get_style_context().add_class("close-button")
         self.close_button.set_sensitive(False)
         self.close_button.connect("clicked", lambda x: Gtk.main_quit())
-        
-        # Force style update
-        self.close_button.override_background_color(
-            Gtk.StateFlags.NORMAL, 
-            Gdk.Color(NORD["nord10"][1:], 1.0)
-        )
-        self.close_button.override_color(
-            Gtk.StateFlags.NORMAL,
-            Gdk.Color(NORD["nord0"][1:], 1.0)
-        )
-        
         self.action_box.pack_start(self.close_button, False, False, 0)
     
     def _populate_packages_list(self):

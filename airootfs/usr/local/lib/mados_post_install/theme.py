@@ -90,27 +90,40 @@ def apply_theme():
     }}
     
     button {{
-        background-color: {NORD["nord9"]};
+        background: {NORD["nord9"]};
+        background-image: linear-gradient(to bottom, {NORD["nord9"]}, {NORD["nord9"]});
         color: {NORD["nord0"]};
         border: none;
         padding: 8px 28px;
         border-radius: 5px;
         font-weight: bold;
         font-size: 11px;
+        text-shadow: none;
+        box-shadow: none;
     }}
     
     button:hover {{
-        background-color: {NORD["nord8"]};
+        background: {NORD["nord8"]};
+        background-image: linear-gradient(to bottom, {NORD["nord8"]}, {NORD["nord8"]});
         color: {NORD["nord0"]};
     }}
     
     .success-button {{
-        background-color: {NORD["nord10"]};
+        background: {NORD["nord10"]};
+        background-image: linear-gradient(to bottom, {NORD["nord10"]}, {NORD["nord10"]});
         color: {NORD["nord0"]};
+        text-shadow: none;
     }}
     
     .success-button:hover {{
-        background-color: #88B076;
+        background: #88B076;
+        background-image: linear-gradient(to bottom, #88B076, #88B076);
+        color: {NORD["nord0"]};
+    }}
+    
+    .success-button:disabled {{
+        background: {NORD["nord3"]};
+        color: {NORD["nord5"]};
     }}
     
     button:disabled {{
