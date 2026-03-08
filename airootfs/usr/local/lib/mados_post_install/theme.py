@@ -21,7 +21,7 @@ def apply_theme():
     }}
     
     .content-card {{
-        background-color: {NORD["nord1"]};
+        background-color: {NORD["nord0"]};
         border: 1px solid {NORD["nord3"]};
         border-radius: 6px;
         padding: 8px;
@@ -84,7 +84,7 @@ def apply_theme():
     }}
     
     button {{
-        background-color: {NORD["nord3"]};
+        background-color: {NORD["nord9"]};
         color: {NORD["nord6"]};
         border: none;
         padding: 8px 28px;
@@ -94,7 +94,7 @@ def apply_theme():
     }}
     
     button:hover {{
-        background-color: {NORD["nord4"]};
+        background-color: {NORD["nord8"]};
         color: {NORD["nord0"]};
     }}
     
@@ -109,7 +109,7 @@ def apply_theme():
     
     button:disabled {{
         background-color: {NORD["nord2"]};
-        color: {NORD["nord4"]};
+        color: {NORD["nord5"]};
     }}
     
     textview {{

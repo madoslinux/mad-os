@@ -283,14 +283,28 @@ class PostInstallApp(Gtk.Window):
         self.progress_bar.set_text(f"{current}/{total} ({progress*100:.0f}%)")
     
     def _mark_package_installed(self, package):
-        """Mark package as installed in the list"""
+        """Mark package as installed in the list and scroll to it"""
         row = self._find_package_row(package)
         if row:
             for child in row.get_children():
                 if isinstance(child, Gtk.Box):
                     for widget in child.get_children():
                         if isinstance(widget, Gtk.Label) and widget.get_name() == f"status-{package}":
-                            widget.set_markup(f'<span size="10000" foreground="{NORD["nord10"]}">✓ Installed</span>')
+                            widget.set_markup(f'<span size="8500" foreground="{NORD["nord10"]}">✓ Installed</span>')
+            
+            # Scroll packages list to show updated row
+            GLib.idle_add(self._scroll_packages_to_row, row)
+    
+    def _scroll_packages_to_row(self, row):
+        """Scroll the packages list to show the given row"""
+        scroll = self.packages_list.get_parent()
+        if isinstance(scroll, Gtk.ScrolledWindow):
+            adj = scroll.get_vadjustment()
+            if adj:
+                alloc = row.get_allocation()
+                # Center the row in the visible area
+                value = alloc.y - 50
+                adj.set_value(max(0, min(value, adj.get_upper() - adj.get_page_size())))
     
     def _mark_package_failed(self, package):
         """Mark package as failed in the list"""
@@ -362,7 +376,8 @@ class PostInstallApp(Gtk.Window):
         GLib.idle_add(self._update_log, message)
     
     def _update_log(self, message):
-        """Update log view"""
+        """Update log view and auto-scroll"""
         end_iter = self.log_buffer.get_end_iter()
         self.log_buffer.insert(end_iter, f"{message}\n")
-        self.log_view.scroll_to_iter(end_iter, 0, False, 0, 0)
+        # Auto-scroll to bottom
+        self.log_view.scroll_to_mark(self.log_buffer.get_insert(), 0, True, 0.5, 0.5)
