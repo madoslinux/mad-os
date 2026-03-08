@@ -26,7 +26,7 @@ class ProvisioningPage(Gtk.Box):
     def _build_ui(self):
         """Build the provisioning page UI."""
         # Header
-        header = create_page_header(self.app, "Automated Provisioning", step_num=2, total_steps=8)
+        header = create_page_header(self.app, self.app.t("provisioning_title"), step_num=2, total_steps=8)
         self.pack_start(header, False, False, 0)
 
         # Main content
@@ -37,12 +37,11 @@ class ProvisioningPage(Gtk.Box):
         content.set_margin_bottom(20)
         self.pack_start(content, True, True, 0)
 
-        # Description
+        # Description - translated
         desc_label = Gtk.Label()
         desc_label.set_markup(
             f'<span size="11000" foreground="{NORD_SNOW_STORM["nord6"]}">'
-            "Load a <b>mados-config.yaml</b> file to automate installation.\n"
-            "Skip this step for manual configuration."
+            f'{self.app.t("provisioning_desc")}'
             "</span>"
         )
         desc_label.set_line_wrap(True)
@@ -56,7 +55,7 @@ class ProvisioningPage(Gtk.Box):
 
         # File chooser button
         self.file_chooser = Gtk.FileChooserButton()
-        self.file_chooser.set_title("Select Provisioning Config")
+        self.file_chooser.set_title(self.app.t("provisioning_select"))
         self.file_chooser.set_width_chars(40)
         
         # Filter for YAML files
@@ -75,8 +74,8 @@ class ProvisioningPage(Gtk.Box):
         self.file_chooser.connect("file-set", self._on_file_selected)
         file_box.pack_start(self.file_chooser, False, False, 0)
 
-        # Load button
-        load_btn = Gtk.Button(label="Load Configuration")
+        # Load button  
+        load_btn = Gtk.Button(label=self.app.t("provisioning_apply_btn"))
         load_btn.get_style_context().add_class("success-button")
         load_btn.connect("clicked", self._on_load_clicked)
         file_box.pack_start(load_btn, False, False, 0)
