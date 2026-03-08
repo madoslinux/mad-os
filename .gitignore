@@ -54,4 +54,4 @@ htmlcov/
 
 # MyPy
 .mypy_cache/
-```
+```tests/test_installer_installation.py
