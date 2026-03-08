@@ -673,7 +673,7 @@ class TestSwayColors(unittest.TestCase):
                 self.assertEqual(
                     len(parts),
                     6,
-                    f"client.focused needs 5 colors (border bg text indicator child_border): {line}",
+                    "client.focused needs 5 colors (border bg text indicator child_border)",
                 )
                 break
         self.assertTrue(found, "client.focused directive not found in config")

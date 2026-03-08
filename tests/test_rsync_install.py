@@ -569,17 +569,16 @@ class TestPostCopyCleanup(unittest.TestCase):
         self.assertIn("/mnt/usr", cmd)
 
     def test_cleanup_called_during_rsync_flow(self):
-        """_post_rsync_cleanup must be invoked inside _rsync_rootfs_with_progress."""
+        """post_rsync_cleanup must be invoked inside rsync_rootfs_with_progress."""
         app = MockApp()
         cleanup_called = [False]
-        original_cleanup = _post_rsync_cleanup
 
         def spy_cleanup(a):
             cleanup_called[0] = True
 
         dispatcher = _make_popen_dispatcher(_make_mock_proc(), _make_mock_proc())
         with (
-            patch(f"{_MOD}._post_rsync_cleanup", side_effect=spy_cleanup),
+            patch(f"{_MOD}.post_rsync_cleanup", side_effect=spy_cleanup),
             patch(f"{_MOD}.subprocess.Popen", side_effect=dispatcher),
             patch(f"{_MOD}.subprocess.run", return_value=MagicMock(returncode=0)),
             patch(f"{_MOD}.set_progress"),
@@ -589,7 +588,7 @@ class TestPostCopyCleanup(unittest.TestCase):
         ):
             rsync_rootfs_with_progress(app)
 
-        self.assertTrue(cleanup_called[0], "_post_rsync_cleanup must be called")
+        self.assertTrue(cleanup_called[0], "post_rsync_cleanup must be called")
 
 
 if __name__ == "__main__":

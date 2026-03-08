@@ -539,18 +539,23 @@ class Playlist:
         self._db.close()
 
 
-def format_time(seconds):
+def format_time(seconds: float) -> str:
     """Format seconds into a time string.
 
     Args:
         seconds: Number of seconds.
 
     Returns:
-        Formatted string like '003:45' (MMM:SS format).
+        Formatted string like '3:45' or '1:02:30' for hours.
     """
     if seconds <= 0 or math.isnan(seconds):
-        return "000:00"
+        return "0:00"
     seconds = int(seconds)
-    total_minutes = seconds // 60
-    secs = seconds % 60
-    return f"{total_minutes:03d}:{secs:02d}"
+    hours = seconds // 3600
+    remaining = seconds % 3600
+    minutes = remaining // 60
+    secs = remaining % 60
+    
+    if hours > 0:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes}:{secs:02d}"

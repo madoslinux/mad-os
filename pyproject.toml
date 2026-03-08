@@ -4,7 +4,7 @@ target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
-ignore = ["E501", "E402", "F401"]
+ignore = ["E402", "F401"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011", "F841", "I001", "F811", "N806", "E741", "UP015", "W293", "W291", "B905", "B007", "N802", "UP024"]
@@ -14,3 +14,22 @@ ignore = ["E501", "E402", "F401"]
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.coverage.run]
+source = ["airootfs"]
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
