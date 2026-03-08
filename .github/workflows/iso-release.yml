@@ -62,7 +62,7 @@ jobs:
 
   build:
     name: "Build ISO"
-    runs-on: ubuntu-latest-8-cores
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     needs: determine-release-type
     strategy:
