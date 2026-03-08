@@ -5,7 +5,7 @@ madOS Installer - Configuration constants
 # ========== DEMO MODE ==========
 # Set to True to run installer in demo mode (no actual disk changes)
 # Set to False for real installation
-DEMO_MODE = True
+DEMO_MODE = False
 # ================================
 
 # Minimum disk size (GB) for installation.  The live rootfs with rsync
