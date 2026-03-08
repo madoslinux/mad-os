@@ -101,6 +101,7 @@ jobs:
               echo 'nameserver ${{ env.DNS_SECONDARY }}' >> /etc/resolv.conf
               pacman-key --init && pacman-key --populate
               pacman -Syu --noconfirm archiso
+              pacman -Scc --noconfirm  # Clear pacman cache
               cd /build
               rm -rf out/*
               
