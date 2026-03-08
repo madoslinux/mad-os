@@ -49,6 +49,7 @@ sqlite
 python
 python-gobject
 python-cairo
+cairo
 python-pillow
 gtk3
 gtk-layer-shell
@@ -202,6 +203,10 @@ networkmanager
 iwd
 wireless_tools
 rsync
+zstd
+xdelta3
+hivex
+libva-utils
 
 # Screenshots Wayland
 grim
