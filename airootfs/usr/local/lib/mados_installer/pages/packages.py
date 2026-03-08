@@ -35,6 +35,8 @@ PACKAGE_GROUPS = {
         "packages": [
             {"id": "python", "name": "Python 3", "default": True},
             {"id": "python-pip", "name": "Python pip", "default": True},
+            {"id": "ollama", "name": "Ollama (AI models)", "default": True},
+            {"id": "opencode", "name": "OpenCode AI Assistant", "default": True},
             {"id": "python-jupyterlab", "name": "JupyterLab", "default": False},
             {"id": "python-scikit-learn", "name": "Scikit-learn", "default": False},
             {"id": "python-matplotlib", "name": "Matplotlib", "default": False},

@@ -186,8 +186,7 @@ systemctl enable systemd-resolved
 systemctl enable earlyoom
 systemctl enable systemd-timesyncd
 systemctl enable greetd
-systemctl enable iwd
-systemctl enable bluetooth
+systemctl enable bluetooth 2>/dev/null || true
 systemctl enable plymouth-quit-wait.service 2>/dev/null || true
 systemctl enable mados-hardware-config.service 2>/dev/null || true
 

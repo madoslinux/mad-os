@@ -199,6 +199,8 @@ PACKAGES_PHASE2 = [
     "libwebp",
     "libheif",
     "libjxl",
+    # Wallpaper Management
+    "swww",
 ]
 
 # Combined package list (all ISO packages in both categories)

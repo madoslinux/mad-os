@@ -299,8 +299,40 @@ class PostInstallApp(Gtk.Window):
                     time.sleep(0.5 + random.random() * 0.5)
                     self.log(f"[DEMO] ✓ {package} installed successfully (simulated)")
                     GLib.idle_add(self._mark_package_installed, package)
+                elif package == "ollama":
+                    # Install Ollama via curl
+                    self.log(f"Installing {package} via curl...")
+                    result = subprocess.run(
+                        "curl -fsSL https://ollama.com/install.sh | sh",
+                        shell=True,
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode == 0:
+                        self.log(f"✓ {package} installed successfully")
+                        GLib.idle_add(self._mark_package_installed, package)
+                    else:
+                        self.log(f"✗ Failed to install {package}: {result.stderr}")
+                        GLib.idle_add(self._mark_package_failed, package)
+                elif package == "opencode":
+                    # Install OpenCode via curl
+                    self.log(f"Installing {package} via curl...")
+                    result = subprocess.run(
+                        "curl -fsSL https://opencode.ai/install | bash",
+                        shell=True,
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode == 0:
+                        self.log(f"✓ {package} installed successfully")
+                        GLib.idle_add(self._mark_package_installed, package)
+                    else:
+                        self.log(f"✗ Failed to install {package}: {result.stderr}")
+                        GLib.idle_add(self._mark_package_failed, package)
                 else:
-                    # Real mode: actually install
+                    # Real mode: install via pacman
                     self.log(f"Installing: {package}")
                     result = subprocess.run(
                         ["pacman", "-S", "--noconfirm", package],
