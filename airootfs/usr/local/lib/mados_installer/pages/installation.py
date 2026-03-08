@@ -198,6 +198,8 @@ def _run_installation(app):
         else:
             with open("/mnt/root/configure.sh", "w") as f:
                 f.write(config_script)
+            # Make script executable
+            os.chmod("/mnt/root/configure.sh", 0o755)
             step_copy_live_files(app)
 
         # Step 7: Run chroot configuration
