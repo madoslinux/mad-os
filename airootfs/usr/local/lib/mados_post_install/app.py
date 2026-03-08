@@ -161,7 +161,7 @@ class PostInstallApp(Gtk.Window):
         log_frame.add(log_box)
         
         log_label = Gtk.Label()
-        log_label.set_markup(f'<span size="8500" weight="bold">📋 Log</span>')
+        log_label.set_markup(f'<span size="8500" weight="bold">Log</span>')
         log_label.set_halign(Gtk.Align.START)
         log_box.pack_start(log_label, False, False, 0)
         
