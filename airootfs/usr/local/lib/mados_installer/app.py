@@ -124,20 +124,31 @@ class MadOSInstaller(Gtk.Window):
 
     def on_language_changed(self, combo):
         """Rebuild all pages with the newly selected language"""
-        self.current_lang = combo.get_active_text()
-        self.install_data["locale"] = LOCALE_MAP[self.current_lang]
+        try:
+            self.current_lang = combo.get_active_text()
+            self.install_data["locale"] = LOCALE_MAP.get(self.current_lang, "en_US.UTF-8")
 
-        current_page = self.notebook.get_current_page()
+            current_page = self.notebook.get_current_page()
 
-        # Remove all pages
-        while self.notebook.get_n_pages() > 0:
-            self.notebook.remove_page(0)
+            # Remove all pages gently
+            for i in range(self.notebook.get_n_pages() - 1, -1, -1):
+                page = self.notebook.get_nth_page(i)
+                if page:
+                    page.destroy()
 
-        # Recreate
-        self._build_pages()
+            # Recreate pages
+            self._build_pages()
 
-        self.notebook.set_current_page(min(current_page, self.notebook.get_n_pages() - 1))
-        self.show_all()
+            # Restore page selection
+            n_pages = self.notebook.get_n_pages()
+            if n_pages > 0:
+                self.notebook.set_current_page(min(current_page, n_pages - 1))
+            
+            self.show_all()
+        except Exception as e:
+            print(f"Error changing language: {e}")
+            import traceback
+            traceback.print_exc()
 
     # ── Page construction ───────────────────────────────────────────────
 
