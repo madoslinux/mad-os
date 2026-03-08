@@ -46,11 +46,13 @@ class PostInstallApp(Gtk.Window):
         # In demo mode, use sample packages if no config found
         if not self.packages_to_install and DEMO_MODE:
             self.packages_to_install = [
-                "git", "vim", "htop", "python-pip", "docker",
-                "code", "gimp", "blender", "obs-studio", "kdenlive",
-                "vlc", "firefox", "thunderbird", "libreoffice-fresh"
+                "git", "neovim", "python-pip", "docker",
+                "python-jupyterlab", "python-scikit-learn",
+                "gimp", "blender", "vlc", "ffmpeg",
+                "libreoffice-fresh", "evince",
+                "firefox", "qbittorrent"
             ]
-            print(f"[DEMO] Using sample package list: {len(self.packages_to_install)} packages")
+            print(f"[DEMO] Using sample package list: {len(self.packages_to_install)} official packages")
         
         # Build UI with packages already set
         self._build_ui()
