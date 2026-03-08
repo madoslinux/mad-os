@@ -1,158 +1,203 @@
 # madOS
 
-**madOS** es una distribución de Linux basada en Arch Linux, diseñada para ser moderna, minimalista y altamente personalizable. Utiliza el entorno de escritorio GNOME con Wayland por defecto y sigue las mejores prácticas de seguridad y rendimiento.
+**madOS** is a Linux distribution based on Arch Linux, designed to be modern, minimalist, and highly customizable. It uses the Sway tiling window manager with Wayland by default and follows best practices for security and performance.
 
-## 📋 Tabla de Contenidos
+## 📋 Table of Contents
 
-- [Características](#características)
-- [Requisitos del Sistema](#requisitos-del-sistema)
-- [Instalación](#instalación)
-- [Estructura del Proyecto](#estructura-del-proyecto)
-- [Desarrollo](#desarrollo)
-- [Contribuir](#contribuir)
-- [Licencia](#licencia)
+- [Features](#features)
+- [System Requirements](#system-requirements)
+- [Installation](#installation)
+- [Project Structure](#project-structure)
+- [Development](#development)
+- [Contributing](#contributing)
+- [License](#license)
 
-## ✨ Características
+## ✨ Features
 
-- **Base Arch Linux**: Acceso al repositorio AUR y actualizaciones rolling release
-- **GNOME + Wayland**: Entorno de escritorio moderno con soporte completo para Wayland
-- **Tema Nord**: Esquema de colores agradable y consistente
-- **Installer Personalizado**: Herramienta de instalación gráfica y por terminal
-- **Perfiles de Paquetes**: Múltiples configuraciones (minimal, standard, developer, media)
-- **Seguridad**: Configuraciones hardened por defecto
+- **Arch Linux Base**: Access to AUR repository and rolling release updates
+- **Sway + Wayland**: Modern tiling window manager with full Wayland support
+- **Nord Theme**: Pleasant and consistent color scheme
+- **Custom Installer**: Graphical and terminal installation tool
+- **Package Profiles**: Multiple configurations (minimal, standard, developer, media)
+- **Security**: Hardened configurations by default
+- **AI-Powered**: Built-in OpenCode AI assistant for development assistance
 
-## 💻 Requisitos del Sistema
+## 💻 System Requirements
 
-### Mínimos
-- **Procesador**: x86_64 compatible (Intel/AMD)
+### Minimum
+- **Processor**: x86_64 compatible (Intel/AMD)
 - **RAM**: 4 GB
-- **Almacenamiento**: 20 GB
-- **Resolución**: 1024x768
+- **Storage**: 20 GB
+- **Resolution**: 1024x768
 
-### Recomendados
-- **Procesador**: Dual-core 2.0 GHz o superior
-- **RAM**: 8 GB o más
-- **Almacenamiento**: 50 GB SSD
-- **Resolución**: 1920x1080 o superior
+### Recommended
+- **Processor**: Dual-core 2.0 GHz or higher
+- **RAM**: 8 GB or more
+- **Storage**: 50 GB SSD
+- **Resolution**: 1920x1080 or higher
 
-## 📥 Instalación
+## 📥 Installation
 
-### Desde ISO
+### From ISO
 
-1. Descarga la última ISO desde [Releases](https://github.com/madox-os/mados/releases)
-2. Graba la ISO en un USB booteable:
+1. Download the latest ISO from [Releases](https://github.com/madkoding/mad-os/releases)
+2. Burn the ISO to a bootable USB:
    ```bash
    sudo dd if=mados.iso of=/dev/sdX bs=4M status=progress
    ```
-3. Arranca desde el USB
-4. Sigue el asistente de instalación
+3. Boot from USB
+4. Follow the installation wizard
 
-### Construir tu propia ISO
+### Build Your Own ISO
 
 ```bash
-# Clonar el repositorio
-git clone https://github.com/madox-os/mados.git
-cd mados
+# Clone the repository
+git clone https://github.com/madkoding/mad-os.git
+cd mad-os
 
-# Instalar dependencias
-pip install -r requirements.txt
+# Install archiso (Arch Linux)
+sudo pacman -S archiso
 
-# Construir la ISO
+# Build the ISO
+./build-iso.sh
+
+# The ISO will be in out/ directory
+```
+
+## 🏗️ Project Structure
+
+```
+mad-os/
+├── airootfs/              # Root filesystem for the ISO
+│   ├── etc/              # Configuration files
+│   ├── home/             # Default user home directory
+│   ├── root/             # Root user directory
+│   ├── usr/              # User programs and data
+│   │   ├── local/bin/    # Custom scripts
+│   │   └── local/lib/    # Python modules
+│   │       ├── mados_installer/      # Installer GUI
+│   │       ├── mados_post_install/   # Post-installation setup
+│   │       └── mados_apps/           # madOS applications
+│   └── share/            # Shared data
+├── packages.x86_64        # Package list for ISO
+├── packages-*.x86_64      # Profile-specific package lists
+├── profiledef.sh         # ISO builder configuration
+├── build-iso.sh          # Build script
+├── tests/                # Automated tests
+└── README.md             # This file
+```
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Arch Linux (or Arch-based distro)
+- `archiso` package
+- `git`
+- `python3`
+
+### Setup Development Environment
+
+```bash
+# Clone repository
+git clone https://github.com/madkoding/mad-os.git
+cd mad-os
+
+# Install dependencies
+sudo pacman -S archiso python-pytest shellcheck-py
+
+# Run tests
+python3 -m pytest tests/ -v
+
+# Build ISO
 ./build-iso.sh
 ```
 
-Para más detalles, consulta la [documentación de construcción](docs/BUILDING.md).
-
-## 📁 Estructura del Proyecto
-
-```
-mados/
-├── .github/                 # Configuración de GitHub Actions y templates
-├── airootfs/                # Sistema de archivos raíz para la ISO
-│   └── usr/local/
-│       ├── bin/             # Scripts y ejecutables del sistema
-│       ├── lib/             # Librerías y módulos Python
-│       └── share/           # Recursos compartidos (temas, iconos)
-├── efiboot/                 # Archivos de boot EFI
-├── grub/                    # Configuración de GRUB
-├── syslinux/                # Configuración de SYSLINUX
-├── tests/                   # Pruebas unitarias y de integración
-├── CONTRIBUTING.md          # Guía para contribuidores
-├── LICENSE                  # Licencia del proyecto (MIT)
-├── packages*.x86_64         # Listas de paquetes por perfil
-├── profiledef.sh            # Definición del perfil de Archiso
-├── pyproject.toml           # Configuración de herramientas Python
-└── README.md                # Este archivo
-```
-
-## 🛠️ Desarrollo
-
-### Configurar el entorno
+### Running Tests
 
 ```bash
-# Crear entorno virtual
-python -m venv venv
-source venv/bin/activate
+# All tests
+python3 -m pytest tests/ -v
 
-# Instalar dependencias de desarrollo
-pip install -r requirements.txt
+# Specific test suite
+python3 -m pytest tests/test_installer_installation.py -v
 
-# Instalar pre-commit hooks
-pre-commit install
+# With coverage
+python3 -m pytest tests/ --cov=airootfs/usr/local/lib
 ```
 
-### Ejecutar pruebas
+## 📦 Package Profiles
 
-```bash
-# Todas las pruebas
-pytest
+madOS includes multiple package profiles for different use cases:
 
-# Con cobertura
-pytest --cov=airootfs/usr/local/lib --cov-report=html
+- **Minimal**: Base system only (~1.5 GB)
+- **Standard**: Desktop environment + essential apps (~3 GB)
+- **Developer**: Development tools, IDEs, compilers (~5 GB)
+- **Media**: Multimedia production tools (~6 GB)
 
-# Linting
-ruff check .
-ruff format .
-```
+You can mix and match profiles during installation.
 
-### Convenciones de Commits
+## 🎯 Post-Installation
 
-Este proyecto sigue [Conventional Commits](https://www.conventionalcommits.org/):
+After installing madOS, the post-installer will automatically run on first boot to:
 
-```
-feat: añadir nueva característica
-fix: corregir bug
-docs: actualizar documentación
-style: formato, sin cambios en lógica
-refactor: reestructurar código
-test: añadir/modificar pruebas
-chore: mantenimiento, dependencias
-```
+- Install selected additional packages
+- Configure user preferences
+- Set up system services
+- Apply customizations
 
-## 🤝 Contribuir
+## 🔧 Custom Scripts
 
-¡Las contribuciones son bienvenidas! Por favor, lee nuestra [Guía de Contribución](CONTRIBUTING.md) antes de empezar.
+madOS includes several custom scripts in `/usr/local/bin/`:
 
-Pasos básicos:
-1. Fork el repositorio
-2. Crea una rama (`git checkout -b feature/nueva-caracteristica`)
-3. Realiza tus cambios
-4. Ejecuta las pruebas (`pytest`)
-5. Commit siguiendo convenciones (`git commit -m 'feat: descripción'`)
-6. Push a tu rama (`git push origin feature/nueva-caracteristica`)
-7. Abre un Pull Request
+- `mados-update` - System update with madOS-specific optimizations
+- `mados-health-check` - System health diagnostics
+- `mados-logs` - Log viewer
+- `mados-wallpaper-glitch` - Dynamic wallpaper effects
+- `mados-audio-quality` - High-quality audio configuration
+- `mados-installer-autostart` - Auto-start installer in live session
 
-## 📄 Licencia
+## 🤝 Contributing
 
-Este proyecto está licenciado bajo la licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+We welcome contributions! Please follow these steps:
 
-## 🔗 Enlaces
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-- [Sitio Web](https://mados.dev)
-- [Documentación](https://docs.mados.dev)
-- [Reportar Bugs](https://github.com/madox-os/mados/issues)
-- [Discord](https://discord.gg/mados)
+### Commit Convention
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+- `feat:` New feature
+- `fix:` Bug fix
+- `docs:` Documentation changes
+- `style:` Code style changes (formatting, etc.)
+- `refactor:` Code refactoring
+- `test:` Adding tests
+- `chore:` Maintenance tasks
+
+Example: `feat(installer): add dark mode to package selection`
+
+## 📄 License
+
+This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- **Releases**: https://github.com/madkoding/mad-os/releases
+- **Issues**: https://github.com/madkoding/mad-os/issues
+- **Discussions**: https://github.com/madkoding/mad-os/discussions
+
+## 🙏 Acknowledgments
+
+- Arch Linux community for excellent documentation
+- SwayWM developers for amazing tiling window manager
+- Nord theme creators for beautiful color scheme
+- All open-source contributors
 
 ---
 
-**madOS** - Modern, Agile, Dynamic Operating System
+**Built with ❤️ using Arch Linux and AI assistance**
