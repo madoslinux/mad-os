@@ -22,7 +22,7 @@ from .pages import (
     create_partitioning_page,
     create_user_page,
     create_locale_page,
-    PackageSelectionPage,
+    create_package_selection_page,
     create_summary_page,
     create_installation_page,
     create_completion_page,
@@ -100,6 +100,26 @@ class MadOSInstaller(Gtk.Window):
         """Translate key to current language"""
         return TRANSLATIONS[self.current_lang].get(key, key)
 
+    # ── Page navigation ─────────────────────────────────────────────────
+
+    def show_page(self, page_name):
+        """Navigate to a page by name"""
+        page_names = {
+            "welcome": 0,
+            "wifi": 1,
+            "provisioning": 2,
+            "disk": 3,
+            "partitioning": 4,
+            "user": 5,
+            "locale": 6,
+            "packages": 7,
+            "summary": 8,
+            "installation": 9,
+            "completion": 10,
+        }
+        if page_name in page_names:
+            self.notebook.set_current_page(page_names[page_name])
+
     # ── Language change ─────────────────────────────────────────────────
 
     def on_language_changed(self, combo):
@@ -125,12 +145,12 @@ class MadOSInstaller(Gtk.Window):
         """Create all installer pages in order"""
         create_welcome_page(self)
         create_wifi_page(self)
-        create_provisioning_page(self, self.content_box)
+        create_provisioning_page(self, self.notebook)
         create_disk_page(self)
         create_partitioning_page(self)
         create_user_page(self)
         create_locale_page(self)
-        PackageSelectionPage(self, self.content_box)
+        create_package_selection_page(self, self.notebook)
         create_summary_page(self)
         create_installation_page(self)
         create_completion_page(self)

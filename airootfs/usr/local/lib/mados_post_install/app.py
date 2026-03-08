@@ -1,0 +1,320 @@
+"""
+madOS Post-Installer - Main application window
+"""
+
+import os
+import subprocess
+import threading
+from pathlib import Path
+
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk, GLib
+
+from .config import NORD, PACKAGE_GROUPS
+from .theme import apply_theme
+
+CONFIG_FILE = "/home/mados/.config/mados/package-selection.json"
+
+
+class PostInstallApp(Gtk.Window):
+    """Post-installation package installer window"""
+
+    def __init__(self):
+        super().__init__(title="madOS - Package Installation")
+        
+        self.set_default_size(900, 600)
+        self.set_position(Gtk.WindowPosition.CENTER)
+        self.set_resizable(True)
+        
+        apply_theme()
+        
+        self.packages_to_install = []
+        self.installed_count = 0
+        self.current_package = ""
+        self.installation_log = []
+        
+        self._load_package_selection()
+        self._build_ui()
+        self.show_all()
+        
+        if self.packages_to_install:
+            GLib.idle_add(self._start_installation)
+    
+    def _load_package_selection(self):
+        """Load package selection from config file"""
+        try:
+            if os.path.exists(CONFIG_FILE):
+                import json
+                with open(CONFIG_FILE, 'r') as f:
+                    data = json.load(f)
+                    self.packages_to_install = data.get('packages', [])
+                    self.log(f"Loaded {len(self.packages_to_install)} packages to install")
+            else:
+                self.log("No package selection file found")
+        except Exception as e:
+            self.log(f"Error loading config: {e}")
+            self.packages_to_install = []
+    
+    def _build_ui(self):
+        """Build the UI"""
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        main_box.set_margin_start(30)
+        main_box.set_margin_end(30)
+        main_box.set_margin_top(20)
+        main_box.set_margin_bottom(20)
+        self.add(main_box)
+        
+        header = Gtk.Label()
+        header.set_markup('<span size="18000" weight="bold">Installing Additional Packages</span>')
+        header.set_halign(Gtk.Align.CENTER)
+        header.set_margin_bottom(10)
+        main_box.pack_start(header, False, False, 0)
+        
+        subtitle = Gtk.Label()
+        subtitle.set_markup(f'<span size="11000" foreground="{NORD["nord6"]}">Installing your selected packages from the madOS installer</span>')
+        subtitle.set_halign(Gtk.Align.CENTER)
+        subtitle.set_margin_bottom(20)
+        main_box.pack_start(subtitle, False, False, 0)
+        
+        packages_frame = Gtk.Frame()
+        packages_frame.get_style_context().add_class("content-card")
+        packages_frame.set_margin_bottom(15)
+        main_box.pack_start(packages_frame, False, False, 0)
+        
+        packages_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        packages_box.set_margin_top(12)
+        packages_box.set_margin_bottom(12)
+        packages_box.set_margin_start(12)
+        packages_box.set_margin_end(12)
+        packages_frame.add(packages_box)
+        
+        packages_label = Gtk.Label()
+        packages_label.set_markup(f'<span size="12000" weight="bold">Packages to Install ({len(self.packages_to_install)})</span>')
+        packages_label.set_halign(Gtk.Align.START)
+        packages_box.pack_start(packages_label, False, False, 8)
+        
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_min_content_height(200)
+        scroll.set_max_content_height(300)
+        packages_box.pack_start(scroll, True, True, 0)
+        
+        self.packages_list = Gtk.ListBox()
+        self.packages_list.get_style_context().add_class("package-list")
+        self.packages_list.set_selection_mode(Gtk.SelectionMode.NONE)
+        scroll.add(self.packages_list)
+        
+        self._populate_packages_list()
+        
+        progress_frame = Gtk.Frame()
+        progress_frame.get_style_context().add_class("content-card")
+        progress_frame.set_margin_bottom(15)
+        main_box.pack_start(progress_frame, False, False, 0)
+        
+        progress_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        progress_box.set_margin_top(12)
+        progress_box.set_margin_bottom(12)
+        progress_box.set_margin_start(12)
+        progress_box.set_margin_end(12)
+        progress_frame.add(progress_box)
+        
+        self.status_label = Gtk.Label()
+        self.status_label.set_markup(f'<span size="11000">Ready to install {len(self.packages_to_install)} packages</span>')
+        self.status_label.set_halign(Gtk.Align.CENTER)
+        progress_box.pack_start(self.status_label, False, False, 0)
+        
+        self.progress_bar = Gtk.ProgressBar()
+        self.progress_bar.set_show_text(True)
+        progress_box.pack_start(self.progress_bar, False, False, 0)
+        
+        self.log_frame = Gtk.Frame()
+        self.log_frame.get_style_context().add_class("content-card")
+        self.log_frame.set_margin_bottom(15)
+        main_box.pack_start(self.log_frame, False, False, 0)
+        
+        self.log_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        self.log_box.set_margin_top(12)
+        self.log_box.set_margin_bottom(12)
+        self.log_box.set_margin_start(12)
+        self.log_box.set_margin_end(12)
+        self.log_frame.add(self.log_box)
+        
+        log_label = Gtk.Label()
+        log_label.set_markup(f'<span size="11000" weight="bold">Installation Log</span>')
+        log_label.set_halign(Gtk.Align.START)
+        self.log_box.pack_start(log_label, False, False, 5)
+        
+        log_scroll = Gtk.ScrolledWindow()
+        log_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        log_scroll.set_min_content_height(150)
+        log_scroll.set_max_content_height(200)
+        self.log_box.pack_start(log_scroll, True, True, 0)
+        
+        self.log_view = Gtk.TextView()
+        self.log_view.set_editable(False)
+        self.log_view.set_monospace(True)
+        self.log_buffer = self.log_view.get_buffer()
+        log_scroll.add(self.log_view)
+        
+        self.action_box = Gtk.Box(spacing=12)
+        self.action_box.set_halign(Gtk.Align.CENTER)
+        self.action_box.set_margin_top(10)
+        main_box.pack_start(self.action_box, False, False, 0)
+        
+        self.close_button = Gtk.Button(label="Close")
+        self.close_button.get_style_context().add_class("success-button")
+        self.close_button.set_sensitive(False)
+        self.close_button.connect("clicked", lambda x: Gtk.main_quit())
+        self.action_box.pack_start(self.close_button, False, False, 0)
+    
+    def _populate_packages_list(self):
+        """Populate the packages list"""
+        if not self.packages_to_install:
+            label = Gtk.Label()
+            label.set_markup('<span size="11000" style="italic">No packages selected for installation</span>')
+            label.set_margin_top(10)
+            label.set_margin_bottom(10)
+            self.packages_list.add(label)
+            return
+        
+        for pkg in self.packages_to_install:
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            row.set_margin_start(5)
+            row.set_margin_end(5)
+            row.set_margin_top(3)
+            row.set_margin_bottom(3)
+            
+            pkg_name = Gtk.Label()
+            pkg_name.set_markup(f'<span size="10000">{pkg}</span>')
+            pkg_name.set_halign(Gtk.Align.START)
+            row.pack_start(pkg_name, True, True, 0)
+            
+            status = Gtk.Label()
+            status.set_markup(f'<span size="10000" foreground="{NORD["nord5"]}">Pending</span>')
+            status.set_name(f"status-{pkg}")
+            row.pack_start(status, False, False, 0)
+            
+            self.packages_list.add(row)
+    
+    def _start_installation(self):
+        """Start installation in background thread"""
+        threading.Thread(target=self._install_packages, daemon=True).start()
+        return False
+    
+    def _install_packages(self):
+        """Install packages in background"""
+        if not self.packages_to_install:
+            GLib.idle_add(self._installation_complete)
+            return
+        
+        try:
+            self.log("Starting package installation...")
+            
+            for i, package in enumerate(self.packages_to_install):
+                self.current_package = package
+                GLib.idle_add(self._update_status, f"Installing {package}...", i, len(self.packages_to_install))
+                self.log(f"Installing: {package}")
+                
+                result = subprocess.run(
+                    ["pacman", "-S", "--noconfirm", package],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    self.log(f"✓ {package} installed successfully")
+                    GLib.idle_add(self._mark_package_installed, package)
+                else:
+                    self.log(f"✗ Failed to install {package}: {result.stderr}")
+                    GLib.idle_add(self._mark_package_failed, package)
+                
+                self.installed_count = i + 1
+            
+            GLib.idle_add(self._installation_complete)
+            
+        except Exception as e:
+            self.log(f"Error during installation: {e}")
+            GLib.idle_add(self._installation_error, str(e))
+    
+    def _update_status(self, status_text, current, total):
+        """Update status label and progress bar"""
+        self.status_label.set_markup(f'<span size="11000">{status_text}</span>')
+        progress = current / total
+        self.progress_bar.set_fraction(progress)
+        self.progress_bar.set_text(f"{current}/{total} ({progress*100:.0f}%)")
+    
+    def _mark_package_installed(self, package):
+        """Mark package as installed in the list"""
+        row = self._find_package_row(package)
+        if row:
+            for child in row.get_children():
+                if isinstance(child, Gtk.Box):
+                    for widget in child.get_children():
+                        if isinstance(widget, Gtk.Label) and widget.get_name() == f"status-{package}":
+                            widget.set_markup(f'<span size="10000" foreground="{NORD["nord10"]}">✓ Installed</span>')
+    
+    def _mark_package_failed(self, package):
+        """Mark package as failed in the list"""
+        row = self._find_package_row(package)
+        if row:
+            for child in row.get_children():
+                if isinstance(child, Gtk.Box):
+                    for widget in child.get_children():
+                        if isinstance(widget, Gtk.Label) and widget.get_name() == f"status-{package}":
+                            widget.set_markup(f'<span size="10000" foreground="{NORD["nord11"]}">✗ Failed</span>')
+    
+    def _find_package_row(self, package):
+        """Find the row for a package"""
+        row = self.packages_list.get_row_at_index(0)
+        index = 0
+        while row:
+            for child in row.get_children():
+                if isinstance(child, Gtk.Box):
+                    for widget in child.get_children():
+                        if isinstance(widget, Gtk.Label) and widget.get_name() == f"status-{package}":
+                            return row
+            index += 1
+            row = self.packages_list.get_row_at_index(index)
+        return None
+    
+    def _installation_complete(self):
+        """Called when installation is complete"""
+        self.status_label.set_markup(f'<span size="12000" weight="bold" foreground="{NORD["nord10"]}">Installation Complete!</span>')
+        self.progress_bar.set_fraction(1.0)
+        self.progress_bar.set_text("100%")
+        self.log("Installation completed successfully!")
+        self.log("Running cleanup...")
+        self._run_cleanup()
+        self.close_button.set_sensitive(True)
+    
+    def _run_cleanup(self):
+        """Run cleanup script to disable post-install service"""
+        try:
+            subprocess.run(
+                ["/usr/local/bin/mados-post-install-cleanup"],
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            self.log("Post-install service disabled for future boots")
+        except Exception as e:
+            self.log(f"Cleanup warning: {e}")
+    
+    def _installation_error(self, error_msg):
+        """Called when there's an error"""
+        self.status_label.set_markup(f'<span size="12000" weight="bold" foreground="{NORD["nord11"]}">Installation Error</span>')
+        self.log(f"ERROR: {error_msg}")
+        self.close_button.set_sensitive(True)
+    
+    def log(self, message):
+        """Add message to log"""
+        self.installation_log.append(message)
+        GLib.idle_add(self._update_log, message)
+    
+    def _update_log(self, message):
+        """Update log view"""
+        end_iter = self.log_buffer.get_end_iter()
+        self.log_buffer.insert(end_iter, f"{message}\n")
+        self.log_view.scroll_to_iter(end_iter, 0, False, 0, 0)

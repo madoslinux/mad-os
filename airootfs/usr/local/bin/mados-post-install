@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""
+madOS Post-Install Launcher
+Runs on first boot to install user-selected packages
+"""
+
+import sys
+import os
+
+sys.path.insert(0, "/usr/local/lib")
+
+from mados_post_install import main
+
+if __name__ == "__main__":
+    main()

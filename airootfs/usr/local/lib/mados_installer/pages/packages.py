@@ -253,3 +253,10 @@ class PackageSelectionPage(Gtk.Box):
                 selected.append(f"{group_data['icon']} {group_data['name']}: {len(group_selected)} packages")
 
         return "\n".join(selected) if selected else "No additional packages"
+
+
+def create_package_selection_page(app, parent_box):
+    """Create and register the package selection page."""
+    page = PackageSelectionPage(app, parent_box)
+    app.notebook.append_page(page, Gtk.Label(label="Packages"))
+    return page

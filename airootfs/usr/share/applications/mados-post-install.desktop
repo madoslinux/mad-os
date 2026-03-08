@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=madOS Package Installer
+Name[es]=Instalador de Paquetes madOS
+Comment=Install your selected packages from madOS installer
+Comment[es]=Instala tus paquetes seleccionados del instalador madOS
+Exec=mados-post-install
+Icon=system-software-install
+Terminal=false
+Categories=System;Settings;
+StartupNotify=true

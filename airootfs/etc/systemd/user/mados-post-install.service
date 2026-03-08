@@ -1,0 +1,16 @@
+[Unit]
+Description=madOS Post-Install Package Manager
+After=graphical-session.target network-online.service
+Wants=network-online.service
+ConditionPathExists=/home/mados/.config/mados/package-selection.json
+
+[Service]
+Type=simple
+User=mados
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/mados/.Xauthority
+ExecStart=/usr/local/bin/mados-post-install
+RemainAfterExit=no
+
+[Install]
+WantedBy=graphical-session.target
