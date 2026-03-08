@@ -1,0 +1,60 @@
+#!/bin/bash
+# madOS - Install AUR and external packages
+# This script installs packages that are not in official Arch repos
+
+set -e
+
+echo "╔═══════════════════════════════════════════════════════════╗"
+echo "║     madOS - AUR & External Package Installer             ║"
+echo "╚═══════════════════════════════════════════════════════════╝"
+echo ""
+
+# Check if yay is installed, if not install it
+if ! command -v yay &> /dev/null; then
+    echo "Installing yay (AUR helper)..."
+    sudo pacman -S --needed --noconfirm git base-devel
+    cd /tmp
+    git clone https://aur.archlinux.org/yay.git
+    cd yay
+    makepkg -si --noconfirm
+    cd ..
+    rm -rf yay
+    echo "✓ yay installed"
+    echo ""
+fi
+
+# AUR packages
+declare -A aur_packages=(
+    ["visual-studio-code-bin"]="Visual Studio Code"
+    ["brave-bin"]="Brave Browser"
+    ["discord"]="Discord"
+    ["zoom"]="Zoom"
+    ["kdenlive"]="Kdenlive Video Editor"
+    ["obs-studio"]="OBS Studio"
+    ["onlyoffice-desktopeditors"]="ONLYOFFICE"
+    ["ollama-bin"]="Ollama AI"
+)
+
+echo "AUR Packages available:"
+for pkg in "${!aur_packages[@]}"; do
+    echo "  - ${aur_packages[$pkg]} ($pkg)"
+done
+echo ""
+
+# Install selected AUR packages
+for pkg in "${!aur_packages[@]}"; do
+    if [ -f "/home/mados/.config/mados/aur-$pkg" ]; then
+        echo "Installing $pkg (${aur_packages[$pkg]})..."
+        yay -S --noconfirm "$pkg"
+        echo "✓ ${aur_packages[$pkg]} installed"
+    fi
+done
+
+echo ""
+echo "External packages (manual installation required):"
+echo "  - OpenCode: npm install -g @anomalyco/opencode"
+echo "  - PyTorch: pip install torch torchvision torchaudio"
+echo "  - TensorFlow: pip install tensorflow"
+echo "  - Transformers: pip install transformers"
+echo ""
+echo "Done!"
