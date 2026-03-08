@@ -39,17 +39,21 @@ class PostInstallApp(Gtk.Window):
         self.current_package = ""
         self.installation_log = []
         
+        # Load or setup packages FIRST
         self._load_package_selection()
+        
+        # In demo mode, use sample packages if no config found
+        if not self.packages_to_install and DEMO_MODE:
+            self.packages_to_install = ["git", "vim", "htop", "python-pip", "docker"]
+            print(f"[DEMO] Using sample package list: {self.packages_to_install}")
+        
+        # Build UI with packages already set
         self._build_ui()
         self.show_all()
         
+        # Start installation if we have packages
         if self.packages_to_install:
-            GLib.idle_add(self._start_installation)
-        elif DEMO_MODE:
-            # In demo mode, use fake packages if none found
-            self.packages_to_install = ["git", "vim", "htop", "python-pip", "docker"]
-            self.log("DEMO MODE: Using sample package list")
-            GLib.idle_add(self._populate_packages_list)
+            print(f"[INFO] Starting installation of {len(self.packages_to_install)} packages")
             GLib.idle_add(self._start_installation)
     
     def _load_package_selection(self):
