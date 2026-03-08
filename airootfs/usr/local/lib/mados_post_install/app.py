@@ -292,19 +292,32 @@ class PostInstallApp(Gtk.Window):
                         if isinstance(widget, Gtk.Label) and widget.get_name() == f"status-{package}":
                             widget.set_markup(f'<span size="8500" foreground="{NORD["nord10"]}">✓ Installed</span>')
             
-            # Scroll packages list to show updated row
+            # Scroll packages list to show updated row (in UI thread)
             GLib.idle_add(self._scroll_packages_to_row, row)
     
     def _scroll_packages_to_row(self, row):
         """Scroll the packages list to show the given row"""
-        scroll = self.packages_list.get_parent()
-        if isinstance(scroll, Gtk.ScrolledWindow):
-            adj = scroll.get_vadjustment()
-            if adj:
-                alloc = row.get_allocation()
-                # Center the row in the visible area
-                value = alloc.y - 50
-                adj.set_value(max(0, min(value, adj.get_upper() - adj.get_page_size())))
+        try:
+            if row:
+                # Get the index of the row
+                index = 0
+                current_row = self.packages_list.get_row_at_index(0)
+                while current_row and current_row != row:
+                    index += 1
+                    current_row = self.packages_list.get_row_at_index(index)
+                
+                if current_row:
+                    # Scroll the scrolledwindow to show this row
+                    scroll = self.packages_list.get_parent()
+                    if isinstance(scroll, Gtk.ScrolledWindow):
+                        adj = scroll.get_vadjustment()
+                        if adj:
+                            # Calculate position to scroll to
+                            row_height = 30  # Approximate row height
+                            scroll_to = index * row_height
+                            adj.set_value(scroll_to)
+        except Exception as e:
+            print(f"Scroll error: {e}")  # Debug
     
     def _mark_package_failed(self, package):
         """Mark package as failed in the list"""
