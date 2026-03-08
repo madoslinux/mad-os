@@ -99,6 +99,9 @@ def _get_disk_list():
             parts = line.split()
             if len(parts) >= 2:
                 name = parts[0]
+                # Skip zram devices (they are compressed RAM, not real disks)
+                if name.startswith("zram"):
+                    continue
                 size = parts[1]
                 model = " ".join(parts[3:]) if len(parts) > 3 else "Unknown disk"
                 disk_list.append((name, size, model))
