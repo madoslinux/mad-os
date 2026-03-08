@@ -38,6 +38,7 @@ class PostInstallApp(Gtk.Window):
         self.installed_count = 0
         self.current_package = ""
         self.installation_log = []
+        self.waiting_for_network = False
         
         # Load or setup packages FIRST
         self._load_package_selection()
@@ -55,10 +56,10 @@ class PostInstallApp(Gtk.Window):
         self._build_ui()
         self.show_all()
         
-        # Start installation if we have packages
+        # Check network before starting
         if self.packages_to_install:
-            print(f"[INFO] Starting installation of {len(self.packages_to_install)} packages")
-            GLib.idle_add(self._start_installation)
+            print(f"[INFO] Checking network connectivity...")
+            GLib.idle_add(self._check_network_and_start)
     
     def _load_package_selection(self):
         """Load package selection from config file"""
@@ -232,8 +233,47 @@ class PostInstallApp(Gtk.Window):
             
             self.packages_list.add(row)
     
+    def _check_network_and_start(self):
+        """Check network connectivity before starting installation"""
+        if DEMO_MODE:
+            GLib.idle_add(self._start_installation)
+            return False
+        
+        self.waiting_for_network = True
+        self._update_status("Waiting for internet connection...", 0, len(self.packages_to_install))
+        self.log("Waiting for network connectivity...")
+        
+        # Start network check thread
+        threading.Thread(target=self._wait_for_network, daemon=True).start()
+        return False
+    
+    def _wait_for_network(self):
+        """Wait for internet connection with timeout"""
+        import socket
+        
+        max_attempts = 60  # Wait up to 5 minutes
+        attempt = 0
+        
+        while attempt < max_attempts:
+            try:
+                # Try to connect to a reliable server
+                socket.create_connection(("8.8.8.8", 53), timeout=5)
+                self.log("Network connection detected!")
+                GLib.idle_add(self._start_installation)
+                return
+            except Exception:
+                attempt += 1
+                if attempt % 10 == 0:  # Every 10 seconds
+                    self.log(f"Waiting for network... (attempt {attempt}/{max_attempts})")
+                time.sleep(1)
+        
+        # Timeout - show error
+        self.log("ERROR: No network connection after 5 minutes")
+        GLib.idle_add(self._installation_error, "No internet connection. Please check your network and try again.")
+    
     def _start_installation(self):
         """Start installation in background thread"""
+        self.waiting_for_network = False
         threading.Thread(target=self._install_packages, daemon=True).start()
         return False
     
