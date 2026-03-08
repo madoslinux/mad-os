@@ -8,7 +8,7 @@ import os
 from gi.repository import Gtk
 
 from .base import create_page_header, create_nav_buttons
-from ..config import NORD_SNOW_STORM, NORD_FROST, NORD_POLAR_NIGHT
+from ..config import NORD_SNOW_STORM, NORD_FROST, NORD_POLAR_NIGHT, NORD_AURORA
 
 # Package groups organized by tabs
 PACKAGE_GROUPS = {
@@ -133,7 +133,7 @@ class PackageSelectionPage(Gtk.Box):
         # Description
         desc_label = Gtk.Label()
         desc_label.set_markup(
-            f'<span size="11000" foreground="{NORD_SNOW_STORM["nord6"]}">'
+            f'<span size="11000" foreground="{NORD_SNOW_STORM["nord5"]}">'
             f'{self.app.t("pkg_select_desc")}'
             "</span>"
         )
@@ -203,7 +203,7 @@ class PackageSelectionPage(Gtk.Box):
         # Description
         desc_label = Gtk.Label()
         desc_label.set_markup(
-            f'<span size="10000" foreground="{NORD_POLAR_NIGHT["nord4"]}">'
+            f'<span size="10000" foreground="{NORD_SNOW_STORM["nord4"]}">'
             f'{self.app.t(group_data["desc_key"])}'
             "</span>"
         )
