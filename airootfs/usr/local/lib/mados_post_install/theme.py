@@ -8,10 +8,11 @@ from .config import NORD
 
 
 def apply_theme():
-    """Apply GTK theme"""
+    """Apply GTK theme - Modern compact design"""
     css = f"""
     * {{
         font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 10px;
     }}
     
     window {{
@@ -21,20 +22,26 @@ def apply_theme():
     
     .content-card {{
         background-color: {NORD["nord1"]};
-        border-radius: 8px;
-        padding: 10px;
-        margin: 5px;
+        border: 1px solid {NORD["nord2"]};
+        border-radius: 6px;
+        padding: 8px;
+        margin: 3px;
     }}
     
     .package-list {{
         background-color: {NORD["nord0"]};
-        border: 1px solid {NORD["nord2"]};
+        border: 1px solid {NORD["nord3"]};
         border-radius: 4px;
     }}
     
     .package-list row {{
-        padding: 8px;
+        padding: 4px 6px;
         border-bottom: 1px solid {NORD["nord2"]};
+        background: transparent;
+    }}
+    
+    .package-list row:hover {{
+        background-color: {NORD["nord1"]};
     }}
     
     .package-list row:last-child {{
@@ -42,12 +49,13 @@ def apply_theme():
     }}
     
     progressbar {{
-        min-height: 25px;
+        min-height: 20px;
         border-radius: 4px;
+        margin: 4px 0;
     }}
     
     progressbar progress {{
-        background-color: {NORD["nord10"]};
+        background: linear-gradient(90deg, {NORD["nord10"]}, #88B076);
         border-radius: 4px;
     }}
     
@@ -56,37 +64,74 @@ def apply_theme():
         border-radius: 4px;
     }}
     
-    button {{
-        background-color: {NORD["nord3"]};
+    progressbar text {{
         color: {NORD["nord6"]};
-        border: none;
-        padding: 10px 24px;
-        border-radius: 4px;
         font-weight: bold;
     }}
     
+    button {{
+        background: linear-gradient(180deg, {NORD["nord3"]}, {NORD["nord2"]});
+        color: {NORD["nord6"]};
+        border: 1px solid {NORD["nord4"]};
+        padding: 8px 28px;
+        border-radius: 5px;
+        font-weight: bold;
+        font-size: 11px;
+    }}
+    
     button:hover {{
-        background-color: {NORD["nord4"]};
+        background: linear-gradient(180deg, {NORD["nord4"]}, {NORD["nord3"]});
         color: {NORD["nord0"]};
+    }}
+    
+    button:active {{
+        background: {NORD["nord9"]};
     }}
     
     .success-button {{
-        background-color: {NORD["nord10"]};
+        background: linear-gradient(180deg, {NORD["nord10"]}, #88B076);
         color: {NORD["nord0"]};
+        border: 1px solid #7FA374;
     }}
     
     .success-button:hover {{
-        background-color: #88B076;
+        background: linear-gradient(180deg, #88B076, #94C084);
+    }}
+    
+    .success-button:active {{
+        background: {NORD["nord10"]};
     }}
     
     button:disabled {{
         background-color: {NORD["nord2"]};
         color: {NORD["nord4"]};
+        border-color: {NORD["nord3"]};
     }}
     
     textview {{
         background-color: {NORD["nord0"]};
         color: {NORD["nord5"]};
+        border: 1px solid {NORD["nord2"]};
+        border-radius: 3px;
+        padding: 4px;
+    }}
+    
+    text {{
+        background-color: {NORD["nord0"]};
+        color: {NORD["nord5"]};
+    }}
+    
+    scrollbar {{
+        background-color: {NORD["nord1"]};
+    }}
+    
+    scrollbar slider {{
+        background-color: {NORD["nord3"]};
+        border-radius: 3px;
+    }}
+    
+    scrollbar slider:hover {{
+        background-color: {NORD["nord4"]};
     }}
     """
     
