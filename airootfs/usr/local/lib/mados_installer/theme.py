@@ -640,6 +640,19 @@ def apply_theme():
         notebook viewport {{
             background-color: #2E3440;
         }}
+
+        notebook > stack {{
+            background-color: #2E3440;
+        }}
+        notebook > box {{
+            background-color: #2E3440;
+        }}
+        frame.package-group-frame {{
+            background-color: #2E3440;
+        }}
+        frame.package-group-frame > box {{
+            background-color: #2E3440;
+        }}
         """
     css_provider.load_from_data(css.encode())
     Gtk.StyleContext.add_provider_for_screen(
