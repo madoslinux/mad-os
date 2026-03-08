@@ -44,8 +44,12 @@ class PostInstallApp(Gtk.Window):
         
         # In demo mode, use sample packages if no config found
         if not self.packages_to_install and DEMO_MODE:
-            self.packages_to_install = ["git", "vim", "htop", "python-pip", "docker"]
-            print(f"[DEMO] Using sample package list: {self.packages_to_install}")
+            self.packages_to_install = [
+                "git", "vim", "htop", "python-pip", "docker",
+                "code", "gimp", "blender", "obs-studio", "kdenlive",
+                "vlc", "firefox", "thunderbird", "libreoffice-fresh"
+            ]
+            print(f"[DEMO] Using sample package list: {len(self.packages_to_install)} packages")
         
         # Build UI with packages already set
         self._build_ui()
@@ -122,6 +126,9 @@ class PostInstallApp(Gtk.Window):
         self.packages_list.get_style_context().add_class("package-list")
         self.packages_list.set_selection_mode(Gtk.SelectionMode.NONE)
         scroll.add(self.packages_list)
+        
+        # Store adjustment for scrolling
+        self.packages_scroll_adj = scroll.get_vadjustment()
         
         self._populate_packages_list()
         
@@ -298,7 +305,7 @@ class PostInstallApp(Gtk.Window):
     def _scroll_packages_to_row(self, row):
         """Scroll the packages list to show the given row"""
         try:
-            if row:
+            if row and self.packages_scroll_adj:
                 # Get the index of the row
                 index = 0
                 current_row = self.packages_list.get_row_at_index(0)
@@ -307,17 +314,13 @@ class PostInstallApp(Gtk.Window):
                     current_row = self.packages_list.get_row_at_index(index)
                 
                 if current_row:
-                    # Scroll the scrolledwindow to show this row
-                    scroll = self.packages_list.get_parent()
-                    if isinstance(scroll, Gtk.ScrolledWindow):
-                        adj = scroll.get_vadjustment()
-                        if adj:
-                            # Calculate position to scroll to
-                            row_height = 30  # Approximate row height
-                            scroll_to = index * row_height
-                            adj.set_value(scroll_to)
+                    # Scroll smoothly to show this row in the middle
+                    row_height = 28  # Approximate row height in pixels
+                    target = max(0, (index * row_height) - 50)
+                    max_scroll = self.packages_scroll_adj.get_upper() - self.packages_scroll_adj.get_page_size()
+                    self.packages_scroll_adj.set_value(min(target, max_scroll))
         except Exception as e:
-            print(f"Scroll error: {e}")  # Debug
+            print(f"Scroll error: {e}")
     
     def _mark_package_failed(self, package):
         """Mark package as failed in the list"""
