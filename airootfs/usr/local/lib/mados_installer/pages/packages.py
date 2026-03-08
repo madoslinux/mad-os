@@ -8,14 +8,13 @@ import os
 from gi.repository import Gtk
 
 from .base import create_page_header, create_nav_buttons
-from ..config import NORD_SNOW_STORM, NORD_FROST, NORD_POLAR_NIGHT, NORD_AURORA
+from ..config import NORD_SNOW_STORM, NORD_FROST, NORD_POLAR_NIGHT
 
 # Package groups organized by tabs
 PACKAGE_GROUPS = {
     "dev_tools": {
         "name_key": "pkg_dev_tools",
-        "desc_key": "pkg_dev_tools_desc",
-        "icon": "🛠️",
+        "short_name": "Dev",
         "packages": [
             {"id": "base-devel", "name": "Base Development Tools", "default": True},
             {"id": "git", "name": "Git", "default": True},
@@ -30,8 +29,7 @@ PACKAGE_GROUPS = {
     },
     "ai_ml": {
         "name_key": "pkg_ai_ml",
-        "desc_key": "pkg_ai_ml_desc",
-        "icon": "🤖",
+        "short_name": "AI/ML",
         "packages": [
             {"id": "ollama", "name": "Ollama", "default": False},
             {"id": "opencode", "name": "OpenCode", "default": False},
@@ -45,8 +43,7 @@ PACKAGE_GROUPS = {
     },
     "multimedia": {
         "name_key": "pkg_multimedia",
-        "desc_key": "pkg_multimedia_desc",
-        "icon": "🎨",
+        "short_name": "Media",
         "packages": [
             {"id": "kdenlive", "name": "Kdenlive (Video Editor)", "default": False},
             {"id": "obs-studio", "name": "OBS Studio", "default": False},
@@ -62,8 +59,7 @@ PACKAGE_GROUPS = {
     },
     "office": {
         "name_key": "pkg_office",
-        "desc_key": "pkg_office_desc",
-        "icon": "📄",
+        "short_name": "Office",
         "packages": [
             {"id": "libreoffice-fresh", "name": "LibreOffice (Office Suite)", "default": False},
             {"id": "onlyoffice", "name": "ONLYOFFICE", "default": False},
@@ -74,8 +70,7 @@ PACKAGE_GROUPS = {
     },
     "internet": {
         "name_key": "pkg_internet",
-        "desc_key": "pkg_internet_desc",
-        "icon": "🌐",
+        "short_name": "Web",
         "packages": [
             {"id": "firefox", "name": "Firefox", "default": False},
             {"id": "chromium", "name": "Chromium", "default": False},
@@ -100,7 +95,7 @@ class PackageSelectionPage(Gtk.Box):
         
         # Store selected packages
         self.selected_packages = set()
-        self.tab_checkboxes = {}  # tab_name -> {package_id -> checkbox}
+        self.tab_checkboxes = {}
         
         self._build_ui()
     
@@ -115,42 +110,39 @@ class PackageSelectionPage(Gtk.Box):
         )
         self.pack_start(header, False, False, 0)
         
-        # Scrollable content
-        scroll = Gtk.ScrolledWindow()
-        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        scroll.set_margin_start(20)
-        scroll.set_margin_end(20)
-        scroll.set_margin_top(10)
-        scroll.set_margin_bottom(10)
-        self.pack_start(scroll, False, True, 0)
-        
-        # Main content box
-        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16)
-        content.set_margin_start(20)
-        content.set_margin_end(20)
-        scroll.add(content)
-        
         # Description
         desc_label = Gtk.Label()
         desc_label.set_markup(
-            f'<span size="11000" foreground="{NORD_SNOW_STORM["nord5"]}">'
+            f'<span size="10000" foreground="{NORD_SNOW_STORM["nord5"]}">'
             f'{self.app.t("pkg_select_desc")}'
             "</span>"
         )
         desc_label.set_line_wrap(True)
         desc_label.set_halign(Gtk.Align.CENTER)
-        content.pack_start(desc_label, False, False, 0)
+        desc_label.set_margin_start(20)
+        desc_label.set_margin_end(20)
+        desc_label.set_margin_top(10)
+        desc_label.set_margin_bottom(10)
+        self.pack_start(desc_label, False, False, 0)
         
         # Create tabs
         notebook = Gtk.Notebook()
         notebook.set_tab_pos(Gtk.PositionType.TOP)
-        content.pack_start(notebook, True, True, 8)
+        notebook.set_margin_start(20)
+        notebook.set_margin_end(20)
+        notebook.set_margin_bottom(10)
+        self.pack_start(notebook, True, True, 0)
         
         # Add tab for each category
         for group_id, group_data in PACKAGE_GROUPS.items():
-            tab_label = f'{group_data["icon"]}  {self.app.t(group_data["name_key"])}'
+            # Short name for tab label
+            tab_label_text = group_data["short_name"]
             tab_page = self._create_tab_content(group_id, group_data)
-            notebook.append_page(tab_page, Gtk.Label(label=tab_label))
+            
+            # Create compact tab label
+            tab_label = Gtk.Label(label=tab_label_text)
+            tab_label.set_size_request(80, 25)
+            notebook.append_page(tab_page, tab_label)
         
         # Navigation buttons
         nav_box = create_nav_buttons(
@@ -163,69 +155,48 @@ class PackageSelectionPage(Gtk.Box):
         nav_box.set_margin_top(10)
         nav_box.set_margin_bottom(20)
         nav_box.set_margin_end(20)
-        content.pack_start(nav_box, False, False, 0)
+        self.pack_start(nav_box, False, False, 0)
         
         # Initialize with defaults
         self._apply_defaults()
     
     def _create_tab_content(self, group_id, group_data):
         """Create content for a package group tab."""
-        frame = Gtk.Frame()
-        frame.get_style_context().add_class("package-group-frame")
-        frame.set_margin_bottom(8)
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         
-        # Frame content box
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        box.set_margin_top(12)
-        box.set_margin_bottom(12)
-        box.set_margin_start(12)
-        box.set_margin_end(12)
-        frame.add(box)
-        
-        # Group header
-        header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        header_box.set_margin_bottom(8)
-        box.pack_start(header_box, False, False, 0)
-        
-        icon_label = Gtk.Label()
-        icon_label.set_markup(f'<span size="16000">{group_data["icon"]}</span>')
-        header_box.pack_start(icon_label, False, False, 0)
-        
-        name_label = Gtk.Label()
-        name_label.set_markup(
-            f'<span size="12000" weight="bold" foreground="{NORD_FROST["nord8"]}">'
-            f'{self.app.t(group_data["name_key"])}'
-            "</span>"
-        )
-        name_label.set_halign(Gtk.Align.START)
-        header_box.pack_start(name_label, False, False, 0)
+        # Content box
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        box.set_margin_top(10)
+        box.set_margin_bottom(10)
+        box.set_margin_start(15)
+        box.set_margin_end(15)
+        scrolled.add(box)
         
         # Description
         desc_label = Gtk.Label()
         desc_label.set_markup(
-            f'<span size="10000" foreground="{NORD_SNOW_STORM["nord4"]}">'
+            f'<span size="9000" foreground="{NORD_SNOW_STORM["nord4"]}">'
             f'{self.app.t(group_data["desc_key"])}'
             "</span>"
         )
         desc_label.set_line_wrap(True)
         desc_label.set_halign(Gtk.Align.START)
-        box.pack_start(desc_label, False, False, 5)
+        desc_label.set_margin_bottom(10)
+        box.pack_start(desc_label, False, False, 0)
         
-        # Packages checklist
-        pkg_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-        pkg_box.set_margin_top(8)
-        pkg_box.set_margin_start(20)
-        box.pack_start(pkg_box, False, False, 0)
-        
+        # Packages checklist - no nested boxes, flat list
         self.tab_checkboxes[group_id] = {}
         for pkg in group_data["packages"]:
             checkbox = Gtk.CheckButton(label=pkg["name"])
             checkbox.set_active(pkg["default"])
             checkbox.set_margin_start(10)
-            pkg_box.pack_start(checkbox, False, False, 0)
+            checkbox.set_margin_top(2)
+            checkbox.set_margin_bottom(2)
+            box.pack_start(checkbox, False, False, 0)
             self.tab_checkboxes[group_id][pkg["id"]] = checkbox
         
-        return frame
+        return scrolled
     
     def _apply_defaults(self):
         """Apply default package selections."""
@@ -265,7 +236,7 @@ class PackageSelectionPage(Gtk.Box):
                     group_selected.append(pkg["name"])
             
             if group_selected:
-                selected.append(f"{group_data['icon']} {self.app.t(group_data['name_key'])}: {len(group_selected)} packages")
+                selected.append(f"{group_data['short_name']}: {len(group_selected)}")
         
         return "\n".join(selected) if selected else "No additional packages"
 
