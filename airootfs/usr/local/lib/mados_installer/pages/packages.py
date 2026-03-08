@@ -14,6 +14,7 @@ from ..config import NORD_SNOW_STORM, NORD_FROST, NORD_POLAR_NIGHT
 PACKAGE_GROUPS = {
     "dev_tools": {
         "name_key": "pkg_dev_tools",
+        "desc_key": "pkg_dev_tools",
         "short_name": "Dev",
         "packages": [
             {"id": "base-devel", "name": "Base Development Tools", "default": True},
@@ -29,6 +30,7 @@ PACKAGE_GROUPS = {
     },
     "ai_ml": {
         "name_key": "pkg_ai_ml",
+        "desc_key": "pkg_ai_ml",
         "short_name": "AI/ML",
         "packages": [
             {"id": "ollama", "name": "Ollama", "default": False},
@@ -43,6 +45,7 @@ PACKAGE_GROUPS = {
     },
     "multimedia": {
         "name_key": "pkg_multimedia",
+        "desc_key": "pkg_multimedia",
         "short_name": "Media",
         "packages": [
             {"id": "kdenlive", "name": "Kdenlive (Video Editor)", "default": False},
@@ -59,6 +62,7 @@ PACKAGE_GROUPS = {
     },
     "office": {
         "name_key": "pkg_office",
+        "desc_key": "pkg_office",
         "short_name": "Office",
         "packages": [
             {"id": "libreoffice-fresh", "name": "LibreOffice (Office Suite)", "default": False},
@@ -70,6 +74,7 @@ PACKAGE_GROUPS = {
     },
     "internet": {
         "name_key": "pkg_internet",
+        "desc_key": "pkg_internet",
         "short_name": "Web",
         "packages": [
             {"id": "firefox", "name": "Firefox", "default": False},
@@ -176,7 +181,7 @@ class PackageSelectionPage(Gtk.Box):
         # Description
         desc_label = Gtk.Label()
         desc_label.set_markup(
-            f'<span size="9000" foreground="{NORD_SNOW_STORM["nord4"]}">'
+            f'<span size="9000">'
             f'{self.app.t(group_data["desc_key"])}'
             "</span>"
         )
