@@ -69,15 +69,15 @@ class MpvBackend:
         ".rm",
     }
 
-    def __init__(self):
-        self._process = None
-        self._socket_path = os.path.join(
+    def __init__(self) -> None:
+        self._process: subprocess.Popen | None = None
+        self._socket_path: str = os.path.join(
             tempfile.gettempdir(), f"mados-audio-player-{os.getpid()}.sock"
         )
-        self._sock = None
-        self._lock = threading.Lock()
-        self._running = False
-        self._response_buf = b""
+        self._sock: socket.socket | None = None
+        self._lock: threading.Lock = threading.Lock()
+        self._running: bool = False
+        self._response_buf: bytes = b""
 
         # State
         self.current_file = None
@@ -111,17 +111,20 @@ class MpvBackend:
             pass
         return "alsa"
 
-    def start(self, sink_name=None, fallback_to_default=True):
+    def start(self, sink_name: str | None = None, fallback_to_default: bool = True) -> tuple[bool, str | None]:
         """Start the mpv process with JSON IPC socket.
 
         Args:
             sink_name: Optional PipeWire/PulseAudio sink name to use for output.
             fallback_to_default: If True and sink fails, try with default audio output.
-        """
-        if self._process and self._process.poll() is None:
-            return
 
-        def _try_start(audio_device):
+        Returns:
+            Tuple of (success: bool, error_message: str | None).
+        """
+        if self._process and self._process.poll() is not None:
+            self._process = None
+
+        def _try_start(audio_device: str) -> tuple[bool, str | None]:
             # Clean up old socket
             if os.path.exists(self._socket_path):
                 try:
@@ -129,7 +132,7 @@ class MpvBackend:
                 except OSError:
                     pass
 
-            cmd = [
+            cmd: list[str] = [
                 "mpv",
                 "--idle=yes",
                 "--no-video",
@@ -192,7 +195,7 @@ class MpvBackend:
             return _try_start(audio_output)
         return success, error
 
-    def _connect(self):
+    def _connect(self) -> None:
         """Connect to the mpv IPC socket."""
         try:
             self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -201,7 +204,7 @@ class MpvBackend:
         except (socket.error, OSError):
             self._sock = None
 
-    def _send_command(self, command, *args):
+    def _send_command(self, command: str, *args) -> dict | bool | None:
         """Send a command to mpv via IPC and return the response.
 
         Args:
@@ -234,7 +237,7 @@ class MpvBackend:
                 self._sock = None
                 return None
 
-    def _read_response(self):
+    def _read_response(self) -> dict | None:
         """Read and parse a JSON response from the mpv socket."""
         data = b""
         try:
@@ -278,11 +281,14 @@ class MpvBackend:
             pass
         return None
 
-    def play_file(self, filepath):
+    def play_file(self, filepath: str) -> bool:
         """Load and play an audio file.
 
         Args:
             filepath: Absolute path to the audio file.
+
+        Returns:
+            True if playback started successfully, False otherwise.
         """
         if not os.path.isfile(filepath):
             return False
@@ -295,24 +301,24 @@ class MpvBackend:
             return True
         return False
 
-    def toggle_pause(self):
+    def toggle_pause(self) -> None:
         """Toggle play/pause state."""
         self._send_command("cycle", "pause")
         self.is_paused = not self.is_paused
 
-    def pause(self):
+    def pause(self) -> None:
         """Pause playback."""
         if self.is_playing and not self.is_paused:
             self._send_command("set_property", "pause", True)
             self.is_paused = True
 
-    def resume(self):
+    def resume(self) -> None:
         """Resume playback."""
         if self.is_playing and self.is_paused:
             self._send_command("set_property", "pause", False)
             self.is_paused = False
 
-    def stop(self):
+    def stop(self) -> None:
         """Stop playback."""
         self._send_command("stop")
         self.is_playing = False
@@ -321,7 +327,7 @@ class MpvBackend:
         self.duration = 0.0
         self.current_file = None
 
-    def seek(self, position):
+    def seek(self, position: float) -> None:
         """Seek to a position in seconds.
 
         Args:
@@ -329,7 +335,7 @@ class MpvBackend:
         """
         self._send_command("seek", position, "absolute")
 
-    def set_volume(self, volume):
+    def set_volume(self, volume: float) -> None:
         """Set volume level.
 
         Args:
@@ -338,7 +344,7 @@ class MpvBackend:
         self.volume = max(0, min(100, int(volume)))
         self._send_command("set_property", "volume", self.volume)
 
-    def set_mute(self, muted):
+    def set_mute(self, muted: bool) -> None:
         """Set mute state.
 
         Args:
@@ -347,11 +353,11 @@ class MpvBackend:
         self.is_muted = muted
         self._send_command("set_property", "mute", "yes" if muted else "no")
 
-    def toggle_mute(self):
+    def toggle_mute(self) -> None:
         """Toggle mute state."""
         self.set_mute(not self.is_muted)
 
-    def get_property(self, prop):
+    def get_property(self, prop: str) -> dict | bool | None:
         """Get a property value from mpv.
 
         Args:
@@ -362,7 +368,7 @@ class MpvBackend:
         """
         return self._send_command("get_property", prop)
 
-    def update_state(self):
+    def update_state(self) -> None:
         """Update internal state from mpv properties.
 
         Call this periodically to keep position/duration/metadata in sync.
@@ -390,7 +396,7 @@ class MpvBackend:
         except Exception:
             pass
 
-    def get_formatted_metadata(self):
+    def get_formatted_metadata(self) -> dict[str, str]:
         """Get formatted metadata for the current track.
 
         Returns:
@@ -411,13 +417,13 @@ class MpvBackend:
             "album": album,
         }
 
-    def get_audio_info(self):
+    def get_audio_info(self) -> dict[str, str]:
         """Get audio format information.
 
         Returns:
             dict with 'format', 'bitrate', 'samplerate' keys.
         """
-        info = {}
+        info: dict[str, str] = {}
         try:
             codec = self.get_property("audio-codec-name")
             if codec:
@@ -434,7 +440,7 @@ class MpvBackend:
             pass
         return info
 
-    def is_track_finished(self):
+    def is_track_finished(self) -> bool:
         """Check if the current track has finished playing.
 
         Returns:
@@ -443,7 +449,7 @@ class MpvBackend:
         idle = self.get_property("idle-active")
         return isinstance(idle, bool) and idle and self.current_file is not None
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         """Clean up mpv process and socket."""
         self._running = False
 
@@ -475,7 +481,7 @@ class MpvBackend:
                 pass
 
     @classmethod
-    def is_audio_file(cls, filepath):
+    def is_audio_file(cls, filepath: str) -> bool:
         """Check if a file is a supported audio file.
 
         Args:
@@ -488,7 +494,7 @@ class MpvBackend:
         return ext.lower() in cls.AUDIO_EXTENSIONS
 
     @classmethod
-    def scan_directory(cls, dirpath, recursive=True):
+    def scan_directory(cls, dirpath: str, recursive: bool = True) -> list[str]:
         """Scan a directory for audio files.
 
         Args:

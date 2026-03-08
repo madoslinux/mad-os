@@ -97,7 +97,7 @@ class TestPostInstallOpenCode(unittest.TestCase):
         self.assertNotIn(
             "setup-opencode.service",
             self.content,
-            "Installer must NOT create setup-opencode.service — opencode is a program, not a service",
+            "Installer must NOT create setup-opencode.service - opencode is a program",
         )
 
     def test_installer_configures_sudoers_for_opencode(self):

@@ -259,7 +259,8 @@ class TestIntegrationWithInstaller(unittest.TestCase):
     """Test integration with installer."""
 
     def setUp(self):
-        config_script = os.path.join(AIROOTFS, "usr", "local", "lib", "mados_installer", "scripts", "configure-system.sh")
+        cfg = os.path.join(AIROOTFS, "usr", "local", "lib", "mados_installer", "scripts")
+        config_script = os.path.join(cfg, "configure-system.sh")
         if not os.path.isfile(config_script):
             self.skipTest("configure-system.sh not found")
         with open(config_script) as f:

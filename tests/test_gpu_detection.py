@@ -497,7 +497,7 @@ class TestLoginShellIntegration(unittest.TestCase):
         )
 
     def test_bash_profile_hyprland_for_3d(self):
-        """.bash_profile must launch Hyprland via start-hyprland when 3D acceleration is available."""
+        """.bash_profile must launch Hyprland via start-hyprland for 3D."""
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
@@ -553,7 +553,7 @@ class TestLoginShellIntegration(unittest.TestCase):
             content = f.read()
         compositor_pos = content.find("select-compositor")
         sway_pos = content.find("exec sway")
-        # Hyprland is launched via start-hyprland without exec (fallback pattern: start-hyprland || { exec sway })
+        # Pattern: start-hyprland || ... fall back to sway
         hyprland_pos = content.find("start-hyprland ||")
         self.assertLess(
             compositor_pos, sway_pos, "Compositor selection must happen before exec sway"
@@ -636,7 +636,7 @@ rm -rf "$MOCK_DIR"
         self.assertEqual(result.stdout.strip(), "sway", "Legacy hardware (no 3D) must select sway")
 
     def test_modern_hardware_selects_hyprland(self):
-        """When detect-legacy-hardware returns 1 (modern) and Hyprland is installed, select hyprland."""
+        """Modern hardware with Hyprland installed must select hyprland."""
         bash_code = f"""
 # Create mock detect-legacy-hardware that returns 1 (modern)
 MOCK_DIR=$(mktemp -d)

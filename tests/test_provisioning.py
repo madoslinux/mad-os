@@ -26,23 +26,23 @@ class TestProvisioningConfig(unittest.TestCase):
     def test_default_values(self):
         """Config should have sensible defaults."""
         from mados_installer.provisioning import ProvisioningConfig
-        
+
         config = ProvisioningConfig()
-        
+
         # Disk defaults
         self.assertEqual(config.disk_device, "auto")
         self.assertEqual(config.partitioning, "auto")
         self.assertEqual(config.filesystem, "ext4")
-        
+
         # System defaults
         self.assertEqual(config.hostname, "mados-system")
         self.assertEqual(config.timezone, "UTC")
         self.assertEqual(config.locale, "en_US.UTF-8")
-        
+
         # User defaults (empty - required)
         self.assertEqual(config.username, "")
         self.assertEqual(config.password, "")
-        
+
         # Package defaults
         self.assertFalse(config.dev_tools)
         self.assertFalse(config.ai_ml)
@@ -51,59 +51,59 @@ class TestProvisioningConfig(unittest.TestCase):
     def test_validation_requires_username(self):
         """Validation should fail without username."""
         from mados_installer.provisioning import ProvisioningConfig
-        
+
         config = ProvisioningConfig()
         is_valid, errors = config.validate()
-        
+
         self.assertFalse(is_valid)
         self.assertIn("Username is required", errors)
 
     def test_validation_requires_password(self):
         """Validation should fail without password."""
         from mados_installer.provisioning import ProvisioningConfig
-        
+
         config = ProvisioningConfig()
         config.username = "testuser"
-        
+
         is_valid, errors = config.validate()
-        
+
         self.assertFalse(is_valid)
         self.assertIn("Password or password_hash is required", errors)
 
     def test_validation_with_minimal_config(self):
         """Validation should pass with minimal required fields."""
         from mados_installer.provisioning import ProvisioningConfig
-        
+
         config = ProvisioningConfig()
         config.username = "testuser"
         config.password = "testpass"
         config.hostname = "testhost"
         config.timezone = "UTC"
         config.locale = "en_US.UTF-8"
-        
+
         is_valid, errors = config.validate()
-        
+
         self.assertTrue(is_valid)
         self.assertEqual(errors, [])
 
     def test_validation_invalid_filesystem(self):
         """Validation should reject invalid filesystem."""
         from mados_installer.provisioning import ProvisioningConfig
-        
+
         config = ProvisioningConfig()
         config.username = "testuser"
         config.password = "testpass"
         config.filesystem = "ntfs"  # Invalid
-        
+
         is_valid, errors = config.validate()
-        
+
         self.assertFalse(is_valid)
         self.assertTrue(any("Filesystem" in e for e in errors))
 
     def test_to_install_data(self):
         """Config should convert to install_data format."""
         from mados_installer.provisioning import ProvisioningConfig
-        
+
         config = ProvisioningConfig()
         config.username = "testuser"
         config.password = "testpass"
@@ -111,9 +111,9 @@ class TestProvisioningConfig(unittest.TestCase):
         config.timezone = "America/New_York"
         config.locale = "en_US.UTF-8"
         config.dev_tools = True
-        
+
         data = config.to_install_data()
-        
+
         self.assertEqual(data["username"], "testuser")
         self.assertEqual(data["password"], "testpass")
         self.assertEqual(data["hostname"], "testhost")
@@ -128,14 +128,14 @@ class TestYAMLParsing(unittest.TestCase):
     def _write_temp_yaml(self, content):
         """Write content to temp file and return path."""
         fd, path = tempfile.mkstemp(suffix=".yaml")
-        with os.fdopen(fd, 'w') as f:
+        with os.fdopen(fd, "w") as f:
             f.write(content)
         return path
 
     def test_parse_minimal_config(self):
         """Should parse minimal valid config."""
         from mados_installer.provisioning import parse_yaml_config
-        
+
         yaml_content = """
 user:
   username: testuser
@@ -148,7 +148,7 @@ system:
         path = self._write_temp_yaml(yaml_content)
         try:
             config = parse_yaml_config(path)
-            
+
             self.assertEqual(config.username, "testuser")
             self.assertEqual(config.password, "testpass")
             self.assertEqual(config.hostname, "testhost")
@@ -158,7 +158,7 @@ system:
     def test_parse_full_config(self):
         """Should parse full configuration."""
         from mados_installer.provisioning import parse_yaml_config
-        
+
         yaml_content = """
 disk:
   device: /dev/sda
@@ -201,7 +201,7 @@ advanced:
         path = self._write_temp_yaml(yaml_content)
         try:
             config = parse_yaml_config(path)
-            
+
             self.assertEqual(config.disk_device, "/dev/sda")
             self.assertEqual(config.partitioning, "separate_home")
             self.assertEqual(config.filesystem, "btrfs")
@@ -221,7 +221,7 @@ advanced:
     def test_parse_invalid_yaml(self):
         """Should raise error on invalid YAML."""
         from mados_installer.provisioning import parse_yaml_config
-        
+
         yaml_content = """
 user:
   username: test
@@ -238,7 +238,7 @@ user:
     def test_load_config_with_errors(self):
         """load_config_from_file should return errors."""
         from mados_installer.provisioning import load_config_from_file
-        
+
         yaml_content = """
 user:
   username: test
@@ -247,7 +247,7 @@ user:
         path = self._write_temp_yaml(yaml_content)
         try:
             config, errors = load_config_from_file(path)
-            
+
             self.assertIsNone(config)
             self.assertGreater(len(errors), 0)
         finally:
@@ -260,8 +260,9 @@ class TestProvisioningIntegration(unittest.TestCase):
     def test_module_exists(self):
         """provisioning module should exist."""
         import mados_installer.provisioning
-        self.assertTrue(hasattr(mados_installer.provisioning, 'ProvisioningConfig'))
-        self.assertTrue(hasattr(mados_installer.provisioning, 'parse_yaml_config'))
+
+        self.assertTrue(hasattr(mados_installer.provisioning, "ProvisioningConfig"))
+        self.assertTrue(hasattr(mados_installer.provisioning, "parse_yaml_config"))
 
     def test_example_config_exists(self):
         """Example config file should exist."""
@@ -271,13 +272,13 @@ class TestProvisioningIntegration(unittest.TestCase):
     def test_example_config_valid(self):
         """Example config should be valid YAML (may have validation errors for required fields)."""
         from mados_installer.provisioning import load_config_from_file
-        
+
         example_path = os.path.join(REPO_DIR, "mados-config-example.yaml")
         config, errors = load_config_from_file(example_path)
-        
+
         # Example has placeholder values, so it may not validate
         # but YAML should be syntactically correct (not raise exceptions)
-        
+
         # Either config loads successfully, or we get validation errors (not parse errors)
         if config is None:
             # Should have validation errors, not file/parse errors

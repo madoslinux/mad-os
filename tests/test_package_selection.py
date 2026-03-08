@@ -14,8 +14,8 @@ import sys
 import unittest
 
 # Mock gi.repository before importing GTK components
-sys.modules['gi'] = unittest.mock.MagicMock()
-sys.modules['gi.repository'] = unittest.mock.MagicMock()
+sys.modules["gi"] = unittest.mock.MagicMock()
+sys.modules["gi.repository"] = unittest.mock.MagicMock()
 
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 AIROOTFS = os.path.join(REPO_DIR, "airootfs")
@@ -29,6 +29,7 @@ class TestPackageGroups(unittest.TestCase):
 
     def setUp(self):
         from mados_installer.pages.packages import PACKAGE_GROUPS
+
         self.groups = PACKAGE_GROUPS
 
     def test_has_dev_tools_group(self):
@@ -90,10 +91,10 @@ class TestPackageSelectionPage(unittest.TestCase):
     def test_package_groups_structure(self):
         """Package groups should have correct structure."""
         from mados_installer.pages.packages import PACKAGE_GROUPS
-        
+
         self.assertIsInstance(PACKAGE_GROUPS, dict)
         self.assertGreater(len(PACKAGE_GROUPS), 0)
-        
+
         # Check each group has required fields
         for group_id, group_data in PACKAGE_GROUPS.items():
             self.assertIn("name", group_data)
@@ -105,13 +106,13 @@ class TestPackageSelectionPage(unittest.TestCase):
     def test_default_selections_logic(self):
         """Default selections should include essential packages."""
         from mados_installer.pages.packages import PACKAGE_GROUPS
-        
+
         selected = set()
         for group_id, group_data in PACKAGE_GROUPS.items():
             for pkg in group_data["packages"]:
                 if pkg.get("default", False):
                     selected.add(pkg["id"])
-        
+
         # Essential defaults
         self.assertIn("ollama", selected)
         self.assertIn("opencode", selected)
@@ -121,12 +122,12 @@ class TestPackageSelectionPage(unittest.TestCase):
     def test_all_package_ids_unique(self):
         """All package IDs should be unique across groups."""
         from mados_installer.pages.packages import PACKAGE_GROUPS
-        
+
         all_ids = []
         for group_data in PACKAGE_GROUPS.values():
             for pkg in group_data["packages"]:
                 all_ids.append(pkg["id"])
-        
+
         # Check for duplicates
         self.assertEqual(len(all_ids), len(set(all_ids)), "Duplicate package IDs found")
 
@@ -137,11 +138,13 @@ class TestPackageIntegration(unittest.TestCase):
     def test_page_registered_in_init(self):
         """PackageSelectionPage must be exported from pages package."""
         from mados_installer.pages import PackageSelectionPage
+
         self.assertTrue(callable(PackageSelectionPage))
 
     def test_package_groups_importable(self):
         """PACKAGE_GROUPS must be importable from packages module."""
         from mados_installer.pages.packages import PACKAGE_GROUPS
+
         self.assertIsInstance(PACKAGE_GROUPS, dict)
         self.assertGreater(len(PACKAGE_GROUPS), 0)
 

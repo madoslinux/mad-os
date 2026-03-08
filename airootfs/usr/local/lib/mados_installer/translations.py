@@ -1,6 +1,9 @@
 """
 madOS Installer - Internationalization translations
+
+SonarCloud: python:S2068 - These are UI translation strings, not credentials
 """
+# noqa: python:S2068
 
 TRANSLATIONS = {
     "English": {

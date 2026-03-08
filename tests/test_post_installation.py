@@ -84,11 +84,11 @@ class TestInitramfsPresetRestoration(unittest.TestCase):
 
     def test_kms_before_plymouth_in_mkinitcpio(self):
         """mkinitcpio.conf must have kms hook before plymouth."""
-        self.assertIn(
-            "HOOKS=(base udev autodetect microcode modconf kms plymouth block filesystems keyboard fsck)",
-            self.script_content,
-            "mkinitcpio.conf must have kms before plymouth in HOOKS",
+        hooks = (
+            "HOOKS=(base udev autodetect microcode modconf kms plymouth "
+            "block filesystems keyboard fsck)"
         )
+        self.assertIn(hooks, self.script_content, "mkinitcpio.conf must have kms before plymouth")
 
     def test_microcode_hook_in_mkinitcpio(self):
         """mkinitcpio.conf must include microcode hook."""
@@ -118,19 +118,19 @@ class TestLiveISOCleanup(unittest.TestCase):
     def setUp(self):
         apply_script = os.path.join(SCRIPTS_DIR, "apply-configuration.sh")
         config_script = os.path.join(SCRIPTS_DIR, "configure-system.sh")
-        
+
         if not os.path.isfile(apply_script):
             self.apply_content = ""
         else:
             with open(apply_script) as f:
                 self.apply_content = f.read()
-        
+
         if not os.path.isfile(config_script):
             self.config_content = ""
         else:
             with open(config_script) as f:
                 self.config_content = f.read()
-        
+
         self.combined_content = self.apply_content + self.config_content
 
     def test_removes_live_autologin_override(self):
@@ -208,7 +208,7 @@ class TestLiveISOCleanup(unittest.TestCase):
         keyring_pos = self.config_content.find("pacman-key --init")
         pacman_pos = self.config_content.find("pacman -Sy")
         if keyring_pos != -1 and pacman_pos != -1:
-            self.assertLess(keyring_pos, pacman_pos, "Keyring must be initialized before pacman calls")
+            self.assertLess(keyring_pos, pacman_pos, "Keyring must be initialized before pacman")
 
     def test_keyring_init_before_services(self):
         """Keyring init must run before enabling services."""
@@ -266,7 +266,7 @@ class TestPostInstallServices(unittest.TestCase):
     def setUp(self):
         apply_script = os.path.join(SCRIPTS_DIR, "apply-configuration.sh")
         config_script = os.path.join(SCRIPTS_DIR, "configure-system.sh")
-        
+
         self.script_content = ""
         if os.path.isfile(apply_script):
             with open(apply_script) as f:
@@ -274,7 +274,7 @@ class TestPostInstallServices(unittest.TestCase):
         if os.path.isfile(config_script):
             with open(config_script) as f:
                 self.script_content += f.read()
-        
+
         if not self.script_content:
             self.skipTest("No config scripts found")
 
@@ -318,13 +318,15 @@ class TestCopyItemErrorReporting(unittest.TestCase):
 
     def setUp(self):
         import sys
-        sys.modules['gi'] = MagicMock()
-        sys.modules['gi.repository'] = MagicMock()
+
+        sys.modules["gi"] = MagicMock()
+        sys.modules["gi.repository"] = MagicMock()
 
     def test_copy_item_checks_source_exists(self):
         """copy_item must check if source file exists before copying."""
         from mados_installer.modules.file_copier import copy_item
         import inspect
+
         source = inspect.getsource(copy_item)
         self.assertIn(
             "os.path.exists",
@@ -336,6 +338,7 @@ class TestCopyItemErrorReporting(unittest.TestCase):
         """copy_item must print warning when source doesn't exist."""
         from mados_installer.modules.file_copier import copy_item
         import inspect
+
         source = inspect.getsource(copy_item)
         self.assertIn(
             "WARNING",
@@ -347,6 +350,7 @@ class TestCopyItemErrorReporting(unittest.TestCase):
         """copy_item must capture cp stderr."""
         from mados_installer.modules.file_copier import copy_item
         import inspect
+
         source = inspect.getsource(copy_item)
         self.assertIn(
             "capture_output",
@@ -358,6 +362,7 @@ class TestCopyItemErrorReporting(unittest.TestCase):
         """copy_item must check cp return code."""
         from mados_installer.modules.file_copier import copy_item
         import inspect
+
         source = inspect.getsource(copy_item)
         self.assertIn(
             "returncode",
@@ -374,8 +379,9 @@ class TestChrootValidation(unittest.TestCase):
 
     def setUp(self):
         import sys
-        sys.modules['gi'] = MagicMock()
-        sys.modules['gi.repository'] = MagicMock()
+
+        sys.modules["gi"] = MagicMock()
+        sys.modules["gi.repository"] = MagicMock()
 
     def test_validates_script_exists_before_chroot(self):
         """Installer must validate config script exists before chroot."""
@@ -383,6 +389,7 @@ class TestChrootValidation(unittest.TestCase):
         # configure-system.sh is copied and validated in file_copier module
         from mados_installer.modules.file_copier import step_copy_scripts
         import inspect
+
         source = inspect.getsource(step_copy_scripts)
         self.assertIn("copy_item", source, "Must use copy_item to copy scripts")
 
@@ -390,13 +397,16 @@ class TestChrootValidation(unittest.TestCase):
         """Chroot must fail if config script is empty."""
         # This validation is implicit - bash will fail on empty script
         from mados_installer.modules.config_generator import build_config_script
-        script = build_config_script({
-            "username": "test",
-            "timezone": "UTC",
-            "locale": "en_US.UTF-8",
-            "hostname": "test",
-            "disk": "/dev/sda",
-        })
+
+        script = build_config_script(
+            {
+                "username": "test",
+                "timezone": "UTC",
+                "locale": "en_US.UTF-8",
+                "hostname": "test",
+                "disk": "/dev/sda",
+            }
+        )
         self.assertGreater(len(script), 100, "Config script must have content")
 
 

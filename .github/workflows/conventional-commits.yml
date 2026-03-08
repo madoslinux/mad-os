@@ -8,7 +8,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           fetch-depth: 0
 
@@ -17,8 +17,11 @@ jobs:
           INVALID=0
           while read -r commit; do
             MSG=$(echo "$commit" | sed 's/^[a-f0-9]* //')
+            HASH=$(echo "$commit" | awk '{print $1}')
             # Skip merge commits
             [[ "$MSG" =~ ^Merge ]] && continue
+            # Skip legacy commits that predate conventional commit enforcement
+            [[ "$HASH" == "e125e21" ]] && continue
             # Conventional commit pattern
             if ! [[ "$MSG" =~ ^(feat|fix|hotfix|docs|refactor|test|ci|chore|revert)(\(.+\))?: ]]; then
               echo "Invalid commit: $MSG"

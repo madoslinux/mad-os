@@ -2,8 +2,8 @@
 """
 Unit tests for the download-in-groups progress feature.
 
-Validates that the new _download_packages_with_progress() function and
-the updated progress ranges in _run_pacstrap_with_progress() work correctly.
+Validates that the new download_packages_with_progress() function and
+the updated progress ranges in run_pacstrap_with_progress() work correctly.
 
 These tests mock subprocess and GTK to run in a headless CI environment.
 """
@@ -30,11 +30,11 @@ install_gtk_mocks()
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "airootfs", "usr", "local", "lib"))
 
 from mados_installer.modules.packages import (
-    _download_packages_with_progress,
-    _run_pacstrap_with_progress,
-    _run_single_pacstrap,
-    _handle_installation_error,
+    download_packages_with_progress,
+    run_pacstrap_with_progress,
+    run_single_pacstrap,
 )
+from mados_installer.pages.installation import _handle_installation_error
 from mados_installer.utils import save_log_to_file, LOG_FILE
 from mados_installer.config import PACKAGES
 
@@ -77,7 +77,7 @@ class TestDownloadProgressRanges(unittest.TestCase):
             ),
             patch("mados_installer.pages.installation.log_message"),
         ):
-            _download_packages_with_progress(app, list(PACKAGES))
+            download_packages_with_progress(app, list(PACKAGES))
 
         # Verify progress stays within the expected range
         self.assertGreater(len(progress_values), 0, "Should have recorded progress values")
@@ -126,7 +126,7 @@ class TestDownloadProgressRanges(unittest.TestCase):
             ),
             patch("mados_installer.pages.installation.log_message"),
         ):
-            _run_pacstrap_with_progress(app, ["base", "linux", "grub"])
+            run_pacstrap_with_progress(app, ["base", "linux", "grub"])
 
         # Verify progress stays within the expected range
         self.assertGreater(len(progress_values), 0, "Should have recorded progress values")
@@ -171,7 +171,7 @@ class TestDownloadGrouping(unittest.TestCase):
             patch("mados_installer.pages.installation.set_progress"),
             patch("mados_installer.pages.installation.log_message"),
         ):
-            _download_packages_with_progress(app, packages)
+            download_packages_with_progress(app, packages)
 
         self.assertEqual(
             len(popen_calls),
@@ -220,7 +220,7 @@ class TestDownloadGrouping(unittest.TestCase):
             patch("mados_installer.pages.installation.set_progress"),
             patch("mados_installer.pages.installation.log_message"),
         ):
-            _download_packages_with_progress(app, ["base", "linux", "grub"])
+            download_packages_with_progress(app, ["base", "linux", "grub"])
 
         self.assertEqual(call_count, 1, "Small package list should be one group")
 
@@ -253,7 +253,7 @@ class TestDownloadFailureHandling(unittest.TestCase):
             ),
         ):
             # Should not raise even though all groups fail
-            _download_packages_with_progress(app, list(PACKAGES))
+            download_packages_with_progress(app, list(PACKAGES))
 
         # Verify warning was logged for each failed group
         warnings = [m for m in log_messages if "Warning: download failed" in m]
@@ -305,7 +305,7 @@ class TestProgressBarNoise(unittest.TestCase):
                 side_effect=capture_log,
             ),
         ):
-            _download_packages_with_progress(app, ["base"])
+            download_packages_with_progress(app, ["base"])
 
         # Progress-bar lines should be filtered out
         for msg in log_messages:
@@ -367,7 +367,7 @@ class TestPacstrapRetryLogic(unittest.TestCase):
             patch("mados_installer.pages.installation.set_progress"),
             patch("mados_installer.pages.installation.log_message"),
         ):
-            _run_pacstrap_with_progress(app, ["base", "linux"])
+            run_pacstrap_with_progress(app, ["base", "linux"])
 
         # Should only call pacstrap once
         self.assertEqual(len(popen_calls), 1)
@@ -405,7 +405,7 @@ class TestPacstrapRetryLogic(unittest.TestCase):
                 side_effect=capture_log,
             ),
         ):
-            _run_pacstrap_with_progress(app, ["base", "linux"])
+            run_pacstrap_with_progress(app, ["base", "linux"])
 
         # Verify retry message was logged
         retry_msgs = [m for m in log_messages if "retrying" in m.lower()]
@@ -433,7 +433,7 @@ class TestPacstrapRetryLogic(unittest.TestCase):
             patch("mados_installer.pages.installation.log_message"),
         ):
             with self.assertRaises(subprocess.CalledProcessError) as ctx:
-                _run_pacstrap_with_progress(app, ["base", "linux"], max_retries=3)
+                run_pacstrap_with_progress(app, ["base", "linux"], max_retries=3)
             self.assertEqual(ctx.exception.returncode, 1)
 
     def test_refreshes_databases_between_retries(self):
@@ -467,7 +467,7 @@ class TestPacstrapRetryLogic(unittest.TestCase):
             patch("mados_installer.pages.installation.set_progress"),
             patch("mados_installer.pages.installation.log_message"),
         ):
-            _run_pacstrap_with_progress(app, ["base"], max_retries=3)
+            run_pacstrap_with_progress(app, ["base"], max_retries=3)
 
         # Should have called pacman -Sy twice (between attempt 1→2 and 2→3)
         pacman_sy_calls = [c for c in run_calls if c == ["pacman", "-Sy", "--noconfirm"]]
@@ -500,7 +500,7 @@ class TestPacstrapRetryLogic(unittest.TestCase):
             patch("mados_installer.pages.installation.log_message"),
         ):
             with self.assertRaises(subprocess.CalledProcessError):
-                _run_pacstrap_with_progress(app, ["base"], max_retries=2)
+                run_pacstrap_with_progress(app, ["base"], max_retries=2)
 
         # Should have attempted exactly 2 times
         self.assertEqual(popen_count[0], 2)

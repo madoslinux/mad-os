@@ -1,0 +1,109 @@
+name: Dependency Updates
+
+on:
+  schedule:
+    # Run daily at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@82c7e631bb3cdc910f68e0081d67478d79c6982d
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Update Python dependencies
+        run: |
+          if [ -f "requirements.in" ]; then
+            pip-compile --upgrade requirements.in -o requirements.txt
+          fi
+          
+          if [ -f "requirements-dev.in" ]; then
+            pip-compile --upgrade requirements-dev.in -o requirements-dev.txt
+          fi
+          
+          if [ -f "pyproject.toml" ]; then
+            # Check if pyproject.toml has dependencies
+            if grep -q "dependencies\s*=" pyproject.toml; then
+              echo "pyproject.toml has dependencies, consider using pip sync for updates"
+            fi
+          fi
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --exit-code || echo "has_changes=true" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        if: steps.git-check.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@a405f332438002e9c8a0eb3aaadaecc4f0431b58
+        with:
+          commit-message: "chore(deps): update Python dependencies"
+          title: "chore(deps): update Python dependencies"
+          body: |
+            ## Dependencies Update
+            
+            This PR updates Python dependencies to their latest compatible versions.
+            
+            ### Changes
+            - Updated dependencies in `requirements.txt` (if exists)
+            - Updated development dependencies in `requirements-dev.txt` (if exists)
+            
+            ### Checklist
+            - [ ] Tests pass with updated dependencies
+            - [ ] No breaking changes detected
+            - [ ] Documentation updated if needed
+            
+            ---
+            *Automated PR created by Dependabot workflow*
+          branch: dependabot/python-dependencies
+          base: main
+          labels: dependencies,automated
+
+  github-actions:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+
+      - name: Setup Node.js
+        uses: actions/setup-node@399ed0419078c63b1a0801082f649d8b7a4f2811
+        with:
+          node-version: '20'
+
+      - name: Install dependency-checker
+        run: npm install -g @manypkg/cli
+
+      - name: Check GitHub Actions updates
+        run: |
+          echo "Checking for GitHub Actions updates..."
+          echo "Manual check recommended for:"
+          echo "  - actions/checkout"
+          echo "  - actions/setup-python"
+          echo "  - actions/upload-artifact"
+          echo "  - Other actions in .github/workflows/"
+          
+      - name: Create issue for Actions updates
+        uses: peter-evans/create-issue-from-file@433e51abf7c482ef191e456197d9a259278afbe9
+        with:
+          title: "chore(actions): review GitHub Actions versions"
+          content-filepath: /dev/stdin
+          labels: dependencies,github-actions
+        continue-on-error: true
