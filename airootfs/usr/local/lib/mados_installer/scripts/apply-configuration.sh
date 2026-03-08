@@ -6,8 +6,8 @@ USERNAME="${1:-}"
 LOCALE="${2:-}"
 VENTOY_PERSIST_SIZE="${3:-4096}"
 
-if [ -z "$USERNAME" ]; then
-    echo "ERROR: Username not provided"
+if [[ -z "$USERNAME" ]]; then
+    echo "ERROR: Username not provided" >&2
     exit 1
 fi
 
@@ -126,19 +126,19 @@ cp /etc/profile.d/mados-media-links.sh /etc/profile.d/ 2>/dev/null || true
 
 chown -R "$USERNAME":"$USERNAME" /home/"$USERNAME"
 
-if [ -f /home/"$USERNAME"/.config/sway/config ]; then
+if [[ -f /home/"$USERNAME"/.config/sway/config ]]; then
     sed -i "s/xkb_layout \"es\"/xkb_layout \"$KB_LAYOUT\"/" /home/"$USERNAME"/.config/sway/config
-elif [ -f /etc/skel/.config/sway/config ]; then
+elif [[ -f /etc/skel/.config/sway/config ]]; then
     sed -i "s/xkb_layout \"es\"/xkb_layout \"$KB_LAYOUT\"/" /etc/skel/.config/sway/config
 fi
 
-if [ -f /home/"$USERNAME"/.config/hypr/hyprland.conf ]; then
+if [[ -f /home/"$USERNAME"/.config/hypr/hyprland.conf ]]; then
     sed -i "s/kb_layout = es/kb_layout = $KB_LAYOUT/" /home/"$USERNAME"/.config/hypr/hyprland.conf
-elif [ -f /etc/skel/.config/hypr/hyprland.conf ]; then
+elif [[ -f /etc/skel/.config/hypr/hyprland.conf ]]; then
     sed -i "s/kb_layout = es/kb_layout = $KB_LAYOUT/" /etc/skel/.config/hypr/hyprland.conf
 fi
 
-if [ ! -f /home/"$USERNAME"/.bash_profile ]; then
+if [[ ! -f /home/"$USERNAME"/.bash_profile ]]; then
     cp /etc/skel/.bash_profile /home/"$USERNAME"/.bash_profile 2>/dev/null || true
 fi
 chown "$USERNAME":"$USERNAME" /home/"$USERNAME"/.bash_profile
