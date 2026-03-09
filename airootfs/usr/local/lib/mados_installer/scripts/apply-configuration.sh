@@ -273,6 +273,9 @@ fi
 
 systemctl enable getty@tty2.service 2>/dev/null || true
 
+systemctl enable mados-post-install.service 2>/dev/null || true
+echo "  ✓ mados-post-install.service enabled (first boot only)"
+
 if [ "$GRAPHICAL_OK" -eq 0 ]; then
     echo "  ⚠ Some graphical components are missing. Enabling getty@tty1 as fallback..."
     systemctl enable getty@tty1.service 2>/dev/null || true

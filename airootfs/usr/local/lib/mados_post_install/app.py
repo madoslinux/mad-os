@@ -17,7 +17,12 @@ from gi.repository import Gtk, GLib
 from .config import DEMO_MODE, NORD, PACKAGE_GROUPS
 from .theme import apply_theme
 
-CONFIG_FILE = "/home/mados/.config/mados/package-selection.json"
+import pwd
+
+CURRENT_USER = os.environ.get("SUDO_USER", os.environ.get("USER", "mados"))
+HOME_DIR = os.path.expanduser(f"~{CURRENT_USER}") if CURRENT_USER != "root" else f"/home/{CURRENT_USER}"
+CONFIG_FILE = os.path.join(HOME_DIR, ".config", "mados", "package-selection.json")
+DONE_FLAG = os.path.join(HOME_DIR, ".config", "mados", "post-install-done")
 
 
 class PostInstallApp(Gtk.Window):

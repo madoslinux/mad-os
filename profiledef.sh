@@ -100,6 +100,7 @@ file_permissions=(
   ["/usr/local/bin/mados-update-notifier"]="0:0:755"
   ["/etc/systemd/system/mados-hardware-config.service"]="0:0:644"
   ["/etc/systemd/system/mados-update-check.service"]="0:0:644"
+  ["/etc/systemd/system/mados-post-install.service"]="0:0:644"
 
   ["/etc/mados/"]="0:0:755"
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
