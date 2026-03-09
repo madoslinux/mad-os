@@ -74,6 +74,27 @@ command = "/usr/local/bin/cage-greeter"
 user = "greeter"
 EOFGREETD
 
+# Create PAM configuration for greetd
+mkdir -p /etc/pam.d
+cat > /etc/pam.d/greetd <<'EOFPAM'
+#%PAM-1.0
+
+auth     requisite     pam_nologin.so
+auth     required      pam_succeed_if.so user != root quiet_success
+auth     substack      password-auth
+
+account  substack      password-auth
+account  required      pam_nologin.so
+
+password substack      password-auth
+
+session  optional      pam_keyinit.so force revoke
+session  required      pam_loginuid.so
+session  substack      password-auth
+session  optional      pam_systemd.so
+session  required      pam_env.so
+EOFPAM
+
 cat > /etc/greetd/regreet.toml <<'EOFREGREET'
 [background]
 path = "/usr/share/backgrounds/mad-os-wallpaper.png"
