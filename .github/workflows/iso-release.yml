@@ -22,7 +22,7 @@ jobs:
   build:
     name: "Build ISO"
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'refs/tags/') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
       version: ${{ steps.build.outputs.version }}
@@ -30,9 +30,9 @@ jobs:
       iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
       short_sha: ${{ steps.build.outputs.short_sha }}
       download_url: ${{ steps.set_url.outputs.download_url }}
-      is_release: ${{ steps.release_info.outputs.is_release }}
-      is_prerelease: ${{ steps.release_info.outputs.is_prerelease }}
-      release_type: ${{ steps.release_info.outputs.release_type }}
+      is_release: ${{ steps.check_tag.outputs.is_release }}
+      is_prerelease: ${{ steps.check_tag.outputs.is_prerelease }}
+      release_type: ${{ steps.check_tag.outputs.release_type }}
 
     steps:
       - name: Checkout
@@ -40,22 +40,28 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Determine release type from tag
-        id: release_info
+      - name: Check if this is a v* tag
+        id: check_tag
         run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          if [[ "$TAG" == *"-beta" ]]; then
+          TAG="${{ github.event.workflow_run.head_branch }}"
+          echo "Checking tag: $TAG"
+          if [[ "$TAG" =~ ^v[0-9] ]]; then
             echo "is_release=false" >> "$GITHUB_OUTPUT"
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
             echo "release_type=beta" >> "$GITHUB_OUTPUT"
-          else
+          elif [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "is_release=true" >> "$GITHUB_OUTPUT"
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
             echo "release_type=stable" >> "$GITHUB_OUTPUT"
+          else
+            echo "Not a release tag, skipping build"
+            echo "skip_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
       - name: Build ISO
         id: build
+        if: steps.check_tag.outputs.skip_build != 'true'
         run: |
           rm -rf out/ 2>/dev/null || true
           mkdir -p out && chmod 777 out
@@ -71,7 +77,8 @@ jobs:
           ISO_FILE=$(ls out/*.iso 2>/dev/null | head -1)
           [ -z "$ISO_FILE" ] && echo "ERROR: No ISO" && exit 1
           sha256sum out/*.iso > out/SHA256SUMS
-          VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${{ github.event.workflow_run.head_branch }}"
+          VERSION="${VERSION#v}"
           NEW_NAME="madOS-${VERSION}-minimal-x86_64.iso"
           mv "$ISO_FILE" "out/$NEW_NAME"
           sed -i "s|$(basename $ISO_FILE)|${NEW_NAME}|g" out/SHA256SUMS
@@ -85,60 +92,23 @@ jobs:
       - name: Upload to GitHub Releases
         id: upload_gh
         uses: softprops/action-gh-release@v2
+        if: steps.build.outputs.iso_name != ''
         with:
           files: out/*.iso out/SHA256SUMS
-          tag_name: ${{ github.ref_name }}
+          tag_name: v${{ steps.build.outputs.version }}
           name: madOS ${{ steps.build.outputs.version }}
           body: |
             **madOS ${{ steps.build.outputs.version }}**
             - ISO: `${{ steps.build.outputs.iso_name }}`
             - Size: ${{ steps.build.outputs.iso_size_mb }} MB
-          prerelease: ${{ steps.release_info.outputs.is_prerelease }}
-          make_latest: ${{ steps.release_info.outputs.is_release }}
+            - Build: ${{ steps.build.outputs.build_date }}
+          prerelease: ${{ steps.check_tag.outputs.is_prerelease == 'true' }}
+          make_latest: ${{ steps.check_tag.outputs.is_release == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set download URL
         id: set_url
+        if: steps.build.outputs.iso_name != ''
         run: |
           echo "download_url=https://github.com/${{ github.repository }}/releases/download/v${{ steps.build.outputs.version }}/${{ steps.build.outputs.iso_name }}" >> $GITHUB_OUTPUT
-
-  update-download-info:
-    name: "Update Download Info"
-    runs-on: ubuntu-latest
-    needs: build
-    if: needs.build.result == 'success'
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout gh-pages
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-        with:
-          ref: gh-pages
-      - name: Update links
-        env:
-          DOWNLOAD_URL: ${{ needs.build.outputs.download_url }}
-          VERSION: ${{ needs.build.outputs.version }}
-          RELEASE_TYPE: ${{ needs.build.outputs.release_type }}
-        run: |
-          CHANNEL="beta"
-          [ "$RELEASE_TYPE" = "stable" ] && CHANNEL="stable"
-          python3 << 'PYEOF'
-import json, os
-ch = os.environ.get('CHANNEL', 'beta')
-data = {}
-try:
-  with open('download-info.html') as f: data = json.loads(f.read().split('---',2)[-1].strip())
-except: pass
-data[ch] = {'version': os.environ.get('VERSION'), 'url': os.environ.get('DOWNLOAD_URL')}
-with open('download-info.html', 'w') as f: f.write(json.dumps(data, indent=2))
-PYEOF
-          [ "$CHANNEL" = "beta" ] && sed -i "s|href=\"[^\"]*\" id=\"beta-download-link\"|href=\"$DOWNLOAD_URL\" id=\"beta-download-link\"|g" index.html || sed -i "s|href=\"[^\"]*\" id=\"stable-download-link\"|href=\"$DOWNLOAD_URL\" id=\"stable-download-link\"|g" index.html
-      - name: Commit
-        run: |
-          git diff --quiet && exit 0
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add download-info.html index.html
-          git commit -m "update to v${{ needs.build.outputs.version }}"
-          git push origin gh-pages
