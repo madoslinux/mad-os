@@ -1,0 +1,38 @@
+#!/bin/bash
+# madOS Post-Install Autostart Wrapper
+# Only runs on first login, then disables itself
+
+LOG="$HOME/.cache/mados-post-install.log"
+DONE_FLAG="$HOME/.config/mados/post-install-done"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG" 2>/dev/null
+}
+
+log "Post-install autostart triggered"
+
+# Check if already ran
+if [ -f "$DONE_FLAG" ]; then
+    log "Post-install already completed, skipping"
+    exit 0
+fi
+
+# Check if script exists
+if [ ! -x /usr/local/bin/mados-post-install ]; then
+    log "ERROR: /usr/local/bin/mados-post-install not found"
+    exit 1
+fi
+
+# Remove autostart so it doesn't run again
+rm -f "$HOME/.config/autostart/mados-post-install.desktop" 2>/dev/null
+
+# Run post-install
+log "Launching mados-post-install"
+/usr/local/bin/mados-post-install
+
+# If successful, the app will create the DONE_FLAG
+if [ $? -eq 0 ]; then
+    log "Post-install completed successfully"
+else
+    log "Post-install exited with error"
+fi

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=madOS Post-Install
+Exec=/usr/local/bin/mados-post-install-autostart
+Comment=Install user-selected packages after first login
+X-GNOME-Autostart-enabled=true
+Hidden=false
+NoDisplay=false
