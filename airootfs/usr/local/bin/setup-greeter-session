@@ -1,34 +1,18 @@
 #!/bin/bash
-# setup-greeter-session - Configure default session for regreet based on hardware
-# Called by cage-greeter before launching regreet
-# SILENT OPERATION - no console output
-
 DEFAULT_SESSION="${MADOS_DEFAULT_SESSION:-sway}"
 REGREET_CONF="/etc/greetd/regreet.toml"
 
-if [ ! -f "$REGREET_CONF" ]; then
-    exit 0
-fi
+[ ! -f "$REGREET_CONF" ] && exit 0
 
-# Reorder sessions: put default first and set default_session
 if [ "$DEFAULT_SESSION" = "hyprland" ]; then
-    SESSION_LIST='[
-    "/usr/share/wayland-sessions/hyprland.desktop",
-    "/usr/share/wayland-sessions/sway.desktop"
-]'
+    SESSION_LIST='["/usr/share/wayland-sessions/hyprland.desktop", "/usr/share/wayland-sessions/sway.desktop"]'
     DEFAULT_SESSION_PATH="/usr/share/wayland-sessions/hyprland.desktop"
 else
-    SESSION_LIST='[
-    "/usr/share/wayland-sessions/sway.desktop",
-    "/usr/share/wayland-sessions/hyprland.desktop"
-]'
+    SESSION_LIST='["/usr/share/wayland-sessions/sway.desktop", "/usr/share/wayland-sessions/hyprland.desktop"]'
     DEFAULT_SESSION_PATH="/usr/share/wayland-sessions/sway.desktop"
 fi
 
-# Create backup
 cp "$REGREET_CONF" "$REGREET_CONF.bak"
-
-# Rewrite complete regreet.toml preserving all sections
 cat > "$REGREET_CONF" << EOFREGREET
 [background]
 path = "/usr/share/backgrounds/mad-os-wallpaper.png"
@@ -39,8 +23,9 @@ LIBSEAT_BACKEND = "logind"
 
 [GTK]
 application_prefer_dark_theme = true
-theme_name = "Adwaita-dark"
-cursor_theme_name = "Adwaita"
+theme_name = "Nordic"
+cursor_theme_name = "Nordzy-dark"
+icon_theme_name = "Nordzy-dark"
 font_name = "Cantarell 11"
 
 [commands]
@@ -57,6 +42,4 @@ EOFREGREET
 
 chmod 644 "$REGREET_CONF"
 chown greeter:greeter "$REGREET_CONF" 2>/dev/null || true
-
-# SILENT: No echo statements - all output suppressed
 exit 0

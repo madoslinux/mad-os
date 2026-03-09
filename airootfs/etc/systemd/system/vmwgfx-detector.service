@@ -3,7 +3,6 @@ Description=Detect VMware and configure vmwgfx driver
 DefaultDependencies=no
 Before=sysinit.target
 After=local-fs.target
-ConditionPathExists=/sys/class/dmi/id
 
 [Service]
 Type=oneshot

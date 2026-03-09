@@ -1,74 +1,22 @@
 #!/bin/bash
-# vmwgfx-detector - Disable vmwgfx module if NOT running on VMware
-# Called from initramfs hook or systemd service at early boot
-#
-# vmwgfx is ONLY useful on real VMware (Workstation, ESXi, Fusion)
-# On VirtualBox, QEMU, Hyper-V, etc. it causes error spam and provides no benefit
-
 LOG_TAG="vmwgfx-detector"
+log() { echo "$1" | systemd-cat -t "$LOG_TAG" -p "${2:-info}" 2>/dev/null; }
 
-# Function to log to journal (silent on console)
-log() {
-    echo "$1" | systemd-cat -t "$LOG_TAG" -p "${2:-info}" 2>/dev/null
-}
-
-# Detect if running on VMware
-# VMware sets specific DMI/SMBIOS values that we can check
 is_vmware() {
-    # Check DMI board vendor
-    if [ -f /sys/class/dmi/id/board_vendor ]; then
-        if grep -qi "vmware" /sys/class/dmi/id/board_vendor 2>/dev/null; then
-            return 0
-        fi
-    fi
-    
-    # Check DMI board name
-    if [ -f /sys/class/dmi/id/board_name ]; then
-        if grep -qi "vmware" /sys/class/dmi/id/board_name 2>/dev/null; then
-            return 0
-        fi
-    fi
-    
-    # Check DMI product name
-    if [ -f /sys/class/dmi/id/product_name ]; then
-        if grep -qi "vmware" /sys/class/dmi/id/product_name 2>/dev/null; then
-            return 0
-        fi
-    fi
-    
-    # Check DMI sys vendor
-    if [ -f /sys/class/dmi/id/sys_vendor ]; then
-        if grep -qi "vmware" /sys/class/dmi/id/sys_vendor 2>/dev/null; then
-            return 0
-        fi
-    fi
-    
-    # Check PCI devices for VMware SVGA adapter
-    if lspci -d 15ad:0405 >/dev/null 2>&1; then
-        return 0
-    fi
-    
-    # Not VMware
+    [ -f /sys/class/dmi/id/board_vendor ] && grep -qi "vmware" /sys/class/dmi/id/board_vendor 2>/dev/null && return 0
+    [ -f /sys/class/dmi/id/product_name ] && grep -qi "vmware" /sys/class/dmi/id/product_name 2>/dev/null && return 0
+    [ -f /sys/class/dmi/id/sys_vendor ] && grep -qi "vmware" /sys/class/dmi/id/sys_vendor 2>/dev/null && return 0
+    lspci -d 15ad:0405 >/dev/null 2>&1 && return 0
     return 1
 }
 
-# Main logic
 if is_vmware; then
-    log "VMware detected - vmwgfx driver will be ENABLED"
-    # Create enable file to allow vmwgfx
+    log "VMware detected - vmwgfx ENABLED"
     rm -f /etc/modprobe.d/99-disable-vmwgfx.conf 2>/dev/null
-    if [ -f /etc/modprobe.d/99-disable-vmwgfx.enabled ]; then
-        rm -f /etc/modprobe.d/99-disable-vmwgfx.enabled
-    fi
 else
-    log "NOT VMware (VirtualBox/QEMU/etc) - vmwgfx driver will be DISABLED"
-    # Create disable file to block vmwgfx
-    cat > /etc/modprobe.d/99-disable-vmwgfx.conf << 'EOF'
-# Auto-generated: vmwgfx disabled because NOT running on VMware
-# vmwgfx is VMware's driver - useless on VirtualBox, QEMU, etc.
+    log "NOT VMware - vmwgfx DISABLED"
+    cat > /etc/modprobe.d/99-disable-vmwgfx.conf << 'EOFPMD'
 install vmwgfx /bin/false
 blacklist vmwgfx
-EOF
+EOFPMD
 fi
-
-exit 0

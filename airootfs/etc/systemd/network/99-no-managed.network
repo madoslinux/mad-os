@@ -1,22 +1,10 @@
-# systemd-networkd - DO NOT manage interfaces already handled by NetworkManager
-# This prevents conflicts and duplicate sysctl changes
-
 [Match]
-# Match all interfaces EXCEPT loopback
 Type=!loopback
-
-# Don't manage if NetworkManager is already handling it
-# This file tells systemd-networkd to stand down
-
 [Network]
-# Disable all configuration - let NetworkManager handle it
 IPv6AcceptRA=no
 IPv6PrivacyExtensions=no
 ConfigureWithoutCarrier=no
 DHCP=no
 LinkLocalAddressing=no
-
 [Link]
-# Don't touch MAC address or MTU
 MACAddressPolicy=persistent
-# Don't bring up/down - NetworkManager decides

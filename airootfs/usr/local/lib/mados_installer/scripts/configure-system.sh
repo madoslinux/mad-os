@@ -5,6 +5,7 @@ set -e
 
 USERNAME="${1:-}"
 PASSWORD="${2:-}"
+PASSWORD="${2:-}"
 TIMEZONE="${3:-}"
 LOCALE="${4:-}"
 HOSTNAME="${5:-}"
@@ -72,11 +73,15 @@ rm -f /etc/sudoers.d/99-opencode-nopasswd
 # Create user - add to wheel group only if is_admin is true
 if [ "$IS_ADMIN" = "true" ]; then
     useradd -m -G wheel,audio,video,storage -s /usr/bin/zsh "$USERNAME"
+# Set password
+echo "$USERNAME:$PASSWORD" | chpasswd
     echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/wheel
     chmod 440 /etc/sudoers.d/wheel
     echo "  User '$USERNAME' created with admin privileges (sudo access)"
 else
     useradd -m -G audio,video,storage -s /usr/bin/zsh "$USERNAME"
+# Set password
+echo "$USERNAME:$PASSWORD" | chpasswd
     echo "  User '$USERNAME' created without admin privileges"
 fi
 

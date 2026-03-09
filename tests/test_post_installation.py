@@ -406,6 +406,7 @@ class TestChrootValidation(unittest.TestCase):
                 "locale": "en_US.UTF-8",
                 "hostname": "test",
                 "disk": "/dev/sda",
+                "password": "testpass123",
             }
         )
         self.assertGreater(len(script), 100, "Config script must have content")

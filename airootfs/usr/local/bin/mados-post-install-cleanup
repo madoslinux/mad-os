@@ -1,26 +1,4 @@
 #!/bin/bash
-# mados-post-install-cleanup - Disable post-install service after completion
-# Called automatically by the post-install app when finished
-
-USER_NAME="${SUDO_USER:-$USER}"
-HOME_DIR="/home/$USER_NAME"
-CONFIG_DIR="$HOME_DIR/.config/mados"
-DONE_FLAG="$CONFIG_DIR/post-install-done"
-
-# Create config directory if it doesn't exist
-mkdir -p "$CONFIG_DIR"
-
-# Mark as done
-touch "$DONE_FLAG"
-chown "$USER_NAME:$USER_NAME" "$DONE_FLAG"
-
-# Disable the systemd service
-if command -v systemctl &>/dev/null; then
-    systemctl disable mados-post-install.service 2>/dev/null || true
-    systemctl stop mados-post-install.service 2>/dev/null || true
-fi
-
-# Also disable from user session
-su "$USER_NAME" -c "systemctl --user disable mados-post-install.service 2>/dev/null || true"
-
-echo "Post-install cleanup completed"
+systemctl disable mados-post-install.service 2>/dev/null || true
+touch ~/.config/mados/post-install-done 2>/dev/null || true
+exit 0

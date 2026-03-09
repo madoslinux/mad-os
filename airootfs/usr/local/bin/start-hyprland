@@ -1,67 +1,35 @@
 #!/bin/bash
-# start-hyprland - SILENT wrapper for Hyprland
 LOG_TAG="start-hyprland"
 MIN_RUNTIME=5
 
 logger -p user.info -t "$LOG_TAG" "Preparing Hyprland"
-
 export XDG_SESSION_TYPE="wayland"
 export XDG_CURRENT_DESKTOP="Hyprland"
 export MOZ_ENABLE_WAYLAND=1
 export LIBSEAT_BACKEND=logind
 
-# AGGRESSIVELY SILENCE ALL LOGGING
+# Silence all logging
 export WLR_LOG_LEVEL=error
 export HYPRLAND_LOG_DISABLED=1
 export G_MESSAGES_DEBUG=
-export GIO_USE_UDEV=0
 export QT_LOGGING_RULES="*.debug=false;*.info=false;*.warning=false;*.critical=false"
-export WAYLAND_DEBUG=
 
-# Detect VM or legacy hardware → software rendering
 USE_SOFTWARE=0
 systemd-detect-virt --vm --quiet 2>/dev/null && USE_SOFTWARE=1
 [ -x /usr/local/bin/detect-legacy-hardware ] && /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1 && USE_SOFTWARE=1
 
-if [ $USE_SOFTWARE -eq 1 ]; then
-    export WLR_RENDERER=pixman
-    export WLR_NO_HARDWARE_CURSORS=1
-    export LIBGL_ALWAYS_SOFTWARE=1
-    export GSK_RENDERER=cairo
-    export MESA_GL_VERSION_OVERRIDE=3.3
-fi
+[ $USE_SOFTWARE -eq 1 ] && export WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 LIBGL_ALWAYS_SOFTWARE=1 GSK_RENDERER=cairo MESA_GL_VERSION_OVERRIDE=3.3
 
 command -v Hyprland >/dev/null 2>&1 || { logger -p user.err -t "$LOG_TAG" "Hyprland not found"; exit 1; }
+[ -x /usr/local/bin/detect-legacy-hardware ] && /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1 && exit 1
 
-# Pre-flight: check legacy hardware
-if [ -x /usr/local/bin/detect-legacy-hardware ]; then
-    if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        logger -p user.warning -t "$LOG_TAG" "Legacy hardware detected"
-        exit 1
-    fi
-fi
-
-# Create watchdog fd
 exec {WATCHDOG_FD}>/dev/null
-
-logger -p user.info -t "$LOG_TAG" "Launching Hyprland (silent)"
 start_time=$(date +%s)
-
-# Launch Hyprland with ALL output suppressed
 Hyprland --watchdog-fd "$WATCHDOG_FD" </dev/null >/dev/null 2>&1
 exit_code=$?
-
 end_time=$(date +%s)
-runtime=$((end_time - start_time))
-
-# Close watchdog fd
 exec {WATCHDOG_FD}>&-
 
-# Check if crashed too quickly
-if [ $runtime -lt $MIN_RUNTIME ]; then
-    logger -p user.err -t "$LOG_TAG" "Hyprland crashed after ${runtime}s (exit code: $exit_code)"
-    exit 1
-fi
-
-logger -p user.info -t "$LOG_TAG" "Hyprland session ended after ${runtime}s (exit code: $exit_code)"
+runtime=$((end_time - start_time))
+[ $runtime -lt $MIN_RUNTIME ] && { logger -p user.err -t "$LOG_TAG" "Hyprland crashed after ${runtime}s"; exit 1; }
 exit $exit_code

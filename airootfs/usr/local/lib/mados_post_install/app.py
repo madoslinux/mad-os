@@ -278,9 +278,72 @@ class PostInstallApp(Gtk.Window):
         self.log("ERROR: No network connection after 5 minutes")
         GLib.idle_add(self._installation_error, "No internet connection. Please check your network and try again.")
     
+    def _show_password_dialog(self):
+        """Show GTK password dialog for sudo"""
+        dialog = Gtk.Dialog(
+            title="Administrator Password Required",
+            parent=self,
+            flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT
+        )
+        dialog.set_default_size(400, 150)
+        dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+        
+        content_area = dialog.get_content_area()
+        content_area.set_spacing(10)
+        content_area.set_margin_top(20)
+        content_area.set_margin_bottom(20)
+        content_area.set_margin_start(20)
+        content_area.set_margin_end(20)
+        
+        instructions = Gtk.Label()
+        instructions.set_markup(
+            '<span size="10000" weight="bold">Enter your password</span>\n'
+            '<span size="9000">Required to install packages via sudo</span>'
+        )
+        instructions.set_line_wrap(True)
+        content_area.pack_start(instructions, False, False, 5)
+        
+        pass_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        pass_label = Gtk.Label(label="Password:")
+        pass_label.set_width_chars(12)
+        pass_label.set_xalign(0)
+        self.sudo_password_entry = Gtk.Entry()
+        self.sudo_password_entry.set_visibility(False)
+        self.sudo_password_entry.set_activates_default(True)
+        self.sudo_password_entry.set_hexpand(True)
+        pass_box.pack_start(pass_label, False, False, 0)
+        pass_box.pack_start(self.sudo_password_entry, True, True, 0)
+        content_area.pack_start(pass_box, False, False, 5)
+        
+        self.sudo_error = Gtk.Label()
+        self.sudo_error.set_markup('<span foreground="red" size="9000"></span>')
+        content_area.pack_start(self.sudo_error, False, False, 5)
+        
+        dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Install", Gtk.ResponseType.OK)
+        dialog.set_default_response(Gtk.ResponseType.OK)
+        
+        dialog.show_all()
+        response = dialog.run()
+        
+        if response == Gtk.ResponseType.OK:
+            self.sudo_password = self.sudo_password_entry.get_text()
+            dialog.destroy()
+            return True
+        dialog.destroy()
+        return False
+    
     def _start_installation(self):
         """Start installation in background thread"""
         self.waiting_for_network = False
+        
+        # Show password dialog first
+        self.sudo_password = None
+        if not self._show_password_dialog():
+            self.log("Installation cancelled by user")
+            GLib.idle_add(self._installation_error, "Installation cancelled")
+            return False
+        
         threading.Thread(target=self._install_packages, daemon=True).start()
         return False
     
@@ -292,6 +355,18 @@ class PostInstallApp(Gtk.Window):
         
         try:
             self.log("Starting package installation...")
+            
+            # First: update package databases (required for fresh installs)
+            self.log("Updating package databases...")
+            GLib.idle_add(self._update_status, "Updating package databases...", 0, len(self.packages_to_install))
+            result = subprocess.run(
+                ["sudo", "-S", "pacman", "-Sy"],
+                input=self.sudo_password + "\n",
+                capture_output=True,
+                text=True
+            )
+            if result.returncode != 0:
+                self.log(f"Warning: Database update had issues: {result.stderr}")
             
             for i, package in enumerate(self.packages_to_install):
                 self.current_package = package
@@ -340,7 +415,8 @@ class PostInstallApp(Gtk.Window):
                     # Real mode: install via pacman
                     self.log(f"Installing: {package}")
                     result = subprocess.run(
-                        ["pacman", "-S", "--noconfirm", package],
+                        ["sudo", "-S", "pacman", "-S", "--noconfirm", package],
+                        input=self.sudo_password + "\n",
                         capture_output=True,
                         text=True
                     )

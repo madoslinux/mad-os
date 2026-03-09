@@ -1,102 +1,43 @@
 #!/bin/bash
-# Cage greeter wrapper - silent operation, no console spam
-
-# Silent log function - only logs to journal, never to console
-log() { echo "$1" | systemd-cat -t "$LOG_TAG" -p "${2:-info}" 2>/dev/null; }
+log() { echo "$1" | systemd-cat -t cage-greeter -p "${2:-info}" 2>/dev/null; }
 LOG_TAG="cage-greeter"
 
-# Validate required binaries exist
-if ! command -v cage >/dev/null 2>&1; then
-    log "FATAL: cage binary not found in PATH" "err"
-    sleep 2
-    exit 1
-fi
-if ! command -v regreet >/dev/null 2>&1; then
-    log "FATAL: regreet binary not found in PATH" "err"
-    sleep 2
-    exit 1
-fi
+command -v cage >/dev/null 2>&1 || { log "cage not found" "err"; sleep 2; exit 1; }
+command -v regreet >/dev/null 2>&1 || { log "regreet not found" "err"; sleep 2; exit 1; }
 
-# Ensure XDG_RUNTIME_DIR is set
-if [ -z "$XDG_RUNTIME_DIR" ]; then
-    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
-    mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null
-fi
-
+[ -z "$XDG_RUNTIME_DIR" ] && export XDG_RUNTIME_DIR="/run/user/$(id -u)" && mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null
 export LIBSEAT_BACKEND=logind
 
-USE_SOFTWARE_RENDERING=0
-DEFAULT_SESSION="sway"
-
-# Detect VirtualBox EARLY - prevents cage flicker
+# Detect early to avoid retry flicker
+USE_SOFTWARE=0
 if systemd-detect-virt --oracle --quiet 2>/dev/null; then
-    USE_SOFTWARE_RENDERING=1
-    DEFAULT_SESSION="sway"
-    log "VirtualBox detected, using software rendering"
-elif [ -x /usr/local/bin/detect-legacy-hardware ]; then
-    if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        USE_SOFTWARE_RENDERING=1
-        DEFAULT_SESSION="sway"
-        log "Legacy hardware detected"
-    else
-        DEFAULT_SESSION="hyprland"
-        log "Hardware acceleration detected"
-    fi
+    USE_SOFTWARE=1
+    export MADOS_DEFAULT_SESSION="sway"
+    log "VirtualBox detected"
+elif systemd-detect-virt --vm --quiet 2>/dev/null; then
+    USE_SOFTWARE=1
+    export MADOS_DEFAULT_SESSION="sway"
+    log "VM detected"
 else
-    if systemd-detect-virt --vm --quiet 2>/dev/null; then
-        USE_SOFTWARE_RENDERING=1
-        DEFAULT_SESSION="sway"
-        log "VM detected, using software rendering"
-    else
-        DEFAULT_SESSION="hyprland"
-        log "Hardware acceleration detected"
-    fi
+    export MADOS_DEFAULT_SESSION="hyprland"
+    log "Hardware detected"
 fi
 
-export MADOS_DEFAULT_SESSION="$DEFAULT_SESSION"
+[ $USE_SOFTWARE -eq 1 ] && export WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 LIBGL_ALWAYS_SOFTWARE=1 GSK_RENDERER=cairo
+systemd-detect-virt --vm --quiet 2>/dev/null && export WLR_DRM_NO_ATOMIC=1 WLR_DRM_NO_MODIFIERS=1
 
-# Setup default session in regreet.toml
-if [ -x /usr/local/bin/setup-greeter-session ]; then
-    /usr/local/bin/setup-greeter-session
-fi
+[ -x /usr/local/bin/setup-greeter-session ] && /usr/local/bin/setup-greeter-session
 
-apply_software_rendering() {
-    export WLR_RENDERER=pixman
-    export WLR_NO_HARDWARE_CURSORS=1
-    export LIBGL_ALWAYS_SOFTWARE=1
-    export MESA_GL_VERSION_OVERRIDE=3.3
-    export GSK_RENDERER=cairo
-}
-
-if [ "$USE_SOFTWARE_RENDERING" -eq 1 ]; then
-    apply_software_rendering
-fi
-
-# VM DRM workarounds
-if systemd-detect-virt --vm --quiet 2>/dev/null; then
-    export WLR_DRM_NO_ATOMIC=1
-    export WLR_DRM_NO_MODIFIERS=1
-    export WLR_NO_HARDWARE_CURSORS=1
-fi
-
-# Clear console and suppress all output - prevent ANY console spam
-exec 2>/dev/null
-
-# Run cage
+# Silence all output
+exec 0</dev/null 1>/dev/null 2>&1
 cage -s -- regreet
 EXIT_CODE=$?
 
-# Retry with software rendering if failed
-if [ $EXIT_CODE -ne 0 ] && [ "$USE_SOFTWARE_RENDERING" -eq 0 ]; then
-    log "cage failed, retrying with software rendering" "warning"
-    apply_software_rendering
+if [ $EXIT_CODE -ne 0 ] && [ $USE_SOFTWARE -eq 0 ]; then
+    export WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 LIBGL_ALWAYS_SOFTWARE=1 GSK_RENDERER=cairo
     cage -s -- regreet
     EXIT_CODE=$?
 fi
 
-if [ $EXIT_CODE -ne 0 ]; then
-    log "cage FAILED (exit code $EXIT_CODE)" "err"
-    sleep 2
-fi
-
+[ $EXIT_CODE -ne 0 ] && { log "cage FAILED ($EXIT_CODE)" "err"; sleep 2; }
 exit $EXIT_CODE
