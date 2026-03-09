@@ -65,18 +65,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     needs: determine-release-type
-    outputs:
-      iso_name: ${{ steps.build.outputs.iso_name }}
-      version: ${{ steps.build.outputs.version }}
-      profile: ${{ steps.build.outputs.profile }}
-      build_date: ${{ steps.build.outputs.build_date }}
-      iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
-      short_sha: ${{ steps.build.outputs.short_sha }}
-      is_release: ${{ needs.determine-release-type.outputs.is_release }}
-      is_prerelease: ${{ needs.determine-release-type.outputs.is_prerelease }}
-      release_type: ${{ needs.determine-release-type.outputs.release_type }}
-      download_url: ${{ steps.upload_gh.outputs.download_url }}
-      source_branch: ${{ needs.determine-release-type.outputs.source_branch }}
 
     steps:
       - name: Checkout
