@@ -23,6 +23,17 @@ else
     log "Hardware detected"
 fi
 
+# Generate VM performance config for Sway
+if [ "$USE_SOFTWARE" -eq 1 ]; then
+    mkdir -p /etc/sway/config.d 2>/dev/null
+    cat > /etc/sway/config.d/99-vm-performance.conf << 'VMCONF'
+# Auto-generated VM performance settings
+# Disables features that cause issues in virtual machines
+gaps inner 0
+gaps outer 0
+VMCONF
+fi
+
 [ $USE_SOFTWARE -eq 1 ] && export WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 LIBGL_ALWAYS_SOFTWARE=1 GSK_RENDERER=cairo
 systemd-detect-virt --vm --quiet 2>/dev/null && export WLR_DRM_NO_ATOMIC=1 WLR_DRM_NO_MODIFIERS=1
 

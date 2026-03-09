@@ -1,13 +1,31 @@
 #!/bin/bash
-# hyprland-session - Wrapper script for Hyprland compositor
-# Sets Wayland environment variables and launches Hyprland
+# hyprland-session - Wrapper for Hyprland compositor with hardware detection
+# Falls back to sway-session on legacy hardware or VMware without 3D
 
-# Set Wayland session type
+logger -p user.info -t "mados-hyprland" "Starting Hyprland session wrapper"
+
+# Set Wayland environment variables
 export XDG_SESSION_TYPE=wayland
 export XDG_CURRENT_DESKTOP=Hyprland
 
-# Clear console to avoid debug messages
+# Check for legacy hardware or VMware without 3D acceleration
+if [ -x /usr/local/bin/detect-legacy-hardware ]; then
+    logger -p user.info -t "mados-hyprland" "Calling detect-legacy-hardware"
+    if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
+        logger -p user.warning -t "mados-hyprland" "Legacy hardware detected, falling back to sway"
+        exec sway-session
+    fi
+fi
+
+# Fall back to sway if hyprland binary is not available
+if ! command -v Hyprland >/dev/null 2>&1; then
+    logger -p user.warning -t "mados-hyprland" "Hyprland not found, falling back to sway"
+    exec sway-session
+fi
+
+# Clear console to suppress debug messages
 printf '\033[2J\033[H\033[3J' 2>/dev/null
 
-# Execute Hyprland with all output suppressed
+# Execute start-hyprland with silent output
+logger -p user.info -t "mados-hyprland" "Launching Hyprland"
 exec start-hyprland
