@@ -1,7 +1,286 @@
-# Enable vmwgfx detector service (runs early at boot)
-systemctl enable vmwgfx-detector.service 2>/dev/null || true
+#!/bin/bash
+# madOS Final Configuration Script
+set -e
 
-# Run detector immediately to configure vmwgfx for current hardware
-if [ -x /usr/local/bin/vmwgfx-detector ]; then
-    /usr/local/bin/vmwgfx-detector
+USERNAME="${1:-}"
+LOCALE="${2:-}"
+VENTOY_PERSIST_SIZE="${3:-4096}"
+
+if [[ -z "$USERNAME" ]]; then
+    echo "ERROR: Username not provided" >&2
+    exit 1
 fi
+
+LOCALE_KB_MAP=(
+    ["en_US.UTF-8"]="us"
+    ["es_AR.UTF-8"]="latam"
+    ["es_ES.UTF-8"]="es"
+    ["pt_BR.UTF-8"]="br"
+    ["fr_FR.UTF-8"]="fr"
+    ["de_DE.UTF-8"]="de"
+    ["it_IT.UTF-8"]="it"
+)
+
+KB_LAYOUT="${LOCALE_KB_MAP[$LOCALE]:-us}"
+
+cat > /etc/os-release <<EOF
+NAME="madOS"
+PRETTY_NAME="madOS (Arch Linux)"
+ID=mados
+ID_LIKE=arch
+BUILD_ID=rolling
+ANSI_COLOR="38;2;23;147;209"
+HOME_URL="https://github.com/madkoding/mad-os"
+DOCUMENTATION_URL="https://wiki.archlinux.org/"
+SUPPORT_URL="https://bbs.archlinux.org/"
+BUG_REPORT_URL="https://gitlab.archlinux.org/groups/archlinux/-/issues"
+PRIVACY_POLICY_URL="https://terms.archlinux.org/docs/privacy-policy/"
+LOGO=archlinux-logo
+EOF
+
+mkdir -p /etc/NetworkManager/conf.d
+cat > /etc/NetworkManager/conf.d/wifi-backend.conf <<EOF
+[device]
+wifi.backend=iwd
+EOF
+
+mkdir -p /etc/greetd
+cat > /etc/greetd/config.toml <<'EOFGREETD'
+[terminal]
+vt = 1
+
+[default_session]
+command = "/usr/local/bin/cage-greeter"
+user = "greeter"
+EOFGREETD
+
+# PAM configuration for greetd
+mkdir -p /etc/pam.d
+cat > /etc/pam.d/greetd <<'EOFPAM'
+#%PAM-1.0
+auth     requisite     pam_nologin.so
+auth     required      pam_succeed_if.so user != root quiet_success
+auth     include       system-login
+account  include       system-login
+password include       system-login
+session  include       system-login
+EOFPAM
+
+cat > /etc/greetd/regreet.toml <<'EOFREGREET'
+[background]
+path = "/usr/share/backgrounds/mad-os-wallpaper.png"
+fit = "Cover"
+
+[env]
+LIBSEAT_BACKEND = "logind"
+
+[GTK]
+application_prefer_dark_theme = true
+theme_name = "Nordic"
+cursor_theme_name = "Nordzy-dark"
+icon_theme_name = "Nordzy-dark"
+font_name = "Cantarell 11"
+
+[commands]
+reboot = [ "systemctl", "reboot" ]
+poweroff = [ "systemctl", "poweroff" ]
+
+[sessions]
+available = [
+    "/usr/share/wayland-sessions/sway.desktop",
+    "/usr/share/wayland-sessions/hyprland.desktop"
+]
+default = "/usr/share/wayland-sessions/sway.desktop"
+
+[css]
+path = "/etc/greetd/regreet.css"
+EOFREGREET
+
+# Copy CSS for greeter
+if [ -f /etc/greetd/regreet.css ]; then
+    cp /etc/greetd/regreet.css /etc/greetd/regreet.css.installed
+    chown greeter:greeter /etc/greetd/regreet.css.installed
+fi
+
+chown -R greeter:greeter /etc/greetd
+chmod 755 /etc/greetd
+chmod 644 /etc/greetd/config.toml /etc/greetd/regreet.toml
+chmod 644 /etc/greetd/regreet.css 2>/dev/null || true
+
+usermod -aG video,input greeter 2>/dev/null || echo "Note: greeter user group modification skipped"
+
+mkdir -p /var/cache/regreet
+chown greeter:greeter /var/cache/regreet
+chmod 750 /var/cache/regreet
+mkdir -p /var/lib/greetd
+chown greeter:greeter /var/lib/greetd
+
+# Disable getty@tty1 and enable getty@tty2 as fallback
+systemctl disable getty@tty1.service 2>/dev/null || true
+systemctl mask getty@tty1.service 2>/dev/null || true
+systemctl enable getty@tty2.service 2>/dev/null || true
+
+mkdir -p /etc/systemd/system/greetd.service.d
+cat > /etc/systemd/system/greetd.service.d/override.conf <<'EOFOVERRIDE'
+[Unit]
+After=plymouth-quit-wait.service systemd-logind.service
+Wants=plymouth-quit-wait.service
+
+[Service]
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_CURRENT_DESKTOP=sway
+StandardOutput=null
+StandardError=null
+TTYVTDisallocate=yes
+EOFOVERRIDE
+
+# Enable vmwgfx detector service
+systemctl enable vmwgfx-detector.service 2>/dev/null || true
+[ -x /usr/local/bin/vmwgfx-detector ] && /usr/local/bin/vmwgfx-detector
+
+# Silence kernel console messages
+mkdir -p /etc/sysctl.d
+cat > /etc/sysctl.d/99-silence-console.conf <<'EOFSYSCTL'
+kernel.printk = 1 1 1 1
+kernel.panic = 0
+EOFSYSCTL
+sysctl -p /etc/sysctl.d/99-silence-console.conf 2>/dev/null || true
+
+# Setup user home directories and configs
+install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}
+install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/{Documents,Downloads,Music,Videos,Desktop,Templates,Public}
+install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/Pictures/{Wallpapers,Screenshots}
+cp -r /etc/skel/.config/* /home/"$USERNAME"/.config/ 2>/dev/null || true
+cp -r /etc/skel/Pictures/* /home/"$USERNAME"/Pictures/ 2>/dev/null || true
+
+chown -R "$USERNAME":"$USERNAME" /home/"$USERNAME"
+
+# Set keyboard layout for Sway
+if [[ -f /home/"$USERNAME"/.config/sway/config ]]; then
+    sed -i "s/xkb_layout \"es\"/xkb_layout \"$KB_LAYOUT\"/" /home/"$USERNAME"/.config/sway/config
+elif [[ -f /etc/skel/.config/sway/config ]]; then
+    sed -i "s/xkb_layout \"es\"/xkb_layout \"$KB_LAYOUT\"/" /etc/skel/.config/sway/config
+fi
+
+# Set keyboard layout for Hyprland
+if [[ -f /home/"$USERNAME"/.config/hypr/hyprland.conf ]]; then
+    sed -i "s/kb_layout = es/kb_layout = $KB_LAYOUT/" /home/"$USERNAME"/.config/hypr/hyprland.conf
+elif [[ -f /etc/skel/.config/hypr/hyprland.conf ]]; then
+    sed -i "s/kb_layout = es/kb_layout = $KB_LAYOUT/" /etc/skel/.config/hypr/hyprland.conf
+fi
+
+# Copy bash profile if not exists
+if [[ ! -f /home/"$USERNAME"/.bash_profile ]]; then
+    cp /etc/skel/.bash_profile /home/"$USERNAME"/.bash_profile 2>/dev/null || true
+fi
+chown "$USERNAME":"$USERNAME" /home/"$USERNAME"/.bash_profile
+
+# Copy zshrc if exists
+if [ -f /etc/skel/.zshrc ]; then
+    cp /etc/skel/.zshrc /home/"$USERNAME"/.zshrc 2>/dev/null || true
+    chown "$USERNAME":"$USERNAME" /home/"$USERNAME"/.zshrc
+fi
+
+# Cleanup live ISO artifacts
+rm -f /root/.automated_script.sh /root/.zlogin
+
+# Create pacman hooks for desktop session overrides
+mkdir -p /etc/pacman.d/hooks
+cat > /etc/pacman.d/hooks/sway-desktop-override.hook <<'EOFHOOK'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = sway
+
+[Action]
+Description = Customizing Sway session for madOS...
+When = PostTransaction
+Depends = sed
+Exec = /usr/bin/sed -i -e 's|^Exec=.*|Exec=/usr/local/bin/sway-session|' -e 's|^Comment=.*|Comment=madOS Sway session with hardware detection|' /usr/share/wayland-sessions/sway.desktop
+EOFHOOK
+
+cat > /etc/pacman.d/hooks/hyprland-desktop-override.hook <<'EOFHOOK2'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = hyprland
+
+[Action]
+Description = Customizing Hyprland session for madOS...
+When = PostTransaction
+Depends = sed
+Exec = /usr/bin/sed -i -e 's|^Exec=.*|Exec=/usr/local/bin/hyprland-session|' -e 's|^Comment=.*|Comment=madOS Hyprland session|' /usr/share/wayland-sessions/hyprland.desktop
+EOFHOOK2
+
+# Graphical environment verification
+echo "Verifying graphical environment components..."
+GRAPHICAL_OK=1
+for bin in cage regreet sway hyprland; do
+    if command -v "$bin" &>/dev/null; then
+        echo "  ✓ $bin found: $(command -v "$bin")"
+    else
+        echo "  ✗ $bin NOT found — graphical login may fail"
+        GRAPHICAL_OK=0
+    fi
+done
+
+for script in /usr/local/bin/cage-greeter /usr/local/bin/sway-session /usr/local/bin/hyprland-session /usr/local/bin/start-hyprland; do
+    if [ -x "$script" ]; then
+        echo "  ✓ $script is executable"
+    elif [ -f "$script" ]; then
+        echo "  ✗ $script exists but is not executable — fixing..."
+        chmod +x "$script"
+    else
+        echo "  ✗ $script NOT found — may fail"
+        GRAPHICAL_OK=0
+    fi
+done
+
+if [ -f /etc/greetd/config.toml ]; then
+    echo "  ✓ greetd config exists"
+else
+    echo "  ✗ greetd config NOT found — graphical login may fail"
+    GRAPHICAL_OK=0
+fi
+
+if [ -f /etc/greetd/regreet.toml ]; then
+    echo "  ✓ regreet config exists"
+else
+    echo "  ✗ regreet.toml NOT found — greeter UI may fail"
+    GRAPHICAL_OK=0
+fi
+
+for session_file in /usr/share/wayland-sessions/sway.desktop /usr/share/wayland-sessions/hyprland.desktop; do
+    if [ -f "$session_file" ]; then
+        if grep -q "/usr/local/bin/" "$session_file"; then
+            echo "  ✓ $session_file has madOS session script"
+        else
+            session_name=$(basename "$session_file" .desktop)
+            if [ -x "/usr/local/bin/${session_name}-session" ]; then
+                sed -i "s|^Exec=.*|Exec=/usr/local/bin/${session_name}-session|" "$session_file"
+                echo "    Fixed: Exec=/usr/local/bin/${session_name}-session"
+            fi
+        fi
+    else
+        echo "  ✗ $session_file NOT found — session may not appear in greeter"
+    fi
+done
+
+if systemctl is-enabled greetd.service &>/dev/null; then
+    echo "  ✓ greetd.service is enabled"
+else
+    echo "  ✗ greetd.service is NOT enabled — enabling..."
+    systemctl enable greetd.service 2>/dev/null || true
+fi
+
+systemctl enable mados-post-install.service 2>/dev/null || true
+echo "  ✓ mados-post-install.service enabled (first boot only)"
+
+if [ "$GRAPHICAL_OK" -eq 0 ]; then
+    echo "  ⚠ Some graphical components missing. Enabling getty@tty1 as fallback..."
+    systemctl enable getty@tty1.service 2>/dev/null || true
+fi
+
+echo "Graphical environment verification complete."
