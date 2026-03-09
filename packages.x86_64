@@ -37,6 +37,10 @@ tumbler
 ffmpegthumbnailer
 lxappearance
 plymouth
+libreoffice-fresh
+rust
+nodejs
+npm
 
 # Herramientas de desarrollo (para OpenCode)
 git
