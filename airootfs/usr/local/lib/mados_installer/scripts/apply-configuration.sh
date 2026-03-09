@@ -144,10 +144,9 @@ systemctl mask getty@tty1.service 2>/dev/null || true
 # Silence ALL kernel console messages (prevent Plymouth/DRM debug spam)
 mkdir -p /etc/sysctl.d
 cat > /etc/sysctl.d/99-silence-console.conf <<'EOFSYSCTL'
-# Silence kernel console messages at runtime
+# Silence kernel console messages - prevent Plymouth/DRM spam
 kernel.printk = 1 1 1 1
 kernel.panic = 0
-dev.drm.debug = 0
 EOFSYSCTL
 
 # Also update the existing low-ram config if present

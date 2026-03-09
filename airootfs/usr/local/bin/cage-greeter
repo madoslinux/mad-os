@@ -31,7 +31,13 @@ export LIBSEAT_BACKEND=logind
 USE_SOFTWARE_RENDERING=0
 DEFAULT_SESSION="sway"  # Default fallback
 
-if [ -x /usr/local/bin/detect-legacy-hardware ]; then
+# Detect VirtualBox early - it always needs software rendering
+# This prevents the cage flicker from failed first attempt
+if systemd-detect-virt --oracle --quiet 2>/dev/null; then
+    USE_SOFTWARE_RENDERING=1
+    DEFAULT_SESSION="sway"
+    log "VirtualBox detected, using software rendering from start"
+elif [ -x /usr/local/bin/detect-legacy-hardware ]; then
     if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
         USE_SOFTWARE_RENDERING=1
         DEFAULT_SESSION="sway"
@@ -96,22 +102,24 @@ VMCONF
     fi
 fi
 
-# First attempt: run cage with current settings
-log "Starting cage with regreet (attempt 1)"
-cage -s -- regreet
+# First attempt: run cage quietly
+log "Starting cage with regreet"
+# Redirect stderr to suppress initial DRM/console errors (causes flicker)
+cage -s -- regreet 2>/dev/null
 EXIT_CODE=$?
 
-# If cage failed and we weren't already using software rendering, retry with it
+# If cage failed and we weren't already using software rendering, retry silently
 if [ $EXIT_CODE -ne 0 ] && [ "$USE_SOFTWARE_RENDERING" -eq 0 ]; then
-    log "cage failed (exit code $EXIT_CODE), retrying with software rendering" "warning"
+    log "cage failed, retrying with software rendering" "warning"
     apply_software_rendering
-    cage -s -- regreet
+    # Second attempt also silent to prevent console spam
+    cage -s -- regreet 2>/dev/null
     EXIT_CODE=$?
 fi
 
-# If still failing, sleep to prevent greetd from entering a tight restart loop
+# Log final failure if still failing
 if [ $EXIT_CODE -ne 0 ]; then
-    log "cage failed (exit code $EXIT_CODE), sleeping 2s to prevent restart loop" "err"
+    log "cage FAILED (exit code $EXIT_CODE) - greeter cannot start" "err"
     sleep 2
 fi
 
