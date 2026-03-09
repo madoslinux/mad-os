@@ -26,7 +26,6 @@ jobs:
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
       version: ${{ steps.build.outputs.version }}
-      profile: ${{ steps.build.outputs.profile }}
       build_date: ${{ steps.build.outputs.build_date }}
       iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
       short_sha: ${{ steps.build.outputs.short_sha }}
@@ -55,11 +54,6 @@ jobs:
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
             echo "release_type=stable" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Use packages.x86_64 (single minimal ISO)
-        id: profile
-        run: |
-          echo "profile=minimal" >> $GITHUB_OUTPUT
 
       - name: Build ISO
         id: build
@@ -140,17 +134,36 @@ jobs:
           DOWNLOAD_URL: ${{ needs.build.outputs.download_url }}
           VERSION: ${{ needs.build.outputs.version }}
           RELEASE_TYPE: ${{ needs.build.outputs.release_type }}
-          BUILD_DATE: ${{ needs.build.outputs.build_date }}
         run: |
-          [[ "$RELEASE_TYPE" == "stable" ]] && CHANNEL="stable" || CHANNEL="beta"
-          python3 << EOF
+          CHANNEL="beta"
+          if [ "$RELEASE_TYPE" = "stable" ]; then CHANNEL="stable"; fi
+          echo "CHANNEL=$CHANNEL"
+          python3 -c "
 import json, os
-with open('download-info.html', 'r') as f: content = f.read()
-data = json.loads(content.lstrip('-').split('---', 2)[-1].strip()) if content.startswith('---') else json.loads(content)
-data[os.environ.get('CHANNEL', 'beta')] = {'version': os.environ.get('VERSION'), 'url': os.environ.get('DOWNLOAD_URL'), 'date': os.environ.get('BUILD_DATE')}
-with open('download-info.html', 'w') as f: f.write(json.dumps(data, indent=2))
-EOF
-          [[ "$CHANNEL" == "beta" ]] && sed -i "s|id=\"beta-download-link\" href=\"[^\"]*\"|id=\"beta-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html || sed -i "s|id=\"stable-download-link\" href=\"[^\"]*\"|id=\"stable-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
+channel = os.environ.get('CHANNEL', 'beta')
+data = {}
+try:
+  with open('download-info.html', 'r') as f:
+    content = f.read()
+  if content.startswith('---'):
+    data = json.loads(content.split('---', 2)[2].strip())
+  else:
+    data = json.loads(content)
+except:
+  pass
+data[channel] = {
+  'version': os.environ.get('VERSION'),
+  'url': os.environ.get('DOWNLOAD_URL'),
+  'date': ''
+}
+with open('download-info.html', 'w') as f:
+  f.write(json.dumps(data, indent=2))
+"
+          if [ "$CHANNEL" = "beta" ]; then
+            sed -i "s|id=\"beta-download-link\" href=\"[^\"]*\"|id=\"beta-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
+          else
+            sed -i "s|id=\"stable-download-link\" href=\"[^\"]*\"|id=\"stable-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
+          fi
       - name: Commit and Push
         run: |
           git diff --quiet && exit 0
