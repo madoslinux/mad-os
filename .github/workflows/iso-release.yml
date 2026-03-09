@@ -1,10 +1,15 @@
 name: ISO Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI/CD"]
+    types:
+      - completed
+    branches:
+      - main
+      - develop
     tags:
       - 'v*'
-  workflow_dispatch:
 
 concurrency:
   group: iso-release-${{ github.ref }}
@@ -22,6 +27,7 @@ jobs:
   determine-release-type:
     name: "Determine Release Type"
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     outputs:
       is_release: ${{ steps.determine.outputs.is_release }}
       is_prerelease: ${{ steps.determine.outputs.is_prerelease }}
