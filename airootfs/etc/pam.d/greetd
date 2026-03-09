@@ -2,15 +2,9 @@
 
 auth     requisite     pam_nologin.so
 auth     required      pam_succeed_if.so user != root quiet_success
-auth     substack      password-auth
+auth     include       system-login
 
-account  substack      password-auth
-account  required      pam_nologin.so
+account  include       system-login
+password include       system-login
 
-password substack      password-auth
-
-session  optional      pam_keyinit.so force revoke
-session  required      pam_loginuid.so
-session  substack      password-auth
-session  optional      pam_systemd.so
-session  required      pam_env.so
+session  include       system-login

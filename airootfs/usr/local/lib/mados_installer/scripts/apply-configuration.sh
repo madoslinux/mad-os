@@ -81,18 +81,12 @@ cat > /etc/pam.d/greetd <<'EOFPAM'
 
 auth     requisite     pam_nologin.so
 auth     required      pam_succeed_if.so user != root quiet_success
-auth     substack      password-auth
+auth     include       system-login
 
-account  substack      password-auth
-account  required      pam_nologin.so
+account  include       system-login
+password include       system-login
 
-password substack      password-auth
-
-session  optional      pam_keyinit.so force revoke
-session  required      pam_loginuid.so
-session  substack      password-auth
-session  optional      pam_systemd.so
-session  required      pam_env.so
+session  include       system-login
 EOFPAM
 
 cat > /etc/greetd/regreet.toml <<'EOFREGREET'
@@ -155,8 +149,6 @@ Wants=plymouth-quit-wait.service
 [Service]
 Environment=XDG_SESSION_TYPE=wayland
 Environment=XDG_CURRENT_DESKTOP=sway
-Stdout=null
-Stderr=journal
 EOFOVERRIDE
 
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}
