@@ -22,8 +22,7 @@ PACKAGE_GROUPS = {
             {"id": "podman", "name": "Podman", "default": False},
             {"id": "ansible", "name": "Ansible", "default": False},
             {"id": "rust", "name": "Rust", "default": False},
-            {"id": "nodejs", "name": "Node.js", "default": False},
-            {"id": "npm", "name": "Node.js npm", "default": False},
+            {"id": "nvm", "name": "NVM (Node Version Manager)", "default": False},
         ],
     },
     "multimedia": {
