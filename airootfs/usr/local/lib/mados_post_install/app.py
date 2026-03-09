@@ -70,7 +70,7 @@ class PostInstallApp(Gtk.Window):
             GLib.idle_add(self._check_network_and_start)
     
     def _load_package_selection(self):
-        """Load package selection from config file"""
+        """Load package selection from config file and always include opencode + ollama"""
         try:
             if os.path.exists(CONFIG_FILE):
                 import json
@@ -86,6 +86,14 @@ class PostInstallApp(Gtk.Window):
                     self.log(f"Loaded {len(self.packages_to_install)} packages from fallback config")
             else:
                 self.log("No package selection file found")
+            
+            # Always include opencode and ollama if not already present
+            if 'opencode' not in self.packages_to_install:
+                self.packages_to_install.append('opencode')
+                self.log("Added opencode to installation list")
+            if 'ollama' not in self.packages_to_install:
+                self.packages_to_install.append('ollama')
+                self.log("Added ollama to installation list")
         except Exception as e:
             self.log(f"Error loading config: {e}")
             self.packages_to_install = []
