@@ -1,85 +1,67 @@
 #!/bin/bash
-# start-hyprland - Wrapper to launch Hyprland with proper environment
-# SILENT OPERATION - no debug spam
-#
-# Called from:
-#   - .bash_profile (installed system)
-#   - .zlogin (live environment)
-#   - hyprland-session
-#
-# Key behavior:
-#   - Checks for 3D acceleration before launching
-#   - Detects if Hyprland exits too quickly (< MIN_RUNTIME seconds) as a crash
-#   - Returns exit code 1 on failure so the || fallback to Sway triggers
-
+# start-hyprland - SILENT wrapper for Hyprland
 LOG_TAG="start-hyprland"
-MIN_RUNTIME=5  # seconds
+MIN_RUNTIME=5
 
-logger -p user.info -t "$LOG_TAG" "Preparing to launch Hyprland"
+logger -p user.info -t "$LOG_TAG" "Preparing Hyprland"
 
-# Ensure required environment variables are set
-export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:-wayland}"
-export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:-Hyprland}"
-export MOZ_ENABLE_WAYLAND="${MOZ_ENABLE_WAYLAND:-1}"
+export XDG_SESSION_TYPE="wayland"
+export XDG_CURRENT_DESKTOP="Hyprland"
+export MOZ_ENABLE_WAYLAND=1
+export LIBSEAT_BACKEND=logind
 
-# Use systemd-logind as the seat management backend
-export LIBSEAT_BACKEND="${LIBSEAT_BACKEND:-logind}"
-
-# SILENCE ALL DEBUG MESSAGES from Hyprland and DRM
+# AGGRESSIVELY SILENCE ALL LOGGING
 export WLR_LOG_LEVEL=error
 export HYPRLAND_LOG_DISABLED=1
-export NIXOS_OSTYPE_SHOULDBE=linux
-export QT_LOGGING_RULES="*.debug=false;*.info=false;*.warning=false"
 export G_MESSAGES_DEBUG=
-export GIO_USE_VFS=
+export GIO_USE_UDEV=0
+export QT_LOGGING_RULES="*.debug=false;*.info=false;*.warning=false;*.critical=false"
+export WAYLAND_DEBUG=
 
-# Verify Hyprland binary exists
-if ! command -v Hyprland >/dev/null 2>&1; then
-    logger -p user.err -t "$LOG_TAG" "Hyprland binary not found"
-    echo "Error: Hyprland is not installed" >&2
-    exit 1
+# Detect VM or legacy hardware → software rendering
+USE_SOFTWARE=0
+systemd-detect-virt --vm --quiet 2>/dev/null && USE_SOFTWARE=1
+[ -x /usr/local/bin/detect-legacy-hardware ] && /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1 && USE_SOFTWARE=1
+
+if [ $USE_SOFTWARE -eq 1 ]; then
+    export WLR_RENDERER=pixman
+    export WLR_NO_HARDWARE_CURSORS=1
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export GSK_RENDERER=cairo
+    export MESA_GL_VERSION_OVERRIDE=3.3
 fi
 
-# Pre-flight: verify 3D acceleration is available
-# If detect-legacy-hardware says this is legacy hardware, don't even try Hyprland
+command -v Hyprland >/dev/null 2>&1 || { logger -p user.err -t "$LOG_TAG" "Hyprland not found"; exit 1; }
+
+# Pre-flight: check legacy hardware
 if [ -x /usr/local/bin/detect-legacy-hardware ]; then
-    detect_output=$(/usr/local/bin/detect-legacy-hardware 2>&1)
     if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        logger -p user.warning -t "$LOG_TAG" "Legacy hardware detected ($detect_output) - refusing to start Hyprland"
-        echo "Legacy hardware detected: $detect_output" >&2
-        echo "Hyprland requires 3D acceleration. Falling back..." >&2
+        logger -p user.warning -t "$LOG_TAG" "Legacy hardware detected"
         exit 1
     fi
 fi
 
-# Create a watchdog fd for Hyprland's session monitoring
-# Hyprland expects --watchdog-fd to signal it was started through a proper session wrapper.
-# Without this, Hyprland shows a "started without start-hyprland" notification on every boot.
-# We open /dev/null as a writable fd — Hyprland writes "vax" (ready) and "end" (exiting) to it.
+# Create watchdog fd
 exec {WATCHDOG_FD}>/dev/null
 
-# Launch Hyprland and measure runtime
-logger -p user.info -t "$LOG_TAG" "Launching Hyprland compositor (watchdog fd=$WATCHDOG_FD)"
+logger -p user.info -t "$LOG_TAG" "Launching Hyprland (silent)"
 start_time=$(date +%s)
-Hyprland --watchdog-fd "$WATCHDOG_FD"
+
+# Launch Hyprland with ALL output suppressed
+Hyprland --watchdog-fd "$WATCHDOG_FD" </dev/null >/dev/null 2>&1
 exit_code=$?
+
 end_time=$(date +%s)
 runtime=$((end_time - start_time))
 
-# Close the watchdog fd
+# Close watchdog fd
 exec {WATCHDOG_FD}>&-
 
-# If Hyprland exited too quickly, treat as a failure regardless of exit code
-# Hyprland can exit with code 0 even when it fails to render (no GPU, no display, etc.)
+# Check if crashed too quickly
 if [ $runtime -lt $MIN_RUNTIME ]; then
-    logger -p user.err -t "$LOG_TAG" "Hyprland exited after ${runtime}s (< ${MIN_RUNTIME}s minimum) with code $exit_code - treating as failure"
-    echo "Hyprland exited too quickly (${runtime}s) - likely failed to initialize display" >&2
+    logger -p user.err -t "$LOG_TAG" "Hyprland crashed after ${runtime}s (exit code: $exit_code)"
     exit 1
 fi
 
-if [ $exit_code -ne 0 ]; then
-    logger -p user.err -t "$LOG_TAG" "Hyprland exited with code $exit_code after ${runtime}s"
-    echo "Hyprland exited with code $exit_code" >&2
-fi
-
+logger -p user.info -t "$LOG_TAG" "Hyprland session ended after ${runtime}s (exit code: $exit_code)"
 exit $exit_code
