@@ -204,17 +204,20 @@ jobs:
             out/*.iso
             out/SHA256SUMS
           prerelease: ${{ needs.determine-release-type.outputs.is_prerelease == 'true' }}
-          generate_release_notes: true
+          body: |
+            **madOS ${{ steps.build.outputs.version }}**
+            
+            - ISO: `${{ steps.build.outputs.iso_name }}`
+            - Size: ${{ steps.build.outputs.iso_size_mb }} MB
+            - Build: ${{ steps.build.outputs.build_date }}
+            - Commit: `${{ steps.build.outputs.short_sha }}`
+            
+            ### Download
+            
+            - **ISO:** [${{ steps.build.outputs.iso_name }}](${{ steps.set_url.outputs.download_url }})
+            - **Checksums:** SHA256SUMS
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set download URL
-        id: set_url
-        run: |
-          ISO_NAME="${{ steps.build.outputs.iso_name }}"
-          VERSION="${{ steps.build.outputs.version }}"
-          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${ISO_NAME}"
-          echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
 
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
