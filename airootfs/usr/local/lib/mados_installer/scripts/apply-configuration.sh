@@ -149,10 +149,21 @@ cat > /etc/sysctl.d/99-silence-console.conf <<'EOFSYSCTL'
 kernel.printk = 1 1 1 1
 # Disable panic messages on console too
 kernel.panic = 0
+# Disable DRM debug messages
+dev.drm.debug = 0
 EOFSYSCTL
 
 # Also update the existing low-ram config
 sed -i 's/^kernel.printk =.*/kernel.printk = 1 1 1 1/' /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || true
+
+# Blacklist problematic DRM modules for VMs (suppress error spam)
+mkdir -p /etc/modprobe.d
+cat > /etc/modprobe.d/99-silence-vmwgfx.conf <<'EOFMOD'
+# Suppress VMware graphics driver error spam
+# These errors appear on console when running in VirtualBox/non-VMware VMs
+options vmwgfx enable=0
+blacklist vmwgfx
+EOFMOD
 
 mkdir -p /etc/systemd/system/greetd.service.d
 cat > /etc/systemd/system/greetd.service.d/override.conf <<'EOFOVERRIDE'
@@ -170,10 +181,10 @@ StandardError=journal
 ExecStartPre=/bin/sh -c 'echo -e "\033[2J\033[H"'
 EOFOVERRIDE
 
-# Add kernel parameter to suppress DRM debug messages at boot
+# Add kernel parameters to suppress DRM debug messages at boot
 mkdir -p /etc/default
 if ! grep -q "drm.debug=0" /etc/default/grub 2>/dev/null; then
-    sed -i 's/GRUB_CMDLINE_LINUX=".*"/& drm.debug=0 loglevel=1 quiet/' /etc/default/grub 2>/dev/null || true
+    sed -i 's/GRUB_CMDLINE_LINUX=".*"/& drm.debug=0 loglevel=1 quiet modprobe.blacklist=vmwgfx/' /etc/default/grub 2>/dev/null || true
 fi
 
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}
