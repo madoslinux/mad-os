@@ -141,10 +141,18 @@ chown greeter:greeter /var/lib/greetd
 systemctl disable getty@tty1.service 2>/dev/null || true
 systemctl mask getty@tty1.service 2>/dev/null || true
 
-# Silence kernel console messages (prevent debug spam)
-# This applies at boot via sysctl
-sed -i 's/^kernel.printk =.*/kernel.printk = 2 4 1 7/' /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || \
-    echo "kernel.printk = 2 4 1 7" >> /etc/sysctl.d/99-silence-console.conf
+# Silence ALL kernel console messages (prevent Plymouth/DRM debug spam)
+# Level 1 = only panic messages, effectively silent
+mkdir -p /etc/sysctl.d
+cat > /etc/sysctl.d/99-silence-console.conf <<'EOFSYSCTL'
+# Silence kernel console messages - prevent Plymouth/DRM spam
+kernel.printk = 1 1 1 1
+# Disable panic messages on console too
+kernel.panic = 0
+EOFSYSCTL
+
+# Also update the existing low-ram config
+sed -i 's/^kernel.printk =.*/kernel.printk = 1 1 1 1/' /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || true
 
 mkdir -p /etc/systemd/system/greetd.service.d
 cat > /etc/systemd/system/greetd.service.d/override.conf <<'EOFOVERRIDE'
@@ -158,7 +166,15 @@ Environment=XDG_CURRENT_DESKTOP=sway
 # Suppress console output from greeter
 StandardOutput=null
 StandardError=journal
+# Clear console before starting to remove Plymouth messages
+ExecStartPre=/bin/sh -c 'echo -e "\033[2J\033[H"'
 EOFOVERRIDE
+
+# Add kernel parameter to suppress DRM debug messages at boot
+mkdir -p /etc/default
+if ! grep -q "drm.debug=0" /etc/default/grub 2>/dev/null; then
+    sed -i 's/GRUB_CMDLINE_LINUX=".*"/& drm.debug=0 loglevel=1 quiet/' /etc/default/grub 2>/dev/null || true
+fi
 
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/{Documents,Downloads,Music,Videos,Desktop,Templates,Public}
