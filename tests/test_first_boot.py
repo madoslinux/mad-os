@@ -26,6 +26,7 @@ class TestConfigScriptStructure(unittest.TestCase):
         # Generate a sample config script
         sample_data = {
             "username": "testuser",
+            "password": "testpass123",
             "timezone": "America/New_York",
             "locale": "en_US.UTF-8",
             "hostname": "test-host",
