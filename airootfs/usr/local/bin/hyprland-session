@@ -1,3 +1,13 @@
 #!/bin/bash
+# hyprland-session - Wrapper script for Hyprland compositor
+# Sets Wayland environment variables and launches Hyprland
+
+# Set Wayland session type
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=Hyprland
+
+# Clear console to avoid debug messages
 printf '\033[2J\033[H\033[3J' 2>/dev/null
-exec /usr/local/bin/start-hyprland "$@"
+
+# Execute Hyprland with all output suppressed
+exec start-hyprland
