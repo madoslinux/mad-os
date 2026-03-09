@@ -1,10 +1,9 @@
 #!/bin/bash
-# Cage greeter wrapper - detects legacy hardware and enables software rendering
-# For VMs with 3D acceleration, uses hardware rendering with DRM workarounds
-# Includes retry logic with software rendering fallback to prevent greetd restart loops
+# Cage greeter wrapper - silent operation, no console spam
 
+# Silent log function - only logs to journal, never to console
+log() { echo "$1" | systemd-cat -t "$LOG_TAG" -p "${2:-info}" 2>/dev/null; }
 LOG_TAG="cage-greeter"
-log() { echo "$1" | systemd-cat -t "$LOG_TAG" -p "${2:-info}" 2>/dev/null || echo "[$LOG_TAG] $1"; }
 
 # Validate required binaries exist
 if ! command -v cage >/dev/null 2>&1; then
@@ -18,53 +17,47 @@ if ! command -v regreet >/dev/null 2>&1; then
     exit 1
 fi
 
-# Ensure XDG_RUNTIME_DIR is set (required by Wayland compositors)
+# Ensure XDG_RUNTIME_DIR is set
 if [ -z "$XDG_RUNTIME_DIR" ]; then
     export XDG_RUNTIME_DIR="/run/user/$(id -u)"
     mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null
-    log "XDG_RUNTIME_DIR was not set, using $XDG_RUNTIME_DIR"
 fi
 
-# Use systemd-logind as the seat management backend (madOS uses systemd)
 export LIBSEAT_BACKEND=logind
 
 USE_SOFTWARE_RENDERING=0
-DEFAULT_SESSION="sway"  # Default fallback
+DEFAULT_SESSION="sway"
 
-# Detect VirtualBox early - it always needs software rendering
-# This prevents the cage flicker from failed first attempt
+# Detect VirtualBox EARLY - prevents cage flicker
 if systemd-detect-virt --oracle --quiet 2>/dev/null; then
     USE_SOFTWARE_RENDERING=1
     DEFAULT_SESSION="sway"
-    log "VirtualBox detected, using software rendering from start"
+    log "VirtualBox detected, using software rendering"
 elif [ -x /usr/local/bin/detect-legacy-hardware ]; then
     if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
         USE_SOFTWARE_RENDERING=1
         DEFAULT_SESSION="sway"
-        log "Legacy hardware detected, using software rendering (sway)"
+        log "Legacy hardware detected"
     else
         DEFAULT_SESSION="hyprland"
-        log "Hardware acceleration detected, using hyprland"
+        log "Hardware acceleration detected"
     fi
 else
     if systemd-detect-virt --vm --quiet 2>/dev/null; then
         USE_SOFTWARE_RENDERING=1
         DEFAULT_SESSION="sway"
-        log "VM detected (no hardware detection script), using software rendering (sway)"
+        log "VM detected, using software rendering"
     else
         DEFAULT_SESSION="hyprland"
-        log "No VM detected, assuming hardware acceleration (hyprland)"
+        log "Hardware acceleration detected"
     fi
 fi
 
-# Export default session for regreet
 export MADOS_DEFAULT_SESSION="$DEFAULT_SESSION"
 
-# Setup default session in regreet.toml (must run AFTER setting MADOS_DEFAULT_SESSION)
+# Setup default session in regreet.toml
 if [ -x /usr/local/bin/setup-greeter-session ]; then
     /usr/local/bin/setup-greeter-session
-else
-    log "WARNING: setup-greeter-session not found" "warning"
 fi
 
 apply_software_rendering() {
@@ -72,7 +65,6 @@ apply_software_rendering() {
     export WLR_NO_HARDWARE_CURSORS=1
     export LIBGL_ALWAYS_SOFTWARE=1
     export MESA_GL_VERSION_OVERRIDE=3.3
-    # GTK: disable Vulkan renderer to avoid GPU probe errors
     export GSK_RENDERER=cairo
 }
 
@@ -80,46 +72,30 @@ if [ "$USE_SOFTWARE_RENDERING" -eq 1 ]; then
     apply_software_rendering
 fi
 
-# VM DRM workarounds: disable atomic modesetting and modifiers for VM GPU drivers
+# VM DRM workarounds
 if systemd-detect-virt --vm --quiet 2>/dev/null; then
     export WLR_DRM_NO_ATOMIC=1
     export WLR_DRM_NO_MODIFIERS=1
     export WLR_NO_HARDWARE_CURSORS=1
-
-    # VM performance: generate optimized sway config drop-in
-    # Reduces visual overhead (solid bg, no gaps) for smoother experience
-    VM_CONF="/etc/sway/config.d/99-vm-performance.conf"
-    if [ ! -f "$VM_CONF" ]; then
-        mkdir -p /etc/sway/config.d
-        cat > "$VM_CONF" << 'VMCONF'
-# Auto-generated VM performance optimizations
-# Reduces visual overhead for smoother mouse/input in VirtualBox/VMware/QEMU
-output * bg #2E3440 solid_color
-gaps inner 0
-gaps outer 0
-VMCONF
-        log "Generated VM performance config: $VM_CONF"
-    fi
 fi
 
-# First attempt: run cage quietly
-log "Starting cage with regreet"
-# Redirect stderr to suppress initial DRM/console errors (causes flicker)
-cage -s -- regreet 2>/dev/null
+# Clear console and suppress all output - prevent ANY console spam
+exec 2>/dev/null
+
+# Run cage
+cage -s -- regreet
 EXIT_CODE=$?
 
-# If cage failed and we weren't already using software rendering, retry silently
+# Retry with software rendering if failed
 if [ $EXIT_CODE -ne 0 ] && [ "$USE_SOFTWARE_RENDERING" -eq 0 ]; then
     log "cage failed, retrying with software rendering" "warning"
     apply_software_rendering
-    # Second attempt also silent to prevent console spam
-    cage -s -- regreet 2>/dev/null
+    cage -s -- regreet
     EXIT_CODE=$?
 fi
 
-# Log final failure if still failing
 if [ $EXIT_CODE -ne 0 ]; then
-    log "cage FAILED (exit code $EXIT_CODE) - greeter cannot start" "err"
+    log "cage FAILED (exit code $EXIT_CODE)" "err"
     sleep 2
 fi
 

@@ -137,28 +137,19 @@ chmod 750 /var/cache/regreet
 mkdir -p /var/lib/greetd
 chown greeter:greeter /var/lib/greetd
 
-# Disable getty@tty1 to avoid conflict with greetd and stop kernel messages
+# Disable getty@tty1 completely
 systemctl disable getty@tty1.service 2>/dev/null || true
 systemctl mask getty@tty1.service 2>/dev/null || true
 
-# Silence ALL kernel console messages (prevent Plymouth/DRM debug spam)
+# Silence kernel console messages
 mkdir -p /etc/sysctl.d
 cat > /etc/sysctl.d/99-silence-console.conf <<'EOFSYSCTL'
-# Silence kernel console messages - prevent Plymouth/DRM spam
 kernel.printk = 1 1 1 1
 kernel.panic = 0
 EOFSYSCTL
-
-# Also update the existing low-ram config if present
 sed -i 's/^kernel.printk =.*/kernel.printk = 1 1 1 1/' /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || true
 
-# Update GRUB cmdline for maximum silence from early boot
-mkdir -p /etc/default
-# Add comprehensive quiet parameters: loglevel=1, drm.debug=0, quiet
-sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 loglevel=1 drm.debug=0 quiet"/' /etc/default/grub 2>/dev/null || true
-# Ensure default also has quiet
-sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 quiet"/' /etc/default/grub 2>/dev/null || true
-
+# Configure greetd service override
 mkdir -p /etc/systemd/system/greetd.service.d
 cat > /etc/systemd/system/greetd.service.d/override.conf <<'EOFOVERRIDE'
 [Unit]
@@ -168,11 +159,9 @@ Wants=plymouth-quit-wait.service
 [Service]
 Environment=XDG_SESSION_TYPE=wayland
 Environment=XDG_CURRENT_DESKTOP=sway
-# Suppress console output from greeter
 StandardOutput=null
-StandardError=journal
-# Clear console before starting to remove Plymouth messages
-ExecStartPre=/bin/sh -c 'echo -e "\033[2J\033[H"'
+StandardError=null
+TTYVTDisallocate=yes
 EOFOVERRIDE
 
 # Add kernel parameters to suppress DRM debug messages at boot
