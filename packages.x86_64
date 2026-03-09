@@ -121,6 +121,9 @@ pkgconf
 # Fuentes
 ttf-jetbrains-mono-nerd
 
+# Temas GTK e iconos
+adwaita-icon-theme
+
 # Información del sistema
 fastfetch
 

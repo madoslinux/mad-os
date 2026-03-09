@@ -54,9 +54,11 @@ fi
 # Export default session for regreet
 export MADOS_DEFAULT_SESSION="$DEFAULT_SESSION"
 
-# Setup default session in regreet.toml
+# Setup default session in regreet.toml (must run AFTER setting MADOS_DEFAULT_SESSION)
 if [ -x /usr/local/bin/setup-greeter-session ]; then
     /usr/local/bin/setup-greeter-session
+else
+    log "WARNING: setup-greeter-session not found" "warning"
 fi
 
 apply_software_rendering() {

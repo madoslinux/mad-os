@@ -84,8 +84,9 @@ LIBSEAT_BACKEND = "logind"
 
 [GTK]
 application_prefer_dark_theme = true
-theme_name = "Adwaita-dark"
-cursor_theme_name = "Adwaita"
+theme_name = "Nordic"
+cursor_theme_name = "Nordzy-dark"
+icon_theme_name = "Nordzy-dark"
 font_name = "Cantarell 11"
 
 [commands]
@@ -97,6 +98,7 @@ available = [
     "/usr/share/wayland-sessions/sway.desktop",
     "/usr/share/wayland-sessions/hyprland.desktop"
 ]
+default = "/usr/share/wayland-sessions/sway.desktop"
 
 [css]
 path = "/etc/greetd/regreet.css"

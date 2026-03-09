@@ -1,22 +1,28 @@
 /* regreet GTK3 CSS - madOS custom theme */
 
+/* Main window - ensure dark background */
+window {
+    background-color: #2E3440;
+    color: #ECEFF4;
+}
+
 /* Fix input field icons visibility */
 .entry image {
-    color: @theme_fg_color;
+    color: #ECEFF4;
     -gtk-icon-shadow: none;
 }
 
 /* Ensure password and username icons are visible */
 .password-entry image,
 .username-entry image {
-    color: #ffffff;
+    color: #ECEFF4;
     opacity: 1;
 }
 
 /* Input fields */
 entry {
     background-color: rgba(0, 0, 0, 0.3);
-    color: #ffffff;
+    color: #ECEFF4;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 8px;
     padding: 8px 12px;
@@ -32,20 +38,21 @@ entry:focus {
 /* Password entry specific */
 .password-entry {
     background-color: rgba(0, 0, 0, 0.3);
-    color: #ffffff;
+    color: #ECEFF4;
 }
 
 /* User selector */
 .user-name {
-    color: #ffffff;
+    color: #ECEFF4;
     font-weight: bold;
     font-size: 18px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 /* Session button */
 button {
     background-color: rgba(23, 147, 209, 0.8);
-    color: #ffffff;
+    color: #ECEFF4;
     border: none;
     border-radius: 8px;
     padding: 8px 16px;
@@ -63,6 +70,7 @@ button:active {
 /* Power menu buttons */
 .power-menu button {
     background-color: rgba(0, 0, 0, 0.5);
+    color: #ECEFF4;
     margin: 4px;
 }
 
@@ -86,4 +94,20 @@ button:active {
 
 .login-button:hover {
     background-color: #4aa3dc;
+}
+
+/* Container backgrounds */
+.container,
+.login-container {
+    background-color: rgba(46, 52, 64, 0.8);
+}
+
+/* Labels */
+label {
+    color: #ECEFF4;
+}
+
+/* Ensure all text is visible */
+*:disabled {
+    color: rgba(236, 239, 244, 0.5);
 }

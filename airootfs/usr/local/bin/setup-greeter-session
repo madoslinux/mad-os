@@ -10,35 +10,52 @@ if [ ! -f "$REGREET_CONF" ]; then
     exit 0
 fi
 
-# Reorder sessions: put default first
+# Reorder sessions: put default first and set default_session
 if [ "$DEFAULT_SESSION" = "hyprland" ]; then
-    SESSIONS='available = [
+    SESSION_LIST='[
     "/usr/share/wayland-sessions/hyprland.desktop",
     "/usr/share/wayland-sessions/sway.desktop"
 ]'
+    DEFAULT_SESSION_PATH="/usr/share/wayland-sessions/hyprland.desktop"
 else
-    SESSIONS='available = [
+    SESSION_LIST='[
     "/usr/share/wayland-sessions/sway.desktop",
     "/usr/share/wayland-sessions/hyprland.desktop"
 ]'
+    DEFAULT_SESSION_PATH="/usr/share/wayland-sessions/sway.desktop"
 fi
 
-# Update the sessions section in regreet.toml
-sed -i '/\[sessions\]/,/^\[/c\[sessions\]\n'"$(echo "$SESSIONS" | sed 's/"/\\"/g' | tr '\n' '\n')"'\n\n[css]' "$REGREET_CONF" 2>/dev/null || {
-    # Fallback: rewrite entire file with sessions
-    cp "$REGREET_CONF" "$REGREET_CONF.bak"
-    
-    # Extract everything before [sessions]
-    head -n $(grep -n '\[sessions\]' "$REGREET_CONF" | cut -d: -f1 | head -1) "$REGREET_CONF.bak" | head -n -1 > "$REGREET_CONF"
-    
-    # Add new sessions section
-    cat >> "$REGREET_CONF" << EOFSESS
+# Create backup
+cp "$REGREET_CONF" "$REGREET_CONF.bak"
+
+# Rewrite complete regreet.toml preserving all sections
+cat > "$REGREET_CONF" << EOFREGREET
+[background]
+path = "/usr/share/backgrounds/mad-os-wallpaper.png"
+fit = "Cover"
+
+[env]
+LIBSEAT_BACKEND = "logind"
+
+[GTK]
+application_prefer_dark_theme = true
+theme_name = "Adwaita-dark"
+cursor_theme_name = "Adwaita"
+font_name = "Cantarell 11"
+
+[commands]
+reboot = [ "systemctl", "reboot" ]
+poweroff = [ "systemctl", "poweroff" ]
+
 [sessions]
-$SESSIONS
+available = $SESSION_LIST
+default = "$DEFAULT_SESSION_PATH"
 
 [css]
 path = "/etc/greetd/regreet.css"
-EOFSESS
-}
+EOFREGREET
+
+chmod 644 "$REGREET_CONF"
+chown greeter:greeter "$REGREET_CONF" 2>/dev/null || true
 
 echo "Default session set to: $DEFAULT_SESSION"

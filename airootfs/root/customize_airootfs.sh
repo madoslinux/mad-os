@@ -151,7 +151,6 @@ rm -rf /usr/share/fonts/truetype/arphic 2>/dev/null || true
 rm -rf /usr/share/fonts/truetype/dejavu 2>/dev/null || true
 rm -rf /usr/share/fonts/truetype/liberation 2>/dev/null || true
 rm -rf /usr/share/icons/hicolor 2>/dev/null || true
-rm -rf /usr/share/icons/Adwaita 2>/dev/null || true
 rm -rf /usr/share/pixmaps/gnome 2>/dev/null || true
 
 echo "Removing unnecessary locales (keeping en_US, es_ES)..."

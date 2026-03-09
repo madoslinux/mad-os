@@ -79,7 +79,9 @@ else
     echo "  User '$USERNAME' created without admin privileges"
 fi
 
-passwd -d "$USERNAME" 2>/dev/null || true
+# NOTE: Password is NOT set here - user will be prompted to set it on first login
+# This allows regreet greeter to request password authentication
+echo "  User '$USERNAME' created - password will be set during first boot setup"
 
 echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/opencode,/usr/local/bin/ollama,/usr/bin/systemctl" > /etc/sudoers.d/opencode-nopasswd
 chmod 440 /etc/sudoers.d/opencode-nopasswd
