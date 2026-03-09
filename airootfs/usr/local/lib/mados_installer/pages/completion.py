@@ -41,6 +41,13 @@ def _save_package_selection(app):
                 with open(also_save_to_etc, 'w') as f:
                     json.dump(data, f, indent=2)
                 print(f"Also saved package selection to {also_save_to_etc}")
+                
+                # Create post-install pending marker
+                marker_dir = Path("/mnt/var/lib/mados")
+                marker_dir.mkdir(parents=True, exist_ok=True)
+                marker_file = marker_dir / "post-install-pending"
+                marker_file.touch()
+                print(f"Created post-install marker at {marker_file}")
     except Exception as e:
         print(f"Error saving package selection: {e}")
 

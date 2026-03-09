@@ -14,8 +14,12 @@ log "Post-install autostart triggered"
 # Check if already ran
 if [ -f "$DONE_FLAG" ]; then
     log "Post-install already completed, skipping"
+    rm -f "$HOME/.config/autostart/mados-post-install.desktop" 2>/dev/null
     exit 0
 fi
+
+# Wait a moment for desktop to be ready
+sleep 2
 
 # Check if script exists
 if [ ! -x /usr/local/bin/mados-post-install ]; then
@@ -28,11 +32,14 @@ rm -f "$HOME/.config/autostart/mados-post-install.desktop" 2>/dev/null
 
 # Run post-install
 log "Launching mados-post-install"
-/usr/local/bin/mados-post-install
+/usr/local/bin/mados-post-install &
 
-# If successful, the app will create the DONE_FLAG
-if [ $? -eq 0 ]; then
+# Wait for background process and check result
+wait $!
+RESULT=$?
+
+if [ $RESULT -eq 0 ]; then
     log "Post-install completed successfully"
 else
-    log "Post-install exited with error"
+    log "Post-install exited with error: $RESULT"
 fi
