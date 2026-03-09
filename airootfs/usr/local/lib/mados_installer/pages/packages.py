@@ -39,7 +39,6 @@ PACKAGE_GROUPS = {
             {"id": "blender", "name": "Blender (3D Suite)", "default": False},
             {"id": "audacity", "name": "Audacity (Audio Editor)", "default": False},
             {"id": "vlc", "name": "VLC Media Player", "default": False},
-            {"id": "mpv", "name": "mpv (Video Player)", "default": False},
         ],
     },
     "office": {
