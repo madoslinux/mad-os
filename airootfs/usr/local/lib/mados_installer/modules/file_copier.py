@@ -165,6 +165,9 @@ def step_copy_desktop_files(app):
         "/usr/share/wayland-sessions/hyprland.desktop",
         "/mnt/usr/share/wayland-sessions/",
     )
+    
+    subprocess.run(["mkdir", "-p", "/mnt/etc/greetd"], check=False)
+    copy_item("/etc/greetd/regreet.css", "/mnt/etc/greetd/")
 
     subprocess.run(["mkdir", "-p", "/mnt/usr/share/backgrounds"], check=False)
     for wp_file in globmod.glob("/usr/share/backgrounds/*"):

@@ -1,0 +1,71 @@
+/* regreet GTK3 CSS - madOS custom theme */
+
+/* Fix input field icons visibility */
+.entry image {
+    color: @theme_fg_color;
+    -gtk-icon-shadow: none;
+}
+
+/* Ensure password and username icons are visible */
+.password-entry image,
+.username-entry image {
+    color: #ffffff;
+    opacity: 1;
+}
+
+/* Input fields */
+entry {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 8px 12px;
+    min-height: 40px;
+}
+
+entry:focus {
+    background-color: rgba(0, 0, 0, 0.5);
+    border-color: #1793d1;
+    box-shadow: 0 0 8px rgba(23, 147, 209, 0.3);
+}
+
+/* Password entry specific */
+.password-entry {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+
+/* User selector */
+.user-name {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* Session button */
+button {
+    background-color: rgba(23, 147, 209, 0.8);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-weight: bold;
+}
+
+button:hover {
+    background-color: #1793d1;
+}
+
+button:active {
+    background-color: #0f6b99;
+}
+
+/* Power menu buttons */
+.power-menu button {
+    background-color: rgba(0, 0, 0, 0.5);
+    margin: 4px;
+}
+
+.power-menu button:hover {
+    background-color: rgba(200, 50, 50, 0.8);
+}

@@ -2,7 +2,7 @@
 # mados-post-install-cleanup - Disable post-install service after completion
 # Called automatically by the post-install app when finished
 
-CONFIG_DIR="/home/mados/.config/mados"
+CONFIG_DIR="$HOME/.config/mados"
 DONE_FLAG="$CONFIG_DIR/post-install-done"
 
 # Create config directory if it doesn't exist

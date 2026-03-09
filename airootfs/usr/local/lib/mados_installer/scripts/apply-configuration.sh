@@ -84,15 +84,33 @@ LIBSEAT_BACKEND = "logind"
 
 [GTK]
 application_prefer_dark_theme = true
+theme_name = "Adwaita-dark"
+cursor_theme_name = "Adwaita"
+font_name = "Cantarell 11"
 
 [commands]
 reboot = [ "systemctl", "reboot" ]
 poweroff = [ "systemctl", "poweroff" ]
+
+[sessions]
+available = [
+    "/usr/share/wayland-sessions/sway.desktop",
+    "/usr/share/wayland-sessions/hyprland.desktop"
+]
+
+[css]
+path = "/etc/greetd/regreet.css"
 EOFREGREET
+
+if [ -f /etc/greetd/regreet.css ]; then
+    cp /etc/greetd/regreet.css /etc/greetd/regreet.css.installed
+    chown greeter:greeter /etc/greetd/regreet.css.installed
+fi
 
 chown -R greeter:greeter /etc/greetd
 chmod 755 /etc/greetd
 chmod 644 /etc/greetd/config.toml /etc/greetd/regreet.toml
+chmod 644 /etc/greetd/regreet.css 2>/dev/null || true
 
 usermod -aG video,input greeter 2>/dev/null || echo "Note: greeter user group modification skipped"
 
