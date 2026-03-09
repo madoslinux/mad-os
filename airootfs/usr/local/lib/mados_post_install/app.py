@@ -371,7 +371,7 @@ class PostInstallApp(Gtk.Window):
         try:
             self.log("Starting package installation...")
             
-            # First: update package databases (required for fresh installs)
+            # First: update package databases and install paru (AUR helper)
             self.log("Updating package databases...")
             GLib.idle_add(self._update_status, "Updating package databases...", 0, len(self.packages_to_install))
             result = subprocess.run(
@@ -382,6 +382,15 @@ class PostInstallApp(Gtk.Window):
             )
             if result.returncode != 0:
                 self.log(f"Warning: Database update had issues: {result.stderr}")
+            
+            # Install paru if not already installed (needed for AUR packages)
+            self.log("Installing paru (AUR helper)...")
+            subprocess.run(
+                ["sudo", "-S", "pacman", "-S", "--noconfirm", "paru"],
+                input=self.sudo_password + "\n",
+                capture_output=True,
+                text=True
+            )
             
             for i, package in enumerate(self.packages_to_install):
                 self.current_package = package
