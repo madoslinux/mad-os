@@ -23,6 +23,9 @@ PACKAGE_GROUPS = {
             {"id": "ansible", "name": "Ansible", "default": False},
             {"id": "rust", "name": "Rust", "default": False},
             {"id": "nvm", "name": "NVM (Node Version Manager)", "default": False},
+            {"id": "code", "name": "Visual Studio Code (OSS)", "default": False},
+            {"id": "vscodium", "name": "VSCodium (MS builds removed)", "default": False},
+            {"id": "visual-studio-code-bin", "name": "Visual Studio Code (Microsoft)", "default": False},
         ],
     },
     "multimedia": {

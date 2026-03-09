@@ -117,6 +117,7 @@ cava
 # Build tools
 make
 pkgconf
+paru
 
 # Tema GTK oscuro (Nordic theme installed from git in customize_airootfs.sh)
 
@@ -133,6 +134,11 @@ fastfetch
 arch-install-scripts
 gptfdisk
 parted
+
+# Editores de código
+code
+vscodium
+visual-studio-code-bin
 
 # Utilidades de red
 dhcpcd

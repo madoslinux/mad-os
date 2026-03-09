@@ -427,10 +427,10 @@ class PostInstallApp(Gtk.Window):
                         self.log(f"✗ Failed to install {package}: {result.stderr}")
                         GLib.idle_add(self._mark_package_failed, package)
                 else:
-                    # Real mode: install via pacman
+                    # Real mode: install via paru (supports AUR and official repos)
                     self.log(f"Installing: {package}")
                     result = subprocess.run(
-                        ["sudo", "-S", "pacman", "-S", "--noconfirm", package],
+                        ["sudo", "-S", "paru", "-S", "--noconfirm", package],
                         input=self.sudo_password + "\n",
                         capture_output=True,
                         text=True
