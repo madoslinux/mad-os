@@ -16,7 +16,9 @@ def _save_package_selection(app):
     """Save package selection to config file for post-install"""
     try:
         if hasattr(app, 'package_selection') and app.package_selection:
-            config_dir = Path("/mnt/home/mados/.config/mados")
+            username = app.install_data.get("username", "mados") if hasattr(app, 'install_data') else "mados"
+            
+            config_dir = Path(f"/mnt/home/{username}/.config/mados")
             if not DEMO_MODE:
                 config_dir.mkdir(parents=True, exist_ok=True)
             
@@ -33,6 +35,12 @@ def _save_package_selection(app):
                 with open(config_file, 'w') as f:
                     json.dump(data, f, indent=2)
                 print(f"Saved package selection to {config_file}")
+                
+                also_save_to_etc = Path("/mnt/etc/mados/package-selection.json")
+                also_save_to_etc.parent.mkdir(parents=True, exist_ok=True)
+                with open(also_save_to_etc, 'w') as f:
+                    json.dump(data, f, indent=2)
+                print(f"Also saved package selection to {also_save_to_etc}")
     except Exception as e:
         print(f"Error saving package selection: {e}")
 

@@ -22,6 +22,7 @@ import pwd
 CURRENT_USER = os.environ.get("SUDO_USER", os.environ.get("USER", "mados"))
 HOME_DIR = os.path.expanduser(f"~{CURRENT_USER}") if CURRENT_USER != "root" else f"/home/{CURRENT_USER}"
 CONFIG_FILE = os.path.join(HOME_DIR, ".config", "mados", "package-selection.json")
+FALLBACK_CONFIG = "/etc/mados/package-selection.json"
 DONE_FLAG = os.path.join(HOME_DIR, ".config", "mados", "post-install-done")
 
 
@@ -76,7 +77,13 @@ class PostInstallApp(Gtk.Window):
                 with open(CONFIG_FILE, 'r') as f:
                     data = json.load(f)
                     self.packages_to_install = data.get('packages', [])
-                    self.log(f"Loaded {len(self.packages_to_install)} packages to install")
+                    self.log(f"Loaded {len(self.packages_to_install)} packages from user config")
+            elif os.path.exists(FALLBACK_CONFIG):
+                import json
+                with open(FALLBACK_CONFIG, 'r') as f:
+                    data = json.load(f)
+                    self.packages_to_install = data.get('packages', [])
+                    self.log(f"Loaded {len(self.packages_to_install)} packages from fallback config")
             else:
                 self.log("No package selection file found")
         except Exception as e:
