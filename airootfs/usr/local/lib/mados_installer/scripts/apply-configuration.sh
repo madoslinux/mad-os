@@ -143,13 +143,20 @@ chmod 750 /var/cache/regreet
 mkdir -p /var/lib/greetd
 chown greeter:greeter /var/lib/greetd
 
+# Disable getty@tty1 to avoid conflict with greetd
+systemctl disable getty@tty1.service 2>/dev/null || true
+
 mkdir -p /etc/systemd/system/greetd.service.d
 cat > /etc/systemd/system/greetd.service.d/override.conf <<'EOFOVERRIDE'
 [Unit]
-After=systemd-logind.service plymouth-quit-wait.service
-Wants=systemd-logind.service
-Conflicts=getty@tty1.service
-After=getty@tty1.service
+After=plymouth-quit-wait.service systemd-logind.service
+Wants=plymouth-quit-wait.service
+
+[Service]
+Environment=XDG_SESSION_TYPE=wayland
+Environment=XDG_CURRENT_DESKTOP=sway
+Stdout=null
+Stderr=journal
 EOFOVERRIDE
 
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}

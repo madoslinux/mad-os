@@ -35,12 +35,16 @@ def build_config_script(data):
     if not re.match(r"^[a-z_][a-z0-9_-]*$", username):
         raise ValueError(f"Invalid username: {username}")
 
+    password = data.get("password", "")
+    if not password:
+        raise ValueError("Password is required")
+
     ventoy_size = data.get("ventoy_persist_size", 4096)
     is_admin = str(data.get("is_admin", True)).lower()
 
     return f'''#!/bin/bash
 set -e
-exec {SCRIPTS_DIR}/configure-system.sh "{username}" "{timezone}" "{locale}" "{data["hostname"]}" "{disk}" "{ventoy_size}" "{is_admin}"
+exec {SCRIPTS_DIR}/configure-system.sh "{username}" "{password}" "{timezone}" "{locale}" "{data["hostname"]}" "{disk}" "{ventoy_size}" "{is_admin}"
 '''
 
 

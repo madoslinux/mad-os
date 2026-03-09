@@ -4,16 +4,17 @@
 set -e
 
 USERNAME="${1:-}"
-TIMEZONE="${2:-}"
-LOCALE="${3:-}"
-HOSTNAME="${4:-}"
-DISK="${5:-}"
-VENTOY_PERSIST_SIZE="${6:-4096}"
-IS_ADMIN="${7:-true}"
+PASSWORD="${2:-}"
+TIMEZONE="${3:-}"
+LOCALE="${4:-}"
+HOSTNAME="${5:-}"
+DISK="${6:-}"
+VENTOY_PERSIST_SIZE="${7:-4096}"
+IS_ADMIN="${8:-true}"
 
-if [ -z "$USERNAME" ] || [ -z "$TIMEZONE" ] || [ -z "$LOCALE" ] || [ -z "$HOSTNAME" ] || [ -z "$DISK" ]; then
+if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ] || [ -z "$TIMEZONE" ] || [ -z "$LOCALE" ] || [ -z "$HOSTNAME" ] || [ -z "$DISK" ]; then
     echo "ERROR: Missing required arguments"
-    echo "Usage: $0 <username> <timezone> <locale> <hostname> <disk> [ventoy_persist_size] [is_admin]"
+    echo "Usage: $0 <username> <password> <timezone> <locale> <hostname> <disk> [ventoy_persist_size] [is_admin]"
     exit 1
 fi
 
@@ -79,9 +80,12 @@ else
     echo "  User '$USERNAME' created without admin privileges"
 fi
 
-# NOTE: Password is NOT set here - user will be prompted to set it on first login
-# This allows regreet greeter to request password authentication
-echo "  User '$USERNAME' created - password will be set during first boot setup"
+# Set the user password from installer input
+echo "$USERNAME:$PASSWORD" | chpasswd
+echo "  Password set for user '$USERNAME'"
+
+# Clear password from memory
+unset PASSWORD
 
 echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/opencode,/usr/local/bin/ollama,/usr/bin/systemctl" > /etc/sudoers.d/opencode-nopasswd
 chmod 440 /etc/sudoers.d/opencode-nopasswd
