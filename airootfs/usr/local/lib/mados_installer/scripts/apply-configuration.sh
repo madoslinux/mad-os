@@ -138,13 +138,27 @@ EOFOVERRIDE
 systemctl enable vmwgfx-detector.service 2>/dev/null || true
 [ -x /usr/local/bin/vmwgfx-detector ] && /usr/local/bin/vmwgfx-detector
 
-# Silence kernel console messages
+# Silence kernel console messages and tune memory
 mkdir -p /etc/sysctl.d
-cat > /etc/sysctl.d/99-silence-console.conf <<'EOFSYSCTL'
+cat > /etc/sysctl.d/99-extreme-low-ram.conf <<'EOFSYSCTL'
+# Silence console
 kernel.printk = 1 1 1 1
 kernel.panic = 0
+
+# Memory tuning
+vm.vfs_cache_pressure = 200
+vm.swappiness = 5
+vm.dirty_ratio = 5
+vm.dirty_background_ratio = 3
+vm.min_free_kbytes = 16384
+
+# Network tuning
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_tw_reuse = 1
+net.core.rmem_max = 262144
+net.core.wmem_max = 262144
 EOFSYSCTL
-sysctl -p /etc/sysctl.d/99-silence-console.conf 2>/dev/null || true
+sysctl -p /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || true
 
 # Setup user home directories and configs
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}
