@@ -297,7 +297,7 @@ class TestPostInstallServices(unittest.TestCase):
     def test_greetd_ordered_after_plymouth_quit(self):
         """greetd.service.d override must order after plymouth-quit-wait."""
         self.assertIn(
-            "After=systemd-logind.service plymouth-quit-wait.service",
+            "After=plymouth-quit-wait.service systemd-logind.service",
             self.script_content,
             "greetd must start after plymouth-quit-wait",
         )
@@ -397,10 +397,11 @@ class TestChrootValidation(unittest.TestCase):
         """Chroot must fail if config script is empty."""
         # This validation is implicit - bash will fail on empty script
         from mados_installer.modules.config_generator import build_config_script
-
+    
         script = build_config_script(
             {
                 "username": "test",
+                "password": "testpass123",
                 "timezone": "UTC",
                 "locale": "en_US.UTF-8",
                 "hostname": "test",
