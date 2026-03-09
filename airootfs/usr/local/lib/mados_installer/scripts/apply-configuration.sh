@@ -137,8 +137,14 @@ chmod 750 /var/cache/regreet
 mkdir -p /var/lib/greetd
 chown greeter:greeter /var/lib/greetd
 
-# Disable getty@tty1 to avoid conflict with greetd
+# Disable getty@tty1 to avoid conflict with greetd and stop kernel messages
 systemctl disable getty@tty1.service 2>/dev/null || true
+systemctl mask getty@tty1.service 2>/dev/null || true
+
+# Silence kernel console messages (prevent debug spam)
+# This applies at boot via sysctl
+sed -i 's/^kernel.printk =.*/kernel.printk = 2 4 1 7/' /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || \
+    echo "kernel.printk = 2 4 1 7" >> /etc/sysctl.d/99-silence-console.conf
 
 mkdir -p /etc/systemd/system/greetd.service.d
 cat > /etc/systemd/system/greetd.service.d/override.conf <<'EOFOVERRIDE'
@@ -149,6 +155,9 @@ Wants=plymouth-quit-wait.service
 [Service]
 Environment=XDG_SESSION_TYPE=wayland
 Environment=XDG_CURRENT_DESKTOP=sway
+# Suppress console output from greeter
+StandardOutput=null
+StandardError=journal
 EOFOVERRIDE
 
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}
