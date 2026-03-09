@@ -46,7 +46,7 @@ PACKAGE_GROUPS = {
         "desc_key": "pkg_office",
         "short_name": "Office",
         "packages": [
-            {"id": "libreoffice-fresh", "name": "LibreOffice", "default": True},
+            {"id": "libreoffice-fresh", "name": "LibreOffice (Writer, Calc, Impress)", "default": True},
             {"id": "thunderbird", "name": "Thunderbird (Email)", "default": False},
             {"id": "calibre", "name": "Calibre (E-books)", "default": False},
         ],
