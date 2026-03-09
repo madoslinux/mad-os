@@ -160,6 +160,15 @@ net.core.wmem_max = 262144
 EOFSYSCTL
 sysctl -p /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || true
 
+# Configure ZRAM swap
+cat > /etc/systemd/zram-generator.conf <<'EOFZRAM'
+[zram0]
+zram-size = ram / 2
+compression-algorithm = zstd
+swap-priority = 100
+fs-type = swap
+EOFZRAM
+
 # Setup user home directories and configs
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/.config/{sway,hypr,waybar,foot,wofi,gtk-3.0,gtk-4.0}
 install -d -o "$USERNAME" -g "$USERNAME" /home/"$USERNAME"/{Documents,Downloads,Music,Videos,Desktop,Templates,Public}
