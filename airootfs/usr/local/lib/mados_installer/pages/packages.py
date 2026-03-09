@@ -21,7 +21,7 @@ PACKAGE_GROUPS = {
             {"id": "docker", "name": "Docker", "default": False},
             {"id": "podman", "name": "Podman", "default": False},
             {"id": "ansible", "name": "Ansible", "default": False},
-            {"id": "rust", "name": "Rust", "default": False},
+            {"id": "rust", "name": "Rust", "default": True},
             {"id": "nvm", "name": "NVM (Node Version Manager)", "default": False},
             {"id": "code", "name": "Visual Studio Code (OSS)", "default": False},
             {"id": "vscodium", "name": "VSCodium (MS builds removed)", "default": False},
