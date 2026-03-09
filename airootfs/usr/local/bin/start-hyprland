@@ -1,6 +1,6 @@
 #!/bin/bash
 # start-hyprland - Wrapper to launch Hyprland with proper environment
-# Returns non-zero if Hyprland fails to start, allowing fallback to Sway
+# SILENT OPERATION - no debug spam
 #
 # Called from:
 #   - .bash_profile (installed system)
@@ -13,7 +13,7 @@
 #   - Returns exit code 1 on failure so the || fallback to Sway triggers
 
 LOG_TAG="start-hyprland"
-MIN_RUNTIME=5  # seconds - if Hyprland exits faster than this, it failed
+MIN_RUNTIME=5  # seconds
 
 logger -p user.info -t "$LOG_TAG" "Preparing to launch Hyprland"
 
@@ -22,8 +22,16 @@ export XDG_SESSION_TYPE="${XDG_SESSION_TYPE:-wayland}"
 export XDG_CURRENT_DESKTOP="${XDG_CURRENT_DESKTOP:-Hyprland}"
 export MOZ_ENABLE_WAYLAND="${MOZ_ENABLE_WAYLAND:-1}"
 
-# Use systemd-logind as the seat management backend (madOS uses systemd)
+# Use systemd-logind as the seat management backend
 export LIBSEAT_BACKEND="${LIBSEAT_BACKEND:-logind}"
+
+# SILENCE ALL DEBUG MESSAGES from Hyprland and DRM
+export WLR_LOG_LEVEL=error
+export HYPRLAND_LOG_DISABLED=1
+export NIXOS_OSTYPE_SHOULDBE=linux
+export QT_LOGGING_RULES="*.debug=false;*.info=false;*.warning=false"
+export G_MESSAGES_DEBUG=
+export GIO_USE_VFS=
 
 # Verify Hyprland binary exists
 if ! command -v Hyprland >/dev/null 2>&1; then

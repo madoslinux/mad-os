@@ -1,12 +1,12 @@
 #!/bin/bash
 # setup-greeter-session - Configure default session for regreet based on hardware
 # Called by cage-greeter before launching regreet
+# SILENT OPERATION - no console output
 
 DEFAULT_SESSION="${MADOS_DEFAULT_SESSION:-sway}"
 REGREET_CONF="/etc/greetd/regreet.toml"
 
 if [ ! -f "$REGREET_CONF" ]; then
-    echo "regreet.toml not found, skipping session setup"
     exit 0
 fi
 
@@ -58,4 +58,5 @@ EOFREGREET
 chmod 644 "$REGREET_CONF"
 chown greeter:greeter "$REGREET_CONF" 2>/dev/null || true
 
-echo "Default session set to: $DEFAULT_SESSION"
+# SILENT: No echo statements - all output suppressed
+exit 0
