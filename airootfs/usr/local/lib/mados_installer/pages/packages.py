@@ -59,6 +59,7 @@ PACKAGE_GROUPS = {
         "packages": [
             {"id": "firefox", "name": "Firefox", "default": True},
             {"id": "chromium", "name": "Chromium", "default": False},
+            {"id": "discord", "name": "Discord", "default": False},
             {"id": "telegram-desktop", "name": "Telegram Desktop", "default": False},
             {"id": "transmission-gtk", "name": "Transmission (Torrent)", "default": False},
         ],
