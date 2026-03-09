@@ -97,12 +97,17 @@ def update_summary(app):
     acct_title.set_halign(Gtk.Align.START)
     acct_card.pack_start(acct_title, False, False, 0)
 
+    is_admin = app.install_data.get("is_admin", True)
+    admin_text = "Administrator" if is_admin else "Standard User"
+    admin_color = NORD_AURORA["nord14"] if is_admin else NORD_SNOW_STORM["nord5"]
+    
     acct_info = Gtk.Label()
     acct_info.set_markup(
-        f'<span size="9000">'
+        '<span size="9000">'
         f"  {app.t('username')}  <b>{app.install_data['username']}</b>\n"
         f"  {app.t('hostname')}  <b>{app.install_data['hostname']}</b>\n"
-        f"  Password:  <b>{'●' * min(len(app.install_data['password']), 8)}</b>"
+        f"  Password:  <b>{'●' * min(len(app.install_data['password']), 8)}</b>\n"
+        f'  Account Type:  <b foreground="{admin_color}">{admin_text}</b>'
         f"</span>"
     )
     acct_info.set_halign(Gtk.Align.START)

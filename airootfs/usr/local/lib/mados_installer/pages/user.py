@@ -91,6 +91,25 @@ def create_user_page(app):
     app.hostname_entry.set_text(app.install_data["hostname"])
     form.pack_start(app.hostname_entry, False, False, 0)
 
+    # Admin checkbox
+    admin_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    admin_box.set_margin_top(8)
+    app.admin_checkbox = Gtk.CheckButton()
+    app.admin_checkbox.set_active(True)  # Checked by default
+    
+    admin_label = Gtk.Label()
+    admin_label.set_markup(
+        f'<span size="9000" foreground="{NORD_FROST["nord8"]}">'
+        f"Allow this user to install software and modify system settings</span>"
+    )
+    admin_label.set_halign(Gtk.Align.START)
+    admin_label.set_use_markup(True)
+    admin_label.set_line_wrap(True)
+    
+    admin_box.pack_start(app.admin_checkbox, False, False, 0)
+    admin_box.pack_start(admin_label, False, False, 0)
+    form.pack_start(admin_box, False, False, 0)
+
     content.pack_start(form, False, False, 0)
 
     # Navigation
@@ -108,6 +127,7 @@ def _on_user_next(app):
     password = app.password_entry.get_text()
     password2 = app.password2_entry.get_text()
     hostname = app.hostname_entry.get_text()
+    is_admin = app.admin_checkbox.get_active()
 
     if not re.match(r"^[a-z_][a-z0-9_-]*$", username):
         show_error(
@@ -145,4 +165,5 @@ def _on_user_next(app):
     app.install_data["username"] = username
     app.install_data["password"] = password
     app.install_data["hostname"] = hostname
+    app.install_data["is_admin"] = is_admin
     app.notebook.next_page()

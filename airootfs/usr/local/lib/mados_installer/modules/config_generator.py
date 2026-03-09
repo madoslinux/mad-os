@@ -36,10 +36,11 @@ def build_config_script(data):
         raise ValueError(f"Invalid username: {username}")
 
     ventoy_size = data.get("ventoy_persist_size", 4096)
+    is_admin = str(data.get("is_admin", True)).lower()
 
     return f'''#!/bin/bash
 set -e
-exec {SCRIPTS_DIR}/configure-system.sh "{username}" "{timezone}" "{locale}" "{data["hostname"]}" "{disk}" "{ventoy_size}"
+exec {SCRIPTS_DIR}/configure-system.sh "{username}" "{timezone}" "{locale}" "{data["hostname"]}" "{disk}" "{ventoy_size}" "{is_admin}"
 '''
 
 

@@ -9,10 +9,11 @@ LOCALE="${3:-}"
 HOSTNAME="${4:-}"
 DISK="${5:-}"
 VENTOY_PERSIST_SIZE="${6:-4096}"
+IS_ADMIN="${7:-true}"
 
 if [ -z "$USERNAME" ] || [ -z "$TIMEZONE" ] || [ -z "$LOCALE" ] || [ -z "$HOSTNAME" ] || [ -z "$DISK" ]; then
     echo "ERROR: Missing required arguments"
-    echo "Usage: $0 <username> <timezone> <locale> <hostname> <disk> [ventoy_persist_size]"
+    echo "Usage: $0 <username> <timezone> <locale> <hostname> <disk> [ventoy_persist_size] [is_admin]"
     exit 1
 fi
 
@@ -67,13 +68,20 @@ fi
 
 rm -f /etc/sudoers.d/99-opencode-nopasswd
 
-useradd -m -G wheel,audio,video,storage -s /usr/bin/zsh "$USERNAME"
+# Create user - add to wheel group only if is_admin is true
+if [ "$IS_ADMIN" = "true" ]; then
+    useradd -m -G wheel,audio,video,storage -s /usr/bin/zsh "$USERNAME"
+    echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/wheel
+    chmod 440 /etc/sudoers.d/wheel
+    echo "  User '$USERNAME' created with admin privileges (sudo access)"
+else
+    useradd -m -G audio,video,storage -s /usr/bin/zsh "$USERNAME"
+    echo "  User '$USERNAME' created without admin privileges"
+fi
+
 passwd -d "$USERNAME" 2>/dev/null || true
 
-echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/wheel
-chmod 440 /etc/sudoers.d/wheel
-
-echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/opencode,/usr/local/bin/ollama,/usr/bin/pacman,/usr/bin/systemctl" > /etc/sudoers.d/opencode-nopasswd
+echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/opencode,/usr/local/bin/ollama,/usr/bin/systemctl" > /etc/sudoers.d/opencode-nopasswd
 chmod 440 /etc/sudoers.d/opencode-nopasswd
 
 echo '[PROGRESS 3/8] Installing GRUB bootloader...'
