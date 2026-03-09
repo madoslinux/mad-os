@@ -44,7 +44,6 @@ jobs:
         id: release_info
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          echo "Tag: $TAG"
           if [[ "$TAG" == *"-beta" ]]; then
             echo "is_release=false" >> "$GITHUB_OUTPUT"
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
@@ -58,38 +57,30 @@ jobs:
       - name: Build ISO
         id: build
         run: |
-          WORKSPACE="${{ github.workspace }}"
           rm -rf out/ 2>/dev/null || true
-          mkdir -p out
-          chmod 777 out
+          mkdir -p out && chmod 777 out
           docker run --privileged --rm \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
-            -v "$WORKSPACE:/build" \
+            -v "${{ github.workspace }}:/build" \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
-              echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
               pacman-key --init && pacman-key --populate
-              pacman -Syu --noconfirm archiso
-              pacman -Scc --noconfirm
+              pacman -Syu --noconfirm archiso && pacman -Scc --noconfirm
               cd /build && rm -rf out/*
-              mkarchiso -v -w /tmp/work -o out .
-            "
+              mkarchiso -v -w /tmp/work -o out ."
           ISO_FILE=$(ls out/*.iso 2>/dev/null | head -1)
-          [ -z "$ISO_FILE" ] && echo "ERROR: No ISO file found" && exit 1
-          sha256sum out/*.iso > out/SHA256SUMS || true
+          [ -z "$ISO_FILE" ] && echo "ERROR: No ISO" && exit 1
+          sha256sum out/*.iso > out/SHA256SUMS
           VERSION="${GITHUB_REF_NAME#v}"
-          NEW_ISO_NAME="madOS-${VERSION}-minimal-x86_64.iso"
-          mv "$ISO_FILE" "out/${NEW_ISO_NAME}"
-          sed -i "s|$(basename "$ISO_FILE")|${NEW_ISO_NAME}|g" out/SHA256SUMS
-          ISO_SIZE=$(stat --format=%s "out/${NEW_ISO_NAME}" 2>/dev/null || echo 0)
-          ISO_SIZE_MB=$((ISO_SIZE / 1024 / 1024))
-          SHORT_SHA=$(echo "$GITHUB_SHA" | cut -c1-7)
-          echo "iso_name=${NEW_ISO_NAME}" >> $GITHUB_OUTPUT
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          NEW_NAME="madOS-${VERSION}-minimal-x86_64.iso"
+          mv "$ISO_FILE" "out/$NEW_NAME"
+          sed -i "s|$(basename $ISO_FILE)|${NEW_NAME}|g" out/SHA256SUMS
+          SIZE_MB=$(($(stat -c%s "out/$NEW_NAME") / 1024 / 1024))
+          echo "iso_name=$NEW_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$(date +%Y.%m.%d)" >> $GITHUB_OUTPUT
-          echo "iso_size_mb=${ISO_SIZE_MB}" >> $GITHUB_OUTPUT
-          echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
-          echo "Build successful!"
+          echo "iso_size_mb=$SIZE_MB" >> $GITHUB_OUTPUT
+          echo "short_sha=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
 
       - name: Upload to GitHub Releases
         id: upload_gh
@@ -102,10 +93,6 @@ jobs:
             **madOS ${{ steps.build.outputs.version }}**
             - ISO: `${{ steps.build.outputs.iso_name }}`
             - Size: ${{ steps.build.outputs.iso_size_mb }} MB
-            - Build: ${{ steps.build.outputs.build_date }}
-            - Commit: `${{ steps.build.outputs.short_sha }}`
-            ### Download
-            - **ISO:** [Download](${{ steps.set_url.outputs.download_url }})
           prerelease: ${{ steps.release_info.outputs.is_prerelease }}
           make_latest: ${{ steps.release_info.outputs.is_release }}
         env:
@@ -128,47 +115,30 @@ jobs:
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
         with:
           ref: gh-pages
-          fetch-depth: 0
-      - name: Update download links
+      - name: Update links
         env:
           DOWNLOAD_URL: ${{ needs.build.outputs.download_url }}
           VERSION: ${{ needs.build.outputs.version }}
           RELEASE_TYPE: ${{ needs.build.outputs.release_type }}
         run: |
           CHANNEL="beta"
-          if [ "$RELEASE_TYPE" = "stable" ]; then CHANNEL="stable"; fi
-          echo "CHANNEL=$CHANNEL"
-          python3 -c "
+          [ "$RELEASE_TYPE" = "stable" ] && CHANNEL="stable"
+          python3 << 'PYEOF'
 import json, os
-channel = os.environ.get('CHANNEL', 'beta')
+ch = os.environ.get('CHANNEL', 'beta')
 data = {}
 try:
-  with open('download-info.html', 'r') as f:
-    content = f.read()
-  if content.startswith('---'):
-    data = json.loads(content.split('---', 2)[2].strip())
-  else:
-    data = json.loads(content)
-except:
-  pass
-data[channel] = {
-  'version': os.environ.get('VERSION'),
-  'url': os.environ.get('DOWNLOAD_URL'),
-  'date': ''
-}
-with open('download-info.html', 'w') as f:
-  f.write(json.dumps(data, indent=2))
-"
-          if [ "$CHANNEL" = "beta" ]; then
-            sed -i "s|id=\"beta-download-link\" href=\"[^\"]*\"|id=\"beta-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
-          else
-            sed -i "s|id=\"stable-download-link\" href=\"[^\"]*\"|id=\"stable-download-link\" href=\"$DOWNLOAD_URL\"|g" index.html
-          fi
-      - name: Commit and Push
+  with open('download-info.html') as f: data = json.loads(f.read().split('---',2)[-1].strip())
+except: pass
+data[ch] = {'version': os.environ.get('VERSION'), 'url': os.environ.get('DOWNLOAD_URL')}
+with open('download-info.html', 'w') as f: f.write(json.dumps(data, indent=2))
+PYEOF
+          [ "$CHANNEL" = "beta" ] && sed -i "s|href=\"[^\"]*\" id=\"beta-download-link\"|href=\"$DOWNLOAD_URL\" id=\"beta-download-link\"|g" index.html || sed -i "s|href=\"[^\"]*\" id=\"stable-download-link\"|href=\"$DOWNLOAD_URL\" id=\"stable-download-link\"|g" index.html
+      - name: Commit
         run: |
           git diff --quiet && exit 0
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add download-info.html index.html
-          git commit -m "ci: update download links to ${{ needs.build.outputs.version }}"
+          git commit -m "update to v${{ needs.build.outputs.version }}"
           git push origin gh-pages
