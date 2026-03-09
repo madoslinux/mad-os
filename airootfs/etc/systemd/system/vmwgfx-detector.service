@@ -1,0 +1,16 @@
+[Unit]
+Description=Detect VMware and configure vmwgfx driver
+DefaultDependencies=no
+Before=sysinit.target
+After=local-fs.target
+ConditionPathExists=/sys/class/dmi/id
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/vmwgfx-detector
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=sysinit.target
