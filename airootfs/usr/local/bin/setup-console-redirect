@@ -1,0 +1,29 @@
+#!/bin/bash
+# setup-console-redirect - Redirect kernel messages to tty2, keep tty1 clean for greeter
+
+# Update GRUB to use tty2 for console output
+if [ -f /etc/default/grub ]; then
+    # Add console=tty2 to GRUB_CMDLINE_LINUX
+    if ! grep -q "console=tty2" /etc/default/grub; then
+        sed -i 's/GRUB_CMDLINE_LINUX="\([^"]*\)"/GRUB_CMDLINE_LINUX="\1 console=tty2"/' /etc/default/grub
+        echo "Added console=tty2 to GRUB_CMDLINE_LINUX"
+    fi
+    
+    # Set console=tty2 as default too
+    if ! grep -q "console=tty2" /etc/default/grub; then
+        sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="\([^"]*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 console=tty2"/' /etc/default/grub
+        echo "Added console=tty2 to GRUB_CMDLINE_LINUX_DEFAULT"
+    fi
+    
+    # Regenerate grub config
+    grub-mkconfig -o /boot/grub/grub.cfg 2>/dev/null && echo "GRUB config updated"
+fi
+
+# Set kernel.printk to show messages but keep tty1 clean
+cat > /etc/sysctl.d/99-console.conf << 'EOF'
+# Show warnings/errors (level 4) but allow switching to tty2 to read them
+kernel.printk = 4 4 1 4
+EOF
+sysctl -p /etc/sysctl.d/99-console.conf 2>/dev/null
+
+echo "Console redirect configured: messages go to tty2, tty1 stays clean"
