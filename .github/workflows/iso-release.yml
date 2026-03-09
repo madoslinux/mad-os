@@ -22,7 +22,7 @@ jobs:
   build:
     name: "Build ISO"
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'refs/tags/v') }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' && startsWith(github.event.workflow_run.head_branch, 'refs/tags/') }}
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
       version: ${{ steps.build.outputs.version }}
