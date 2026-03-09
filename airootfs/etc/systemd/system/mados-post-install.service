@@ -1,15 +1,28 @@
 [Unit]
 Description=madOS Post-Install Package Manager
-After=display-manager.service network-online.service greetd.service
+# Wait for user to log in graphically
+After=display-manager.service greetd.service
+# Wait for seat/session to be active
+Requires=display-manager.service greetd.service
+# Network for package downloads
 Wants=network-online.service
+After=network-online.service
+# Only run for actual users (not mados live user)
 ConditionPathExists=!/home/mados/.config/mados/post-install-done
+# Only run if a real user exists (not the default mados user)
+ConditionPathExists=!/home/mados
 
 [Service]
 Type=oneshot
-User=root
+# Run as the real user, not root - needed for GTK
+ExecStart=/bin/sh -c 'for user in /home/*; do if [ -d "$user" ] && [ "$(basename $user)" != "mados" ]; then echo "Running post-install for $(basename $user)"; su - "$(basename $user)" -c "DISPLAY=:0 /usr/local/bin/mados-post-install"; break; fi; done'
+# Wait for X11/Wayland to be ready with proper permissions
 Environment=DISPLAY=:0
-ExecStart=/usr/local/bin/mados-post-install
+Environment=XAUTHORITY=/run/user/1000/gdm/Xauthority
+StandardOutput=journal
+StandardError=journal
 RemainAfterExit=no
+TimeoutStartSec=120
 
 [Install]
 WantedBy=multi-user.target
