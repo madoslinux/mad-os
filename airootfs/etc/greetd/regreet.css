@@ -69,3 +69,21 @@ button:active {
 .power-menu button:hover {
     background-color: rgba(200, 50, 50, 0.8);
 }
+
+/* Auto-focus hint - make password field more prominent */
+.password-entry:focus {
+    background-color: rgba(23, 147, 209, 0.2);
+    border-color: #1793d1;
+    box-shadow: 0 0 12px rgba(23, 147, 209, 0.5);
+}
+
+/* Make login button more prominent */
+.login-button {
+    background-color: #1793d1;
+    font-size: 14px;
+    padding: 10px 24px;
+}
+
+.login-button:hover {
+    background-color: #4aa3dc;
+}

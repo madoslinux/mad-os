@@ -122,6 +122,7 @@ def step_copy_scripts(app):
         "hyprland-session",
         "start-hyprland",
         "select-compositor",
+        "setup-greeter-session",
         "mados-audio-quality.sh",
     ]
     for script in scripts:

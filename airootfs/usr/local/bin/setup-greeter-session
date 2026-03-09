@@ -1,0 +1,44 @@
+#!/bin/bash
+# setup-greeter-session - Configure default session for regreet based on hardware
+# Called by cage-greeter before launching regreet
+
+DEFAULT_SESSION="${MADOS_DEFAULT_SESSION:-sway}"
+REGREET_CONF="/etc/greetd/regreet.toml"
+
+if [ ! -f "$REGREET_CONF" ]; then
+    echo "regreet.toml not found, skipping session setup"
+    exit 0
+fi
+
+# Reorder sessions: put default first
+if [ "$DEFAULT_SESSION" = "hyprland" ]; then
+    SESSIONS='available = [
+    "/usr/share/wayland-sessions/hyprland.desktop",
+    "/usr/share/wayland-sessions/sway.desktop"
+]'
+else
+    SESSIONS='available = [
+    "/usr/share/wayland-sessions/sway.desktop",
+    "/usr/share/wayland-sessions/hyprland.desktop"
+]'
+fi
+
+# Update the sessions section in regreet.toml
+sed -i '/\[sessions\]/,/^\[/c\[sessions\]\n'"$(echo "$SESSIONS" | sed 's/"/\\"/g' | tr '\n' '\n')"'\n\n[css]' "$REGREET_CONF" 2>/dev/null || {
+    # Fallback: rewrite entire file with sessions
+    cp "$REGREET_CONF" "$REGREET_CONF.bak"
+    
+    # Extract everything before [sessions]
+    head -n $(grep -n '\[sessions\]' "$REGREET_CONF" | cut -d: -f1 | head -1) "$REGREET_CONF.bak" | head -n -1 > "$REGREET_CONF"
+    
+    # Add new sessions section
+    cat >> "$REGREET_CONF" << EOFSESS
+[sessions]
+$SESSIONS
+
+[css]
+path = "/etc/greetd/regreet.css"
+EOFSESS
+}
+
+echo "Default session set to: $DEFAULT_SESSION"

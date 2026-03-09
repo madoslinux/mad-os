@@ -29,17 +29,34 @@ fi
 export LIBSEAT_BACKEND=logind
 
 USE_SOFTWARE_RENDERING=0
+DEFAULT_SESSION="sway"  # Default fallback
 
 if [ -x /usr/local/bin/detect-legacy-hardware ]; then
     if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
         USE_SOFTWARE_RENDERING=1
-        log "Legacy hardware detected, using software rendering"
+        DEFAULT_SESSION="sway"
+        log "Legacy hardware detected, using software rendering (sway)"
+    else
+        DEFAULT_SESSION="hyprland"
+        log "Hardware acceleration detected, using hyprland"
     fi
 else
     if systemd-detect-virt --vm --quiet 2>/dev/null; then
         USE_SOFTWARE_RENDERING=1
-        log "VM detected (no hardware detection script), using software rendering"
+        DEFAULT_SESSION="sway"
+        log "VM detected (no hardware detection script), using software rendering (sway)"
+    else
+        DEFAULT_SESSION="hyprland"
+        log "No VM detected, assuming hardware acceleration (hyprland)"
     fi
+fi
+
+# Export default session for regreet
+export MADOS_DEFAULT_SESSION="$DEFAULT_SESSION"
+
+# Setup default session in regreet.toml
+if [ -x /usr/local/bin/setup-greeter-session ]; then
+    /usr/local/bin/setup-greeter-session
 fi
 
 apply_software_rendering() {
