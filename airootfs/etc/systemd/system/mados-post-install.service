@@ -1,28 +1,31 @@
 [Unit]
 Description=madOS Post-Install Package Manager
-# Wait for user to log in graphically
-After=display-manager.service greetd.service
-# Wait for seat/session to be active
+# Wait for graphical session to be fully active
+After=display-manager.service greetd.service systemd-user-sessions.service
 Requires=display-manager.service greetd.service
 # Network for package downloads
 Wants=network-online.service
 After=network-online.service
-# Only run for actual users (not mados live user)
+# Only run for first boot (not mados live user)
 ConditionPathExists=!/home/mados/.config/mados/post-install-done
-# Only run if a real user exists (not the default mados user)
-ConditionPathExists=!/home/mados
+# Ensure a real user home exists
+ConditionDirectoryNotEmpty=/home
 
 [Service]
 Type=oneshot
-# Run as the real user, not root - needed for GTK
-ExecStart=/bin/sh -c 'for user in /home/*; do if [ -d "$user" ] && [ "$(basename $user)" != "mados" ]; then echo "Running post-install for $(basename $user)"; su - "$(basename $user)" -c "DISPLAY=:0 /usr/local/bin/mados-post-install"; break; fi; done'
-# Wait for X11/Wayland to be ready with proper permissions
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/run/user/1000/gdm/Xauthority
+# Root is required for pacman operations
+User=root
+# Find first real user and get their display auth
+ExecStartPre=/bin/sh -c 'for d in /home/*/.Xauthority; do [ -f "$d" ] && export XAUTHORITY=$d && export DISPLAY=:0 && break; done'
+# Run post-install as root but with user's display permissions
+ExecStart=/bin/bash -c 'export DISPLAY=:0; export XAUTHORITY=$(find /home -name ".Xauthority" -type f 2>/dev/null | head -1); /usr/local/bin/mados-post-install'
+# Allow time for X11/Wayland to be ready
+TimeoutStartSec=180
+# Log everything
 StandardOutput=journal
 StandardError=journal
-RemainAfterExit=no
-TimeoutStartSec=120
+# Keep user environment
+PassEnvironment=DISPLAY XAUTHORITY
 
 [Install]
 WantedBy=multi-user.target
