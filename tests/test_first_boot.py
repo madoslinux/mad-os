@@ -31,7 +31,6 @@ class TestConfigScriptStructure(unittest.TestCase):
             "locale": "en_US.UTF-8",
             "hostname": "test-host",
             "disk": "/dev/sda",
-            "password": "testpass123",
         }
         self.content = build_config_script(sample_data)
 

@@ -397,7 +397,7 @@ class TestChrootValidation(unittest.TestCase):
         """Chroot must fail if config script is empty."""
         # This validation is implicit - bash will fail on empty script
         from mados_installer.modules.config_generator import build_config_script
-    
+
         script = build_config_script(
             {
                 "username": "test",
@@ -406,7 +406,6 @@ class TestChrootValidation(unittest.TestCase):
                 "locale": "en_US.UTF-8",
                 "hostname": "test",
                 "disk": "/dev/sda",
-                "password": "testpass123",
             }
         )
         self.assertGreater(len(script), 100, "Config script must have content")
