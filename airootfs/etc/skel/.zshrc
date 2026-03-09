@@ -32,42 +32,20 @@ if [ -f /etc/hostname ] && grep -q "mados" /etc/hostname 2>/dev/null; then
         touch /tmp/.madOS-welcome-shown-zsh
         cat << 'EOF'
 
-╔═══════════════════════════════════════════════════╗
-║                                                   ║
-║     ███╗   ███╗ █████╗ ██████╗  ██████╗ ███████╗ ║
-║     ████╗ ████║██╔══██╗██╔══██╗██╔═══██╗██╔════╝ ║
-║     ██╔████╔██║███████║██║  ██║██║   ██║███████╗ ║
-║     ██║╚██╔╝██║██╔══██║██║  ██║██║   ██║╚════██║ ║
-║     ██║ ╚═╝ ██║██║  ██║██████╔╝╚██████╔╝███████║ ║
-║     ╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚══════╝ ║
-║                                                   ║
-║         AI-Orchestrated Arch Linux System        ║
-║               Powered by OpenCode                ║
-║                                                   ║
-╚═══════════════════════════════════════════════════╝
-
-Welcome to madOS Live Environment!
-
-📦 To install madOS to disk:
-   sudo install-mados
-
-🌐 Network setup:
-   nmtui                    (Network Manager TUI)
-
-💻 Type 'fastfetch' to see system info
-💻 Type 'opencode' to start the AI assistant
+╔══════════════════════════════════════════════════════╗
+║                                                      ║
+║     ███╗   ███╗ █████╗ ██████╗  ██████╗ ███████╗     ║
+║     ████╗ ████║██╔══██╗██╔══██╗██╔═══██╗██╔════╝     ║
+║     ██╔████╔██║███████║██║  ██║██║   ██║███████╗     ║
+║     ██║╚██╔╝██║██╔══██║██║  ██║██║   ██║╚════██║     ║
+║     ██║ ╚═╝ ██║██║  ██║██████╔╝╚██████╔╝███████║     ║
+║     ╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚══════╝     ║
+║                                                      ║
+║         AI-Orchestrated Arch Linux System            ║
+║           Powered by Ollama and OpenCode             ║
+║                                                      ║
+╚══════════════════════════════════════════════════════╝
 
 EOF
-    fi
-fi
-
-# NVM (Node Version Manager) - para npm a nivel de usuario
-export NVM_DIR="$HOME/.nvm"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-    # shellcheck source=/dev/null
-    source "$NVM_DIR/nvm.sh"
-    # Set default node version
-    if command -v nvm &>/dev/null; then
-        nvm alias default system 2>/dev/null || true
     fi
 fi

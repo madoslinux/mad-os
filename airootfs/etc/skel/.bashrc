@@ -18,54 +18,19 @@ if [ -f /etc/hostname ] && grep -q "mados" /etc/hostname 2>/dev/null; then
         touch /tmp/.madOS-welcome-shown
         cat << 'EOF'
 
-╔═══════════════════════════════════════════════════╗
-║                                                   ║
-║     ███╗   ███╗ █████╗ ██████╗  ██████╗ ███████╗ ║
-║     ████╗ ████║██╔══██╗██╔══██╗██╔═══██╗██╔════╝ ║
-║     ██╔████╔██║███████║██║  ██║██║   ██║███████╗ ║
-║     ██║╚██╔╝██║██╔══██║██║  ██║██║   ██║╚════██║ ║
-║     ██║ ╚═╝ ██║██║  ██║██████╔╝╚██████╔╝███████║ ║
-║     ╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚══════╝ ║
-║                                                   ║
-║         AI-Orchestrated Arch Linux System        ║
-║               Powered by OpenCode                ║
-║                                                   ║
-╚═══════════════════════════════════════════════════╝
-
-Welcome to madOS Live Environment!
-
-📦 To install madOS to disk:
-   sudo install-mados
-
-   (Auto-selects GTK installer if available, TUI otherwise)
-
-🔧 Alternative installers:
-   sudo install-mados.sh                    (TUI - dialog based)
-   sudo install-mados-gtk.py                (GTK - graphical)
-   sudo /usr/local/bin/install-arch-optimized.sh  (CLI - legacy)
-
-🌐 Network setup:
-   nmtui                    (Network Manager TUI)
-   sudo systemctl start iwd (WiFi daemon)
-
-💻 System specs:
-   • Sway Wayland compositor
-   • OpenCode AI assistant
-   • Optimized for 1.9GB RAM
-   • Intel Atom support
-
-📚 Keyboard shortcuts:
-   Super+Enter      - Open terminal
-   Super+D          - Application launcher
-   Super+Shift+Q    - Close window
-
-🐛 Debugging:
-   mados-debug              (quick system diagnostics)
-   mados-debug chromium     (Chromium logs)
-   mados-debug apps         (Python app diagnostics)
-   less /usr/share/doc/madOS/DEBUGGING.md
-
-Type 'opencode' to start the AI assistant (after installation)
+╔══════════════════════════════════════════════════════╗
+║                                                      ║
+║     ███╗   ███╗ █████╗ ██████╗  ██████╗ ███████╗     ║
+║     ████╗ ████║██╔══██╗██╔══██╗██╔═══██╗██╔════╝     ║
+║     ██╔████╔██║███████║██║  ██║██║   ██║███████╗     ║
+║     ██║╚██╔╝██║██╔══██║██║  ██║██║   ██║╚════██║     ║
+║     ██║ ╚═╝ ██║██║  ██║██████╔╝╚██████╔╝███████║     ║
+║     ╚═╝     ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚══════╝     ║
+║                                                      ║
+║         AI-Orchestrated Arch Linux System            ║
+║           Powered by Ollama and OpenCode             ║
+║                                                      ║
+╚══════════════════════════════════════════════════════╝
 
 EOF
     fi
