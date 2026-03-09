@@ -197,7 +197,7 @@ jobs:
 
       - name: Upload to GitHub Releases
         id: upload_gh
-        uses: softprops/action-gh-release@de2c0deb81c15680e39d697ed27f7c2b3f10b98b
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           files: |
@@ -343,7 +343,7 @@ jobs:
           curl -L "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/SHA256SUMS" -o out/SHA256SUMS || true
 
       - name: Create Release
-        uses: softprops/action-gh-release@de2c0deb81c15680e39d697ed27f7c2b3f10b98b
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: "madOS ${{ needs.build.outputs.version }}"
