@@ -1,19 +1,9 @@
 #!/bin/bash
-export XDG_SESSION_TYPE=wayland
-export XDG_CURRENT_DESKTOP=Hyprland
-export MOZ_ENABLE_WAYLAND=1
+# hyprland-session wrapper with silent startup
 
-# Use systemd-logind as the seat management backend (madOS uses systemd)
-export LIBSEAT_BACKEND=logind
+# Clear console and suppress all messages
+exec 0</dev/null 1>/dev/null 2>&1
+printf '\033[2J\033[H\033[3J' 2>/dev/null
 
-# Hyprland requires GPU acceleration.  On legacy / no-3D hardware, fall
-# back to sway-session which supports pixman software rendering.
-if [ -x /usr/local/bin/detect-legacy-hardware ]; then
-    if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        logger -p user.warning -t mados-hyprland "Legacy hardware detected, falling back to sway-session"
-        exec /usr/local/bin/sway-session
-    fi
-fi
-
-logger -p user.info -t mados-hyprland "Launching Hyprland compositor"
-exec start-hyprland
+# Launch start-hyprland
+exec /usr/local/bin/start-hyprland "$@"
