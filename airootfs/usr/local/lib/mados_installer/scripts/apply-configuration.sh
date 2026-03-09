@@ -142,28 +142,23 @@ systemctl disable getty@tty1.service 2>/dev/null || true
 systemctl mask getty@tty1.service 2>/dev/null || true
 
 # Silence ALL kernel console messages (prevent Plymouth/DRM debug spam)
-# Level 1 = only panic messages, effectively silent
 mkdir -p /etc/sysctl.d
 cat > /etc/sysctl.d/99-silence-console.conf <<'EOFSYSCTL'
-# Silence kernel console messages - prevent Plymouth/DRM spam
+# Silence kernel console messages at runtime
 kernel.printk = 1 1 1 1
-# Disable panic messages on console too
 kernel.panic = 0
-# Disable DRM debug messages
 dev.drm.debug = 0
 EOFSYSCTL
 
-# Also update the existing low-ram config
+# Also update the existing low-ram config if present
 sed -i 's/^kernel.printk =.*/kernel.printk = 1 1 1 1/' /etc/sysctl.d/99-extreme-low-ram.conf 2>/dev/null || true
 
-# Blacklist problematic DRM modules for VMs (suppress error spam)
-mkdir -p /etc/modprobe.d
-cat > /etc/modprobe.d/99-silence-vmwgfx.conf <<'EOFMOD'
-# Suppress VMware graphics driver error spam
-# These errors appear on console when running in VirtualBox/non-VMware VMs
-options vmwgfx enable=0
-blacklist vmwgfx
-EOFMOD
+# Update GRUB cmdline for maximum silence from early boot
+mkdir -p /etc/default
+# Add comprehensive quiet parameters: loglevel=1, drm.debug=0, quiet
+sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 loglevel=1 drm.debug=0 quiet"/' /etc/default/grub 2>/dev/null || true
+# Ensure default also has quiet
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT="\(.*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 quiet"/' /etc/default/grub 2>/dev/null || true
 
 mkdir -p /etc/systemd/system/greetd.service.d
 cat > /etc/systemd/system/greetd.service.d/override.conf <<'EOFOVERRIDE'
