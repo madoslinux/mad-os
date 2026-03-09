@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=madOS Hyprland
-Comment=madOS Hyprland session with hardware detection
-Exec=/usr/local/bin/hyprland-session
-Type=Application
-DesktopNames=Hyprland

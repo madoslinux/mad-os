@@ -107,6 +107,4 @@ file_permissions=(
   ["/etc/mados/"]="0:0:755"
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
   ["/etc/greetd/regreet.css"]="0:0:644"
-  ["/usr/share/wayland-sessions/sway.desktop"]="0:0:644"
-  ["/usr/share/wayland-sessions/hyprland.desktop"]="0:0:644"
 )

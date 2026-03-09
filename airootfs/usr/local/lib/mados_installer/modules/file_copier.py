@@ -158,14 +158,8 @@ def step_copy_scripts(app):
 
 def step_copy_desktop_files(app):
     """Copy session files."""
-    set_progress(app, 0.54, "Copying session files...")
-    log_message(app, "Copying session files...")
-    subprocess.run(["mkdir", "-p", "/mnt/usr/share/wayland-sessions"], check=False)
-    copy_item("/usr/share/wayland-sessions/sway.desktop", "/mnt/usr/share/wayland-sessions/")
-    copy_item(
-        "/usr/share/wayland-sessions/hyprland.desktop",
-        "/mnt/usr/share/wayland-sessions/",
-    )
+    set_progress(app, 0.54, "Copying session assets...")
+    log_message(app, "Copying regreet CSS theme...")
     
     subprocess.run(["mkdir", "-p", "/mnt/etc/greetd"], check=False)
     copy_item("/etc/greetd/regreet.css", "/mnt/etc/greetd/")
