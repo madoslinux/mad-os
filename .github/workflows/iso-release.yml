@@ -15,6 +15,9 @@ env:
   DNS_SECONDARY: "8.8.4.4"
   ARCHLINUX_IMAGE: archlinux:latest
 
+permissions:
+  contents: write
+
 jobs:
   determine-release-type:
     name: "Determine Release Type"
@@ -199,11 +202,11 @@ jobs:
         id: upload_gh
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
           files: |
             out/*.iso
             out/SHA256SUMS
-          prerelease: ${{ needs.determine-release-type.outputs.is_prerelease == 'true' }}
+          tag_name: ${{ github.ref_name }}
+          name: madOS ${{ steps.build.outputs.version }}
           body: |
             **madOS ${{ steps.build.outputs.version }}**
             
@@ -214,10 +217,21 @@ jobs:
             
             ### Download
             
-            - **ISO:** [${{ steps.build.outputs.iso_name }}](${{ steps.set_url.outputs.download_url }})
+            - **ISO:** [Download](${{ steps.set_url.outputs.download_url }})
             - **Checksums:** SHA256SUMS
+          prerelease: ${{ needs.determine-release-type.outputs.is_prerelease == 'true' }}
+          draft: false
+          make_latest: ${{ needs.determine-release-type.outputs.is_release == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set download URL
+        id: set_url
+        run: |
+          ISO_NAME="${{ steps.build.outputs.iso_name }}"
+          VERSION="${{ steps.build.outputs.version }}"
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${ISO_NAME}"
+          echo "download_url=${DOWNLOAD_URL}" >> "$GITHUB_OUTPUT"
 
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
