@@ -1,5 +1,6 @@
 # SSH server configuration for madOS Live
 # Password authentication enabled for easy access
+# No password for live user (like Ubuntu Live)
 
 Port 22
 ListenAddress 0.0.0.0
@@ -8,7 +9,7 @@ ListenAddress 0.0.0.0
 PermitRootLogin no
 PubkeyAuthentication yes
 PasswordAuthentication yes
-PermitEmptyPasswords no
+PermitEmptyPasswords yes
 
 # Security
 X11Forwarding yes
