@@ -161,4 +161,77 @@ jobs:
             -v ${{ github.workspace }}:/build \
             ${{ env.ARCHLINUX_IMAGE }} bash /build/${{ matrix.component.script }}
 
+  # ================================================================
+  # Stage 3: Build ISO (only on v* tags)
+  # ================================================================
+  iso-release:
+    name: "Build ISO"
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-integration]
+    if: startsWith(github.ref, 'refs/tags/v')
+    outputs:
+      iso_name: ${{ steps.build.outputs.iso_name }}
+      version: ${{ steps.build.outputs.version }}
+      build_date: ${{ steps.build.outputs.build_date }}
+      iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
+      short_sha: ${{ steps.build.outputs.short_sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build ISO
+        id: build
+        run: |
+          rm -rf out/ 2>/dev/null || true
+          mkdir -p out && chmod 777 out
+          docker run --privileged --rm \
+            --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
+            -v "${{ github.workspace }}:/build" \
+            ${{ env.ARCHLINUX_IMAGE }} bash -c "
+              set -e
+              pacman-key --init && pacman-key --populate
+              pacman -Syu --noconfirm archiso && pacman -Scc --noconfirm
+              cd /build && rm -rf out/*
+              mkarchiso -v -w /tmp/work -o out ."
+          ISO_FILE=$(ls out/*.iso 2>/dev/null | head -1)
+          [ -z "$ISO_FILE" ] && echo "ERROR: No ISO" && exit 1
+          sha256sum out/*.iso > out/SHA256SUMS
+          VERSION="${{ steps.version.outputs.version }}"
+          NEW_NAME="madOS-${VERSION}-minimal-x86_64.iso"
+          mv "$ISO_FILE" "out/$NEW_NAME"
+          sed -i "s|$(basename $ISO_FILE)|${NEW_NAME}|g" out/SHA256SUMS
+          SIZE_MB=$(($(stat -c%s "out/$NEW_NAME") / 1024 / 1024))
+          echo "iso_name=$NEW_NAME" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "build_date=$(date +%Y.%m.%d)" >> $GITHUB_OUTPUT
+          echo "iso_size_mb=$SIZE_MB" >> $GITHUB_OUTPUT
+          echo "short_sha=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+
+      - name: Upload to GitHub Releases
+        if: steps.build.outputs.iso_name != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*.iso out/SHA256SUMS
+          tag_name: ${{ github.ref_name }}
+          name: madOS ${{ steps.version.outputs.version }}
+          body: |
+            **madOS ${{ steps.version.outputs.version }}**
+            - ISO: `${{ steps.build.outputs.iso_name }}`
+            - Size: ${{ steps.build.outputs.iso_size_mb }} MB
+            - Build: ${{ steps.build.outputs.build_date }}
+          prerelease: ${{ !contains(github.ref_name, 'v1.') || contains(github.ref_name, '-beta') }}
+          make_latest: ${{ contains(github.ref_name, 'v1.') && !contains(github.ref_name, '-beta') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
