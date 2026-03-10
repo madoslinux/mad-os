@@ -7,7 +7,19 @@ fi
 
 # Auto-start compositor on TTY1 for live environment
 # Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
+# Boot parameters to control behavior:
+#   mados_safe_mode - Force Sway with maximum compatibility
+#   mados_no_graphic - Skip auto-start of graphical session (debug mode)
+#   nomodeset - Force safe graphics mode (kernel parameter)
 if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
+    # Debug mode: skip graphical session auto-start
+    if grep -q 'mados_no_graphic' /proc/cmdline 2>/dev/null; then
+        echo "mados_no_graphic detected - skipping graphical session auto-start" >&2
+        logger -p user.info -t mados-session "Debug mode: graphical session disabled"
+        echo "To start manually, run: sway" >&2
+        return 0
+    fi
+    
     # Check for safe mode boot parameter
     if grep -q 'mados_safe_mode' /proc/cmdline 2>/dev/null; then
         echo "Safe mode requested - launching Sway directly" >&2
