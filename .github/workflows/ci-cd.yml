@@ -18,6 +18,9 @@ env:
   DNS_SECONDARY: "8.8.4.4"
   ARCHLINUX_IMAGE: archlinux:latest
 
+permissions:
+  contents: write
+
 jobs:
   # ================================================================
   # Stage 1: Tests (run in parallel)
