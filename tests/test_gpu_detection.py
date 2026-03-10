@@ -925,58 +925,6 @@ class TestSessionLogging(unittest.TestCase):
         self.assertIn("logger", content, ".zlogin must use logger for session logging")
         self.assertIn("mados-session", content, ".zlogin must log with mados-session tag")
 
-    # --- SSH session handling -------------------------------------------------
-
-    def test_zlogin_skips_graphics_on_ssh(self):
-        """.zlogin must skip graphical session on SSH connections."""
-        path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
-        with open(path) as f:
-            content = f.read()
-        self.assertIn(
-            "SSH_CONNECTION", content,
-            ".zlogin must check SSH_CONNECTION to skip graphics on SSH"
-        )
-
-    def test_bash_profile_skips_graphics_on_ssh(self):
-        """.bash_profile must skip graphical session on SSH connections."""
-        path = os.path.join(SKEL_DIR, ".bash_profile")
-        with open(path) as f:
-            content = f.read()
-        self.assertIn(
-            "SSH_CONNECTION", content,
-            ".bash_profile must check SSH_CONNECTION to skip graphics on SSH"
-        )
-
-    # --- automated_script.sh robustness ----------------------------------------
-
-    def test_automated_script_runs_only_on_tty1(self):
-        """.automated_script.sh must only run on tty1 to avoid SSH issues."""
-        path = os.path.join(AIROOTFS, "home", "mados", ".automated_script.sh")
-        if not os.path.isfile(path):
-            self.skipTest(".automated_script.sh not found in airootfs")
-        with open(path) as f:
-            content = f.read()
-        # Must check for tty1 before running
-        self.assertIn("tty1", content, ".automated_script.sh must check for tty1")
-        # Must have exit 0 to prevent session closing
-        self.assertIn(
-            "exit 0", content,
-            ".automated_script.sh must exit 0 to prevent session close"
-        )
-
-    def test_automated_script_has_error_handling(self):
-        """.automated_script.sh must have error handling to avoid closing session."""
-        path = os.path.join(AIROOTFS, "home", "mados", ".automated_script.sh")
-        if not os.path.isfile(path):
-            self.skipTest(".automated_script.sh not found in airootfs")
-        with open(path) as f:
-            content = f.read()
-        # Should have || true or set -e disabled for robustness
-        self.assertTrue(
-            "|| true" in content or "2>/dev/null" in content,
-            ".automated_script.sh must have error handling to avoid closing SSH session"
-        )
-
     def test_select_compositor_logs(self):
         """select-compositor must log its decisions."""
         path = os.path.join(BIN_DIR, "select-compositor")

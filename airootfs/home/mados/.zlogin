@@ -5,55 +5,12 @@ fi
 
 ~/.automated_script.sh
 
-# Only auto-start compositor on physical TTY1 (not SSH, not serial console)
-# SSH sessions have a pty, not a real tty
-if [ -z "${WAYLAND_DISPLAY}" ]; then
-    # Check if we're on a real TTY (not SSH/pty)
-    if [ -n "$SSH_CONNECTION" ]; then
-        # SSH session - just show a welcome message, don't try to start graphics
-        echo "SSH session detected. Graphical session runs on TTY1."
-        echo "To switch to graphical session, use Ctrl+Alt+F1 on physical display."
-        return 0
-    fi
-    
-    # Check for debug boot parameters
-    if grep -q 'mados_no_graphic' /proc/cmdline 2>/dev/null; then
-        echo "mados_no_graphic detected - skipping graphical session auto-start" >&2
-        logger -p user.info -t mados-session "Debug mode: graphical session disabled"
-        echo "To start manually, run: sway" >&2
-        return 0
-    fi
-    
-    # Check for safe mode boot parameter
-    if grep -q 'mados_safe_mode' /proc/cmdline 2>/dev/null; then
-        echo "Safe mode requested - launching Sway directly" >&2
-        logger -p user.info -t mados-session "Safe mode requested via kernel parameter"
-        exec /usr/local/bin/mados-safe-mode
-    fi
-    
-    # Only start compositor on real console (tty1-tty6)
-    TTY=$(tty 2>/dev/null)
-    if [ "${TTY}" != "/dev/tty1" ] && [ "${TTY}" != "/dev/tty2" ] && [ "${TTY}" != "/dev/tty3" ] && [ "${TTY}" != "/dev/tty4" ] && [ "${TTY}" != "/dev/tty5" ] && [ "${TTY}" != "/dev/tty6" ]; then
-        # Not on a physical console - could be SSH, serial, etc.
-        # Don't try to start graphical session
-        return 0
-    fi
-    
+# Auto-start compositor on TTY1 for live environment
+# Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
+if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
     # Copy skel configs to home on first boot (if not already present)
-    # This ensures all config files and directories exist
-    if [ -d /etc/skel ]; then
-        for item in /etc/skel/.*; do
-            item_name=$(basename "$item")
-            # Skip . and .. and hidden directories starting with .
-            if [ "$item_name" = "." ] || [ "$item_name" = ".." ]; then
-                continue
-            fi
-            # Don't overwrite if already exists
-            dest="$HOME/$item_name"
-            if [ ! -e "$dest" ]; then
-                cp -r "$item" "$dest" 2>/dev/null && chown -R 1000:1000 "$dest"
-            fi
-        done
+    if [ ! -d ~/.config/sway ]; then
+        cp -r /etc/skel/.config ~/ 2>/dev/null
     fi
     if [ ! -d ~/Pictures ]; then
         cp -r /etc/skel/Pictures ~/ 2>/dev/null
@@ -71,7 +28,7 @@ if [ -z "${WAYLAND_DISPLAY}" ]; then
     if [ "$COMPOSITOR" = "sway" ]; then
         # Software rendering: use Sway with pixman renderer
         export XDG_CURRENT_DESKTOP=sway
-        echo "Software rendering enabled - using Sway" >&2
+        echo "Software rendering enabled - using Sway"
         logger -p user.info -t mados-session "Compositor selected: sway (software rendering)"
         export WLR_RENDERER=pixman
         export WLR_NO_HARDWARE_CURSORS=1
@@ -104,7 +61,7 @@ VMCONF
     else
         # Hardware rendering: use Hyprland
         export XDG_CURRENT_DESKTOP=Hyprland
-        echo "Hardware rendering enabled - using Hyprland" >&2
+        echo "Hardware rendering enabled - using Hyprland"
         logger -p user.info -t mados-session "Compositor selected: hyprland (hardware rendering)"
         # VM with 3D acceleration: generate Hyprland optimizations for smoother input
         if systemd-detect-virt --vm --quiet 2>/dev/null; then
@@ -137,7 +94,7 @@ VMCONF
         # Try Hyprland via start-hyprland wrapper, fall back to Sway if it fails
         start-hyprland || {
             logger -p user.warning -t mados-session "Hyprland failed, falling back to Sway"
-            echo "Hyprland failed - falling back to Sway with software rendering" >&2
+            echo "Hyprland failed - falling back to Sway with software rendering"
             export XDG_CURRENT_DESKTOP=sway
             export WLR_RENDERER=pixman
             export WLR_NO_HARDWARE_CURSORS=1
