@@ -310,20 +310,37 @@ jobs:
             SIZE_MB="${{ needs.iso-release.outputs.iso_size_mb }}"
             BUILD_DATE="${{ needs.iso-release.outputs.build_date }}"
             
-            # Update ISO filename in all links
+            # Determine if this is a beta or stable release
+            if echo "$TAG" | grep -q -- "-beta"; then
+              RELEASE_TYPE="beta"
+            else
+              RELEASE_TYPE="stable"
+            fi
+            
+            echo "Release type: $RELEASE_TYPE"
+            
+            # Update ISO filename in all links (both beta and stable)
             sed -i "s|madOS-[0-9][^\"']*.iso|$IS_ONAME|g" index.html || true
             
             # Update release tag in GitHub Releases URLs (e.g., v1.72.1-beta → v1.72.2-beta)
             sed -i "s|releases/download/v[0-9][^/]*/|releases/download/$TAG/|g" index.html || true
             
-            # Update version numbers (e.g., v1.51.0, v1.72.1-beta)
-            sed -i "s|v[0-9]\+\.[0-9]\+\.[0-9]\+(-[a-z]\+)*|$TAG|g" index.html || true
-            
-            # Update data-version attributes
-            sed -i "s|data-version=\"[0-9][^\"]*\"|data-version=\"$VERSION\"|g" index.html || true
-            
-            # Update Download button text
-            sed -i "s|>Download v[0-9][^<]*|>Download $TAG|g" index.html || true
+            # Update version numbers ONLY for matching release type
+            if [ "$RELEASE_TYPE" = "beta" ]; then
+              # Update beta versions only (v1.XX.XX-beta patterns)
+              sed -i "s|v[0-9]\+\.[0-9]\+\.[0-9]\+-beta|$TAG|g" index.html || true
+              # Update data-version for beta
+              sed -i "s|data-version=\"[0-9][^\"]*-beta\"|data-version=\"$VERSION\"|g" index.html || true
+              # Update Download button text for beta
+              sed -i "s|>Download v[0-9][^>]*-beta|>Download $TAG|g" index.html || true
+            else
+              # Update stable versions only (v1.XX.XX without -beta)
+              sed -i "s|v\([0-9]\+\.[0-9]\+\.[0-9]\+\)\([^-]\)|v\1\2|g; s|v[0-9]\+\.[0-9]\+\.[0-9]\+(-[a-z]\+)*|$TAG|g" index.html || true
+              # Update data-version for stable
+              sed -i "s|data-version=\"[0-9][^\"]*\"|data-version=\"$VERSION\"|g" index.html || true
+              # Update Download button text for stable
+              sed -i "s|>Download v[0-9][^>]*|>Download $TAG|g" index.html || true
+            fi
             
             # Update ISO size in MB (look for patterns like 1881 MB, 1900 MB, etc)
             sed -i "s|[0-9]\{3,\} MB|$SIZE_MB MB|g" index.html || true
@@ -339,6 +356,7 @@ jobs:
             echo "Version: $VERSION"
             echo "Tag: $TAG"
             echo "Size: $SIZE_MB MB"
+            echo "Release type: $RELEASE_TYPE"
             grep -E "data-version=|Download v|\.iso" index.html | head -15 || true
           fi
 
