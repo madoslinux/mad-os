@@ -1,0 +1,38 @@
+#!/bin/bash
+# mados-graphical-session-setup - Log graphical session startup
+
+LOG="/var/log/mados-graphical-session.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"
+}
+
+log "=== madOS Graphical Session Setup ==="
+log "User: $(whoami)"
+log "TTY: $(tty)"
+log "DISPLAY: ${DISPLAY:-not set}"
+log "WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-not set}"
+log "XDG_SESSION_TYPE: ${XDG_SESSION_TYPE:-not set}"
+log "XDG_RUNTIME_DIR: ${XDG_RUNTIME_DIR:-not set}"
+
+# Detect GPU
+log "=== GPU Detection ==="
+lspci -nn | grep -iE 'VGA|3D|Display' | tee -a "$LOG"
+
+# Check loaded drivers
+log "=== Loaded DRM Drivers ==="
+ls -la /dev/dri/ 2>&1 | tee -a "$LOG"
+
+# Check for common issues
+log "=== Checking for nomodeset ==="
+if grep -q nomodeset /proc/cmdline; then
+    log "WARNING: nomodeset detected - this disables KMS and may break Wayland"
+fi
+
+log "=== Checking for VM ==="
+if systemd-detect-virt --vm --quiet; then
+    VM_TYPE=$(systemd-detect-virt)
+    log "VM detected: $VM_TYPE"
+fi
+
+log "Setup complete"

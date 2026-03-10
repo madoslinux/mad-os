@@ -1,0 +1,47 @@
+#!/bin/bash
+# mados-safe-mode - Fallback to Sway with maximum compatibility settings
+# Use this if Hyprland fails to start
+
+LOG_TAG="mados-safe-mode"
+
+log() {
+    echo "$LOG_TAG: $*" >&2
+    logger -p user.info -t "$LOG_TAG" "$*"
+}
+
+log "Starting safe mode - forcing Sway with software rendering"
+
+# Kill any existing compositor
+pkill -9 Hyprland 2>/dev/null
+pkill -9 sway 2>/dev/null
+sleep 1
+
+# Set maximum compatibility environment
+export XDG_SESSION_TYPE=wayland
+export XDG_CURRENT_DESKTOP=sway
+export WLR_RENDERER=pixman
+export WLR_NO_HARDWARE_CURSORS=1
+export WLR_DRM_NO_ATOMIC=1
+export WLR_DRM_NO_MODIFIERS=1
+export LIBGL_ALWAYS_SOFTWARE=1
+export GSK_RENDERER=cairo
+export MESA_GL_VERSION_OVERRIDE=3.3
+export CHROMIUM_FLAGS="--disable-gpu"
+
+# Copy configs if not present
+if [ ! -d ~/.config/sway ]; then
+    cp -r /etc/skel/.config/sway ~/.config/ 2>/dev/null
+fi
+
+# Generate minimal config for safe mode
+mkdir -p ~/.config/sway
+cat > ~/.config/sway/safe-mode.conf << 'EOF'
+# Safe mode config - minimal and compatible
+include ~/.config/sway/config
+
+# Force software rendering hints
+set $SWAY_SAFE_MODE 1
+EOF
+
+log "Launching Sway in safe mode"
+exec sway -c ~/.config/sway/safe-mode.conf

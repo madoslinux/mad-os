@@ -8,6 +8,12 @@ fi
 # Auto-start compositor on TTY1 for live environment
 # Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
 if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
+    # Check for safe mode boot parameter
+    if grep -q 'mados_safe_mode' /proc/cmdline 2>/dev/null; then
+        echo "Safe mode requested - launching Sway directly" >&2
+        logger -p user.info -t mados-session "Safe mode requested via kernel parameter"
+        exec /usr/local/bin/mados-safe-mode
+    fi
     # Copy skel configs to home on first boot (if not already present)
     if [ ! -d ~/.config/sway ]; then
         cp -r /etc/skel/.config ~/ 2>/dev/null
@@ -28,7 +34,7 @@ if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
     if [ "$COMPOSITOR" = "sway" ]; then
         # Software rendering: use Sway with pixman renderer
         export XDG_CURRENT_DESKTOP=sway
-        echo "Software rendering enabled - using Sway"
+        echo "Software rendering enabled - using Sway" >&2
         logger -p user.info -t mados-session "Compositor selected: sway (software rendering)"
         export WLR_RENDERER=pixman
         export WLR_NO_HARDWARE_CURSORS=1
@@ -61,7 +67,7 @@ VMCONF
     else
         # Hardware rendering: use Hyprland
         export XDG_CURRENT_DESKTOP=Hyprland
-        echo "Hardware rendering enabled - using Hyprland"
+        echo "Hardware rendering enabled - using Hyprland" >&2
         logger -p user.info -t mados-session "Compositor selected: hyprland (hardware rendering)"
         # VM with 3D acceleration: generate Hyprland optimizations for smoother input
         if systemd-detect-virt --vm --quiet 2>/dev/null; then
@@ -94,7 +100,7 @@ VMCONF
         # Try Hyprland via start-hyprland wrapper, fall back to Sway if it fails
         start-hyprland || {
             logger -p user.warning -t mados-session "Hyprland failed, falling back to Sway"
-            echo "Hyprland failed - falling back to Sway with software rendering"
+            echo "Hyprland failed - falling back to Sway with software rendering" >&2
             export XDG_CURRENT_DESKTOP=sway
             export WLR_RENDERER=pixman
             export WLR_NO_HARDWARE_CURSORS=1

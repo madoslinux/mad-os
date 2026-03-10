@@ -1,6 +1,30 @@
 #!/bin/bash
 # madOS Launcher - Application dock for Wayland compositors
-# Launches the Python GTK dock application
+# Launches the Python GTK dock application with fallback if it fails
+
+LOG_TAG="mados-launcher"
 
 export PYTHONPATH="/usr/local/lib${PYTHONPATH:+:$PYTHONPATH}"
-exec python3 -m mados_launcher "$@"
+
+# Wait for Wayland to be fully ready (up to 10s)
+for _ in $(seq 1 20); do
+    if [ -n "$XDG_RUNTIME_DIR" ] && [ -S "$XDG_RUNTIME_DIR/wayland-0" ]; then
+        break
+    fi
+    sleep 0.5
+done
+
+# Try to launch, if it fails within 3s, log and exit silently (don't break WM)
+timeout 3 python3 -m mados_launcher "$@" >/dev/null 2>&1 &
+LAUNCHER_PID=$!
+
+# Wait briefly to see if it crashes immediately
+sleep 2
+if ! kill -0 $LAUNCHER_PID 2>/dev/null; then
+    logger -p user.warning -t "$LOG_TAG" "Launcher failed to start (process exited early)"
+    # Don't exit with error - Hyprland should continue running
+    exit 0
+fi
+
+logger -p user.info -t "$LOG_TAG" "Launcher started successfully (PID $LAUNCHER_PID)"
+exit 0

@@ -205,8 +205,8 @@ fi
 
 kill_previous
 
-# Wait for swww-daemon to be ready (up to 15s)
-for attempt in $(seq 1 30); do
+# Wait for swww-daemon to be ready (up to 5s)
+for attempt in $(seq 1 10); do
     if swww query >/dev/null 2>&1; then
         log "swww-daemon ready (attempt $attempt)"
         break
@@ -215,8 +215,9 @@ for attempt in $(seq 1 30); do
 done
 
 if ! swww query >/dev/null 2>&1; then
-    log "ERROR: swww-daemon not ready after 15s"
-    exit 1
+    log "WARNING: swww-daemon not ready, skipping wallpaper daemon (Hyprland will still work)"
+    # Keep running to avoid breaking Hyprland startup - just don't set wallpapers
+    exec sleep infinity
 fi
 
 # Initialise / update wallpaper database

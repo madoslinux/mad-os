@@ -1,0 +1,12 @@
+[Unit]
+Description=madOS Graphical Session Logger
+Documentation=man:systemd.special(7)
+After=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-graphical-session-setup
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

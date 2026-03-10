@@ -1,5 +1,5 @@
 #!/bin/bash
-# start-hyprland - COMPLETELY SILENT wrapper for Hyprland
+# start-hyprland - COMPLETELY SILENT wrapper for Hyprland with fallback to Sway
 LOG_TAG="start-hyprland"
 MIN_RUNTIME=5
 
@@ -44,5 +44,8 @@ end_time=$(date +%s)
 exec {WATCHDOG_FD}>&-
 
 runtime=$((end_time - start_time))
-[ $runtime -lt $MIN_RUNTIME ] && { logger -p user.err -t "$LOG_TAG" "Hyprland crashed after ${runtime}s"; exit 1; }
+if [ $runtime -lt $MIN_RUNTIME ]; then
+    logger -p user.err -t "$LOG_TAG" "Hyprland crashed after ${runtime}s - legacy hardware likely"
+    exit 1
+fi
 exit $exit_code

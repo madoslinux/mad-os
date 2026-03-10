@@ -1,0 +1,11 @@
+#!/bin/bash
+# mados-graphical-session-cleanup - Log graphical session shutdown
+
+LOG="/var/log/mados-graphical-session.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"
+}
+
+log "=== madOS Graphical Session Cleanup ==="
+log "Session ended"
