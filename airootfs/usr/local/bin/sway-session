@@ -6,30 +6,42 @@ export MOZ_ENABLE_WAYLAND=1
 # Use systemd-logind as the seat management backend (madOS uses systemd)
 export LIBSEAT_BACKEND=logind
 
+LOG="/var/log/mados-sway-session.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"
+    logger -p user.info -t mados-sway "$*"
+}
+
+log "=== Sway Session Start ==="
+log "User: $(whoami)"
+log "TTY: $(tty)"
+
 if [ -x /usr/local/bin/detect-legacy-hardware ]; then
-    if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
+    log "Calling detect-legacy-hardware"
+    if /usr/local/bin/detect-legacy-hardware; then
+        log "Legacy hardware detected, using software rendering"
         export WLR_RENDERER=pixman
         export WLR_NO_HARDWARE_CURSORS=1
         export LIBGL_ALWAYS_SOFTWARE=1
         export MESA_GL_VERSION_OVERRIDE=3.3
-        # GTK: disable Vulkan renderer to avoid GPU probe errors
         export GSK_RENDERER=cairo
-        # Chromium: force software rendering on legacy hardware
         export CHROMIUM_FLAGS="${CHROMIUM_FLAGS:-} --disable-gpu"
-        logger -p user.info -t mados-sway "Starting sway with software rendering (pixman)"
+        log "Software rendering env vars set"
+    else
+        log "Modern hardware detected"
     fi
+elif systemd-detect-virt --vm --quiet 2>/dev/null; then
+    VM_TYPE=$(systemd-detect-virt)
+    log "VM detected: $VM_TYPE, using software rendering"
+    export WLR_RENDERER=pixman
+    export WLR_NO_HARDWARE_CURSORS=1
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export MESA_GL_VERSION_OVERRIDE=3.3
+    export GSK_RENDERER=cairo
+    export CHROMIUM_FLAGS="${CHROMIUM_FLAGS:-} --disable-gpu"
 else
-    if systemd-detect-virt --vm --quiet 2>/dev/null; then
-        export WLR_RENDERER=pixman
-        export WLR_NO_HARDWARE_CURSORS=1
-        export LIBGL_ALWAYS_SOFTWARE=1
-        export MESA_GL_VERSION_OVERRIDE=3.3
-        # GTK: disable Vulkan renderer to avoid GPU probe errors
-        export GSK_RENDERER=cairo
-        # Chromium: force software rendering in VMs without 3D
-        export CHROMIUM_FLAGS="${CHROMIUM_FLAGS:-} --disable-gpu"
-        logger -p user.info -t mados-sway "Starting sway with software rendering (VM fallback)"
-    fi
+    log "No detect script, not VM - using default rendering"
 fi
 
 # VM DRM workarounds: disable atomic modesetting and modifiers for VM GPU drivers

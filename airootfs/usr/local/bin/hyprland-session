@@ -2,7 +2,18 @@
 # hyprland-session - Wrapper for Hyprland compositor with hardware detection
 # Falls back to sway-session on legacy hardware or VMware without 3D
 
-logger -p user.info -t "mados-hyprland" "Starting Hyprland session wrapper"
+LOG="/var/log/mados-hyprland-session.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"
+    logger -p user.info -t "mados-hyprland" "$*"
+}
+
+log "=== Hyprland Session Start ==="
+log "User: $(whoami)"
+log "TTY: $(tty)"
+log "Display: ${DISPLAY:-not set}"
+log "WAYLAND_DISPLAY: ${WAYLAND_DISPLAY:-not set}"
 
 # Set Wayland environment variables
 export XDG_SESSION_TYPE=wayland
@@ -10,11 +21,15 @@ export XDG_CURRENT_DESKTOP=Hyprland
 
 # Check for legacy hardware or VMware without 3D acceleration
 if [ -x /usr/local/bin/detect-legacy-hardware ]; then
-    logger -p user.info -t "mados-hyprland" "Calling detect-legacy-hardware"
-    if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        logger -p user.warning -t "mados-hyprland" "Legacy hardware detected, falling back to sway"
+    log "Calling detect-legacy-hardware"
+    if /usr/local/bin/detect-legacy-hardware; then
+        log "Legacy hardware detected, falling back to sway"
         exec sway-session
+    else
+        log "Modern hardware detected, proceeding with Hyprland"
     fi
+else
+    log "detect-legacy-hardware NOT found"
 fi
 
 # Fall back to sway if hyprland binary is not available

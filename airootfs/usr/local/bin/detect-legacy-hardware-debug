@@ -1,0 +1,70 @@
+#!/bin/bash
+# detect-legacy-hardware-debug - Debug version that logs everything
+# Source this instead of detect-legacy-hardware for debugging
+
+LOG="/var/log/mados-hardware-detect.log"
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"
+}
+
+log "=== Hardware Detection Debug ==="
+log "Running as: $(whoami)"
+log "TTY: $(tty)"
+
+# Check render node
+if [ -e /dev/dri/renderD128 ]; then
+    log "✓ /dev/dri/renderD128 exists"
+else
+    log "✗ /dev/dri/renderD128 NOT found"
+fi
+
+# Check DRM drivers
+log "=== DRM Drivers ==="
+for card in /sys/class/drm/card*/device/driver; do
+    if [ -L "$card" ]; then
+        driver=$(basename "$(readlink "$card")")
+        log "Card: $card → Driver: $driver"
+    fi
+done
+
+# Check VM
+if systemd-detect-virt --vm --quiet 2>/dev/null; then
+    VM_TYPE=$(systemd-detect-virt)
+    log "VM detected: $VM_TYPE"
+    
+    # Check VM modules
+    for mod in vboxvideo virtio-gpu vmwgfx virgl; do
+        if [ -d "/sys/module/$mod" ]; then
+            log "✓ Module $mod loaded"
+        else
+            log "✗ Module $mod NOT loaded"
+        fi
+    done
+else
+    log "Not a VM"
+fi
+
+# Check lspci
+if command -v lspci >/dev/null 2>&1; then
+    log "=== PCI Devices ==="
+    lspci -nn | grep -iE 'VGA|3D|Display' | tee -a "$LOG"
+fi
+
+# Check eglinfo if available
+if command -v eglinfo >/dev/null 2>&1; then
+    log "=== EGL Info ==="
+    eglinfo 2>&1 | head -20 | tee -a "$LOG"
+else
+    log "eglinfo NOT available"
+fi
+
+# Run actual detection
+log "=== Running detect-legacy-hardware ==="
+if /usr/local/bin/detect-legacy-hardware; then
+    log "RESULT: Legacy hardware (exit 0)"
+else
+    log "RESULT: Modern hardware (exit 1)"
+fi
+
+log "=== Detection Complete ==="
