@@ -27,8 +27,20 @@ if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
         exec /usr/local/bin/mados-safe-mode
     fi
     # Copy skel configs to home on first boot (if not already present)
-    if [ ! -d ~/.config/sway ]; then
-        cp -r /etc/skel/.config ~/ 2>/dev/null
+    # This ensures all config files and directories exist
+    if [ -d /etc/skel ]; then
+        for item in /etc/skel/.*; do
+            item_name=$(basename "$item")
+            # Skip . and .. and hidden directories starting with .
+            if [ "$item_name" = "." ] || [ "$item_name" = ".." ]; then
+                continue
+            fi
+            # Don't overwrite if already exists
+            dest="$HOME/$item_name"
+            if [ ! -e "$dest" ]; then
+                cp -r "$item" "$dest" 2>/dev/null && chown -R 1000:1000 "$dest"
+            fi
+        done
     fi
     if [ ! -d ~/Pictures ]; then
         cp -r /etc/skel/Pictures ~/ 2>/dev/null

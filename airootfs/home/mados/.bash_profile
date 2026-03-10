@@ -1,0 +1,1 @@
+/etc/skel/.bash_profile

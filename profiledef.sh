@@ -110,6 +110,10 @@ file_permissions=(
   ["/etc/systemd/system/mados-hardware-config.service"]="0:0:644"
   ["/etc/systemd/system/mados-update-check.service"]="0:0:644"
   ["/etc/systemd/system/mados-graphical-session.service"]="0:0:644"
+  ["/etc/systemd/system/sshd.service"]="0:0:644"
+  ["/etc/systemd/system/sshd-ready.service"]="0:0:644"
+  ["/etc/systemd/system/ssh-genkeys.service"]="0:0:644"
+  ["/etc/ssh/sshd_config"]="0:0:644"
   ["/etc/profile.d/mados-post-install.sh"]="0:0:755"
 
   ["/etc/mados/"]="0:0:755"

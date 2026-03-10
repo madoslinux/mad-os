@@ -91,10 +91,48 @@ if [[ -d /home/mados && ! -f /home/mados/.zshrc && -f /etc/skel/.zshrc ]]; then
     echo "  → Copied .zshrc to /home/mados"
 fi
 
+# Copy .bashrc and .bash_profile to mados user
+if [[ -d /home/mados ]]; then
+    if [[ ! -f /home/mados/.bashrc && -f /etc/skel/.bashrc ]]; then
+        cp /etc/skel/.bashrc /home/mados/.bashrc
+        chown 1000:1000 /home/mados/.bashrc
+        echo "  → Copied .bashrc to /home/mados"
+    fi
+    if [[ ! -f /home/mados/.bash_profile && -f /etc/skel/.bash_profile ]]; then
+        cp /etc/skel/.bash_profile /home/mados/.bash_profile
+        chown 1000:1000 /home/mados/.bash_profile
+        echo "  → Copied .bash_profile to /home/mados"
+    fi
+    # Ensure .config directories are copied
+    if [[ -d /etc/skel/.config && ! -d /home/mados/.config ]]; then
+        cp -r /etc/skel/.config /home/mados/
+        chown -R 1000:1000 /home/mados/.config
+        echo "  → Copied .config to /home/mados"
+    fi
+    # Copy other skel directories (Pictures, etc.)
+    for dir in Desktop Documents Downloads Music Pictures Public Templates Videos; do
+        if [[ -d /etc/skel/$dir && ! -d /home/mados/$dir ]]; then
+            cp -r /etc/skel/$dir /home/mados/
+            chown -R 1000:1000 /home/mados/$dir
+            echo "  → Copied $dir to /home/mados"
+        fi
+    done
+fi
+
 # Copy .zshrc to root if not present
 if [[ ! -f /root/.zshrc && -f /etc/skel/.zshrc ]]; then
     cp /etc/skel/.zshrc /root/.zshrc
     echo "  → Copied .zshrc to /root"
+fi
+
+# Copy .bashrc and .bash_profile to root
+if [[ ! -f /root/.bashrc && -f /etc/skel/.bashrc ]]; then
+    cp /etc/skel/.bashrc /root/.bashrc
+    echo "  → Copied .bashrc to /root"
+fi
+if [[ ! -f /root/.bash_profile && -f /etc/skel/.bash_profile ]]; then
+    cp /etc/skel/.bash_profile /root/.bash_profile
+    echo "  → Copied .bash_profile to /root"
 fi
 
 # ── Hide unwanted .desktop entries from application menu ──────────────────

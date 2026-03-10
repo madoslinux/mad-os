@@ -1,0 +1,22 @@
+# SSH server configuration for madOS Live
+# Password authentication enabled for easy access
+
+Port 22
+ListenAddress 0.0.0.0
+
+# Authentication
+PermitRootLogin no
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+
+# Security
+X11Forwarding yes
+PrintMotd no
+AcceptEnv LANG LC_*
+
+# Override default of no subsystems
+Subsystem sftp /usr/lib/ssh/sftp-server
+
+# Allow user mados
+AllowUsers mados

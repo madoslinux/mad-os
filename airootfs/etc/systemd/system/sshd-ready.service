@@ -1,0 +1,12 @@
+[Unit]
+Description=Prepare SSH directory
+Before=sshd.service
+DefaultDependencies=no
+
+[Service]
+Type=oneshot
+ExecStart=/bin/mkdir -p /run/sshd
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
