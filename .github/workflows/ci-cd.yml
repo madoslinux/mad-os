@@ -197,23 +197,43 @@ jobs:
         run: |
           rm -rf out/ 2>/dev/null || true
           mkdir -p out && chmod 777 out
+          
+          echo "=== Building ISO with mkarchiso ==="
           docker run --privileged --rm \
             --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
             -v "${{ github.workspace }}:/build" \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
+              echo 'Setting up pacman...'
               pacman-key --init && pacman-key --populate
-              pacman -Syu --noconfirm archiso && pacman -Scc --noconfirm
+              echo 'Updating system and installing archiso...'
+              pacman -Syu --noconfirm archiso
+              pacman -Scc --noconfirm
+              echo 'Building ISO...'
               cd /build && rm -rf out/*
               mkarchiso -v -w /tmp/work -o out ."
+          
+          echo "=== Verifying output ==="
+          ls -lh out/
+          
           ISO_FILE=$(ls out/*.iso 2>/dev/null | head -1)
-          [ -z "$ISO_FILE" ] && echo "ERROR: No ISO" && exit 1
+          if [ -z "$ISO_FILE" ]; then
+            echo "ERROR: No ISO file found in out/"
+            exit 1
+          fi
+          
+          echo "Found ISO: $ISO_FILE"
           sha256sum out/*.iso > out/SHA256SUMS
+          cat out/SHA256SUMS
+          
           VERSION="${{ steps.version.outputs.version }}"
           NEW_NAME="madOS-${VERSION}-minimal-x86_64.iso"
           mv "$ISO_FILE" "out/$NEW_NAME"
           sed -i "s|$(basename $ISO_FILE)|${NEW_NAME}|g" out/SHA256SUMS
+          
           SIZE_MB=$(($(stat -c%s "out/$NEW_NAME") / 1024 / 1024))
+          echo "ISO renamed to: $NEW_NAME (${SIZE_MB}MB)"
+          
           echo "iso_name=$NEW_NAME" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_date=$(date +%Y.%m.%d)" >> $GITHUB_OUTPUT
