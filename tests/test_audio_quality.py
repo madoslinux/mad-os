@@ -511,13 +511,14 @@ class TestInstallerAudioQualityIntegration(unittest.TestCase):
             self.content = f.read()
 
     def test_installer_copies_audio_quality_script(self):
-        """Installer must copy mados-audio-quality.sh to installed system."""
-        self.assertIn("mados-audio-quality.sh", self.content)
-        self.assertIn(
-            "MNT_USR_LOCAL_BIN",
-            self.content,
-            "Installer must use MNT_USR_LOCAL_BIN constant for copying scripts",
+        """Script is pre-installed on live USB and copied via rsync (not explicit copy)."""
+        # Audio quality script exists in live system and is copied by rsync
+        self.assertTrue(
+            os.path.isfile(AUDIO_QUALITY_SCRIPT),
+            "mados-audio-quality.sh must exist on live USB",
         )
+        # Installer uses rsync which copies all files from / to /mnt (excluding RSYNC_EXCLUDES)
+        # No explicit copy needed - script will be present after rsync
 
     def test_installer_creates_system_service(self):
         """System service must be pre-installed on the live USB."""

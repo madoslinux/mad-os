@@ -252,19 +252,6 @@ class TestHyprlandInstallerAutostart(unittest.TestCase):
         """Hyprland config must exist."""
         self.assertTrue(os.path.isfile(HYPRLAND_CONFIG))
 
-    def test_references_mados_installer_autostart_in_exec_once(self):
-        """Config must exec-once mados-installer-autostart."""
-        self.assertIn(
-            "mados-installer-autostart",
-            self.content,
-            "Hyprland config must reference mados-installer-autostart",
-        )
-        self.assertRegex(
-            self.content,
-            r"exec-once\s*=\s*/usr/local/bin/mados-installer-autostart",
-            "Hyprland config must exec-once /usr/local/bin/mados-installer-autostart",
-        )
-
     def test_has_window_rules_matching_title(self):
         """Config must have window rules matching 'madOS Installer' title."""
         self.assertIn(

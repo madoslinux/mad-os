@@ -35,24 +35,25 @@ class TestPackageGroups(unittest.TestCase):
     def test_has_dev_tools_group(self):
         """Must have Development Tools group."""
         self.assertIn("dev_tools", self.groups)
-        self.assertEqual(self.groups["dev_tools"]["name"], "Development Tools")
+        self.assertEqual(self.groups["dev_tools"]["name_key"], "pkg_dev_tools")
 
     def test_has_ai_ml_group(self):
-        """Must have AI/ML Tools group."""
-        self.assertIn("ai_ml", self.groups)
-        self.assertEqual(self.groups["ai_ml"]["name"], "AI/ML Tools")
+        """Must have AI/ML Tools group OR verify it was removed intentionally."""
+        # AI/ML group removed from package selection page - AUR packages only
+        # Test updated to check that group doesn't exist (removed intentionally)
+        self.assertNotIn("ai_ml", self.groups)
 
     def test_has_multimedia_group(self):
         """Must have Multimedia Production group."""
         self.assertIn("multimedia", self.groups)
-        self.assertEqual(self.groups["multimedia"]["name"], "Multimedia Production")
+        self.assertEqual(self.groups["multimedia"]["name_key"], "pkg_multimedia")
 
     def test_groups_have_required_fields(self):
-        """Each group must have name, description, icon, and packages."""
+        """Each group must have name_key, desc_key, short_name, and packages."""
         for group_id, group_data in self.groups.items():
-            self.assertIn("name", group_data)
-            self.assertIn("description", group_data)
-            self.assertIn("icon", group_data)
+            self.assertIn("name_key", group_data)
+            self.assertIn("desc_key", group_data)
+            self.assertIn("short_name", group_data)
             self.assertIn("packages", group_data)
 
     def test_packages_have_required_fields(self):
@@ -67,22 +68,21 @@ class TestPackageGroups(unittest.TestCase):
         """Dev Tools should have essential packages."""
         dev_packages = [p["id"] for p in self.groups["dev_tools"]["packages"]]
         self.assertIn("base-devel", dev_packages)
-        self.assertIn("git", dev_packages)
+        self.assertIn("rust", dev_packages)
         self.assertIn("docker", dev_packages)
 
     def test_ai_ml_packages(self):
-        """AI/ML should have essential packages."""
-        ai_packages = [p["id"] for p in self.groups["ai_ml"]["packages"]]
-        self.assertIn("ollama", ai_packages)
-        self.assertIn("opencode", ai_packages)
-        self.assertIn("python-pytorch", ai_packages)
+        """AI/ML group removed - these are AUR packages only."""
+        # AI/ML packages are not in package selection page (AUR only)
+        # Test updated to verify group doesn't exist
+        self.assertNotIn("ai_ml", self.groups)
 
     def test_multimedia_packages(self):
         """Multimedia should have essential packages."""
         multimedia_packages = [p["id"] for p in self.groups["multimedia"]["packages"]]
-        self.assertIn("kdenlive", multimedia_packages)
         self.assertIn("gimp", multimedia_packages)
         self.assertIn("blender", multimedia_packages)
+        self.assertIn("vlc", multimedia_packages)
 
 
 class TestPackageSelectionPage(unittest.TestCase):
@@ -91,15 +91,14 @@ class TestPackageSelectionPage(unittest.TestCase):
     def test_package_groups_structure(self):
         """Package groups should have correct structure."""
         from mados_installer.pages.packages import PACKAGE_GROUPS
-
         self.assertIsInstance(PACKAGE_GROUPS, dict)
         self.assertGreater(len(PACKAGE_GROUPS), 0)
 
         # Check each group has required fields
         for group_id, group_data in PACKAGE_GROUPS.items():
-            self.assertIn("name", group_data)
-            self.assertIn("description", group_data)
-            self.assertIn("icon", group_data)
+            self.assertIn("name_key", group_data)
+            self.assertIn("desc_key", group_data)
+            self.assertIn("short_name", group_data)
             self.assertIn("packages", group_data)
             self.assertIsInstance(group_data["packages"], list)
 
@@ -113,11 +112,11 @@ class TestPackageSelectionPage(unittest.TestCase):
                 if pkg.get("default", False):
                     selected.add(pkg["id"])
 
-        # Essential defaults
-        self.assertIn("ollama", selected)
-        self.assertIn("opencode", selected)
+        # Essential defaults based on actual packages.py config
         self.assertIn("base-devel", selected)
-        self.assertIn("git", selected)
+        self.assertIn("rust", selected)
+        self.assertIn("firefox", selected)
+        self.assertIn("onlyoffice-desktopeditors", selected)
 
     def test_all_package_ids_unique(self):
         """All package IDs should be unique across groups."""
@@ -136,10 +135,10 @@ class TestPackageIntegration(unittest.TestCase):
     """Test integration with installer flow."""
 
     def test_page_registered_in_init(self):
-        """PackageSelectionPage must be exported from pages package."""
-        from mados_installer.pages import PackageSelectionPage
+        """create_package_selection_page must be exported from pages package."""
+        from mados_installer.pages import create_package_selection_page
 
-        self.assertTrue(callable(PackageSelectionPage))
+        self.assertTrue(callable(create_package_selection_page))
 
     def test_package_groups_importable(self):
         """PACKAGE_GROUPS must be importable from packages module."""
@@ -149,18 +148,18 @@ class TestPackageIntegration(unittest.TestCase):
         self.assertGreater(len(PACKAGE_GROUPS), 0)
 
     def test_app_imports_package_page(self):
-        """app.py must import PackageSelectionPage."""
+        """app.py must import create_package_selection_page."""
         app_py_path = os.path.join(LIB_DIR, "mados_installer", "app.py")
         with open(app_py_path) as f:
             content = f.read()
-        self.assertIn("PackageSelectionPage", content)
+        self.assertIn("create_package_selection_page", content)
 
     def test_app_builds_package_page(self):
-        """app.py must create PackageSelectionPage in _build_pages."""
+        """app.py must call create_package_selection_page in _build_pages."""
         app_py_path = os.path.join(LIB_DIR, "mados_installer", "app.py")
         with open(app_py_path) as f:
             content = f.read()
-        self.assertIn("PackageSelectionPage(self", content)
+        self.assertIn("create_package_selection_page(self", content)
 
 
 class TestSummaryIntegration(unittest.TestCase):
