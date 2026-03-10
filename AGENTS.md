@@ -161,6 +161,68 @@ VBoxManage storageattach "VM_NAME" --storagectl "SATA" \
 
 6. **Wayland-first:** Todas las configuraciones de display deben priorizar Wayland. X11 solo como fallback compatibility
 
+## 🔒 Reglas de Testing y Validación (OBLIGATORIO)
+
+**ANTES DE SUBIR CUALQUIER CAMBIO A MAIN O DEVELOP, DEBES:**
+
+1. **Ejecutar todos los tests relevantes:**
+   ```bash
+   # Si modificas scripts de sistema (bash)
+   shellcheck airootfs/usr/local/bin/*.sh
+   
+   # Si modificas Python
+   ruff check airootfs/ tests/
+   ruff format airootfs/ tests/ --check
+   
+   # Ejecutar tests específicos según lo que modificaste
+   python3 -m pytest tests/test_liveusb_scripts.py -v
+   python3 -m pytest tests/test_gpu_detection.py -v
+   python3 -m pytest tests/test_hyprland_config.py tests/test_sway_config.py -v
+   ```
+
+2. **Si NO existen tests para lo que modificaste → CREARLOS:**
+   - Agregar tests unitarios en `tests/test_<modulo>.py`
+   - Agregar tests de integración en `tests/test-*.sh`
+   - No subir código sin tests si el test suite ya existe
+
+3. **Verificar que NO se rompa lógica existente:**
+   - Si cambias `detect-legacy-hardware`, correr `tests/test_gpu_detection.py`
+   - Si cambias `.zlogin` o `start-hyprland`, correr tests de compositor
+   - Si cambias lógica de login, verificar que `tests/test_liveusb_scripts.py` pase
+
+4. **Run full test suite antes de merge:**
+   ```bash
+   python3 -m pytest tests/ -v
+   ```
+   - **TODOS los tests deben pasar** antes de push/merge
+   - Si fallan tests existentes → REVERTIR o CORREGIR
+
+5. **Commit message debe incluir:**
+   - Qué se modificó
+   - Qué tests se ejecutaron
+   - Si se agregaron nuevos tests
+
+**Ejemplo de commit correcto:**
+```
+fix: detect-legacy-hardware uses eglinfo for real 3D check
+
+- Restored main branch's eglinfo-based detection
+- Now correctly identifies hardware without OpenGL
+- Avoids Hyprland crash on legacy hardware
+
+Tests executed:
+- tests/test_gpu_detection.py: 103 passing
+- tests/test_liveusb_scripts.py: 12 passing (280 subtests)
+
+No new tests added (existing tests validated the fix).
+```
+
+**Ejemplo de commit INCORRECTO (no hacer):**
+```
+fix: graphics startup
+```
+❌ Falta detalle, no menciona tests, no prueba nada.
+
 ## 🎯 Enfoque del Proyecto
 
 **madOS está diseñado para:**
