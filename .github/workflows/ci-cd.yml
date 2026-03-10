@@ -17,6 +17,8 @@ env:
   DNS_PRIMARY: "8.8.8.8"
   DNS_SECONDARY: "8.8.4.4"
   ARCHLINUX_IMAGE: archlinux:latest
+  # Use Node.js 24 for JavaScript actions (avoid Node.js 20 deprecation warnings)
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 permissions:
   contents: write
