@@ -245,7 +245,9 @@ jobs:
 
       - name: Upload to GitHub Releases
         if: steps.build.outputs.iso_name != ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.5.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: |
             out/*.iso
@@ -259,8 +261,6 @@ jobs:
             - Build: ${{ steps.build.outputs.build_date }}
           prerelease: ${{ !contains(github.ref_name, 'v1.') || contains(github.ref_name, '-beta') }}
           make_latest: ${{ contains(github.ref_name, 'v1.') && !contains(github.ref_name, '-beta') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ================================================================
   # Stage 4: Update GitHub Pages (only on v* tags after ISO is built)
