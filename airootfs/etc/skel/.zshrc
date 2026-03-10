@@ -12,8 +12,8 @@ ZSH_THEME="agnoster"
 # Oh My Zsh plugins
 plugins=(git sudo command-not-found)
 
-# Load Oh My Zsh if installed
-if [ -d "$ZSH" ]; then
+# Load Oh My Zsh if installed and readable
+if [ -d "$ZSH" ] && [ -f "$ZSH/oh-my-zsh.sh" ]; then
     source "$ZSH/oh-my-zsh.sh"
 else
     # Fallback prompt if Oh My Zsh is not yet installed
