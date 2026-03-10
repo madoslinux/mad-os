@@ -313,6 +313,9 @@ jobs:
             # Update ISO filename in all links
             sed -i "s|madOS-[0-9][^\"']*.iso|$IS_ONAME|g" index.html || true
             
+            # Update release tag in GitHub Releases URLs (e.g., v1.72.1-beta → v1.72.2-beta)
+            sed -i "s|releases/download/v[0-9][^/]*/|releases/download/$TAG/|g" index.html || true
+            
             # Update version numbers (e.g., v1.51.0, v1.72.1-beta)
             sed -i "s|v[0-9]\+\.[0-9]\+\.[0-9]\+(-[a-z]\+)*|$TAG|g" index.html || true
             
