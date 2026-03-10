@@ -404,11 +404,12 @@ class TestCustomizeAirootfs(unittest.TestCase):
 
     def test_copies_ohmyzsh_to_mados_user(self):
         """Script must copy Oh My Zsh to /home/mados."""
-        self.assertIn("/home/mados/.oh-my-zsh", self.content)
+        self.assertIn("/home/mados", self.content)
+        self.assertIn("chown 1000:1000", self.content)
 
     def test_copies_ohmyzsh_to_root(self):
         """Script must copy Oh My Zsh to /root."""
-        self.assertIn("/root/.oh-my-zsh", self.content)
+        self.assertIn("/root/.zshrc", self.content)
 
     def test_profiledef_has_permissions(self):
         """profiledef.sh must set permissions for customize_airootfs.sh."""

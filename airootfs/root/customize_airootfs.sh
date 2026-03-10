@@ -57,26 +57,13 @@ fi
 echo "NVM and Node installation skipped (will be installed post-installation)"
 
 # ── Oh My Zsh ────────────────────────────────────────────────────────────
-# Solo instala en /etc/skel - los usuarios root y mados usan symlinks
-# para ahorrar ~400-600MB en la ISO
+# Instalar en /etc/skel y copiar a usuarios
 OMZ_DIR="/etc/skel/.oh-my-zsh"
 
 if [[ ! -d "$OMZ_DIR" ]]; then
     echo "Installing Oh My Zsh to /etc/skel..."
     if git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$OMZ_DIR" 2>&1; then
         echo "✓ Oh My Zsh installed to /etc/skel"
-        
-        # Crear symlinks en lugar de copias para ahorrar espacio
-        # mados user
-        if [[ -d /home/mados ]]; then
-            ln -sf /etc/skel/.oh-my-zsh /home/mados/.oh-my-zsh
-            chown -h 1000:1000 /home/mados/.oh-my-zsh
-            echo "  → Linked Oh My Zsh to /home/mados"
-        fi
-        
-        # root user
-        ln -sf /etc/skel/.oh-my-zsh /root/.oh-my-zsh
-        echo "  → Linked Oh My Zsh to /root"
     else
         echo "⚠ Failed to clone Oh My Zsh (will install at boot)"
     fi
