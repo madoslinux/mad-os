@@ -64,11 +64,32 @@ if [[ ! -d "$OMZ_DIR" ]]; then
     echo "Installing Oh My Zsh to /etc/skel..."
     if git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$OMZ_DIR" 2>&1; then
         echo "✓ Oh My Zsh installed to /etc/skel"
+        
+        # Copy to users after cloning
+        if [[ -d /home/mados ]]; then
+            cp -r "$OMZ_DIR" /home/mados/.oh-my-zsh
+            chown -R 1000:1000 /home/mados/.oh-my-zsh
+            echo "  → Copied Oh My Zsh to /home/mados"
+        fi
+        if [[ -d /root ]]; then
+            cp -r "$OMZ_DIR" /root/.oh-my-zsh
+            echo "  → Copied Oh My Zsh to /root"
+        fi
     else
         echo "⚠ Failed to clone Oh My Zsh (will install at boot)"
     fi
 else
     echo "✓ Oh My Zsh already present in /etc/skel"
+    # Still copy to users if not present
+    if [[ -d /home/mados && ! -d /home/mados/.oh-my-zsh ]]; then
+        cp -r "$OMZ_DIR" /home/mados/.oh-my-zsh
+        chown -R 1000:1000 /home/mados/.oh-my-zsh
+        echo "  → Copied Oh My Zsh to /home/mados"
+    fi
+    if [[ -d /root && ! -d /root/.oh-my-zsh ]]; then
+        cp -r "$OMZ_DIR" /root/.oh-my-zsh
+        echo "  → Copied Oh My Zsh to /root"
+    fi
 fi
 
 # Copy .zshrc to mados user
