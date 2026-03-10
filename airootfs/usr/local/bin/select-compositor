@@ -4,32 +4,54 @@
 # Returns "hyprland" for hardware-accelerated rendering (modern hardware)
 
 select_compositor() {
-    # Check if detect-legacy-hardware script exists and run it
+    # Check for nomodeset boot parameter (force safe mode)
+    if grep -q 'nomodeset' /proc/cmdline 2>/dev/null; then
+        logger -p user.info -t mados-compositor "nomodeset detected - selecting sway for safe graphics"
+        echo "sway"
+        return
+    fi
+    
+    # Check if detect-legacy-hardware script exists
     if [ -x /usr/local/bin/detect-legacy-hardware ]; then
+        # Run detection once and capture output
         local detect_output
+        local detect_result
         detect_output=$(/usr/local/bin/detect-legacy-hardware 2>&1)
-        if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-            # Legacy hardware detected: use Sway (better software rendering support via wlroots/pixman)
-            logger -p user.info -t mados-compositor "Legacy hardware detected: $detect_output - selecting sway"
+        detect_result=$?
+        
+        if [ $detect_result -eq 0 ]; then
+            # Legacy hardware detected: use Sway
+            logger -p user.info -t mados-compositor "Legacy hardware: $detect_output - selecting sway"
             echo "sway"
             return
-        fi
-    else
-        # Fallback: if no detection script, check for VM or nomodeset
-        if systemd-detect-virt --vm --quiet 2>/dev/null || grep -q 'nomodeset' /proc/cmdline 2>/dev/null; then
-            logger -p user.info -t mados-compositor "Fallback detection (VM/nomodeset) - selecting sway"
-            echo "sway"
-            return
+        else
+            # Modern hardware detected: use Hyprland
+            if command -v Hyprland >/dev/null 2>&1; then
+                logger -p user.info -t mados-compositor "Modern hardware: $detect_output - selecting hyprland"
+                echo "hyprland"
+                return
+            else
+                logger -p user.warning -t mados-compositor "Hyprland not installed, falling back to sway"
+                echo "sway"
+                return
+            fi
         fi
     fi
-
-    # Modern hardware: use Hyprland (GPU-accelerated compositor)
-    # Verify Hyprland is installed, fall back to Sway if not
+    
+    # No detection script available - use safe fallback
+    if systemd-detect-virt --vm --quiet 2>/dev/null; then
+        # VM without detection: assume Sway is safer
+        logger -p user.info -t mados-compositor "VM detected without hardware detection - selecting sway"
+        echo "sway"
+        return
+    fi
+    
+    # Absolute fallback: check if Hyprland exists
     if command -v Hyprland >/dev/null 2>&1; then
-        logger -p user.info -t mados-compositor "Modern hardware detected - selecting hyprland"
+        logger -p user.info -t mados-compositor "No detection available, Hyprland found - selecting hyprland"
         echo "hyprland"
     else
-        logger -p user.warning -t mados-compositor "Hyprland not found - falling back to sway"
+        logger -p user.warning -t mados-compositor "No detection and no Hyprland - selecting sway"
         echo "sway"
     fi
 }

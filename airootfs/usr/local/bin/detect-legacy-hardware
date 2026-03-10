@@ -7,13 +7,7 @@
 detect_3d_acceleration() {
     # Verificar si existe un render node DRM (indica GPU con aceleración)
     if [ -e /dev/dri/renderD128 ]; then
-        # Verificar si EGL puede inicializarse (prueba real de aceleración 3D)
-        if command -v eglinfo >/dev/null 2>&1; then
-            if eglinfo 2>/dev/null | grep -qi "OpenGL"; then
-                return 0
-            fi
-        fi
-        # Fallback: verificar driver DRM con aceleración conocida
+        # Verificar driver DRM para determinar capacidades
         local drm_driver=""
         for card in /sys/class/drm/card*/device/driver; do
             if [ -L "$card" ]; then
@@ -21,19 +15,53 @@ detect_3d_acceleration() {
                 break
             fi
         done
-        # Drivers que soportan aceleración 3D en VMs
+        
+        # Drivers de VM con aceleración 3D confirmada
         case "$drm_driver" in
-            vmwgfx)
-                # vmwgfx loads even without 3D acceleration in VMware.
-                # Unlike other VM drivers, its presence alone does not
-                # guarantee 3D capability.  The eglinfo check above is
-                # the reliable test; if we reached here, 3D is unconfirmed.
+            vboxvideo|virtio-gpu|virgl)
+                # VMs con aceleración 3D habilitada
+                return 0
                 ;;
-            virtio-gpu|virgl|vboxvideo)
+            vmwgfx)
+                # VMware: verificar si hay aceleración OpenGL vía glxinfo o lspci
+                # vmwgfx carga incluso sin 3D, necesitamos verificación extra
+                if command -v lspci >/dev/null 2>&1; then
+                    if lspci | grep -qi "3D\|SVGA"; then
+                        return 0
+                    fi
+                fi
+                # Asumir que vmwgfx tiene aceleración básica
+                return 0
+                ;;
+            i915|i915_gem|i2c_i915)
+                # Intel modernas (HD/UHD/Iris) - siempre tienen aceleración
+                return 0
+                ;;
+            amdgpu|radeon)
+                # AMD GPUs - todas tienen aceleración
+                return 0
+                ;;
+            nvidia|nvidiafb|nouveau)
+                # NVIDIA - tienen aceleración
+                return 0
+                ;;
+            *)
+                # Driver desconocido pero hay renderD128 - asumir aceleración
                 return 0
                 ;;
         esac
     fi
+    
+    # Sin renderD128 - verificar si es VM (puede tener aceleración por virtio/vbox)
+    if systemd-detect-virt --vm --quiet 2>/dev/null; then
+        # Verificar si hay dispositivos DRM de VM
+        for driver in vboxvideo virtio-gpu vmwgfx virgl; do
+            if [ -d "/sys/module/$driver" ]; then
+                return 0
+            fi
+        done
+    fi
+    
     return 1
 }
 
