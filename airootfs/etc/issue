@@ -1,0 +1,11 @@
+madOS GNU/Linux \m - Kernel \r
+
+User: mados  Password: mados
+
+If graphical session fails, check logs:
+  cat /var/log/mados-hyprland-session.log
+  cat /var/log/mados-sway-session.log
+  cat /var/log/mados-hardware-detect.log
+
+For hardware detection debug:
+  sudo detect-legacy-hardware-debug
