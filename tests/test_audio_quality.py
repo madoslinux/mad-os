@@ -375,7 +375,7 @@ class TestAudioQualityIntegration(unittest.TestCase):
 
         # Should use defaults if detection fails
         self.assertIn("DEFAULT_SAMPLE_RATE", content)
-        self.assertIn("DEFAULT_BIT_DEPTH", content)
+        self.assertIn("DEFAULT_QUANTUM", content)
 
 
 # ═══════════════════════════════════════════════════════════════════════════

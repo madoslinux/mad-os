@@ -88,6 +88,7 @@ main() {
     fi
 
     if [[ -f "$MEDIA_HELPER" ]]; then
+        # shellcheck source=/usr/local/lib/mados-media-helper.sh
         source "$MEDIA_HELPER"
         if ! can_install_software; then
             log_warn "Medio óptico (DVD/CD) detectado."
