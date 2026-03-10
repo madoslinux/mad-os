@@ -5,14 +5,18 @@ fi
 
 ~/.automated_script.sh
 
-# Auto-start compositor on TTY1 for live environment
-# Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
-# Boot parameters to control behavior:
-#   mados_safe_mode - Force Sway with maximum compatibility
-#   mados_no_graphic - Skip auto-start of graphical session (debug mode)
-#   nomodeset - Force safe graphics mode (kernel parameter)
-if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
-    # Debug mode: skip graphical session auto-start
+# Only auto-start compositor on physical TTY1 (not SSH, not serial console)
+# SSH sessions have a pty, not a real tty
+if [ -z "${WAYLAND_DISPLAY}" ]; then
+    # Check if we're on a real TTY (not SSH/pty)
+    if [ -n "$SSH_CONNECTION" ]; then
+        # SSH session - just show a welcome message, don't try to start graphics
+        echo "SSH session detected. Graphical session runs on TTY1."
+        echo "To switch to graphical session, use Ctrl+Alt+F1 on physical display."
+        return 0
+    fi
+    
+    # Check for debug boot parameters
     if grep -q 'mados_no_graphic' /proc/cmdline 2>/dev/null; then
         echo "mados_no_graphic detected - skipping graphical session auto-start" >&2
         logger -p user.info -t mados-session "Debug mode: graphical session disabled"
@@ -26,6 +30,15 @@ if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
         logger -p user.info -t mados-session "Safe mode requested via kernel parameter"
         exec /usr/local/bin/mados-safe-mode
     fi
+    
+    # Only start compositor on real console (tty1-tty6)
+    TTY=$(tty 2>/dev/null)
+    if [ "${TTY}" != "/dev/tty1" ] && [ "${TTY}" != "/dev/tty2" ] && [ "${TTY}" != "/dev/tty3" ] && [ "${TTY}" != "/dev/tty4" ] && [ "${TTY}" != "/dev/tty5" ] && [ "${TTY}" != "/dev/tty6" ]; then
+        # Not on a physical console - could be SSH, serial, etc.
+        # Don't try to start graphical session
+        return 0
+    fi
+    
     # Copy skel configs to home on first boot (if not already present)
     # This ensures all config files and directories exist
     if [ -d /etc/skel ]; then

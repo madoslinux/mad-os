@@ -4,19 +4,34 @@
 
 [[ -f ~/.bashrc ]] && . ~/.bashrc
 
-# Auto-start compositor on TTY1 (live ISO only — installed system uses greetd)
-# Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
-if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ] && [ -d /run/archiso ]; then
-  export XDG_SESSION_TYPE=wayland
-  export MOZ_ENABLE_WAYLAND=1
-  export XCURSOR_THEME=Adwaita
-  export XCURSOR_SIZE=16
+# Only auto-start compositor on physical TTY1 (not SSH)
+# SSH sessions have SSH_CONNECTION env var set
+if [ -z "$WAYLAND_DISPLAY" ] && [ -z "$SSH_CONNECTION" ]; then
+    # Check for live ISO environment
+    if [ ! -d /run/archiso ]; then
+        return 0
+    fi
+    
+    # Only on physical console (tty1-tty6)
+    TTY=$(tty 2>/dev/null)
+    case "$TTY" in
+        /dev/tty[1-6])
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+    
+    export XDG_SESSION_TYPE=wayland
+    export MOZ_ENABLE_WAYLAND=1
+    export XCURSOR_THEME=Adwaita
+    export XCURSOR_SIZE=16
 
-  # Select compositor based on hardware capabilities
-  COMPOSITOR="hyprland"
-  if [ -x /usr/local/bin/select-compositor ]; then
-      COMPOSITOR=$(/usr/local/bin/select-compositor)
-  fi
+    # Select compositor based on hardware capabilities
+    COMPOSITOR="hyprland"
+    if [ -x /usr/local/bin/select-compositor ]; then
+        COMPOSITOR=$(/usr/local/bin/select-compositor)
+    fi
 
   if [ "$COMPOSITOR" = "sway" ]; then
       # Software rendering: use Sway with pixman renderer
