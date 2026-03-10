@@ -256,7 +256,10 @@ class TestDownloadFailureHandling(unittest.TestCase):
             download_packages_with_progress(app, list(PACKAGES))
 
         # Verify warning was logged for each failed group
-        warnings = [m for m in log_messages if "Warning: download failed" in m or "pacstrap will retry" in m]
+        warnings = [
+            m for m in log_messages
+            if "Warning: download failed" in m or "pacstrap will retry" in m
+        ]
         expected_groups = (len(PACKAGES) + 9) // 10
         self.assertGreaterEqual(
             len(warnings),

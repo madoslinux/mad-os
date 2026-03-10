@@ -223,7 +223,7 @@ class TestRsyncProgress(unittest.TestCase):
         return progress_values
 
     def test_progress_range_0_21_to_0_48(self):
-        """Progress must stay within the 0.21 → 0.48 range (rsync ends at 0.43, then jumps to 0.48)."""
+        """Progress must stay within 0.21-0.48 range (rsync ends at 0.43, then 0.48)."""
         lines = [
             "          5,000  0%    0.00kB/s    0:00:00\n",
             "    100,000,000 25%  100.00MB/s    0:00:03\n",
