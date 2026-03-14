@@ -97,43 +97,12 @@ if [[ ! -f /root/.zshrc && -f /etc/skel/.zshrc ]]; then
 fi
 
 # ── OpenCode ─────────────────────────────────────────────────────────────
-OPENCODE_CMD="opencode"
-INSTALL_DIR="/usr/local/bin"
-
-if command -v "$OPENCODE_CMD" &>/dev/null; then
-    echo "✓ OpenCode already installed"
-else
-    echo "Installing OpenCode..."
-    
-    # Install via curl (official method - binary)
-    # The installer puts it in ~/.opencode/bin/opencode
-    if curl -fsSL https://opencode.ai/install | bash; then
-        # Find and copy the installed binary
-        if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
-            cp "$HOME/.opencode/bin/opencode" "$INSTALL_DIR/$OPENCODE_CMD"
-            chmod +x "$INSTALL_DIR/$OPENCODE_CMD"
-            echo "✓ OpenCode installed"
-        else
-            echo "⚠ OpenCode binary not found in ~/.opencode/bin/"
-        fi
-    else
-        echo "⚠ OpenCode install failed"
-    fi
-fi
+# OpenCode NO se instala en el live USB - se instala post-instalación si se desea
+echo "OpenCode installation skipped (will be installed post-installation if desired)"
 
 # ── Ollama ───────────────────────────────────────────────────────────────
-OLLAMA_CMD="ollama"
-
-if command -v "$OLLAMA_CMD" &>/dev/null; then
-    echo "✓ Ollama already installed"
-else
-    echo "Installing Ollama..."
-    if curl -fsSL https://ollama.com/install.sh | sh; then
-        echo "✓ Ollama installed"
-    else
-        echo "⚠ Ollama install failed"
-    fi
-fi
+# Ollama NO se instala en el live USB - se instala post-instalación si se desea
+echo "Ollama installation skipped (will be installed post-installation if desired)"
 
 # ── Hide unwanted .desktop entries from application menu ──────────────────
 echo "Hiding unwanted application menu entries..."
