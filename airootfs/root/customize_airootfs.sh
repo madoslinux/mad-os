@@ -57,31 +57,30 @@ fi
 echo "NVM and Node installation skipped (will be installed post-installation)"
 
 # ── Oh My Zsh ────────────────────────────────────────────────────────────
-# Solo instala en /etc/skel - los usuarios root y mados usan symlinks
-# para ahorrar ~400-600MB en la ISO
-OMZ_DIR="/etc/skel/.oh-my-zsh"
+# Instala en /usr/share - los usuarios usan symlinks para ahorrar ~400-600MB en la ISO
+OMZ_DIR="/usr/share/oh-my-zsh"
 
 if [[ ! -d "$OMZ_DIR" ]]; then
-    echo "Installing Oh My Zsh to /etc/skel..."
+    echo "Installing Oh My Zsh to /usr/share..."
     if git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$OMZ_DIR" 2>&1; then
-        echo "✓ Oh My Zsh installed to /etc/skel"
+        echo "✓ Oh My Zsh installed to /usr/share"
         
-        # Crear symlinks en lugar de copias para ahorrar espacio
-        # mados user
+        # Crear symlinks para usuarios (después de que archiso copie skel)
         if [[ -d /home/mados ]]; then
-            ln -sf /etc/skel/.oh-my-zsh /home/mados/.oh-my-zsh
+            rm -rf /home/mados/.oh-my-zsh
+            ln -sf /usr/share/oh-my-zsh /home/mados/.oh-my-zsh
             chown -h 1000:1000 /home/mados/.oh-my-zsh
             echo "  → Linked Oh My Zsh to /home/mados"
         fi
         
-        # root user
-        ln -sf /etc/skel/.oh-my-zsh /root/.oh-my-zsh
+        rm -rf /root/.oh-my-zsh
+        ln -sf /usr/share/oh-my-zsh /root/.oh-my-zsh
         echo "  → Linked Oh My Zsh to /root"
     else
         echo "⚠ Failed to clone Oh My Zsh (will install at boot)"
     fi
 else
-    echo "✓ Oh My Zsh already present in /etc/skel"
+    echo "✓ Oh My Zsh already present in /usr/share"
 fi
 
 # Copy .zshrc to mados user
