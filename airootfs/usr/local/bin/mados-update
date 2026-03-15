@@ -1,0 +1,73 @@
+#!/bin/bash
+# madOS Applications Update Script
+
+set -e
+
+MADOS_APPS=(
+    "mados-audio-player"
+    "mados-equalizer"
+    "mados-launcher"
+    "mados-pdf-viewer"
+    "mados-photo-viewer"
+    "mados-video-player"
+    "mados-installer"
+)
+
+GITHUB_REPO="madkoding"
+UPDATED=0
+
+notify_update() {
+    if [[ -n "$DISPLAY" || -n "$WAYLAND_DISPLAY" ]]; then
+        notify-send -u normal "madOS Actualizado" "$UPDATED aplicación(es) actualizada(s)" -i system-software-update 2>/dev/null || true
+    fi
+}
+
+echo "=== madOS Applications Update ==="
+
+for app in "${MADOS_APPS[@]}"; do
+    APP_DIR="/usr/local/lib/${app}"
+    LAUNCHER="/usr/local/bin/${app}"
+    APP_NAME="${app#mados-}"
+    
+    if [[ -d "$APP_DIR/.git" ]]; then
+        cd "$APP_DIR"
+        CURRENT=$(git rev-parse HEAD 2>/dev/null)
+        git fetch origin
+        LATEST=$(git rev-parse origin/master 2>/dev/null || git rev-parse origin/main 2>/dev/null)
+        
+        if [[ "$CURRENT" != "$LATEST" ]]; then
+            echo "Updating $app..."
+            git checkout -f master 2>/dev/null || git checkout -f main 2>/dev/null
+            git reset --hard "$LATEST"
+            
+            # Update launcher if needed
+            if [[ "$app" == "mados-installer" ]]; then
+                cat > "$LAUNCHER" << 'EOF'
+#!/bin/bash
+# madOS Installer - Launcher script
+export PYTHONPATH="/usr/local/lib${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m mados_installer "$@"
+EOF
+            else
+                cat > "$LAUNCHER" << EOF
+#!/bin/bash
+# madOS ${APP_NAME^} - Launcher script
+export PYTHONPATH="/usr/local/lib\${PYTHONPATH:+:\$PYTHONPATH}"
+exec python3 -m ${app} "\$@"
+EOF
+            fi
+            chmod +x "$LAUNCHER"
+            UPDATED=$((UPDATED + 1))
+            echo "  ✓ $app updated"
+        fi
+        cd /
+    fi
+done
+
+if [[ $UPDATED -gt 0 ]]; then
+    echo ""
+    echo "✓ $UPDATED application(s) updated"
+    notify_update
+else
+    echo "✓ All applications are up to date"
+fi

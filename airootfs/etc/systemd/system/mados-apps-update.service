@@ -1,0 +1,11 @@
+[Unit]
+Description=MadOS Applications Update
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-update
+StandardOutput=journal
+StandardError=journal
+RemainAfterExit=yes

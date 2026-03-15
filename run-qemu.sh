@@ -14,6 +14,9 @@ echo "=== Running QEMU with ${ISO_FILE} ==="
 
 MEMORY="${MEMORY:-4G}"
 CPU="${CPU:-4}"
+RESOLUTION="${RESOLUTION:-1920x1080}"
+XRES="${RESOLUTION%x*}"
+YRES="${RESOLUTION#*x}"
 
 if [ -w /dev/kvm ]; then
     echo "Using KVM acceleration"
@@ -30,5 +33,6 @@ qemu-system-x86_64 \
     -net nic \
     -net user,hostfwd=tcp::2222-:22 \
     -vga virtio \
-    -display gtk,grab-on-hover=on \
+    -global virtio-vga.max_outputs=1 \
+    -display sdl \
     "$@"

@@ -49,6 +49,108 @@ else
     [[ -n "$NORDZY_BUILD_DIR" ]] && rm -rf "$NORDZY_BUILD_DIR"
 fi
 
+# ── Michroma Font (from Google Fonts) ─────────────────────────────────────
+MICHROMA_DIR="/usr/share/fonts/truetype/michroma"
+
+if [[ -d "$MICHROMA_DIR" ]]; then
+    echo "✓ Michroma font already installed"
+else
+    echo "Installing Michroma font..."
+    MICHROMA_BUILD_DIR=$(mktemp -d)
+    if git clone --depth=1 https://github.com/google/fonts.git "$MICHROMA_BUILD_DIR/fonts" 2>&1; then
+        mkdir -p "$MICHROMA_DIR"
+        cp "$MICHROMA_BUILD_DIR/fonts/ofl/michroma/Michroma-Regular.ttf" "$MICHROMA_DIR/"
+        echo "✓ Michroma font installed"
+    else
+        echo "⚠ Failed to install Michroma font"
+    fi
+    rm -rf "$MICHROMA_BUILD_DIR"
+fi
+
+# ════════════════════════════════════════════════════════════════════════════
+# madOS Applications Suite - Download from GitHub
+# ════════════════════════════════════════════════════════════════════════════
+
+MADOS_APPS=(
+    "mados-audio-player"
+    "mados-equalizer"
+    "mados-launcher"
+    "mados-pdf-viewer"
+    "mados-photo-viewer"
+    "mados-video-player"
+)
+
+GITHUB_REPO="madkoding"
+
+for app in "${MADOS_APPS[@]}"; do
+    APP_DIR="/usr/local/lib/${app}"
+    LAUNCHER="/usr/local/bin/${app}"
+    APP_NAME="${app#mados-}"
+    
+    if [[ -d "$APP_DIR/.git" ]]; then
+        echo "Updating $app..."
+        cd "$APP_DIR"
+        git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+        cd /
+    else
+        echo "Installing $app from GitHub..."
+        rm -rf "$APP_DIR"
+        APP_BUILD_DIR=$(mktemp -d)
+        if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$APP_BUILD_DIR/${app}" 2>&1; then
+            mkdir -p /usr/local/lib
+            mv "$APP_BUILD_DIR/${app}" "$APP_DIR"
+            
+            # Create launcher script
+            cat > "$LAUNCHER" << EOF
+#!/bin/bash
+# madOS ${APP_NAME^} - Launcher script
+export PYTHONPATH="/usr/local/lib\${PYTHONPATH:+:\$PYTHONPATH}"
+exec python3 -m ${app} "\$@"
+EOF
+            chmod +x "$LAUNCHER"
+            echo "✓ $app installed"
+        else
+            echo "⚠ Failed to install $app"
+        fi
+        rm -rf "$APP_BUILD_DIR"
+    fi
+done
+
+# Also install mados-installer (has different structure)
+INSTALLER_APP="mados-installer"
+INSTALLER_DIR="/usr/local/lib/${INSTALLER_APP}"
+INSTALLER_LAUNCHER="/usr/local/bin/${INSTALLER_APP}"
+
+if [[ -d "$INSTALLER_DIR/.git" ]]; then
+    echo "Updating $INSTALLER_APP..."
+    cd "$INSTALLER_DIR"
+    git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+    cd /
+else
+    echo "Installing $INSTALLER_APP from GitHub..."
+    rm -rf "$INSTALLER_DIR"
+    INSTALLER_BUILD_DIR=$(mktemp -d)
+    if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${INSTALLER_APP}.git" "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" 2>&1; then
+        mkdir -p /usr/local/lib
+        mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_DIR"
+        
+        # Create launcher script
+        cat > "$INSTALLER_LAUNCHER" << 'EOF'
+#!/bin/bash
+# madOS Installer - Launcher script
+export PYTHONPATH="/usr/local/lib${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m mados_installer "$@"
+EOF
+        chmod +x "$INSTALLER_LAUNCHER"
+        echo "✓ $INSTALLER_APP installed"
+    else
+        echo "⚠ Failed to install $INSTALLER_APP"
+    fi
+    rm -rf "$INSTALLER_BUILD_DIR"
+fi
+
+echo "✓ madOS applications suite installed"
+
 # ════════════════════════════════════════════════════════════════════════════
 # NVM (Node Version Manager) y Node
 # NOTA: No se instala en la imagen ISO para reducir tamaño.
@@ -160,6 +262,9 @@ rm -rf /usr/share/fonts/truetype/liberation 2>/dev/null || true
 rm -rf /usr/share/icons/hicolor 2>/dev/null || true
 rm -rf /usr/share/icons/Adwaita 2>/dev/null || true
 rm -rf /usr/share/pixmaps/gnome 2>/dev/null || true
+
+echo "Updating font cache..."
+fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true
 
 echo "Removing unnecessary locales (keeping en_US, es_ES)..."
 for lang in /usr/share/locale/*; do
