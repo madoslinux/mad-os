@@ -344,6 +344,62 @@ window#waybar {
     }
 }
 
+/* Custom Help - LED Amarillo/Azulado */
+#custom-help {
+    padding: 3px 12px;
+    margin: 3px 2px;
+    color: #81A1C1;
+    background: linear-gradient(135deg, rgba(129, 161, 193, 0.12), rgba(94, 129, 172, 0.08));
+    border-radius: 6px;
+    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    transition: all 0.3s ease;
+    text-shadow:
+        0 0 8px #81A1C1,
+        0 0 12px #81A1C1,
+        0 0 16px rgba(129, 161, 193, 0.8),
+        0 0 20px rgba(129, 161, 193, 0.5);
+}
+
+#custom-help:hover {
+    background: linear-gradient(135deg, rgba(129, 161, 193, 0.2), rgba(94, 129, 172, 0.12));
+    text-shadow:
+        0 0 10px #81A1C1,
+        0 0 15px #81A1C1,
+        0 0 20px rgba(129, 161, 193, 0.9),
+        0 0 25px rgba(129, 161, 193, 0.6);
+}
+
+/* Custom Power - LED Rojo/Púrpura */
+#custom-power {
+    padding: 3px 12px;
+    margin: 3px 2px;
+    color: #BF616A;
+    background: linear-gradient(135deg, rgba(191, 97, 106, 0.12), rgba(180, 80, 90, 0.08));
+    border-radius: 6px;
+    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    transition: all 0.3s ease;
+    text-shadow:
+        0 0 8px #BF616A,
+        0 0 12px #BF616A,
+        0 0 16px rgba(191, 97, 106, 0.8),
+        0 0 20px rgba(191, 97, 106, 0.5);
+}
+
+#custom-power:hover {
+    background: linear-gradient(135deg, rgba(191, 97, 106, 0.2), rgba(180, 80, 90, 0.12));
+    text-shadow:
+        0 0 10px #BF616A,
+        0 0 15px #BF616A,
+        0 0 20px rgba(191, 97, 106, 0.9),
+        0 0 25px rgba(191, 97, 106, 0.6);
+}
+
 /* ===== Tooltip ===== */
 
 tooltip,

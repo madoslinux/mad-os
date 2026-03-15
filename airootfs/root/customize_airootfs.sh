@@ -266,4 +266,8 @@ done
 echo "✓ Package cache cleaned"
 echo "✓ Unnecessary files removed"
 
+echo "=== madOS: Ensuring executable permissions ==="
+chmod +x /usr/local/bin/mados-help
+chmod +x /usr/local/bin/mados-power
+
 echo "=== madOS: Pre-installation complete ==="

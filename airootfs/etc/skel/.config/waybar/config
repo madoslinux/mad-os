@@ -23,7 +23,9 @@
         "memory",
         "pulseaudio",
         "backlight",
-        "battery"
+        "battery",
+        "custom/help",
+        "custom/power"
     ],
     "sway/workspaces": {
         "format": "{name}",
@@ -155,5 +157,15 @@
             "󰁹"
         ],
         "tooltip-format": "{capacity}% • {timeTo}"
+    },
+    "custom/help": {
+        "format": "?",
+        "on-click": "/usr/local/bin/mados-help",
+        "tooltip": false
+    },
+    "custom/power": {
+        "format": "⏻",
+        "on-click": "/usr/local/bin/mados-power",
+        "tooltip": false
     }
 }
