@@ -198,14 +198,6 @@ if [[ ! -f /root/.zshrc && -f /etc/skel/.zshrc ]]; then
     echo "  → Copied .zshrc to /root"
 fi
 
-# ── OpenCode ─────────────────────────────────────────────────────────────
-# OpenCode NO se instala en el live USB - se instala post-instalación si se desea
-echo "OpenCode installation skipped (will be installed post-installation if desired)"
-
-# ── Ollama ───────────────────────────────────────────────────────────────
-# Ollama NO se instala en el live USB - se instala post-instalación si se desea
-echo "Ollama installation skipped (will be installed post-installation if desired)"
-
 # ── Hide unwanted .desktop entries from application menu ──────────────────
 echo "Hiding unwanted application menu entries..."
 for desktop_file in \
