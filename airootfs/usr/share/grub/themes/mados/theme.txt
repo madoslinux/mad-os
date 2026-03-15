@@ -1,0 +1,37 @@
+# GRUB Theme for madOS
+# https://github.com/madoslinux/mad-os
+
+# Desktop slide/box settings
++ boot_menu {
+    left = 20%
+    top = 30%
+    width = 60%
+    height = 40%
+    item_color = "#88C0D0"
+    selected_item_color = "#ECEFF4"
+    item_height = 30
+    item_padding = 10
+    item_spacing = 5
+    visible = true
+}
+
+# Label style for menu items
+* {
+    font = "Sans 16"
+    color = "#88C0D0"
+}
+
+# Selected menu item
++ label {
+    font = "Sans Bold 18"
+    color = "#ECEFF4"
+    selected_color = "#88C0D0"
+}
+
+# Title/Header
++ image {
+    top = 5%
+    left = 50%-100
+    width = 200
+    file = "logo.png"
+}
