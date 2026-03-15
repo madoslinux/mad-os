@@ -49,22 +49,19 @@ else
     [[ -n "$NORDZY_BUILD_DIR" ]] && rm -rf "$NORDZY_BUILD_DIR"
 fi
 
-# ── Michroma Font (from Google Fonts) ─────────────────────────────────────
+# ── Michroma Font (from Google Fonts - Direct Download) ────────────────────
 MICHROMA_DIR="/usr/share/fonts/truetype/michroma"
 
-if [[ -d "$MICHROMA_DIR" ]]; then
+if [[ -d "$MICHROMA_DIR" ]] && [[ -f "$MICHROMA_DIR/Michroma-Regular.ttf" ]]; then
     echo "✓ Michroma font already installed"
 else
     echo "Installing Michroma font..."
-    MICHROMA_BUILD_DIR=$(mktemp -d)
-    if git clone --depth=1 https://github.com/google/fonts.git "$MICHROMA_BUILD_DIR/fonts" 2>&1; then
-        mkdir -p "$MICHROMA_DIR"
-        cp "$MICHROMA_BUILD_DIR/fonts/ofl/michroma/Michroma-Regular.ttf" "$MICHROMA_DIR/"
+    mkdir -p "$MICHROMA_DIR"
+    if curl -fsSL "https://github.com/google/fonts/raw/main/ofl/michroma/Michroma-Regular.ttf" -o "$MICHROMA_DIR/Michroma-Regular.ttf" 2>&1; then
         echo "✓ Michroma font installed"
     else
         echo "⚠ Failed to install Michroma font"
     fi
-    rm -rf "$MICHROMA_BUILD_DIR"
 fi
 
 # ════════════════════════════════════════════════════════════════════════════
