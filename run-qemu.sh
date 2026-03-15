@@ -28,6 +28,7 @@ qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp "$CPU" \
     -enable-kvm \
+    -cpu host \
     -cdrom "$ISO_FILE" \
     -boot d \
     -net nic \
