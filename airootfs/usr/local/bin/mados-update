@@ -13,7 +13,7 @@ MADOS_APPS=(
     "mados-installer"
 )
 
-GITHUB_REPO="madkoding"
+GITHUB_REPO="madoslinux"
 UPDATED=0
 
 notify_update() {

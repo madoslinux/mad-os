@@ -80,7 +80,7 @@ MADOS_APPS=(
     "mados-video-player"
 )
 
-GITHUB_REPO="madkoding"
+GITHUB_REPO="madoslinux"
 
 for app in "${MADOS_APPS[@]}"; do
     APP_DIR="/usr/local/lib/${app}"
