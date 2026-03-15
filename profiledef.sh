@@ -91,7 +91,7 @@ file_permissions=(
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
   ["/etc/systemd/system/mados-apps-update.service"]="0:0:644"
   ["/etc/systemd/system/mados-apps-update.timer"]="0:0:644"
-  ["/usr/share/grub/themes/mados/"]="0:0:755"
+  ["/usr/share/grub/themes/mados"]="0:0:755"
   ["/usr/share/grub/themes/mados/theme.txt"]="0:0:644"
   ["/usr/share/grub/themes/mados/logo.png"]="0:0:644"
 )
