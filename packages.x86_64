@@ -148,6 +148,9 @@ python-evdev
 # On-screen virtual keyboard (auto-activated when no physical keyboard detected)
 squeekboard
 
+# Ollama - LLM cloud client (binario only, ~50MB)
+ollama
+
 # madOS Native Apps Dependencies
 # madOS Photo Viewer - image viewing and video playback
 gstreamer
