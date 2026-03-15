@@ -57,7 +57,7 @@ Welcome to madOS Live Environment!
 📚 Keyboard shortcuts:
    Super+Enter      - Open terminal
    Super+D          - Application launcher
-   Super+Shift+Q    - Close window
+   Super+Q          - Close window
 
 🐛 Debugging:
    mados-debug              (quick system diagnostics)
