@@ -151,6 +151,9 @@ squeekboard
 # Ollama - LLM cloud client (binario only, ~50MB)
 ollama
 
+# OpenCode AI Assistant (~30MB)
+opencode
+
 # madOS Native Apps Dependencies
 # madOS Photo Viewer - image viewing and video playback
 gstreamer
