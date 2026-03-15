@@ -2,7 +2,7 @@
 Name=madOS Photo Viewer
 Comment=View images
 Exec=mados-photo-viewer %f
-Icon=multimedia-photo-viewer
+Icon=eog
 Terminal=false
 Type=Application
 Categories=Graphics;Viewer;
