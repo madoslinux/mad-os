@@ -17,6 +17,14 @@ CPU="${CPU:-4}"
 RESOLUTION="${RESOLUTION:-1920x1080}"
 XRES="${RESOLUTION%x*}"
 YRES="${RESOLUTION#*x}"
+DISK_SIZE="${DISK_SIZE:-10G}"
+DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
+
+# Create virtual disk if it doesn't exist
+if [ ! -f "$DISK_FILE" ]; then
+    echo "Creating ${DISK_SIZE} virtual disk at ${DISK_FILE}..."
+    qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
+fi
 
 if [ -w /dev/kvm ]; then
     echo "Using KVM acceleration"
@@ -31,6 +39,7 @@ qemu-system-x86_64 \
     -cpu host \
     -cdrom "$ISO_FILE" \
     -boot d \
+    -hda "$DISK_FILE" \
     -net nic \
     -net user,hostfwd=tcp::2222-:22 \
     -vga virtio \
