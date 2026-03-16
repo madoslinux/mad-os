@@ -65,4 +65,5 @@ qemu-system-x86_64 \
     -audiodev id=audio,driver=alsa \
     -device ich9-intel-hda \
     -device hda-output,audiodev=audio \
+    -bios /usr/share/edk2/x64/OVMF.4m.fd \
     "$@"
