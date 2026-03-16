@@ -128,6 +128,12 @@ if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
     cd "$INSTALLER_PYTHON_DIR"
         git pull --ff-only origin main 2>/dev/null || true
     cd /
+    
+    # Fix BIOS GRUB install - patch config_script.py
+    if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+        echo "  Patching mados-installer BIOS GRUB install fix..."
+        sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+    fi
 else
     echo "Installing $INSTALLER_APP from GitHub..."
     rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
