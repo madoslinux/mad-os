@@ -12,14 +12,6 @@ log() {
 
 log "Starting autostart as user: $(whoami) uid: $(id -u)"
 
-# Re-run as root if not running as root
-if [[ $(id -u) != "0" ]]; then
-    log "Not root, re-executing as root..."
-    exec su -c "PATH=$PATH $0 $*" root
-fi
-
-log "Running as root, uid: $(id -u)"
-
 is_ventoy_boot() {
     if [ -f /proc/cmdline ]; then
         grep -q "ventoy" /proc/cmdline && return 0
