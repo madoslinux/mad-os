@@ -89,7 +89,7 @@ for app in "${MADOS_APPS[@]}"; do
     if [[ -d "$PYTHON_APP_DIR/.git" ]]; then
         echo "Updating $app..."
         cd "$PYTHON_APP_DIR"
-        git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+        git pull --ff-only origin main 2>/dev/null || true
         cd /
     else
         echo "Installing $app from GitHub..."
@@ -126,7 +126,7 @@ INSTALLER_LAUNCHER="/usr/local/bin/${INSTALLER_APP}"
 if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
     echo "Updating $INSTALLER_APP..."
     cd "$INSTALLER_PYTHON_DIR"
-    git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+        git pull --ff-only origin main 2>/dev/null || true
     cd /
 else
     echo "Installing $INSTALLER_APP from GitHub..."
