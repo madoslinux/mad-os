@@ -86,7 +86,6 @@ file_permissions=(
   ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
   ["/usr/local/bin/mados-update"]="0:0:755"
-  ["/etc/polkit-1/rules.d/99-mados-nopass.rules"]="0:0:644"
 
   ["/etc/mados/"]="0:0:755"
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
