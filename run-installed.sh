@@ -12,11 +12,9 @@ if [ ! -f "$DISK_FILE" ]; then
 fi
 
 echo "=== Running QEMU with installed disk ${DISK_FILE} ==="
-[ -n "$ISO_FILE" ] && echo "ISO available: ${ISO_FILE}"
 
 MEMORY="${MEMORY:-4G}"
 CPU="${CPU:-4}"
-BOOT="${BOOT:-disk}"  # disk, iso, or both
 
 if [ -w /dev/kvm ]; then
     echo "Using KVM acceleration"
@@ -24,40 +22,14 @@ else
     echo "KVM not available, using TCG"
 fi
 
-# Build boot options based on BOOT variable
-case "$BOOT" in
-    disk)
-        echo "Booting from disk only (BIOS mode)"
-        BOOT_OPT="-boot c -hda $DISK_FILE"
-        ;;
-    iso)
-        echo "Booting from ISO only"
-        [ -z "$ISO_FILE" ] && echo "No ISO found" && exit 1
-        BOOT_OPT="-boot d -cdrom $ISO_FILE"
-        ;;
-    both|recovery)
-        echo "Booting from disk (with ISO as fallback)"
-        [ -z "$ISO_FILE" ] && echo "No ISO found, disk only" || BOOT_OPT="-boot c -hda $DISK_FILE -cdrom $ISO_FILE"
-        ;;
-    iso+disk)
-        echo "Booting from ISO (with disk connected)"
-        [ -z "$ISO_FILE" ] && echo "No ISO found" && exit 1
-        BOOT_OPT="-boot d -hda $DISK_FILE -cdrom $ISO_FILE"
-        ;;
-    *)
-        echo "Unknown boot option: $BOOT"
-        echo "Usage: BOOT=disk|iso|both|iso+disk ./run-installed.sh"
-        exit 1
-        ;;
-esac
-
-echo "Starting QEMU..."
+echo "Starting QEMU with SCSI disk..."
 qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp "$CPU" \
     -enable-kvm \
     -cpu host \
-    $BOOT_OPT \
+    -drive file="$DISK_FILE",format=qcow2,if=scsi,index=0,media=disk \
+    -boot c \
     -net nic \
     -net user,hostfwd=tcp::2222-:22 \
     -vga virtio \
@@ -66,5 +38,5 @@ qemu-system-x86_64 \
     -audiodev id=audio,driver=alsa \
     -device ich9-intel-hda \
     -device hda-output,audiodev=audio \
-    -device ich9-ahci \
+    -device lsi53c895a \
     "$@"
