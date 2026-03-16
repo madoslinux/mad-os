@@ -36,13 +36,17 @@ case "$BOOT" in
         BOOT_OPT="-boot d -cdrom $ISO_FILE"
         ;;
     both|recovery)
-        echo "Booting from ISO (for recovery)"
+        echo "Booting from disk (with ISO as fallback)"
+        [ -z "$ISO_FILE" ] && echo "No ISO found, disk only" || BOOT_OPT="-boot c -hda $DISK_FILE -cdrom $ISO_FILE"
+        ;;
+    iso+disk)
+        echo "Booting from ISO (with disk connected)"
         [ -z "$ISO_FILE" ] && echo "No ISO found" && exit 1
         BOOT_OPT="-boot d -hda $DISK_FILE -cdrom $ISO_FILE"
         ;;
     *)
         echo "Unknown boot option: $BOOT"
-        echo "Usage: BOOT=disk|iso|both ./run-installed.sh"
+        echo "Usage: BOOT=disk|iso|both|iso+disk ./run-installed.sh"
         exit 1
         ;;
 esac
@@ -61,5 +65,4 @@ qemu-system-x86_64 \
     -audiodev id=audio,driver=alsa \
     -device ich9-intel-hda \
     -device hda-output,audiodev=audio \
-    -bios /usr/share/edk2/x64/OVMF.4m.fd 2>/dev/null || true \
     "$@"
