@@ -57,11 +57,11 @@ log "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
 
 sleep 2
 
-# Run installer as root preserving user's environment
+# Run installer (as root since autostart runs as root via su)
 if [ -x /usr/local/bin/install-mados ]; then
-    log "Starting install-mados as root"
-    # Execute as root with user's environment variables
-    pkexec --preserve-env=WAYLAND_DISPLAY,XDG_RUNTIME_DIR,GDK_BACKEND,DISPLAY /usr/local/bin/install-mados
+    log "Starting install-mados"
+    # Execute directly (running as root already)
+    /usr/local/bin/install-mados
     EXIT_CODE=$?
     log "Installer exited with code: $EXIT_CODE"
 else
