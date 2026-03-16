@@ -27,7 +27,7 @@ fi
 # Build boot options based on BOOT variable
 case "$BOOT" in
     disk)
-        echo "Booting from disk only"
+        echo "Booting from disk only (BIOS mode)"
         BOOT_OPT="-boot c -hda $DISK_FILE"
         ;;
     iso)
@@ -51,6 +51,7 @@ case "$BOOT" in
         ;;
 esac
 
+echo "Starting QEMU..."
 qemu-system-x86_64 \
     -m "$MEMORY" \
     -smp "$CPU" \
@@ -65,5 +66,4 @@ qemu-system-x86_64 \
     -audiodev id=audio,driver=alsa \
     -device ich9-intel-hda \
     -device hda-output,audiodev=audio \
-    -bios /usr/share/edk2/x64/OVMF.4m.fd \
     "$@"
