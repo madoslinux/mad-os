@@ -141,6 +141,7 @@ else
         cat > "$INSTALLER_LAUNCHER" << 'EOF'
 #!/bin/bash
 # madOS Installer - Launcher script
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
 cd "/usr/local/lib/mados_installer"
 exec python3 -m mados_installer "$@"
 EOF

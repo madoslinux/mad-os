@@ -8,4 +8,5 @@ if [[ $(id -u) != "0" ]]; then
     exit 1
 fi
 
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
 exec /usr/local/bin/install-mados-gtk.py "$@"

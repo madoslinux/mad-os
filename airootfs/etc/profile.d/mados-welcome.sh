@@ -3,6 +3,11 @@
 
 WELCOME_INFO_SHOWN="/tmp/.mados-welcome-info-shown"
 
+# Fix pacman db warnings on live environment
+if [[ -d /run/archiso ]] && command -v pacman-db-upgrade &>/dev/null; then
+    pacman-db-upgrade &>/dev/null || true
+fi
+
 # Only show once per boot
 if [[ -f "$WELCOME_INFO_SHOWN" ]]; then
     return 0
