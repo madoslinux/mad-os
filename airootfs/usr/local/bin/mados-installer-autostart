@@ -5,6 +5,11 @@
 
 LOG="/var/log/mados-installer-autostart.log"
 
+# Re-run as root if not running as root (live environment)
+if [[ $(id -u) != "0" ]]; then
+    exec sudo "$0" "$@"
+fi
+
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG" 2>/dev/null
 }
