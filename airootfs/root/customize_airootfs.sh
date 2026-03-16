@@ -129,11 +129,11 @@ if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
         git pull --ff-only origin main 2>/dev/null || true
     cd /
     
-    # Fix BIOS GRUB install - patch config_script.py
+    # Fix BIOS GRUB install - patch config_script.py (for older versions)
     if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
-        echo "  Patching mados-installer BIOS GRUB install fix..."
-        sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
-        sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+        # These patches are applied in mados-installer now, kept here for compatibility
+        sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+        sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
     fi
 else
     echo "Installing $INSTALLER_APP from GitHub..."
@@ -144,13 +144,12 @@ else
         mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
         ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
         
-        # Fix BIOS GRUB install - patch config_script.py
+        # Fix BIOS GRUB install - patch config_script.py (for older versions)
         if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
             echo "  Patching mados-installer BIOS GRUB install fix..."
-            # Replace the BIOS grub-install line to use the disk variable properly
-            sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
-            # Fix: use sda3 (root) not sda2 (EFI) - also ensure proper UUID format
-            sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+            # These patches are applied in mados-installer now, kept here for compatibility
+            sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+            sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
         fi
         
         # Create launcher script
