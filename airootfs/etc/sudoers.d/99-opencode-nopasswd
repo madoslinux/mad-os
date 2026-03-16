@@ -3,7 +3,7 @@
 %wheel ALL=(ALL:ALL) ALL
 
 # Sudo sin password para Ollama, OpenCode e Installer (en live environment)
-%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/ollama, /usr/local/bin/ollama, /usr/bin/opencode, /usr/local/bin/opencode, /usr/local/bin/install-mados
+%wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/ollama, /usr/local/bin/ollama, /usr/bin/opencode, /usr/local/bin/opencode, /usr/local/bin/install-mados, /usr/local/bin/mados-installer
 
 # Preservar variables de entorno Wayland para aplicaciones GTK ejecutadas con sudo
 Defaults env_keep += "WAYLAND_DISPLAY XDG_RUNTIME_DIR DISPLAY SWAYSOCK"
