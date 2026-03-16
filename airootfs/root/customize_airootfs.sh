@@ -81,28 +81,31 @@ GITHUB_REPO="madoslinux"
 
 for app in "${MADOS_APPS[@]}"; do
     APP_DIR="/usr/local/lib/${app}"
+    PYTHON_APP_NAME="${app//-/_}"
+    PYTHON_APP_DIR="/usr/local/lib/${PYTHON_APP_NAME}"
     LAUNCHER="/usr/local/bin/${app}"
     APP_NAME="${app#mados-}"
     
-    if [[ -d "$APP_DIR/.git" ]]; then
+    if [[ -d "$PYTHON_APP_DIR/.git" ]]; then
         echo "Updating $app..."
-        cd "$APP_DIR"
+        cd "$PYTHON_APP_DIR"
         git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
         cd /
     else
         echo "Installing $app from GitHub..."
-        rm -rf "$APP_DIR"
+        rm -rf "$PYTHON_APP_DIR"
         APP_BUILD_DIR=$(mktemp -d)
         if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$APP_BUILD_DIR/${app}" 2>&1; then
             mkdir -p /usr/local/lib
-            mv "$APP_BUILD_DIR/${app}" "$APP_DIR"
+            mv "$APP_BUILD_DIR/${app}" "$PYTHON_APP_DIR"
+            ln -sf "$PYTHON_APP_DIR" "$APP_DIR"
             
             # Create launcher script
             cat > "$LAUNCHER" << EOF
 #!/bin/bash
 # madOS ${APP_NAME^} - Launcher script
 export PYTHONPATH="/usr/local/lib\${PYTHONPATH:+:\$PYTHONPATH}"
-exec python3 -m ${app} "\$@"
+exec python3 -m ${PYTHON_APP_NAME} "\$@"
 EOF
             chmod +x "$LAUNCHER"
             echo "✓ $app installed"
