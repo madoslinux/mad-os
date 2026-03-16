@@ -16,6 +16,14 @@ is_ventoy_boot() {
     return 1
 }
 
+fix_pacman_db() {
+    if [[ -d /run/archiso ]] && command -v pacman-db-upgrade &>/dev/null; then
+        log "Fixing pacman DB..."
+        pacman-db-upgrade &>/dev/null || true
+        log "Pacman DB fixed"
+    fi
+}
+
 # Only launch installer if in archiso live environment and NOT in Ventoy mode
 if [ ! -d /run/archiso ]; then
     log "Not in archiso live environment, skipping installer autostart"
@@ -28,6 +36,9 @@ if is_ventoy_boot; then
 fi
 
 log "Live environment detected, launching installer..."
+
+# Fix pacman DB
+fix_pacman_db
 
 # Ensure GTK uses the Wayland backend
 export GDK_BACKEND=wayland
