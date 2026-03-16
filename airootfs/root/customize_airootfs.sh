@@ -93,19 +93,18 @@ for app in "${MADOS_APPS[@]}"; do
         cd /
     else
         echo "Installing $app from GitHub..."
-        rm -rf "$PYTHON_APP_DIR"
+        rm -rf "$PYTHON_APP_DIR" "$APP_DIR"
         APP_BUILD_DIR=$(mktemp -d)
         if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$APP_BUILD_DIR/${app}" 2>&1; then
             mkdir -p /usr/local/lib
-            mv "$APP_BUILD_DIR/${app}" "$PYTHON_APP_DIR"
-            ln -sf "$PYTHON_APP_DIR" "$APP_DIR"
+            mv "$APP_BUILD_DIR/${app}" "$APP_DIR"
             
-            # Create launcher script
+            # Create launcher script - run directly from app directory
             cat > "$LAUNCHER" << EOF
 #!/bin/bash
 # madOS ${APP_NAME^} - Launcher script
-export PYTHONPATH="/usr/local/lib/${PYTHON_APP_NAME}:\${PYTHONPATH}"
-exec python3 -m ${PYTHON_APP_NAME} "\$@"
+cd "/usr/local/lib/${app}"
+exec python3 __main__.py "\$@"
 EOF
             chmod +x "$LAUNCHER"
             echo "✓ $app installed"
