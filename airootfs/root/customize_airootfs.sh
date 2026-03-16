@@ -104,7 +104,7 @@ for app in "${MADOS_APPS[@]}"; do
             cat > "$LAUNCHER" << EOF
 #!/bin/bash
 # madOS ${APP_NAME^} - Launcher script
-export PYTHONPATH="/usr/local/lib\${PYTHONPATH:+:\$PYTHONPATH}"
+export PYTHONPATH="/usr/local/lib/${PYTHON_APP_NAME}:\${PYTHONPATH}"
 exec python3 -m ${PYTHON_APP_NAME} "\$@"
 EOF
             chmod +x "$LAUNCHER"
