@@ -1,0 +1,34 @@
+# GRUB Theme for madOS
+# Simple theme with logo
+
+global {
+    left = 0
+    top = 0
+    width = 100%
+    height = 100%
+    background_color = "#000000"
+}
+
++ image {
+    path = "mados-logo.png"
+    width = 400
+    height = 400
+    left = "center"
+    top = "20%"
+}
+
++ boot_menu {
+    left = 15%
+    top = 60%
+    width = 70%
+    height = 30%
+    item_height = 35
+    item_padding = 5
+    items_color = "#88C0D0"
+    selected_color = "#ECEFF4"
+}
+
+* {
+    color = "#ECEFF4"
+    font = "Sans 14"
+}

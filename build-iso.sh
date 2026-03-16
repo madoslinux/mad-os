@@ -14,6 +14,10 @@ echo ""
 
 mkdir -p "${OUT_DIR}" "${CLEAN_WORK_DIR}"
 
+echo "Cleaning previous ISOs..."
+sudo rm -f "${OUT_DIR}"/*.iso "${OUT_DIR}"/*.iso.* || true
+sudo rm -rf "${WORK_DIR}"-* || true
+
 if [[ -d "$WORK_DIR" && -d "$WORK_DIR/x86_64/airootfs/home/mados" ]]; then
     echo "Cleaning previous .oh-my-zsh from work dir..."
     rm -rf "$WORK_DIR/x86_64/airootfs/home/mados/.oh-my-zsh" 2>/dev/null || true
@@ -28,4 +32,4 @@ sudo mkarchiso \
 
 echo ""
 echo "=== Build complete ==="
-ls -lh "${OUT_DIR}"/*.iso 2>/dev/null || echo "No ISO found in ${OUT_DIR}"
+ls -lh "${OUT_DIR}"/*.iso || echo "No ISO found in ${OUT_DIR}"

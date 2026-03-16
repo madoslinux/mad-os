@@ -165,6 +165,17 @@ get_wallpaper_for_ws() {
         "SELECT w.path FROM assignments a JOIN wallpapers w ON a.wallpaper_id=w.id WHERE a.workspace=$ws LIMIT 1;"
 }
 
+# Preload all wallpapers into swww cache for fast switching
+preload_wallpapers() {
+    log "Preloading wallpapers into memory..."
+    for wp in "${WALLPAPERS[@]}"; do
+        if [[ -f "$wp" ]]; then
+            swww img "$wp" --transition-type none 2>/dev/null || true
+        fi
+    done
+    log "Preloading complete"
+}
+
 # Set wallpaper via swww with smooth fade transition (no black flash)
 set_wallpaper() {
     local wallpaper="$1"
@@ -233,6 +244,9 @@ declare -a WALLPAPERS=()
 collect_wallpapers || exit 1
 shuffle_wallpapers
 assign_wallpapers
+
+# Preload all wallpapers into swww for fast switching
+preload_wallpapers
 
 # Determine current workspace
 last_ws="$(swaymsg -t get_workspaces 2>/dev/null \

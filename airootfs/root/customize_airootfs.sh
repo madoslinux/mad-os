@@ -49,6 +49,111 @@ else
     [[ -n "$NORDZY_BUILD_DIR" ]] && rm -rf "$NORDZY_BUILD_DIR"
 fi
 
+# ── Michroma Font (from Google Fonts - Direct Download) ────────────────────
+MICHROMA_DIR="/usr/share/fonts/truetype/michroma"
+
+if [[ -d "$MICHROMA_DIR" ]] && [[ -f "$MICHROMA_DIR/Michroma-Regular.ttf" ]]; then
+    echo "✓ Michroma font already installed"
+else
+    echo "Installing Michroma font..."
+    mkdir -p "$MICHROMA_DIR"
+    if curl -fsSL "https://github.com/google/fonts/raw/main/ofl/michroma/Michroma-Regular.ttf" -o "$MICHROMA_DIR/Michroma-Regular.ttf" 2>&1; then
+        echo "✓ Michroma font installed"
+    else
+        echo "⚠ Failed to install Michroma font"
+    fi
+fi
+
+# ════════════════════════════════════════════════════════════════════════════
+# madOS Applications Suite - Download from GitHub
+# ════════════════════════════════════════════════════════════════════════════
+
+MADOS_APPS=(
+    "mados-audio-player"
+    "mados-equalizer"
+    "mados-launcher"
+    "mados-pdf-viewer"
+    "mados-photo-viewer"
+    "mados-video-player"
+)
+
+GITHUB_REPO="madoslinux"
+
+for app in "${MADOS_APPS[@]}"; do
+    APP_DIR="/usr/local/lib/${app}"
+    PYTHON_APP_NAME="${app//-/_}"
+    PYTHON_APP_DIR="/usr/local/lib/${PYTHON_APP_NAME}"
+    LAUNCHER="/usr/local/bin/${app}"
+    APP_NAME="${app#mados-}"
+    
+    if [[ -d "$PYTHON_APP_DIR/.git" ]]; then
+        echo "Updating $app..."
+        cd "$PYTHON_APP_DIR"
+        git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+        cd /
+    else
+        echo "Installing $app from GitHub..."
+        rm -rf "$APP_DIR" "$PYTHON_APP_DIR"
+        APP_BUILD_DIR=$(mktemp -d)
+        if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$APP_BUILD_DIR/${app}" 2>&1; then
+            mkdir -p /usr/local/lib
+            # Rename directory to use underscores for Python module
+            mv "$APP_BUILD_DIR/${app}" "$PYTHON_APP_DIR"
+            
+            # Create launcher script - run as module from app directory
+            cat > "$LAUNCHER" << EOF
+#!/bin/bash
+# madOS ${APP_NAME^} - Launcher script
+cd "/usr/local/lib/${PYTHON_APP_NAME}"
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+exec python3 -m "${PYTHON_APP_NAME}" "\$@"
+EOF
+            chmod +x "$LAUNCHER"
+            echo "✓ $app installed"
+        else
+            echo "⚠ Failed to install $app"
+        fi
+        rm -rf "$APP_BUILD_DIR"
+    fi
+done
+
+# Also install mados-installer (has different structure)
+INSTALLER_APP="mados-installer"
+INSTALLER_DIR="/usr/local/lib/${INSTALLER_APP}"
+INSTALLER_PYTHON_DIR="/usr/local/lib/mados_installer"
+INSTALLER_LAUNCHER="/usr/local/bin/${INSTALLER_APP}"
+
+if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
+    echo "Updating $INSTALLER_APP..."
+    cd "$INSTALLER_PYTHON_DIR"
+    git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+    cd /
+else
+    echo "Installing $INSTALLER_APP from GitHub..."
+    rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
+    INSTALLER_BUILD_DIR=$(mktemp -d)
+    if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${INSTALLER_APP}.git" "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" 2>&1; then
+        mkdir -p /usr/local/lib
+        mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
+        ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
+        
+        # Create launcher script
+        cat > "$INSTALLER_LAUNCHER" << 'EOF'
+#!/bin/bash
+# madOS Installer - Launcher script
+cd "/usr/local/lib/mados_installer"
+exec python3 -m mados_installer "$@"
+EOF
+        chmod +x "$INSTALLER_LAUNCHER"
+        echo "✓ $INSTALLER_APP installed"
+    else
+        echo "⚠ Failed to install $INSTALLER_APP"
+    fi
+    rm -rf "$INSTALLER_BUILD_DIR"
+fi
+
+echo "✓ madOS applications suite installed"
+
 # ════════════════════════════════════════════════════════════════════════════
 # NVM (Node Version Manager) y Node
 # NOTA: No se instala en la imagen ISO para reducir tamaño.
@@ -95,14 +200,6 @@ if [[ ! -f /root/.zshrc && -f /etc/skel/.zshrc ]]; then
     cp /etc/skel/.zshrc /root/.zshrc
     echo "  → Copied .zshrc to /root"
 fi
-
-# ── OpenCode ─────────────────────────────────────────────────────────────
-# OpenCode NO se instala en el live USB - se instala post-instalación si se desea
-echo "OpenCode installation skipped (will be installed post-installation if desired)"
-
-# ── Ollama ───────────────────────────────────────────────────────────────
-# Ollama NO se instala en el live USB - se instala post-instalación si se desea
-echo "Ollama installation skipped (will be installed post-installation if desired)"
 
 # ── Hide unwanted .desktop entries from application menu ──────────────────
 echo "Hiding unwanted application menu entries..."
@@ -161,6 +258,9 @@ rm -rf /usr/share/icons/hicolor 2>/dev/null || true
 rm -rf /usr/share/icons/Adwaita 2>/dev/null || true
 rm -rf /usr/share/pixmaps/gnome 2>/dev/null || true
 
+echo "Updating font cache..."
+fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true
+
 echo "Removing unnecessary locales (keeping en_US, es_ES)..."
 for lang in /usr/share/locale/*; do
     lang_name=$(basename "$lang")
@@ -171,5 +271,9 @@ done
 
 echo "✓ Package cache cleaned"
 echo "✓ Unnecessary files removed"
+
+echo "=== madOS: Ensuring executable permissions ==="
+chmod +x /usr/local/bin/mados-help
+chmod +x /usr/local/bin/mados-power
 
 echo "=== madOS: Pre-installation complete ==="

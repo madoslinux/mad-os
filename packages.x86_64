@@ -46,7 +46,11 @@ python
 python-gobject
 python-cairo
 gtk3
+gtk4
+gst-plugin-gtk
 gtk-layer-shell
+noto-fonts-cjk
+noto-fonts-emoji
 gdk-pixbuf2
 xdg-desktop-portal-gtk
 
@@ -147,6 +151,12 @@ python-evdev
 
 # On-screen virtual keyboard (auto-activated when no physical keyboard detected)
 squeekboard
+
+# Ollama - LLM cloud client (binario only, ~50MB)
+ollama
+
+# OpenCode AI Assistant (~30MB)
+opencode
 
 # madOS Native Apps Dependencies
 # madOS Photo Viewer - image viewing and video playback
