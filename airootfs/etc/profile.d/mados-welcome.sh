@@ -2,10 +2,15 @@
 # Show madOS welcome info on first login
 
 WELCOME_INFO_SHOWN="/tmp/.mados-welcome-info-shown"
+PACMAN_DB_FIXED="/tmp/.mados-pacman-db-fixed"
 
-# Fix pacman db warnings on live environment
-if [[ -d /run/archiso ]] && command -v pacman-db-upgrade &>/dev/null; then
-    pacman-db-upgrade &>/dev/null || true
+# Fix pacman db warnings on live environment (only once, as root)
+if [[ -d /run/archiso ]] && [[ ! -f "$PACMAN_DB_FIXED" ]]; then
+    if command -v pacman-db-upgrade &>/dev/null; then
+        # Use pkexec to run as root without password in live
+        pkexec pacman-db-upgrade &>/dev/null || pacman-db-upgrade &>/dev/null || true
+        touch "$PACMAN_DB_FIXED"
+    fi
 fi
 
 # Only show once per boot
