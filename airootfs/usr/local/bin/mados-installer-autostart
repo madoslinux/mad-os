@@ -34,12 +34,12 @@ fi
 
 log "Live environment detected, launching installer..."
 
-# Fix pacman DB in live environment (uses polkit but with rules)
+# Fix pacman DB (running as root via su)
 log "Fixing pacman DB..."
-pkexec pacman-key --init 2>/dev/null || true
-pkexec pacman-key --populate 2>/dev/null || true
+pacman-key --init 2>/dev/null || true
+pacman-key --populate 2>/dev/null || true
 if command -v pacman-db-upgrade &>/dev/null; then
-    pkexec pacman-db-upgrade 2>/dev/null || true
+    pacman-db-upgrade 2>/dev/null || true
 fi
 log "Pacman DB fixed"
 
