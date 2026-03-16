@@ -36,5 +36,7 @@ qemu-system-x86_64 \
     -vga virtio \
     -global virtio-vga.max_outputs=1 \
     -display sdl \
-    -soundhw hda \
+    -audiodev id=audio,driver=spice \
+    -device ich9-intel-hda \
+    -device hda-output,audiodev=audio \
     "$@"
