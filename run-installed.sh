@@ -66,4 +66,5 @@ qemu-system-x86_64 \
     -audiodev id=audio,driver=alsa \
     -device ich9-intel-hda \
     -device hda-output,audiodev=audio \
+    -device ich9-ahci \
     "$@"
