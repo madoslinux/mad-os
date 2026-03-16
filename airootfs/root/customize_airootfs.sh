@@ -137,6 +137,13 @@ else
         mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
         ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
         
+        # Fix BIOS GRUB install - patch config_script.py
+        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+            echo "  Patching mados-installer BIOS GRUB install fix..."
+            # Replace the BIOS grub-install line to use the disk variable properly
+            sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+        fi
+        
         # Create launcher script
         cat > "$INSTALLER_LAUNCHER" << 'EOF'
 #!/bin/bash
