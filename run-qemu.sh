@@ -36,4 +36,5 @@ qemu-system-x86_64 \
     -vga virtio \
     -global virtio-vga.max_outputs=1 \
     -display sdl \
+    -soundhw hda \
     "$@"
