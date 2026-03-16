@@ -1,5 +1,8 @@
+# Sudo para usuarios wheel
+# Acceso completo con password para administración del sistema
+%wheel ALL=(ALL:ALL) ALL
+
 # Sudo sin password para Ollama y OpenCode
-# Solo usuarios con privilegios sudo (grupo wheel) pueden ejecutar estos comandos
 %wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/ollama, /usr/local/bin/ollama, /usr/bin/opencode, /usr/local/bin/opencode
 
 # Preservar variables de entorno Wayland para aplicaciones GTK ejecutadas con sudo
