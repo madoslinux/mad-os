@@ -34,12 +34,12 @@ export GDK_BACKEND=wayland
 
 sleep 2
 
-# Use --preserve-env to pass Wayland display variables through sudo
-# (sudoers env_keep also lists these, but --preserve-env is explicit and reliable)
+# Run installer as root (live environment has root access via su)
 if [ -x /usr/local/bin/install-mados ]; then
-    log "Starting install-mados"
-    sudo --preserve-env=WAYLAND_DISPLAY,XDG_RUNTIME_DIR,GDK_BACKEND \
-        /usr/local/bin/install-mados
+    log "Starting install-mados as root"
+    su -c "export WAYLAND_DISPLAY=$WAYLAND_DISPLAY XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR GDK_BACKEND=$GDK_BACKEND; /usr/local/bin/install-mados" root
+    EXIT_CODE=$?
+    log "Installer exited with code: $EXIT_CODE"
 else
     log "ERROR: /usr/local/bin/install-mados not found or not executable"
     exit 1
