@@ -276,4 +276,23 @@ echo "=== madOS: Ensuring executable permissions ==="
 chmod +x /usr/local/bin/mados-help
 chmod +x /usr/local/bin/mados-power
 
+echo "=== madOS: Configuring ollama and opencode for wheel group ==="
+if id 1000 &>/dev/null; then
+    # Ensure wheel group exists with GID 10
+    groupadd -g 10 wheel 2>/dev/null || true
+    usermod -aG wheel 1000 2>/dev/null || true
+    
+    # Set ownership to root:wheel - everyone can execute, but only wheel can sudo
+    # This allows: normal users to run ollama/opencode, wheel users can sudo them
+    for bin in ollama opencode; do
+        for path in /usr/bin/$bin /usr/local/bin/$bin; do
+            if [[ -f "$path" ]]; then
+                chown root:wheel "$path"
+                chmod 755 "$path"
+                echo "  → Configured: $path (root:wheel, 755)"
+            fi
+        done
+    done
+fi
+
 echo "=== madOS: Pre-installation complete ==="
