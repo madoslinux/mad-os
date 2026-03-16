@@ -19,14 +19,14 @@ is_ventoy_boot() {
 fix_pacman_db() {
     if [[ -d /run/archiso ]]; then
         log "Initializing pacman keyring..."
-        # Initialize pacman keyring first
-        pkexec pacman-key --init 2>/dev/null || pacman-key --init 2>/dev/null || true
-        pkexec pacman-key --populate 2>/dev/null || pacman-key --populate 2>/dev/null || true
+        # Initialize pacman keyring first (running as root via sudo)
+        pacman-key --init 2>/dev/null || true
+        pacman-key --populate 2>/dev/null || true
         log "Pacman keyring initialized"
         
         if command -v pacman-db-upgrade &>/dev/null; then
             log "Fixing pacman DB..."
-            pkexec pacman-db-upgrade &>/dev/null || pacman-db-upgrade &>/dev/null || true
+            pacman-db-upgrade &>/dev/null || true
             log "Pacman DB fixed"
         fi
     fi
