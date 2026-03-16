@@ -120,26 +120,28 @@ done
 # Also install mados-installer (has different structure)
 INSTALLER_APP="mados-installer"
 INSTALLER_DIR="/usr/local/lib/${INSTALLER_APP}"
+INSTALLER_PYTHON_DIR="/usr/local/lib/mados_installer"
 INSTALLER_LAUNCHER="/usr/local/bin/${INSTALLER_APP}"
 
-if [[ -d "$INSTALLER_DIR/.git" ]]; then
+if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
     echo "Updating $INSTALLER_APP..."
-    cd "$INSTALLER_DIR"
+    cd "$INSTALLER_PYTHON_DIR"
     git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
     cd /
 else
     echo "Installing $INSTALLER_APP from GitHub..."
-    rm -rf "$INSTALLER_DIR"
+    rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
     INSTALLER_BUILD_DIR=$(mktemp -d)
     if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${INSTALLER_APP}.git" "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" 2>&1; then
         mkdir -p /usr/local/lib
-        mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_DIR"
+        mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
+        ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
         
         # Create launcher script
         cat > "$INSTALLER_LAUNCHER" << 'EOF'
 #!/bin/bash
 # madOS Installer - Launcher script
-export PYTHONPATH="/usr/local/lib${PYTHONPATH:+:$PYTHONPATH}"
+cd "/usr/local/lib/mados_installer"
 exec python3 -m mados_installer "$@"
 EOF
         chmod +x "$INSTALLER_LAUNCHER"
