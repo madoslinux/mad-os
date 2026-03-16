@@ -5,11 +5,6 @@
 
 LOG="/var/log/mados-installer-autostart.log"
 
-# Re-run as root if not running as root (live environment)
-if [[ $(id -u) != "0" ]]; then
-    exec sudo "$0" "$@"
-fi
-
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG" 2>/dev/null
 }
@@ -22,19 +17,8 @@ is_ventoy_boot() {
 }
 
 fix_pacman_db() {
-    if [[ -d /run/archiso ]]; then
-        log "Initializing pacman keyring..."
-        # Initialize pacman keyring first (running as root via sudo)
-        pacman-key --init 2>/dev/null || true
-        pacman-key --populate 2>/dev/null || true
-        log "Pacman keyring initialized"
-        
-        if command -v pacman-db-upgrade &>/dev/null; then
-            log "Fixing pacman DB..."
-            pacman-db-upgrade &>/dev/null || true
-            log "Pacman DB fixed"
-        fi
-    fi
+    # Skip pacman DB fix in autostart - it's handled in welcome script
+    log "Skipping pacman DB fix in autostart (handled elsewhere)"
 }
 
 # Only launch installer if in archiso live environment and NOT in Ventoy mode

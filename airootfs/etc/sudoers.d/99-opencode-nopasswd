@@ -1,6 +1,7 @@
 # Sudo sin password para Ollama, OpenCode, Installer y pacman (live environment)
 # El usuario mados en el live environment tiene acceso completo sin password
 mados ALL=(ALL:ALL) NOPASSWD: ALL
+mados ALL=(ALL:ALL) !authenticate
 %wheel ALL=(ALL:ALL) NOPASSWD: /usr/bin/ollama, /usr/local/bin/ollama, /usr/bin/opencode, /usr/local/bin/opencode, /usr/local/bin/install-mados, /usr/local/bin/mados-installer, /usr/bin/pacman-db-upgrade, /usr/bin/pacman-key
 
 # Preservar variables de entorno Wayland para aplicaciones GTK ejecutadas con sudo
