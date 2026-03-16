@@ -34,8 +34,13 @@ fi
 
 log "Live environment detected, launching installer..."
 
-# Fix pacman DB
-fix_pacman_db
+# Fix pacman DB using su (no polkit)
+log "Fixing pacman DB..."
+echo "" | su -c "pacman-key --init && pacman-key --populate" root 2>/dev/null || true
+if command -v pacman-db-upgrade &>/dev/null; then
+    su -c "pacman-db-upgrade" root 2>/dev/null || true
+fi
+log "Pacman DB fixed"
 
 # Ensure GTK uses the Wayland backend
 export GDK_BACKEND=wayland
