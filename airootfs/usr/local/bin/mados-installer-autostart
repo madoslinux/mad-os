@@ -7,7 +7,18 @@ LOG="/var/log/mados-installer-autostart.log"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG" 2>/dev/null
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
+
+log "Starting autostart as user: $(whoami) uid: $(id -u)"
+
+# Re-run as root if not running as root
+if [[ $(id -u) != "0" ]]; then
+    log "Not root, re-executing as root..."
+    exec su -c "PATH=$PATH $0 $*" root
+fi
+
+log "Running as root, uid: $(id -u)"
 
 is_ventoy_boot() {
     if [ -f /proc/cmdline ]; then
@@ -57,14 +68,15 @@ log "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
 
 sleep 2
 
-# Run installer (as root since autostart runs as root via su)
+# Run installer (should be running as root now)
+log "Running as user: $(whoami) with uid: $(id -u)"
 if [ -x /usr/local/bin/install-mados ]; then
     log "Starting install-mados"
-    # Execute directly (running as root already)
     /usr/local/bin/install-mados
     EXIT_CODE=$?
     log "Installer exited with code: $EXIT_CODE"
 else
-    log "ERROR: /usr/local/bin/install-mados not found or not executable"
+    log "ERROR: /usr/local/bin/install-mados not found"
+    ls -la /usr/local/bin/install-mados 2>&1 || true
     exit 1
 fi
