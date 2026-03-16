@@ -148,8 +148,6 @@ else
             echo "  Patching mados-installer BIOS GRUB install fix..."
             # Replace the BIOS grub-install line to use the disk variable properly
             sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
-            # Restore sda3 (root is partition 3 in the installer layout)
-            sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
         fi
         
         # Create launcher script
