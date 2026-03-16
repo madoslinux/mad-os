@@ -1,0 +1,13 @@
+/* Allow mados user to run pacman commands without authentication in live environment */
+polkit.addRule(function(action, subject) {
+    if (subject.isInGroup("wheel") || subject.user == "mados") {
+        /* Allow pacman-db-upgrade */
+        if (action.id == "org.archlinux.pkexec.pacman-db-upgrade") {
+            return polkit.Result.YES;
+        }
+        /* Allow pacman-key */
+        if (action.id == "org.archlinux.pkexec.pacman-key") {
+            return polkit.Result.YES;
+        }
+    }
+});

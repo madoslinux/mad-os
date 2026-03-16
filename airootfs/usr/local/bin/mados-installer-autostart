@@ -34,7 +34,14 @@ fi
 
 log "Live environment detected, launching installer..."
 
-# Note: pacman DB fix moved to mados-welcome.sh (runs on first terminal open)
+# Fix pacman DB in live environment (uses polkit but with rules)
+log "Fixing pacman DB..."
+pkexec pacman-key --init 2>/dev/null || true
+pkexec pacman-key --populate 2>/dev/null || true
+if command -v pacman-db-upgrade &>/dev/null; then
+    pkexec pacman-db-upgrade 2>/dev/null || true
+fi
+log "Pacman DB fixed"
 
 # Ensure GTK uses the Wayland backend
 export GDK_BACKEND=wayland
@@ -54,7 +61,7 @@ sleep 2
 if [ -x /usr/local/bin/install-mados ]; then
     log "Starting install-mados as root"
     # Execute as root with user's environment variables
-    su root -c "export WAYLAND_DISPLAY=$WAYLAND_DISPLAY XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR GDK_BACKEND=$GDK_BACKEND DISPLAY=$DISPLAY; /usr/local/bin/install-mados"
+    pkexec --preserve-env=WAYLAND_DISPLAY,XDG_RUNTIME_DIR,GDK_BACKEND,DISPLAY /usr/local/bin/install-mados
     EXIT_CODE=$?
     log "Installer exited with code: $EXIT_CODE"
 else
