@@ -133,6 +133,7 @@ if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
     if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
         echo "  Patching mados-installer BIOS GRUB install fix..."
         sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+        sed -i 's|/dev/sda3|/dev/sda2|' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
     fi
 else
     echo "Installing $INSTALLER_APP from GitHub..."
@@ -148,6 +149,8 @@ else
             echo "  Patching mados-installer BIOS GRUB install fix..."
             # Replace the BIOS grub-install line to use the disk variable properly
             sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+            # Fix hardcoded /dev/sda3 to use sda2 (common root partition)
+            sed -i 's|/dev/sda3|/dev/sda2|' "$INSTALLER_PYTHON_DIR/installer/config_script.py"
         fi
         
         # Create launcher script
