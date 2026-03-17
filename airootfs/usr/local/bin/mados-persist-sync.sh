@@ -43,7 +43,6 @@ is_rsync_mode() {
         partition|file) return 0 ;;
         *) return 1 ;;
     esac
-    return 1
 }
 
 is_persistence_mounted() {
