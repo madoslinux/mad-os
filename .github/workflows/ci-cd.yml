@@ -114,23 +114,9 @@ jobs:
     needs: code-quality
     if: github.event_name != 'workflow_dispatch'
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: "First-Boot Simulation"
-            script: "tests/test-first-boot-simulation.sh"
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run integration test
-        run: |
-          docker run --privileged --rm \
-            --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
-            -v ${{ github.workspace }}:/build \
-            ${{ env.ARCHLINUX_IMAGE }} bash /build/${{ matrix.script }}
+      - name: Skip (installer in external repo)
+        run: echo "Skipping integration test - installer is now tested in mados-installer repo"
 
   # ================================================================
   # Stage 2: Validation (only on push to main/develop after tests pass)
