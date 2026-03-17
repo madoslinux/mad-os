@@ -74,9 +74,7 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 
 ### Key Scripts
 
-- `airootfs/usr/local/bin/install-mados` — Installer launcher
-- `airootfs/usr/local/bin/install-mados-gtk.py` — GTK graphical installer (Python + GTK3)
-- `airootfs/usr/local/lib/mados_installer/` — Installer Python modules
+- `airootfs/usr/local/bin/mados-installer-autostart` — Launcher for external installer
 - `airootfs/usr/local/bin/setup-opencode.sh` — OpenCode setup script
 - `airootfs/usr/local/bin/setup-persistence.sh` — Persistent storage setup
 

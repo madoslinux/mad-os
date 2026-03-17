@@ -3,17 +3,27 @@
 # Launched by Sway/Hyprland config - checks conditions and starts the GTK installer
 # Only runs in live environment (archiso) and NOT when booted via Ventoy
 
-LOG="/var/log/mados-installer-autostart.log"
+LOG_DIR="/run/user/0"
+LOG="$LOG_DIR/mados-installer-autostart.log"
+mkdir -p "$LOG_DIR"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG" 2>/dev/null
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | sudo tee -a "$LOG" >/dev/null 2>&1
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
+
+log "Starting autostart as user: $(whoami) uid: $(id -u)"
 
 is_ventoy_boot() {
     if [ -f /proc/cmdline ]; then
         grep -q "ventoy" /proc/cmdline && return 0
     fi
     return 1
+}
+
+fix_pacman_db() {
+    # Skip pacman DB fix in autostart - it's handled in welcome script
+    log "Skipping pacman DB fix in autostart (handled elsewhere)"
 }
 
 # Only launch installer if in archiso live environment and NOT in Ventoy mode
@@ -29,18 +39,40 @@ fi
 
 log "Live environment detected, launching installer..."
 
+# Fix pacman DB (running as root)
+log "Fixing pacman DB..."
+pacman-key --init 2>&1 | tee -a "$LOG" || true
+pacman-key --populate 2>&1 | tee -a "$LOG" || true
+if command -v pacman-db-upgrade &>/dev/null; then
+    pacman-db-upgrade 2>&1 | tee -a "$LOG" || true
+fi
+log "Pacman DB fixed"
+
 # Ensure GTK uses the Wayland backend
 export GDK_BACKEND=wayland
 
+# Get the current user's display and runtime dir
+CURRENT_USER=$(whoami)
+WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u $CURRENT_USER)}"
+
+log "Current user: $CURRENT_USER"
+log "WAYLAND_DISPLAY: $WAYLAND_DISPLAY"
+log "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
+
 sleep 2
 
-# Use --preserve-env to pass Wayland display variables through sudo
-# (sudoers env_keep also lists these, but --preserve-env is explicit and reliable)
-if [ -x /usr/local/bin/install-mados ]; then
-    log "Starting install-mados"
-    sudo --preserve-env=WAYLAND_DISPLAY,XDG_RUNTIME_DIR,GDK_BACKEND \
-        /usr/local/bin/install-mados
+# Run installer (should be running as root now)
+log "Running as user: $(whoami) with uid: $(id -u)"
+INSTALLER_PATH="/usr/local/bin/mados-installer"
+if [ -x "$INSTALLER_PATH" ]; then
+    log "Starting installer: $INSTALLER_PATH"
+    sudo -E PATH="$PATH" "$INSTALLER_PATH"
+    EXIT_CODE=$?
+    log "Installer exited with code: $EXIT_CODE"
 else
-    log "ERROR: /usr/local/bin/install-mados not found or not executable"
+    log "ERROR: $INSTALLER_PATH not found"
+    ls -la /usr/local/bin/mados-installer 2>&1 || true
+    ls -la /usr/local/lib/mados_installer/ 2>&1 || true
     exit 1
 fi

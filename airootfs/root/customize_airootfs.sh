@@ -89,7 +89,7 @@ for app in "${MADOS_APPS[@]}"; do
     if [[ -d "$PYTHON_APP_DIR/.git" ]]; then
         echo "Updating $app..."
         cd "$PYTHON_APP_DIR"
-        git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+        git pull --ff-only origin main 2>/dev/null || true
         cd /
     else
         echo "Installing $app from GitHub..."
@@ -126,8 +126,15 @@ INSTALLER_LAUNCHER="/usr/local/bin/${INSTALLER_APP}"
 if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
     echo "Updating $INSTALLER_APP..."
     cd "$INSTALLER_PYTHON_DIR"
-    git pull --ff-only origin master 2>/dev/null || git pull --ff-only origin main 2>/dev/null || true
+        git pull --ff-only origin main 2>/dev/null || true
     cd /
+    
+    # Fix BIOS GRUB install - patch config_script.py (for older versions)
+    if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+        # These patches are applied in mados-installer now, kept here for compatibility
+        sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+        sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+    fi
 else
     echo "Installing $INSTALLER_APP from GitHub..."
     rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
@@ -137,19 +144,52 @@ else
         mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
         ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
         
-        # Create launcher script
-        cat > "$INSTALLER_LAUNCHER" << 'EOF'
-#!/bin/bash
-# madOS Installer - Launcher script
-cd "/usr/local/lib/mados_installer"
-exec python3 -m mados_installer "$@"
-EOF
-        chmod +x "$INSTALLER_LAUNCHER"
-        echo "✓ $INSTALLER_APP installed"
+        # Fix BIOS GRUB install - patch config_script.py (for older versions)
+        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+            echo "  Patching mados-installer BIOS GRUB install fix..."
+            sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+            sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+        fi
+
+        # Add pacman %INSTALLED_DB% cleanup to config_script.py
+        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+            echo "  Adding pacman DB cleanup to config script..."
+            PACMAN_CLEANUP='
+# Clean %INSTALLED_DB% from pacman local database (fixes pacman 7.x compatibility)
+PACMAN_LOCAL_DB="/var/lib/pacman/local"
+if [ -d "$PACMAN_LOCAL_DB" ]; then
+    cleaned=0
+    for desc_file in "$PACMAN_LOCAL_DB"/*/desc; do
+        if [ -f "$desc_file" ] && grep -q "^%INSTALLED_DB%$" "$desc_file" 2>/dev/null; then
+            sed -i '/^%INSTALLED_DB%$/,+1d' "$desc_file"
+            cleaned=$((cleaned + 1))
+        fi
+    done
+    if [ "$cleaned" -gt 0 ]; then
+        echo "  Cleaned %INSTALLED_DB% from $cleaned package entries"
+    fi
+fi
+'
+            sed -i "/# Clean up archiso artifacts/a\\
+$PACMAN_CLEANUP" "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+        fi
     else
         echo "⚠ Failed to install $INSTALLER_APP"
     fi
     rm -rf "$INSTALLER_BUILD_DIR"
+fi
+
+# Create launcher script (always, whether new or update)
+if [[ -d "$INSTALLER_PYTHON_DIR" ]]; then
+    cat > "$INSTALLER_LAUNCHER" << 'EOF'
+#!/bin/bash
+# madOS Installer - Launcher script
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+cd "/usr/local/lib/mados_installer"
+exec python3 -m mados_installer "$@"
+EOF
+    chmod +x "$INSTALLER_LAUNCHER"
+    echo "✓ $INSTALLER_APP launcher created at $INSTALLER_LAUNCHER"
 fi
 
 echo "✓ madOS applications suite installed"
@@ -186,6 +226,12 @@ if [[ ! -d "$OMZ_DIR" ]]; then
     fi
 else
     echo "✓ Oh My Zsh already present in /usr/share"
+fi
+
+# Also create in /etc/skel so installer can copy it
+if [[ -d "$OMZ_DIR" && ! -d /etc/skel/.oh-my-zsh ]]; then
+    ln -sf /usr/share/oh-my-zsh /etc/skel/.oh-my-zsh
+    echo "  → Linked Oh My Zsh to /etc/skel (for installer)"
 fi
 
 # Copy .zshrc to mados user
@@ -275,5 +321,40 @@ echo "✓ Unnecessary files removed"
 echo "=== madOS: Ensuring executable permissions ==="
 chmod +x /usr/local/bin/mados-help
 chmod +x /usr/local/bin/mados-power
+
+echo "=== madOS: Configuring ollama and opencode for wheel group ==="
+if id 1000 &>/dev/null; then
+    # Ensure wheel group exists with GID 10
+    groupadd -g 10 wheel 2>/dev/null || true
+    usermod -aG wheel 1000 2>/dev/null || true
+    
+    # Set ownership to root:wheel - everyone can execute, but only wheel can sudo
+    # This allows: normal users to run ollama/opencode, wheel users can sudo them
+    for bin in ollama opencode; do
+        for path in /usr/bin/$bin /usr/local/bin/$bin; do
+            if [[ -f "$path" ]]; then
+                chown root:wheel "$path"
+                chmod 755 "$path"
+                echo "  → Configured: $path (root:wheel, 755)"
+            fi
+        done
+    done
+fi
+
+# ── Fix pacman %INSTALLED_DB% warning ────────────────────────────────────────
+# Clean unknown %INSTALLED_DB% entries from local pacman DB
+# This prevents warnings when pacman version differs between build host and live system
+echo "=== madOS: Cleaning pacman local database ==="
+PACMAN_LOCAL_DB="/var/lib/pacman/local"
+if [[ -d "$PACMAN_LOCAL_DB" ]]; then
+    cleaned=0
+    for desc_file in "$PACMAN_LOCAL_DB"/*/desc; do
+        if [[ -f "$desc_file" ]] && grep -q "^%INSTALLED_DB%$" "$desc_file" 2>/dev/null; then
+            sed -i '/^%INSTALLED_DB%$/,+1d' "$desc_file"
+            ((cleaned++)) || true
+        fi
+    done
+    echo "  → Cleaned $cleaned package entries"
+fi
 
 echo "=== madOS: Pre-installation complete ==="

@@ -1,7 +1,7 @@
-# Sudo sin password para entorno live ISO
-# mados necesita acceso completo para ejecutar el instalador, gestionar discos y persistencia
-root ALL=(ALL:ALL) NOPASSWD: ALL
+# Sudo sin password para todo en live environment
+# El usuario mados tiene acceso completo sin password (solo en live)
 mados ALL=(ALL:ALL) NOPASSWD: ALL
+%wheel ALL=(ALL:ALL) NOPASSWD: ALL
 
 # Preservar variables de entorno Wayland para aplicaciones GTK ejecutadas con sudo
 Defaults env_keep += "WAYLAND_DISPLAY XDG_RUNTIME_DIR DISPLAY SWAYSOCK"

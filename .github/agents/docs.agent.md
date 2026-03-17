@@ -67,6 +67,6 @@ You are the documentation specialist for the madOS project, an Arch Linux distri
 - **Hardware target**: 1.9GB RAM systems with Intel Atom processors
 - **Desktop**: Sway compositor with Nord color scheme
 - **AI assistant**: OpenCode (installed via npm)
-- **Installer**: GTK graphical installer (`install-mados-gtk.py`)
+- **Installer**: External GTK installer (in `/usr/local/bin/mados-installer`)
 - **Persistence**: Dynamic USB persistence with ext4 partition
 - **Services**: earlyoom, iwd, systemd-timesyncd, ZRAM
