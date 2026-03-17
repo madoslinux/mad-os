@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily rootkit hunter scan
+After=network.target
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target
