@@ -126,27 +126,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test-unit, test-integration]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
-    strategy:
-      fail-fast: false
-      matrix:
-        component:
-          - name: "Python Modules"
-            script: "tests/test-installer-python-validation.sh"
-          - name: "Config Generation"
-            script: "tests/test-installer-config-generation.sh"
-          - name: "Disk Installation"
-            script: "tests/test-installer-disk-install.sh"
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Run validation
-        run: |
-          docker run --privileged --rm \
-            --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
-            -v ${{ github.workspace }}:/build \
-            ${{ env.ARCHLINUX_IMAGE }} bash /build/${{ matrix.component.script }}
+      - name: Skip (installer in external repo)
+        run: echo "Skipping validation - installer is now tested in mados-installer repo"
 
   # ================================================================
   # Stage 3: Auto Tag & Build ISO
