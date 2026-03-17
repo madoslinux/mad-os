@@ -204,6 +204,22 @@ else
     echo "✓ Oh My Zsh already present in /usr/share"
 fi
 
+# Also create in /etc/skel so installer can copy it
+if [[ -d "$OMZ_DIR" && ! -d /etc/skel/.oh-my-zsh ]]; then
+    ln -sf /usr/share/oh-my-zsh /etc/skel/.oh-my-zsh
+    echo "  → Linked Oh My Zsh to /etc/skel (for installer)"
+fi
+
+# Link opencode and ollama to /etc/skel so installer can copy them
+for bin in opencode ollama; do
+    for path in /usr/bin/$bin /usr/local/bin/$bin; do
+        if [[ -f "$path" && ! -e /etc/skel/$bin ]]; then
+            ln -sf "$path" /etc/skel/$bin
+            echo "  → Linked $bin to /etc/skel (for installer)"
+        fi
+    done
+done
+
 # Copy .zshrc to mados user
 if [[ -d /home/mados && ! -f /home/mados/.zshrc && -f /etc/skel/.zshrc ]]; then
     cp /etc/skel/.zshrc /home/mados/.zshrc
