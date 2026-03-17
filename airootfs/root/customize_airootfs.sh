@@ -128,13 +128,6 @@ if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
     cd "$INSTALLER_PYTHON_DIR"
         git pull --ff-only origin main 2>/dev/null || true
     cd /
-    
-    # Fix BIOS GRUB install - patch config_script.py (for older versions)
-    if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
-        # These patches are applied in mados-installer now, kept here for compatibility
-        sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-        sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-    fi
 else
     echo "Installing $INSTALLER_APP from GitHub..."
     rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
@@ -144,35 +137,6 @@ else
         mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
         ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
         
-        # Fix BIOS GRUB install - patch config_script.py (for older versions)
-        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
-            echo "  Patching mados-installer BIOS GRUB install fix..."
-            sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-            sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-        fi
-
-        # Add pacman %INSTALLED_DB% cleanup to config_script.py
-        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
-            echo "  Adding pacman DB cleanup to config script..."
-            PACMAN_CLEANUP='
-# Clean %INSTALLED_DB% from pacman local database (fixes pacman 7.x compatibility)
-PACMAN_LOCAL_DB="/var/lib/pacman/local"
-if [ -d "$PACMAN_LOCAL_DB" ]; then
-    cleaned=0
-    for desc_file in "$PACMAN_LOCAL_DB"/*/desc; do
-        if [ -f "$desc_file" ] && grep -q "^%INSTALLED_DB%$" "$desc_file" 2>/dev/null; then
-            sed -i '/^%INSTALLED_DB%$/,+1d' "$desc_file"
-            cleaned=$((cleaned + 1))
-        fi
-    done
-    if [ "$cleaned" -gt 0 ]; then
-        echo "  Cleaned %INSTALLED_DB% from $cleaned package entries"
-    fi
-fi
-'
-            sed -i "/# Clean up archiso artifacts/a\\
-$PACMAN_CLEANUP" "$INSTALLER_PYTHON_DIR/installer/config_script.py"
-        fi
     else
         echo "⚠ Failed to install $INSTALLER_APP"
     fi
