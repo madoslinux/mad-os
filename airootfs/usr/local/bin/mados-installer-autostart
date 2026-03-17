@@ -65,7 +65,7 @@ log "Running as user: $(whoami) with uid: $(id -u)"
 INSTALLER_PATH="/opt/mados-installer/mados-installer"
 if [ -x "$INSTALLER_PATH" ]; then
     log "Starting install-mados"
-    "$INSTALLER_PATH"
+    sudo "$INSTALLER_PATH"
     EXIT_CODE=$?
     log "Installer exited with code: $EXIT_CODE"
 else
