@@ -233,7 +233,7 @@ main() {
         if ! can_install_software; then
             log_warn "Medio óptico (DVD/CD) detectado."
             log_info "No se puede instalar OpenCode en medio de solo lectura."
-            log_info "Instala madOS en disco con: sudo /opt/mados-installer/mados-installer"
+            log_info "Instala madOS en disco con: sudo /usr/local/bin/mados-installer"
             return 0
         fi
     fi

@@ -62,7 +62,7 @@ sleep 2
 
 # Run installer (should be running as root now)
 log "Running as user: $(whoami) with uid: $(id -u)"
-INSTALLER_PATH="/opt/mados-installer/mados-installer"
+INSTALLER_PATH="/usr/local/bin/mados-installer"
 if [ -x "$INSTALLER_PATH" ]; then
     log "Starting install-mados"
     sudo "$INSTALLER_PATH"

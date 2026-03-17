@@ -20,7 +20,7 @@ if [[ -t 0 && -t 1 ]]; then
 ╚════════════════════════════════════════════════════════════════╝
 
 🔧 Quick Commands:
-   • Install madOS:     sudo /opt/mados-installer/mados-installer
+   • Install madOS:     sudo /usr/local/bin/mados-installer
    • AI Assistant:      opencode
    • Package Manager:   sudo pacman -S <package>
 

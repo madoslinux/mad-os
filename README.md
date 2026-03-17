@@ -9,7 +9,7 @@ AI-orchestrated Arch Linux distribution built with `archiso`. Targets low-RAM sy
 - **AI Assistant**: OpenCode integrated out-of-the-box
 - **Persistence**: Dynamic USB persistence with ext4 partition
 - **Multi-GPU Support**: Intel, AMD, and NVIDIA drivers included
-- **GTK Installer**: External installer (`/opt/mados-installer/`) for disk installation
+- **GTK Installer**: External installer (`/usr/local/bin/mados-installer`) for disk installation
 
 ## Quick Start
 

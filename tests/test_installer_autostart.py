@@ -134,17 +134,17 @@ class TestInstallerAutostartScript(unittest.TestCase):
         )
 
     def test_checks_install_mados_exists(self):
-        """Script must check /opt/mados-installer/mados-installer exists before running."""
+        """Script must check /usr/local/bin/mados-installer exists before running."""
         self.assertIn(
-            "/opt/mados-installer/mados-installer",
+            "/usr/local/bin/mados-installer",
             self.content,
-            "Script must reference /opt/mados-installer/mados-installer",
+            "Script must reference /usr/local/bin/mados-installer",
         )
         # Verify it checks executability with -x
         self.assertRegex(
             self.content,
-            r"\[\s+-x\s+/opt/mados-installer/mados-installer\s+\]",
-            "Script must check if /opt/mados-installer/mados-installer is executable",
+            r"\[\s+-x\s+/usr/local/bin/mados-installer\s+\]",
+            "Script must check if /usr/local/bin/mados-installer is executable",
         )
 
     def test_has_permissions_in_profiledef(self):

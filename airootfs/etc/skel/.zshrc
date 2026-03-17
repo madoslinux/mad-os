@@ -49,7 +49,7 @@ if [ -f /etc/hostname ] && grep -q "mados" /etc/hostname 2>/dev/null; then
 Welcome to madOS Live Environment!
 
 📦 To install madOS to disk:
-   sudo /opt/mados-installer/mados-installer
+   sudo /usr/local/bin/mados-installer
 
 🌐 Network setup:
    nmtui                    (Network Manager TUI)

@@ -56,7 +56,7 @@ sequenceDiagram
         I->>I: Check /run/archiso exists
         I->>I: Check NOT Ventoy boot
         I->>I: Fix pacman-db
-        I->>I: Launch installer at /opt/mados-installer/mados-installer
+        I->>I: Launch installer at /usr/local/bin/mados-installer
     else Ventoy or installed system
         I->>I: Exit silently
     end
@@ -69,7 +69,7 @@ sequenceDiagram
     participant U as User
     participant D as Desktop Entry
     participant A as mados-installer-autostart
-    participant I as /opt/mados-installer/mados-installer
+    participant I as /usr/local/bin/mados-installer
     participant G as GTK UI
 
     U->>D: Click "madOS Installer" or run command

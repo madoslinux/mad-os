@@ -153,7 +153,7 @@ systemctl list-units --type=service --state=failed
 cat /var/log/mados-install.log 2>/dev/null
 
 # Run installer manually with verbose output
-sudo /opt/mados-installer/mados-installer 2>&1 | tee /tmp/installer-debug.log
+sudo /usr/local/bin/mados-installer 2>&1 | tee /tmp/installer-debug.log
 ```
 
 ## Common Issues
