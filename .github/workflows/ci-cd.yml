@@ -19,8 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DNS_PRIMARY: 8.8.8.8
-  DNS_SECONDARY: 8.8.4.4
   ARCHLINUX_IMAGE: archlinux:latest
 
 jobs:
@@ -153,12 +151,10 @@ jobs:
           chmod 777 out
           
           docker run --privileged --rm \
-            --dns ${{ env.DNS_PRIMARY }} --dns ${{ env.DNS_SECONDARY }} \
+            --network host \
             -v "$WORKSPACE:/build" \
             ${{ env.ARCHLINUX_IMAGE }} bash -c "
               set -e
-              echo 'nameserver ${{ env.DNS_PRIMARY }}' > /etc/resolv.conf
-              echo 'nameserver ${{ env.DNS_SECONDARY }}' >> /etc/resolv.conf
               pacman-key --init && pacman-key --populate
               pacman -Syu --noconfirm archiso
               cd /build
