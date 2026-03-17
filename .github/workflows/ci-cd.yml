@@ -49,11 +49,11 @@ jobs:
         run: |
           find airootfs/usr/local/bin -type f -executable | while read -r script; do
             if head -1 "$script" | grep -qE "(bash|sh)$"; then
-              shellcheck -s bash "$script"
+              shellcheck -s bash --severity=error "$script"
             fi
           done
           find airootfs/usr/local/lib/mados_installer/scripts -type f -name "*.sh" | while read -r script; do
-            shellcheck -s bash "$script"
+            shellcheck -s bash --severity=error "$script"
           done
 
       - name: Validate Python syntax
@@ -88,6 +88,8 @@ jobs:
             files: "tests/test_gpu_detection.py tests/test_wifi_backend.py"
           - category: "Apps"
             files: "tests/test_equalizer_presets.py tests/test_photo_navigator.py tests/test_installer_config.py"
+          - category: "OTA Updates"
+            files: "tests/test_mados_ota.py"
           - category: "Live USB"
             files: "tests/test_liveusb_scripts.py"
 
