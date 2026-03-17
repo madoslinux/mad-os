@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=madOS Installer
+Exec=sudo /usr/local/bin/mados-installer-autostart
+X-GNOME-Autostart-enabled=true
+X-Systemd-After=graphical.target

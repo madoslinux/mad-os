@@ -62,13 +62,14 @@ sleep 2
 
 # Run installer (should be running as root now)
 log "Running as user: $(whoami) with uid: $(id -u)"
-if [ -x /usr/local/bin/install-mados ]; then
+INSTALLER_PATH="/opt/mados-installer/mados-installer"
+if [ -x "$INSTALLER_PATH" ]; then
     log "Starting install-mados"
-    /usr/local/bin/install-mados
+    "$INSTALLER_PATH"
     EXIT_CODE=$?
     log "Installer exited with code: $EXIT_CODE"
 else
-    log "ERROR: /usr/local/bin/install-mados not found"
-    ls -la /usr/local/bin/install-mados 2>&1 || true
+    log "ERROR: $INSTALLER_PATH not found"
+    ls -la "$INSTALLER_PATH" 2>&1 || true
     exit 1
 fi

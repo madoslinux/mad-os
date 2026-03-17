@@ -283,7 +283,7 @@ class InhibitChecker:
             "foot", "chromium", "firefox", "code", "code-oss",
             "pcmanfm", "wofi", "waybar", "mako",
             "pavucontrol", "blueman", "nm-applet",
-            "install-mados", "mados-photo-viewer", "mados-pdf-viewer",
+            "mados-installer", "mados-photo-viewer", "mados-pdf-viewer",
             "mados-video-player", "mados-audio-player", "mados-equalizer",
             "mados-launcher", "mpv",
         }

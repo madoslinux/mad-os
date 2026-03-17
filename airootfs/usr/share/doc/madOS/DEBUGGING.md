@@ -153,7 +153,7 @@ systemctl list-units --type=service --state=failed
 cat /var/log/mados-install.log 2>/dev/null
 
 # Run installer manually with verbose output
-sudo /usr/local/bin/install-mados-gtk.py 2>&1 | tee /tmp/installer-debug.log
+sudo /opt/mados-installer/mados-installer 2>&1 | tee /tmp/installer-debug.log
 ```
 
 ## Common Issues

@@ -35,14 +35,7 @@ if [ -f /etc/hostname ] && grep -q "mados" /etc/hostname 2>/dev/null; then
 Welcome to madOS Live Environment!
 
 📦 To install madOS to disk:
-   sudo install-mados
-
-   (Auto-selects GTK installer if available, TUI otherwise)
-
-🔧 Alternative installers:
-   sudo install-mados.sh                    (TUI - dialog based)
-   sudo install-mados-gtk.py                (GTK - graphical)
-   sudo /usr/local/bin/install-arch-optimized.sh  (CLI - legacy)
+   sudo /opt/mados-installer/mados-installer
 
 🌐 Network setup:
    nmtui                    (Network Manager TUI)

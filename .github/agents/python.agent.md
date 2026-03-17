@@ -9,7 +9,8 @@ You are the Python specialist for the madOS project, an Arch Linux distribution 
 
 - Develop and maintain Python scripts in `airootfs/usr/local/bin/`
 - Build and improve Python library modules in `airootfs/usr/local/lib/`
-- Work on the GTK graphical installer and related applications
+- Work on Python applications in the airootfs
+- The GTK installer lives in a separate repository (cloned to /opt/mados-installer/)
 - Ensure code follows project conventions and Python best practices
 - Write clean, maintainable code that works on low-RAM systems (1.9GB)
 
@@ -53,7 +54,7 @@ mados_<appname>/
 
 | Application | Location | Purpose |
 |---|---|---|
-| GTK Installer | `airootfs/usr/local/bin/install-mados-gtk.py` + `airootfs/usr/local/lib/mados_installer/` | System installer |
+| Installer Launcher | `airootfs/usr/local/bin/mados-installer-autostart` | Launches external installer |
 | Photo Viewer | `airootfs/usr/local/lib/mados_photo_viewer/` | Image viewing |
 | PDF Viewer | `airootfs/usr/local/lib/mados_pdf_viewer/` | PDF viewing |
 | WiFi Manager | `airootfs/usr/local/lib/mados_wifi/` | WiFi configuration |
@@ -78,7 +79,6 @@ Example entry in `profiledef.sh`:
 - Tests for Python modules are in `tests/test_*.py`
 - Use GTK mocks from `tests/test_helpers.py` for headless testing
 - Run tests: `python3 -m pytest tests/ -v`
-- When modifying the installer, update tests in `tests/test_installer_config.py`
 - Always verify scripts don't break existing tests before committing
 
 ## Key Dependencies
