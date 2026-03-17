@@ -39,7 +39,7 @@ qemu-system-x86_64 \
     -cpu host \
     -cdrom "$ISO_FILE" \
     -boot d \
-    -hda "$DISK_FILE" \
+    -drive file="$DISK_FILE",format=qcow2,if=virtio \
     -net nic \
     -net user,hostfwd=tcp::2222-:22 \
     -vga virtio \
