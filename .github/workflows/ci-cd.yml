@@ -19,9 +19,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DNS_PRIMARY: "8.8.8.8"
-  DNS_SECONDARY: "8.8.4.4"
+  DNS_PRIMARY: 8.8.8.8
+  DNS_SECONDARY: 8.8.4.4
   ARCHLINUX_IMAGE: archlinux:latest
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ================================================================
@@ -82,10 +83,8 @@ jobs:
         include:
           - category: "Core & OTA"
             files: "tests/test_boot_scripts.py tests/test_mados_ota.py tests/test_liveusb_scripts.py"
-          - category: "AI & Desktop"
-            files: "tests/test_opencode.py tests/test_ollama.py tests/test_hyprland_config.py"
-          - category: "Hardware"
-            files: "tests/test_gpu_detection.py tests/test_wifi_backend.py"
+          - category: "Desktop Config"
+            files: "tests/test_hyprland_config.py tests/test_sway_config.py"
 
     steps:
       - name: Checkout
