@@ -3,10 +3,12 @@
 # Launched by Sway/Hyprland config - checks conditions and starts the GTK installer
 # Only runs in live environment (archiso) and NOT when booted via Ventoy
 
-LOG="/var/log/mados-installer-autostart.log"
+LOG_DIR="/run/user/0"
+LOG="$LOG_DIR/mados-installer-autostart.log"
+mkdir -p "$LOG_DIR"
 
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" >> "$LOG" 2>/dev/null
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | sudo tee -a "$LOG" >/dev/null 2>&1
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"
 }
 
@@ -64,12 +66,13 @@ sleep 2
 log "Running as user: $(whoami) with uid: $(id -u)"
 INSTALLER_PATH="/usr/local/bin/mados-installer"
 if [ -x "$INSTALLER_PATH" ]; then
-    log "Starting install-mados"
-    sudo "$INSTALLER_PATH"
+    log "Starting installer: $INSTALLER_PATH"
+    sudo -E PATH="$PATH" "$INSTALLER_PATH"
     EXIT_CODE=$?
     log "Installer exited with code: $EXIT_CODE"
 else
     log "ERROR: $INSTALLER_PATH not found"
-    ls -la "$INSTALLER_PATH" 2>&1 || true
+    ls -la /usr/local/bin/mados-installer 2>&1 || true
+    ls -la /usr/local/lib/mados_installer/ 2>&1 || true
     exit 1
 fi
