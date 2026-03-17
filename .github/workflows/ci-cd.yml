@@ -22,7 +22,6 @@ env:
   DNS_PRIMARY: 8.8.8.8
   DNS_SECONDARY: 8.8.4.4
   ARCHLINUX_IMAGE: archlinux:latest
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ================================================================
@@ -35,10 +34,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
           cache: 'pip'
@@ -88,10 +87,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
           cache: 'pip'
@@ -148,7 +147,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -255,7 +254,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always() && !cancelled() && (needs.auto-tag.result == 'success' || needs.auto-tag.result == 'skipped')
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -431,7 +430,7 @@ jobs:
 
     steps:
       - name: Checkout gh-pages
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: gh-pages
           fetch-depth: 0
@@ -530,7 +529,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
