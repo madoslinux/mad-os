@@ -24,3 +24,13 @@ repos:
         types: [python]
         pass_filenames: false
         args: ["."]
+
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        entry: python3 -m pytest
+        language: system
+        types: [python]
+        pass_filenames: false
+        args: ["tests/test_boot_scripts.py", "tests/test_mados_ota.py", "-v"]
