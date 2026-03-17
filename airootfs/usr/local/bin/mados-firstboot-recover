@@ -61,7 +61,7 @@ recover_phase() {
             if [[ -f /var/lib/mados-firstboot/packages-list ]]; then
                 local packages
                 packages=$(cat /var/lib/mados-firstboot/packages-list)
-                if pacman -S --noconfirm --needed $packages 2>&1 | tee -a "$LOG_FILE"; then
+                if pacman -S --noconfirm --needed "$packages" 2>&1 | tee -a "$LOG_FILE"; then
                     print_success "Packages installed successfully"
                     return 0
                 else
