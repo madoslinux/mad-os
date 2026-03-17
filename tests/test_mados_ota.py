@@ -161,7 +161,9 @@ class TestDownloader(unittest.TestCase):
         try:
             hash_value = Downloader._calculate_sha256(temp_path)
             self.assertEqual(len(hash_value), 64)
-            self.assertEqual(hash_value, "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72")
+            self.assertEqual(
+                hash_value, "6ae8a75555209fd6c44157c0aed8016e763ff435a19cf186f76863140143ff72"
+            )
         finally:
             temp_path.unlink()
 
@@ -169,9 +171,7 @@ class TestDownloader(unittest.TestCase):
 class TestDownloaderIntegration(unittest.TestCase):
     """Integration tests for Downloader (requires network)."""
 
-    @unittest.skipIf(
-        not sys.stdout.isatty(), "Skip network tests in non-interactive mode"
-    )
+    @unittest.skipIf(not sys.stdout.isatty(), "Skip network tests in non-interactive mode")
     def test_check_for_updates_no_updates(self):
         """Test checking for updates with current version."""
         current = {"version": "999.999.999", "system": {"version": "999.999.999"}, "apps": {}}

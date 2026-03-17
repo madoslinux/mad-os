@@ -26,7 +26,7 @@ class BackupManager:
         self.backup_root = backup_root
         self.backup_root.mkdir(parents=True, exist_ok=True)
 
-    def create_backup(self, backup_name: Optional[str] = None) -> Optional[Path]:
+    def create_backup(self, backup_name: str | None = None) -> Path | None:
         """Create a backup of current system state.
 
         Args:
@@ -181,7 +181,7 @@ class BackupManager:
             print(f"Restore failed: {e}", file=sys.stderr)
             return False
 
-    def get_latest_backup(self) -> Optional[Path]:
+    def get_latest_backup(self) -> Path | None:
         """Get the most recent backup.
 
         Returns:
@@ -204,9 +204,7 @@ def main():
     parser.add_argument("--create", action="store_true", help="Create a backup")
     parser.add_argument("--list", action="store_true", help="List backups")
     parser.add_argument("--restore", type=str, help="Restore from backup")
-    parser.add_argument(
-        "--name", type=str, help="Backup name (for --create)"
-    )
+    parser.add_argument("--name", type=str, help="Backup name (for --create)")
 
     args = parser.parse_args()
 

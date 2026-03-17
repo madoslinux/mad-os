@@ -25,9 +25,7 @@ class Installer:
     def __init__(self):
         self.backup_manager = BackupManager()
 
-    def install_update(
-        self, update_dir: Path, auto_backup: bool = True
-    ) -> bool:
+    def install_update(self, update_dir: Path, auto_backup: bool = True) -> bool:
         """Install an update from a downloaded directory.
 
         Args:
@@ -157,7 +155,7 @@ class Installer:
             except Exception:
                 pass
 
-    def rollback(self, backup_name: Optional[str] = None) -> bool:
+    def rollback(self, backup_name: str | None = None) -> bool:
         """Rollback to a previous version.
 
         Args:
@@ -184,9 +182,7 @@ def main():
     parser = argparse.ArgumentParser(description="madOS Update Installer")
     parser.add_argument("--install", type=str, help="Install from directory")
     parser.add_argument("--rollback", type=str, help="Rollback to backup")
-    parser.add_argument(
-        "--pacman", action="store_true", help="Run pacman system update"
-    )
+    parser.add_argument("--pacman", action="store_true", help="Run pacman system update")
 
     args = parser.parse_args()
 

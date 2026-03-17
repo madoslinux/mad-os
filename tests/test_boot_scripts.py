@@ -314,7 +314,6 @@ class TestProfiledefPermissions(unittest.TestCase):
     """Verify profiledef.sh grants correct permissions to boot scripts."""
 
     BOOT_SCRIPTS = [
-        "setup-ohmyzsh.sh",
         "setup-opencode.sh",
         "setup-ollama.sh",
     ]

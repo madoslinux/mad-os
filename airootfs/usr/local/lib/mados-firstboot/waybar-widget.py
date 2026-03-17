@@ -18,7 +18,7 @@ def get_progress():
     try:
         if PROGRESS_FILE.exists():
             return int(PROGRESS_FILE.read_text().strip())
-    except (ValueError, IOError):
+    except (OSError, ValueError):
         pass
     return None
 
@@ -33,15 +33,15 @@ def get_phase_status():
         "services-enable",
         "cleanup",
     ]
-    
+
     status = {}
     for phase in phases:
         phase_file = STATUS_DIR / f"{phase}.status"
         try:
             status[phase] = phase_file.read_text().strip()
-        except (IOError, FileNotFoundError):
+        except (OSError, FileNotFoundError):
             status[phase] = "pending"
-    
+
     return status
 
 
@@ -56,7 +56,7 @@ def format_tooltip(phase_status):
         "services-enable": "⚙️ Services",
         "cleanup": "🧹 Cleanup",
     }
-    
+
     for phase in phase_status:
         status = phase_status[phase]
         if status == "complete":
@@ -67,7 +67,7 @@ def format_tooltip(phase_status):
             icon = "○"
         label = labels.get(phase, phase)
         lines.append(f"{icon} {label}")
-    
+
     return "\n".join(lines)
 
 
@@ -77,45 +77,45 @@ def check_alert():
     if alert_file.exists():
         try:
             return json.loads(alert_file.read_text())
-        except (json.JSONDecodeError, IOError):
+        except (OSError, json.JSONDecodeError):
             pass
     return None
 
 
 def main():
     alert = check_alert()
-    
+
     if alert:
         print(json.dumps(alert))
         return
-    
+
     progress = get_progress()
-    
+
     if progress is None:
         # No progress file, setup not started or complete
         print(json.dumps({"text": "", "tooltip": "First-boot setup complete"}))
         return
-    
+
     if progress >= 100:
         print(json.dumps({"text": "", "tooltip": "First-boot setup complete"}))
         return
-    
+
     phase_status = get_phase_status()
     tooltip = format_tooltip(phase_status)
-    
+
     # Find current running phase
     current_phase = ""
     for phase, status in phase_status.items():
         if status == "running":
             current_phase = phase
             break
-    
+
     # Format display text
     if current_phase:
         display_text = f"⚙️ {progress}%"
     else:
         display_text = f"📊 {progress}%"
-    
+
     # Format colors based on progress
     if progress < 30:
         color = "#f5a962"  # Nord orange
@@ -123,17 +123,17 @@ def main():
         color = "#88c0d0"  # Nord blue
     else:
         color = "#a3be8c"  # Nord green
-    
+
     output = {
         "text": display_text,
         "tooltip": f"{tooltip}\n\nOverall: {progress}%",
         "class": "firstboot-progress",
         "percentage": progress,
     }
-    
+
     if color:
         output["color"] = color
-    
+
     print(json.dumps(output))
 
 

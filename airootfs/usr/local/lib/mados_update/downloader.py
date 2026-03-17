@@ -51,7 +51,7 @@ class Downloader:
         self.temp_dir = TEMP_DIR
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
-    def get_latest_release(self, channel: str = "stable") -> Optional[ReleaseInfo]:
+    def get_latest_release(self, channel: str = "stable") -> ReleaseInfo | None:
         """Get the latest release from GitHub.
 
         Args:
@@ -114,9 +114,7 @@ class Downloader:
             print(f"Error fetching release: {e}", file=sys.stderr)
             return None
 
-    def download_file(
-        self, url: str, dest: Path, expected_hash: Optional[str] = None
-    ) -> bool:
+    def download_file(self, url: str, dest: Path, expected_hash: str | None = None) -> bool:
         """Download a file from URL.
 
         Args:
@@ -147,9 +145,7 @@ class Downloader:
             print(f"Download failed: {e}", file=sys.stderr)
             return False
 
-    def download_update(
-        self, release: ReleaseInfo, dest_dir: Optional[Path] = None
-    ) -> Optional[Path]:
+    def download_update(self, release: ReleaseInfo, dest_dir: Path | None = None) -> Path | None:
         """Download all update files from a release.
 
         Args:
@@ -195,9 +191,7 @@ class Downloader:
         return sha256_hash.hexdigest()
 
     @staticmethod
-    def check_for_updates(
-        current_version_json: dict, channel: str = "stable"
-    ) -> Optional[UpdateInfo]:
+    def check_for_updates(current_version_json: dict, channel: str = "stable") -> UpdateInfo | None:
         """Check if updates are available.
 
         Args:
