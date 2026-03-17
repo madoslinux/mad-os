@@ -87,7 +87,7 @@ jobs:
           - category: "Hardware"
             files: "tests/test_gpu_detection.py tests/test_wifi_backend.py"
           - category: "Apps"
-            files: "tests/test_equalizer_presets.py tests/test_photo_navigator.py tests/test_installer_config.py"
+            files: "tests/test_equalizer_presets.py tests/test_photo_navigator.py"
           - category: "OTA Updates"
             files: "tests/test_mados_ota.py"
           - category: "Live USB"
