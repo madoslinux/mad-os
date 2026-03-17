@@ -177,3 +177,13 @@ libjxl
 
 # madOS PDF Viewer - PDF rendering and annotations
 poppler-glib
+
+# Firewall
+ufw
+
+# Security
+usbguard
+rkhunter
+clamav
+fail2ban
+zenity
