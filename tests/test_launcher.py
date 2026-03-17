@@ -11,6 +11,16 @@ import unittest
 REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LAUNCHER_LIB = os.path.join(REPO_DIR, "airootfs", "usr", "local", "lib")
 
+# ---------------------------------------------------------------------------
+# Skip tests if apps not present (moved to external repos)
+# ---------------------------------------------------------------------------
+sys.path.insert(0, LAUNCHER_LIB)
+try:
+    import mados_launcher
+    del sys.modules["mados_launcher"]  # Remove to re-import after mocks
+except ImportError:
+    raise unittest.SkipTest("mados_launcher module not present (app moved to external repo)")
+
 # ======================================================================
 # GTK / GI Mock Setup — allows headless testing without GTK or Wayland
 # ======================================================================

@@ -33,4 +33,4 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        args: ["tests/test_boot_scripts.py", "tests/test_mados_ota.py", "-v"]
+        args: ["tests/test_boot_scripts.py", "tests/test_mados_ota.py", "tests/test_liveusb_scripts.py", "-v"]
