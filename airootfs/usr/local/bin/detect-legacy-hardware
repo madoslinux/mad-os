@@ -39,7 +39,8 @@ detect_3d_acceleration() {
 
 # Función para detectar CPUs antiguas
 detect_legacy_cpu() {
-    local cpu_info=$(cat /proc/cpuinfo 2>/dev/null)
+    local cpu_info
+    cpu_info=$(cat /proc/cpuinfo 2>/dev/null)
     
     # Detectar Intel Atom (Bonnell, Saltwell, Silvermont, Airmont, Goldmont, Goldmont Plus)
     if echo "$cpu_info" | grep -qi "Atom\|Celeron N\|Pentium N"; then
@@ -47,8 +48,10 @@ detect_legacy_cpu() {
     fi
     
     # Detectar CPUs muy antiguas por familia/modelo
-    local cpu_family=$(grep -m1 "^cpu family" /proc/cpuinfo | awk '{print $4}')
-    local model=$(grep -m1 "^model[[:space:]]" /proc/cpuinfo | awk '{print $3}')
+    local cpu_family
+    local model
+    cpu_family=$(grep -m1 "^cpu family" /proc/cpuinfo | awk '{print $4}')
+    model=$(grep -m1 "^model[[:space:]]" /proc/cpuinfo | awk '{print $3}')
     
     # Intel Core antiguo (antes de Sandy Bridge - familia 6, modelo < 42)
     if [ "$cpu_family" = "6" ] && [ "$model" -lt "42" ] 2>/dev/null; then
@@ -56,7 +59,8 @@ detect_legacy_cpu() {
     fi
     
     # CPUs con frecuencia muy baja (< 1.5 GHz)
-    local max_freq=$(lscpu | grep "CPU max MHz" | awk '{print $NF}')
+    local max_freq
+    max_freq=$(lscpu | grep "CPU max MHz" | awk '{print $NF}')
     if [ -n "$max_freq" ]; then
         if awk -v freq="$max_freq" 'BEGIN {exit !(freq < 1500)}'; then
             return 0
@@ -68,7 +72,8 @@ detect_legacy_cpu() {
 
 # Función para detectar GPUs antiguas de Intel
 detect_legacy_intel_gpu() {
-    local gpu_info=$(lspci 2>/dev/null | grep -i "VGA\|3D\|Display" | grep -i intel)
+    local gpu_info
+    gpu_info=$(lspci 2>/dev/null | grep -i "VGA\|3D\|Display" | grep -i intel)
     
     if [ -z "$gpu_info" ]; then
         return 1  # No es Intel
@@ -91,7 +96,8 @@ detect_legacy_intel_gpu() {
 
 # Función para detectar GPUs antiguas de NVIDIA
 detect_legacy_nvidia_gpu() {
-    local gpu_info=$(lspci 2>/dev/null | grep -i "VGA\|3D\|Display" | grep -i nvidia)
+    local gpu_info
+    gpu_info=$(lspci 2>/dev/null | grep -i "VGA\|3D\|Display" | grep -i nvidia)
     
     if [ -z "$gpu_info" ]; then
         return 1  # No es NVIDIA
@@ -120,7 +126,8 @@ detect_legacy_nvidia_gpu() {
 
 # Función para detectar GPUs antiguas de AMD/ATI
 detect_legacy_amd_gpu() {
-    local gpu_info=$(lspci 2>/dev/null | grep -i "VGA\|3D\|Display" | grep -iE "AMD|ATI|Radeon")
+    local gpu_info
+    gpu_info=$(lspci 2>/dev/null | grep -i "VGA\|3D\|Display" | grep -iE "AMD|ATI|Radeon")
     
     if [ -z "$gpu_info" ]; then
         return 1  # No es AMD/ATI
@@ -149,8 +156,10 @@ detect_legacy_amd_gpu() {
 
 # Función para detectar sistemas con RAM muy baja
 detect_low_ram() {
-    local total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-    local total_ram_mb=$((total_ram_kb / 1024))
+    local total_ram_kb
+    local total_ram_mb
+    total_ram_kb=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+    total_ram_mb=$((total_ram_kb / 1024))
     
     # Menos de 2GB de RAM
     if [ "$total_ram_mb" -lt 2048 ]; then

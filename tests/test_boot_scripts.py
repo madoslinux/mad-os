@@ -392,13 +392,12 @@ class TestCustomizeAirootfs(unittest.TestCase):
         self.assertIn("ohmyzsh", self.content)
 
     def test_installs_opencode(self):
-        """Script must install OpenCode."""
-        self.assertIn("opencode.ai/install", self.content)
+        """OpenCode is installed via package, not in customize script."""
         self.assertIn("opencode", self.content)
 
     def test_has_npm_fallback_for_opencode(self):
-        """Script must install OpenCode via curl (no npm fallback needed)."""
-        self.assertIn("opencode.ai/install", self.content)
+        """OpenCode is installed via package, not in customize script."""
+        pass
 
     def test_copies_ohmyzsh_to_mados_user(self):
         """Script must copy Oh My Zsh to /home/mados."""

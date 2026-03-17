@@ -24,7 +24,7 @@ read_state() {
     MADOS_PERSIST_ACTIVE="0"
 
     if [ -f "$STATE_FILE" ]; then
-        # shellcheck source=/dev/null
+        # shellcheck source=/dev/null,SC2034
         . "$STATE_FILE"
     fi
 }

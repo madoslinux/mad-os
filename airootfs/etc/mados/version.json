@@ -1,0 +1,20 @@
+{
+  "version": "1.75.0-beta",
+  "release_date": "2025-03-17",
+  "system": {
+    "version": "1.75.0-beta",
+    "arch": "x86_64"
+  },
+  "apps": {
+    "mados-installer": "0.0.0",
+    "mados-audio-player": "0.0.0",
+    "mados-video-player": "0.0.0",
+    "mados-photo-viewer": "0.0.0",
+    "mados-pdf-viewer": "0.0.0",
+    "mados-launcher": "0.0.0",
+    "mados-equalizer": "0.0.0"
+  },
+  "update_channel": "stable",
+  "last_check": null,
+  "auto_update": false
+}

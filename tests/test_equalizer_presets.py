@@ -29,6 +29,15 @@ REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 LIB_DIR = os.path.join(REPO_DIR, "airootfs", "usr", "local", "lib")
 sys.path.insert(0, LIB_DIR)
 
+# ---------------------------------------------------------------------------
+# Skip tests if apps not present (moved to external repos)
+# ---------------------------------------------------------------------------
+try:
+    import mados_equalizer
+except ImportError:
+    import unittest
+    raise unittest.SkipTest("mados_equalizer module not present (app moved to external repo)")
+
 from mados_equalizer.presets import (
     FREQUENCY_BANDS,
     BAND_LABELS,
