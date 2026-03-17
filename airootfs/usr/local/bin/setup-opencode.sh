@@ -35,6 +35,12 @@ check_already_installed() {
     if command -v "$OPENCODE_CMD" &>/dev/null; then
         return 0
     fi
+    if [[ -x "/usr/bin/$OPENCODE_CMD" ]]; then
+        return 0
+    fi
+    if [[ -x "/usr/local/bin/$OPENCODE_CMD" ]]; then
+        return 0
+    fi
     if [[ -x "$INSTALL_DIR/$OPENCODE_CMD" ]]; then
         return 0
     fi
@@ -45,6 +51,45 @@ check_already_installed() {
         fi
         return 0
     fi
+    return 1
+}
+
+copy_from_live() {
+    local live_bin=""
+    
+    if [[ -x "/usr/bin/$OPENCODE_CMD" ]]; then
+        live_bin="/usr/bin/$OPENCODE_CMD"
+    elif [[ -x "/usr/local/bin/$OPENCODE_CMD" ]]; then
+        live_bin="/usr/local/bin/$OPENCODE_CMD"
+    fi
+    
+    if [[ -n "$live_bin" ]]; then
+        log_info "Copiando binario de live USB..."
+        
+        local target_dir="$INSTALL_DIR"
+        local using_persistence=false
+        
+        if [[ -d "/mnt/persistence" ]] && [[ -w "/mnt/persistence/usr/local/bin" ]]; then
+            target_dir="$PERSIST_DIR"
+            using_persistence=true
+            mkdir -p "$target_dir"
+        elif [[ -d "/mnt/persistence" ]] && [[ -w "/mnt/persistence" ]]; then
+            target_dir="$PERSIST_DIR"
+            using_persistence=true
+            mkdir -p "$target_dir"
+        fi
+        
+        mkdir -p "$target_dir"
+        cp "$live_bin" "$target_dir/$OPENCODE_CMD"
+        chmod +x "$target_dir/$OPENCODE_CMD"
+        
+        if [[ "$using_persistence" == true ]]; then
+            ln -sf "$target_dir/$OPENCODE_CMD" "$INSTALL_DIR/$OPENCODE_CMD" 2>/dev/null || true
+        fi
+        
+        return 0
+    fi
+    
     return 1
 }
 
@@ -188,35 +233,41 @@ main() {
         if ! can_install_software; then
             log_warn "Medio óptico (DVD/CD) detectado."
             log_info "No se puede instalar OpenCode en medio de solo lectura."
-            log_info "Instala madOS en disco con: sudo install-mados"
+            log_info "Instala madOS en disco con: sudo /usr/local/bin/mados-installer"
             return 0
         fi
     fi
 
-    log_info "Verificando conexión a Internet..."
-    if ! curl -sf --connect-timeout 5 https://opencode.ai/ >/dev/null 2>&1; then
-        log_warn "No hay conexión a Internet."
-        log_info "Conecta a la red primero:"
-        log_info "  WiFi:     nmtui  o  iwctl station wlan0 connect <SSID>"
-        log_info "  Ethernet: debería conectarse automáticamente"
-        log_info ""
-        log_info "Luego ejecuta de nuevo: setup-opencode.sh"
-        return 0
-    fi
-    log_ok "Conexión a Internet disponible."
-
-    if install_via_curl; then
-        :
-    elif install_via_npm; then
-        :
+    log_info "Buscando binario en live USB..."
+    if copy_from_live; then
+        log_ok "OpenCode copiado del live USB"
     else
-        log_error "No se pudo instalar OpenCode."
-        log_info "Métodos intentados:"
-        log_info "  1. curl -fsSL https://opencode.ai/install | bash"
-        log_info "  2. npm install -g opencode-ai"
-        log_info ""
-        log_info "Intenta instalar manualmente y reporta el error."
-        return 1
+        log_info "No se encontró binario en live. Descargando..."
+        
+        if ! curl -sf --connect-timeout 5 https://opencode.ai/ >/dev/null 2>&1; then
+            log_warn "No hay conexión a Internet."
+            log_info "Conecta a la red primero:"
+            log_info "  WiFi:     nmtui  o  iwctl station wlan0 connect <SSID>"
+            log_info "  Ethernet: debería conectarse automáticamente"
+            log_info ""
+            log_info "Luego ejecuta de nuevo: setup-opencode.sh"
+            return 0
+        fi
+        log_ok "Conexión a Internet disponible."
+
+        if install_via_curl; then
+            :
+        elif install_via_npm; then
+            :
+        else
+            log_error "No se pudo instalar OpenCode."
+            log_info "Métodos intentados:"
+            log_info "  1. curl -fsSL https://opencode.ai/install | bash"
+            log_info "  2. npm install -g opencode-ai"
+            log_info ""
+            log_info "Intenta instalar manualmente y reporta el error."
+            return 1
+        fi
     fi
     
     # Ensure it's available after installation

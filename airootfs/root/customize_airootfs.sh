@@ -49,6 +49,151 @@ else
     [[ -n "$NORDZY_BUILD_DIR" ]] && rm -rf "$NORDZY_BUILD_DIR"
 fi
 
+# ── Michroma Font (from Google Fonts - Direct Download) ────────────────────
+MICHROMA_DIR="/usr/share/fonts/truetype/michroma"
+
+if [[ -d "$MICHROMA_DIR" ]] && [[ -f "$MICHROMA_DIR/Michroma-Regular.ttf" ]]; then
+    echo "✓ Michroma font already installed"
+else
+    echo "Installing Michroma font..."
+    mkdir -p "$MICHROMA_DIR"
+    if curl -fsSL "https://github.com/google/fonts/raw/main/ofl/michroma/Michroma-Regular.ttf" -o "$MICHROMA_DIR/Michroma-Regular.ttf" 2>&1; then
+        echo "✓ Michroma font installed"
+    else
+        echo "⚠ Failed to install Michroma font"
+    fi
+fi
+
+# ════════════════════════════════════════════════════════════════════════════
+# madOS Applications Suite - Download from GitHub
+# ════════════════════════════════════════════════════════════════════════════
+
+MADOS_APPS=(
+    "mados-audio-player"
+    "mados-equalizer"
+    "mados-launcher"
+    "mados-pdf-viewer"
+    "mados-photo-viewer"
+    "mados-video-player"
+)
+
+GITHUB_REPO="madoslinux"
+
+for app in "${MADOS_APPS[@]}"; do
+    APP_DIR="/usr/local/lib/${app}"
+    PYTHON_APP_NAME="${app//-/_}"
+    PYTHON_APP_DIR="/usr/local/lib/${PYTHON_APP_NAME}"
+    LAUNCHER="/usr/local/bin/${app}"
+    APP_NAME="${app#mados-}"
+    
+    if [[ -d "$PYTHON_APP_DIR/.git" ]]; then
+        echo "Updating $app..."
+        cd "$PYTHON_APP_DIR"
+        git pull --ff-only origin main 2>/dev/null || true
+        cd /
+    else
+        echo "Installing $app from GitHub..."
+        rm -rf "$APP_DIR" "$PYTHON_APP_DIR"
+        APP_BUILD_DIR=$(mktemp -d)
+        if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$APP_BUILD_DIR/${app}" 2>&1; then
+            mkdir -p /usr/local/lib
+            # Rename directory to use underscores for Python module
+            mv "$APP_BUILD_DIR/${app}" "$PYTHON_APP_DIR"
+            
+            # Create launcher script - run as module from app directory
+            cat > "$LAUNCHER" << EOF
+#!/bin/bash
+# madOS ${APP_NAME^} - Launcher script
+cd "/usr/local/lib/${PYTHON_APP_NAME}"
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+exec python3 -m "${PYTHON_APP_NAME}" "\$@"
+EOF
+            chmod +x "$LAUNCHER"
+            echo "✓ $app installed"
+        else
+            echo "⚠ Failed to install $app"
+        fi
+        rm -rf "$APP_BUILD_DIR"
+    fi
+done
+
+# Also install mados-installer (has different structure)
+INSTALLER_APP="mados-installer"
+INSTALLER_DIR="/usr/local/lib/${INSTALLER_APP}"
+INSTALLER_PYTHON_DIR="/usr/local/lib/mados_installer"
+INSTALLER_LAUNCHER="/usr/local/bin/${INSTALLER_APP}"
+
+if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
+    echo "Updating $INSTALLER_APP..."
+    cd "$INSTALLER_PYTHON_DIR"
+        git pull --ff-only origin main 2>/dev/null || true
+    cd /
+    
+    # Fix BIOS GRUB install - patch config_script.py (for older versions)
+    if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+        # These patches are applied in mados-installer now, kept here for compatibility
+        sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+        sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+    fi
+else
+    echo "Installing $INSTALLER_APP from GitHub..."
+    rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
+    INSTALLER_BUILD_DIR=$(mktemp -d)
+    if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${INSTALLER_APP}.git" "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" 2>&1; then
+        mkdir -p /usr/local/lib
+        mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
+        ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
+        
+        # Fix BIOS GRUB install - patch config_script.py (for older versions)
+        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+            echo "  Patching mados-installer BIOS GRUB install fix..."
+            sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+            sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
+        fi
+
+        # Add pacman %INSTALLED_DB% cleanup to config_script.py
+        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
+            echo "  Adding pacman DB cleanup to config script..."
+            PACMAN_CLEANUP='
+# Clean %INSTALLED_DB% from pacman local database (fixes pacman 7.x compatibility)
+PACMAN_LOCAL_DB="/var/lib/pacman/local"
+if [ -d "$PACMAN_LOCAL_DB" ]; then
+    cleaned=0
+    for desc_file in "$PACMAN_LOCAL_DB"/*/desc; do
+        if [ -f "$desc_file" ] && grep -q "^%INSTALLED_DB%$" "$desc_file" 2>/dev/null; then
+            sed -i '/^%INSTALLED_DB%$/,+1d' "$desc_file"
+            cleaned=$((cleaned + 1))
+        fi
+    done
+    if [ "$cleaned" -gt 0 ]; then
+        echo "  Cleaned %INSTALLED_DB% from $cleaned package entries"
+    fi
+fi
+'
+            sed -i "/# Clean up archiso artifacts/a\\
+$PACMAN_CLEANUP" "$INSTALLER_PYTHON_DIR/installer/config_script.py"
+        fi
+    else
+        echo "⚠ Failed to install $INSTALLER_APP"
+    fi
+    rm -rf "$INSTALLER_BUILD_DIR"
+fi
+
+# Create launcher script (always, whether new or update)
+if [[ -d "$INSTALLER_PYTHON_DIR" ]]; then
+    cat > "$INSTALLER_LAUNCHER" << 'EOF'
+#!/bin/bash
+# madOS Installer - Launcher script
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+cd "/usr/local/lib/mados_installer"
+exec python3 -m mados_installer "$@"
+EOF
+    chmod +x "$INSTALLER_LAUNCHER"
+    echo "✓ $INSTALLER_APP launcher created at $INSTALLER_LAUNCHER"
+fi
+
+echo "✓ madOS applications suite installed"
+
 # ════════════════════════════════════════════════════════════════════════════
 # NVM (Node Version Manager) y Node
 # NOTA: No se instala en la imagen ISO para reducir tamaño.
@@ -57,31 +202,36 @@ fi
 echo "NVM and Node installation skipped (will be installed post-installation)"
 
 # ── Oh My Zsh ────────────────────────────────────────────────────────────
-# Solo instala en /etc/skel - los usuarios root y mados usan symlinks
-# para ahorrar ~400-600MB en la ISO
-OMZ_DIR="/etc/skel/.oh-my-zsh"
+# Instala en /usr/share - los usuarios usan symlinks para ahorrar ~400-600MB en la ISO
+OMZ_DIR="/usr/share/oh-my-zsh"
 
 if [[ ! -d "$OMZ_DIR" ]]; then
-    echo "Installing Oh My Zsh to /etc/skel..."
+    echo "Installing Oh My Zsh to /usr/share..."
     if git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$OMZ_DIR" 2>&1; then
-        echo "✓ Oh My Zsh installed to /etc/skel"
+        echo "✓ Oh My Zsh installed to /usr/share"
         
-        # Crear symlinks en lugar de copias para ahorrar espacio
-        # mados user
+        # Crear symlinks para usuarios (después de que archiso copie skel)
         if [[ -d /home/mados ]]; then
-            ln -sf /etc/skel/.oh-my-zsh /home/mados/.oh-my-zsh
+            rm -rf /home/mados/.oh-my-zsh
+            ln -sf /usr/share/oh-my-zsh /home/mados/.oh-my-zsh
             chown -h 1000:1000 /home/mados/.oh-my-zsh
             echo "  → Linked Oh My Zsh to /home/mados"
         fi
         
-        # root user
-        ln -sf /etc/skel/.oh-my-zsh /root/.oh-my-zsh
+        rm -rf /root/.oh-my-zsh
+        ln -sf /usr/share/oh-my-zsh /root/.oh-my-zsh
         echo "  → Linked Oh My Zsh to /root"
     else
         echo "⚠ Failed to clone Oh My Zsh (will install at boot)"
     fi
 else
-    echo "✓ Oh My Zsh already present in /etc/skel"
+    echo "✓ Oh My Zsh already present in /usr/share"
+fi
+
+# Also create in /etc/skel so installer can copy it
+if [[ -d "$OMZ_DIR" && ! -d /etc/skel/.oh-my-zsh ]]; then
+    ln -sf /usr/share/oh-my-zsh /etc/skel/.oh-my-zsh
+    echo "  → Linked Oh My Zsh to /etc/skel (for installer)"
 fi
 
 # Copy .zshrc to mados user
@@ -95,45 +245,6 @@ fi
 if [[ ! -f /root/.zshrc && -f /etc/skel/.zshrc ]]; then
     cp /etc/skel/.zshrc /root/.zshrc
     echo "  → Copied .zshrc to /root"
-fi
-
-# ── OpenCode ─────────────────────────────────────────────────────────────
-OPENCODE_CMD="opencode"
-INSTALL_DIR="/usr/local/bin"
-
-if command -v "$OPENCODE_CMD" &>/dev/null; then
-    echo "✓ OpenCode already installed"
-else
-    echo "Installing OpenCode..."
-    
-    # Install via curl (official method - binary)
-    # The installer puts it in ~/.opencode/bin/opencode
-    if curl -fsSL https://opencode.ai/install | bash; then
-        # Find and copy the installed binary
-        if [[ -x "$HOME/.opencode/bin/opencode" ]]; then
-            cp "$HOME/.opencode/bin/opencode" "$INSTALL_DIR/$OPENCODE_CMD"
-            chmod +x "$INSTALL_DIR/$OPENCODE_CMD"
-            echo "✓ OpenCode installed"
-        else
-            echo "⚠ OpenCode binary not found in ~/.opencode/bin/"
-        fi
-    else
-        echo "⚠ OpenCode install failed"
-    fi
-fi
-
-# ── Ollama ───────────────────────────────────────────────────────────────
-OLLAMA_CMD="ollama"
-
-if command -v "$OLLAMA_CMD" &>/dev/null; then
-    echo "✓ Ollama already installed"
-else
-    echo "Installing Ollama..."
-    if curl -fsSL https://ollama.com/install.sh | sh; then
-        echo "✓ Ollama installed"
-    else
-        echo "⚠ Ollama install failed"
-    fi
 fi
 
 # ── Hide unwanted .desktop entries from application menu ──────────────────
@@ -193,6 +304,9 @@ rm -rf /usr/share/icons/hicolor 2>/dev/null || true
 rm -rf /usr/share/icons/Adwaita 2>/dev/null || true
 rm -rf /usr/share/pixmaps/gnome 2>/dev/null || true
 
+echo "Updating font cache..."
+fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true
+
 echo "Removing unnecessary locales (keeping en_US, es_ES)..."
 for lang in /usr/share/locale/*; do
     lang_name=$(basename "$lang")
@@ -203,5 +317,44 @@ done
 
 echo "✓ Package cache cleaned"
 echo "✓ Unnecessary files removed"
+
+echo "=== madOS: Ensuring executable permissions ==="
+chmod +x /usr/local/bin/mados-help
+chmod +x /usr/local/bin/mados-power
+
+echo "=== madOS: Configuring ollama and opencode for wheel group ==="
+if id 1000 &>/dev/null; then
+    # Ensure wheel group exists with GID 10
+    groupadd -g 10 wheel 2>/dev/null || true
+    usermod -aG wheel 1000 2>/dev/null || true
+    
+    # Set ownership to root:wheel - everyone can execute, but only wheel can sudo
+    # This allows: normal users to run ollama/opencode, wheel users can sudo them
+    for bin in ollama opencode; do
+        for path in /usr/bin/$bin /usr/local/bin/$bin; do
+            if [[ -f "$path" ]]; then
+                chown root:wheel "$path"
+                chmod 755 "$path"
+                echo "  → Configured: $path (root:wheel, 755)"
+            fi
+        done
+    done
+fi
+
+# ── Fix pacman %INSTALLED_DB% warning ────────────────────────────────────────
+# Clean unknown %INSTALLED_DB% entries from local pacman DB
+# This prevents warnings when pacman version differs between build host and live system
+echo "=== madOS: Cleaning pacman local database ==="
+PACMAN_LOCAL_DB="/var/lib/pacman/local"
+if [[ -d "$PACMAN_LOCAL_DB" ]]; then
+    cleaned=0
+    for desc_file in "$PACMAN_LOCAL_DB"/*/desc; do
+        if [[ -f "$desc_file" ]] && grep -q "^%INSTALLED_DB%$" "$desc_file" 2>/dev/null; then
+            sed -i '/^%INSTALLED_DB%$/,+1d' "$desc_file"
+            ((cleaned++)) || true
+        fi
+    done
+    echo "  → Cleaned $cleaned package entries"
+fi
 
 echo "=== madOS: Pre-installation complete ==="

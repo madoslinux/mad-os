@@ -164,6 +164,17 @@ get_random_transition() {
     echo "${TRANSITIONS[$idx]}"
 }
 
+# Preload all wallpapers into swww cache for fast switching
+preload_wallpapers() {
+    log "Preloading wallpapers into memory..."
+    for wp in "${WALLPAPERS[@]}"; do
+        if [[ -f "$wp" ]]; then
+            swww img "$wp" --transition-type none 2>/dev/null || true
+        fi
+    done
+    log "Preloading complete"
+}
+
 # Set wallpaper via swww with optional glitch transition effect
 set_wallpaper() {
     local wallpaper="$1"
@@ -228,6 +239,9 @@ declare -a WALLPAPERS=()
 collect_wallpapers || exit 1
 shuffle_wallpapers
 assign_wallpapers
+
+# Preload all wallpapers into swww for fast switching
+preload_wallpapers
 
 # Determine current workspace
 current_ws="$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.id // empty' 2>/dev/null)" || true

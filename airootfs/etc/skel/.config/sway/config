@@ -99,7 +99,7 @@ client.urgent            $urgent-bg-color    $urgent-bg-color    $text-color    
 
 # Basics
 bindsym $mod+Return exec $term
-bindsym $mod+Shift+q kill
+bindsym $mod+q kill
 bindsym $mod+d exec $menu
 bindsym $mod+Shift+c reload
 bindsym $mod+Shift+e exec swaynag -t warning -m 'Salir de Sway?' -B 'Sí, salir' 'swaymsg exit'

@@ -34,12 +34,57 @@ check_already_installed() {
     if command -v "$OLLAMA_CMD" &>/dev/null; then
         return 0
     fi
+    if [[ -x "/usr/bin/$OLLAMA_CMD" ]]; then
+        return 0
+    fi
+    if [[ -x "/usr/local/bin/$OLLAMA_CMD" ]]; then
+        return 0
+    fi
     if [[ -x "$OLLAMA_INSTALL_DIR/bin/$OLLAMA_CMD" ]]; then
         return 0
     fi
     if [[ -x "$PERSIST_DIR/bin/$OLLAMA_CMD" ]]; then
         return 0
     fi
+    return 1
+}
+
+copy_from_live() {
+    local live_bin=""
+    
+    if [[ -x "/usr/bin/$OLLAMA_CMD" ]]; then
+        live_bin="/usr/bin/$OLLAMA_CMD"
+    elif [[ -x "/usr/local/bin/$OLLAMA_CMD" ]]; then
+        live_bin="/usr/local/bin/$OLLAMA_CMD"
+    fi
+    
+    if [[ -n "$live_bin" ]]; then
+        log_info "Copiando binario de live USB..."
+        
+        local target_dir="$OLLAMA_INSTALL_DIR"
+        local using_persistence=false
+        
+        if [[ -d "/mnt/persistence" ]] && [[ -w "/mnt/persistence/usr/local" ]]; then
+            target_dir="$PERSIST_DIR"
+            using_persistence=true
+            mkdir -p "$target_dir/bin"
+        elif [[ -d "/mnt/persistence" ]] && [[ -w "/mnt/persistence" ]]; then
+            target_dir="$PERSIST_DIR"
+            using_persistence=true
+            mkdir -p "$target_dir/bin"
+        fi
+        
+        mkdir -p "$target_dir/bin"
+        cp "$live_bin" "$target_dir/bin/$OLLAMA_CMD"
+        chmod +x "$target_dir/bin/$OLLAMA_CMD"
+        
+        if [[ "$using_persistence" == true ]]; then
+            ln -sf "$target_dir/bin/$OLLAMA_CMD" "$OLLAMA_INSTALL_DIR/bin/$OLLAMA_CMD" 2>/dev/null || true
+        fi
+        
+        return 0
+    fi
+    
     return 1
 }
 
@@ -92,32 +137,38 @@ main() {
         if ! can_install_software; then
             log_warn "Medio óptico (DVD/CD) detectado."
             log_info "No se puede instalar Ollama en medio de solo lectura."
-            log_info "Instala madOS en disco con: sudo install-mados"
+            log_info "Instala madOS en disco con: sudo /usr/local/bin/mados-installer"
             return 0
         fi
     fi
 
-    log_info "Verificando conexión a Internet..."
-    if ! curl -sf --connect-timeout 5 https://ollama.com/ >/dev/null 2>&1; then
-        log_warn "No hay conexión a Internet."
-        log_info "Conecta a la red primero:"
-        log_info "  WiFi:     nmtui  o  iwctl station wlan0 connect <SSID>"
-        log_info "  Ethernet: debería conectarse automáticamente"
-        log_info ""
-        log_info "Luego ejecuta de nuevo: setup-ollama.sh"
-        return 0
-    fi
-    log_ok "Conexión a Internet disponible."
-
-    if install_ollama; then
-        :
+    log_info "Buscando binario en live USB..."
+    if copy_from_live; then
+        log_ok "Ollama copiado del live USB"
     else
-        log_error "No se pudo instalar Ollama."
-        log_info "Intenta instalar manualmente:"
-        log_info "  curl -fsSL https://ollama.com/install.sh | sh"
-        log_info ""
-        log_info "Y reporta el error."
-        return 1
+        log_info "No se encontró binario en live. Descargando..."
+        
+        if ! curl -sf --connect-timeout 5 https://ollama.com/ >/dev/null 2>&1; then
+            log_warn "No hay conexión a Internet."
+            log_info "Conecta a la red primero:"
+            log_info "  WiFi:     nmtui  o  iwctl station wlan0 connect <SSID>"
+            log_info "  Ethernet: debería conectarse automáticamente"
+            log_info ""
+            log_info "Luego ejecuta de nuevo: setup-ollama.sh"
+            return 0
+        fi
+        log_ok "Conexión a Internet disponible."
+
+        if install_ollama; then
+            :
+        else
+            log_error "No se pudo instalar Ollama."
+            log_info "Intenta instalar manualmente:"
+            log_info "  curl -fsSL https://ollama.com/install.sh | sh"
+            log_info ""
+            log_info "Y reporta el error."
+            return 1
+        fi
     fi
 
     echo ""

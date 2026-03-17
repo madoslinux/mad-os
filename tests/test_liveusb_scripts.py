@@ -261,8 +261,6 @@ class TestCriticalLiveUSBScriptsExist(unittest.TestCase):
     """Critical scripts that must be present for live USB to function."""
 
     CRITICAL_SCRIPTS = [
-        "install-mados",
-        "install-mados-gtk.py",
         "livecd-sound",
         "choose-mirror",
         "select-compositor",
@@ -272,6 +270,7 @@ class TestCriticalLiveUSBScriptsExist(unittest.TestCase):
         "mados-audio-init.sh",
         "mados-debug",
         "detect-legacy-hardware",
+        "mados-installer-autostart",
     ]
 
     def test_critical_scripts_exist(self):

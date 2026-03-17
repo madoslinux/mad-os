@@ -34,9 +34,6 @@ file_permissions=(
   ["/usr/local/bin/livecd-sound"]="0:0:755"
   ["/usr/local/bin/mados-audio-init.sh"]="0:0:755"
   ["/usr/local/bin/mados-audio-quality.sh"]="0:0:755"
-  ["/usr/local/bin/install-mados-gtk.py"]="0:0:755"
-  ["/usr/local/bin/install-mados"]="0:0:755"
-  ["/usr/local/lib/mados_installer/"]="0:0:755"
   ["/usr/local/bin/setup-opencode.sh"]="0:0:755"
   ["/usr/local/bin/setup-nvm.sh"]="0:0:755"
   ["/usr/local/bin/setup-ollama.sh"]="0:0:755"
@@ -85,7 +82,13 @@ file_permissions=(
   ["/usr/local/bin/mados-timezone-detect.sh"]="0:0:755"
   ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
+  ["/usr/local/bin/mados-update"]="0:0:755"
 
   ["/etc/mados/"]="0:0:755"
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
+  ["/etc/systemd/system/mados-apps-update.service"]="0:0:644"
+  ["/etc/systemd/system/mados-apps-update.timer"]="0:0:644"
+  ["/usr/share/grub/themes/mados"]="0:0:755"
+  ["/usr/share/grub/themes/mados/theme.txt"]="0:0:644"
+  ["/usr/share/grub/themes/mados/logo.png"]="0:0:644"
 )
