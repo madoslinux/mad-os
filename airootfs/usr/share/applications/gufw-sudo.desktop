@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Firewall Configuration
+Comment=Configure firewall rules
+Exec=/usr/local/bin/gufw
+Icon=gufw
+Terminal=false
+Type=Application
+Categories=System;Settings;Security;
+Keywords=firewall;ufw;security;
+StartupNotify=true

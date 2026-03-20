@@ -160,6 +160,7 @@ opencode
 
 # madOS Native Apps Dependencies
 # madOS Photo Viewer - image viewing and video playback
+# GStreamer with gtksink support (from gst-plugin-gtk package)
 gstreamer
 gst-plugins-base
 gst-plugins-good
@@ -167,6 +168,7 @@ gst-plugins-ugly
 gst-plugins-bad
 gst-libav
 gst-python
+gst-plugin-gtk
 python-pillow
 librsvg
 libwebp
@@ -175,3 +177,13 @@ libjxl
 
 # madOS PDF Viewer - PDF rendering and annotations
 poppler-glib
+
+# Firewall
+ufw
+
+# Security
+usbguard
+rkhunter
+clamav
+fail2ban
+zenity

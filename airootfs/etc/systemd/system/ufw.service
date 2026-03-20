@@ -1,0 +1,18 @@
+[Unit]
+Description=Uncomplicated Firewall
+Documentation=man:ufw(8)
+DefaultDependencies=no
+After=network-pre.target
+Before=network.target
+Wants=network-pre.target
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/ufw --enable
+ExecReload=/usr/bin/ufw reload
+Restart=on-failure
+RuntimeDirectory=ufw
+RuntimeDirectoryMode=0755
+
+[Install]
+WantedBy=multi-user.target

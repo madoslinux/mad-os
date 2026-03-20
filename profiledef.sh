@@ -37,19 +37,8 @@ file_permissions=(
   ["/usr/local/bin/setup-opencode.sh"]="0:0:755"
   ["/usr/local/bin/setup-nvm.sh"]="0:0:755"
   ["/usr/local/bin/setup-ollama.sh"]="0:0:755"
-  ["/usr/local/bin/setup-ohmyzsh.sh"]="0:0:755"
   ["/usr/local/bin/toggle-demo-mode.sh"]="0:0:755"
-  ["/usr/local/bin/mados-photo-viewer"]="0:0:755"
-  ["/usr/local/bin/mados-pdf-viewer"]="0:0:755"
-  ["/usr/local/bin/mados-video-player"]="0:0:755"
 
-  ["/usr/local/bin/mados-equalizer"]="0:0:755"
-  ["/usr/local/bin/mados-launcher"]="0:0:755"
-  ["/usr/local/lib/mados_photo_viewer/"]="0:0:755"
-  ["/usr/local/lib/mados_pdf_viewer/"]="0:0:755"
-  ["/usr/local/lib/mados_video_player/"]="0:0:755"
-  ["/usr/local/lib/mados_equalizer/"]="0:0:755"
-  ["/usr/local/lib/mados_launcher/"]="0:0:755"
   ["/usr/local/bin/mados-debug"]="0:0:755"
   ["/usr/local/bin/detect-legacy-hardware"]="0:0:755"
   ["/usr/local/bin/cage-greeter"]="0:0:755"
@@ -64,14 +53,6 @@ file_permissions=(
   ["/usr/local/bin/mados-sway-workspace-cycle"]="0:0:755"
   ["/usr/local/bin/mados-hyprland-wallpaper-set"]="0:0:755"
   ["/usr/local/bin/mados-hyprland-workspace-cycle"]="0:0:755"
-  ["/usr/local/bin/mados-audio-player"]="0:0:755"
-  ["/usr/local/lib/mados_audio_player/"]="0:0:755"
-  ["/usr/local/bin/mados-photo-viewer"]="0:0:755"
-  ["/usr/local/lib/mados_photo_viewer/"]="0:0:755"
-  ["/usr/local/bin/mados-video-player"]="0:0:755"
-  ["/usr/local/lib/mados_video_player/"]="0:0:755"
-  ["/usr/local/bin/mados-pdf-viewer"]="0:0:755"
-  ["/usr/local/lib/mados_pdf_viewer/"]="0:0:755"
   ["/usr/local/lib/mados-media-helper.sh"]="0:0:755"
   ["/usr/local/bin/mados-persistence"]="0:0:755"
   ["/usr/local/bin/mados-installer-autostart"]="0:0:755"
@@ -82,13 +63,54 @@ file_permissions=(
   ["/usr/local/bin/mados-timezone-detect.sh"]="0:0:755"
   ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
+  ["/usr/local/bin/mados-firstboot-recover"]="0:0:755"
+  ["/usr/local/bin/mados-health-check"]="0:0:755"
+  ["/usr/local/bin/mados-help"]="0:0:755"
+  ["/usr/local/bin/mados-power"]="0:0:755"
+  ["/usr/local/bin/mados-logs"]="0:0:755"
   ["/usr/local/bin/mados-update"]="0:0:755"
+  ["/usr/local/bin/mados-ota"]="0:0:755"
+  ["/usr/local/lib/mados_update/"]="0:0:755"
 
   ["/etc/mados/"]="0:0:755"
+  ["/etc/mados/version.json"]="0:0:644"
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
   ["/etc/systemd/system/mados-apps-update.service"]="0:0:644"
   ["/etc/systemd/system/mados-apps-update.timer"]="0:0:644"
+  ["/etc/systemd/system/mados-ota.service"]="0:0:644"
+  ["/etc/systemd/system/mados-ota.timer"]="0:0:644"
   ["/usr/share/grub/themes/mados"]="0:0:755"
   ["/usr/share/grub/themes/mados/theme.txt"]="0:0:644"
   ["/usr/share/grub/themes/mados/logo.png"]="0:0:644"
+
+  # UFW Firewall
+  ["/etc/ufw/ufw.conf"]="0:0:644"
+  ["/etc/ufw/user.rules"]="0:0:600"
+  ["/etc/ufw/user6.rules"]="0:0:600"
+  ["/etc/systemd/system/ufw.service"]="0:0:644"
+  ["/etc/systemd/system/multi-user.target.wants/ufw.service"]="0:0:644"
+
+  # Security hardening
+  ["/etc/sysctl.d/99-security.conf"]="0:0:644"
+
+  # USBGuard
+  ["/etc/usbguard/usbguard-daemon.conf"]="0:0:644"
+  ["/etc/usbguard/rules.conf"]="0:0:600"
+  ["/etc/usbguard/usbguard-notify.sh"]="0:0:755"
+  ["/etc/systemd/system/usbguard.service"]="0:0:644"
+
+  # RKHunter
+  ["/etc/rkhunter.conf"]="0:0:644"
+  ["/etc/systemd/system/rkhunter.service"]="0:0:644"
+  ["/etc/systemd/system/rkhunter.timer"]="0:0:644"
+
+  # Fail2Ban
+  ["/etc/fail2ban/jail.local"]="0:0:644"
+
+  # Security notifications
+  ["/etc/profile.d/mados-security-notify.sh"]="0:0:755"
+
+  # ClamAV
+  ["/etc/systemd/system/clamav-scan.service"]="0:0:644"
+  ["/etc/systemd/system/clamav-scan.timer"]="0:0:644"
 )

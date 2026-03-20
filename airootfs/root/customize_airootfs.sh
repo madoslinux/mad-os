@@ -75,6 +75,7 @@ MADOS_APPS=(
     "mados-pdf-viewer"
     "mados-photo-viewer"
     "mados-video-player"
+    "mados-wallpaper"
 )
 
 GITHUB_REPO="madoslinux"
@@ -115,7 +116,84 @@ EOF
         fi
         rm -rf "$APP_BUILD_DIR"
     fi
+    
+    # Fix mados-wallpaper: needs GTK3 fixes and no CSS
+    if [[ "$app" == "mados-wallpaper" && -f "$PYTHON_APP_DIR/workspace_card.py" ]]; then
+        # Fix GTK version
+        sed -i 's/gi.require_version("Gtk", "4.0")/gi.require_version("Gtk", "3.0")/' "$PYTHON_APP_DIR/workspace_card.py"
+        sed -i 's/gi.require_version("Gdk", "4.0")/gi.require_version("Gdk", "3.0")/' "$PYTHON_APP_DIR/workspace_card.py"
+        # Remove all EventController (GTK4) and use VBox instead
+        sed -i 's/class WorkspaceCard(Gtk.Box)/class WorkspaceCard(Gtk.VBox)/g' "$PYTHON_APP_DIR/workspace_card.py"
+        sed -i 's/set_css_classes/get_style_context().add_class/g' "$PYTHON_APP_DIR/workspace_card.py"
+        # Fix GTK4 Picture to GTK3 Image
+        sed -i 's/Gtk.Picture.new_for_pixbuf/Gtk.Image().set_from_pixbuf/g' "$PYTHON_APP_DIR/workspace_card.py"
+        # Remove EventController and GestureClick
+        sed -i '/EventController/d' "$PYTHON_APP_DIR/workspace_card.py"
+        sed -i '/GestureClick/d' "$PYTHON_APP_DIR/workspace_card.py"
+        sed -i '/add_controller/d' "$PYTHON_APP_DIR/workspace_card.py"
+        # Add Pango import
+        sed -i '/from gi.repository import Gtk, Gdk/ a from gi.repository import Pango' "$PYTHON_APP_DIR/workspace_card.py"
+    fi
+    
+    # Fix app.py for GTK3 - remove CSS and use show_all
+    if [[ "$app" == "mados-wallpaper" && -f "$PYTHON_APP_DIR/app.py" ]]; then
+        sed -i 's/window.show()/window.show_all()/g' "$PYTHON_APP_DIR/app.py"
+        sed -i 's/add_provider_for_display/add_provider_for_screen/g' "$PYTHON_APP_DIR/app.py"
+        sed -i 's/Gdk\.Display\.get_default()/Gdk.Screen.get_default()/g' "$PYTHON_APP_DIR/app.py"
+        # Replace CSS with simple header
+        sed -i '/css = f"""{/,/^        """/d' "$PYTHON_APP_DIR/app.py"
+        sed -i '/provider = Gtk.CssProvider()/,/Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION/d' "$PYTHON_APP_DIR/app.py"
+    fi
 done
+
+# ── Post-install mados-wallpaper: desktop entry, icon, and default wallpapers ──
+WALLPAPER_APP_DIR="/usr/local/lib/mados_wallpaper"
+if [[ -d "$WALLPAPER_APP_DIR" ]]; then
+    echo "Setting up mados-wallpaper desktop entry and icons..."
+
+    # Copy .desktop file to system applications
+    if [[ -f "$WALLPAPER_APP_DIR/mados-wallpaper.desktop" ]]; then
+        cp "$WALLPAPER_APP_DIR/mados-wallpaper.desktop" /usr/share/applications/
+        echo "  → Desktop entry installed"
+    else
+        echo "  → WARNING: mados-wallpaper.desktop not found"
+    fi
+
+    # Copy icon to system icons
+    if [[ -f "$WALLPAPER_APP_DIR/mados-wallpaper.svg" ]]; then
+        mkdir -p /usr/share/icons/hicolor/scalable/apps
+        cp "$WALLPAPER_APP_DIR/mados-wallpaper.svg" /usr/share/icons/hicolor/scalable/apps/mados-wallpaper.svg
+        mkdir -p /usr/share/icons/hicolor/48x48/apps
+        cp "$WALLPAPER_APP_DIR/mados-wallpaper.svg" /usr/share/icons/hicolor/48x48/apps/mados-wallpaper.svg 2>/dev/null || true
+        echo "  → Icon installed"
+    else
+        echo "  → WARNING: mados-wallpaper.svg not found"
+    fi
+
+    # Copy default wallpapers to skel for new users
+    if [[ -d "$WALLPAPER_APP_DIR" ]]; then
+        wp_count=$(ls -1 "$WALLPAPER_APP_DIR"/*.png 2>/dev/null | wc -l)
+        echo "  → Found $wp_count wallpapers in repo"
+        
+        mkdir -p /etc/skel/.local/share/mados/wallpapers
+        cp "$WALLPAPER_APP_DIR"/*.png /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
+        copied_skel=$(ls -1 /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null | wc -l)
+        echo "  → $copied_skel wallpapers copied to skel"
+
+        # Also copy wallpapers to existing mados user (for live ISO)
+        if [[ -d /home/mados ]]; then
+            mkdir -p /home/mados/.local/share/mados/wallpapers
+            cp "$WALLPAPER_APP_DIR"/*.png /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
+            chown -R 1000:1000 /home/mados/.local/share/mados
+            copied_home=$(ls -1 /home/mados/.local/share/mados/wallpapers/ 2>/dev/null | wc -l)
+            echo "  → $copied_home wallpapers copied to /home/mados"
+        fi
+    else
+        echo "  → ERROR: $WALLPAPER_APP_DIR not found"
+    fi
+else
+    echo "  → ERROR: mados-wallpaper not installed at $WALLPAPER_APP_DIR"
+fi
 
 # Also install mados-installer (has different structure)
 INSTALLER_APP="mados-installer"
@@ -128,13 +206,6 @@ if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
     cd "$INSTALLER_PYTHON_DIR"
         git pull --ff-only origin main 2>/dev/null || true
     cd /
-    
-    # Fix BIOS GRUB install - patch config_script.py (for older versions)
-    if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
-        # These patches are applied in mados-installer now, kept here for compatibility
-        sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-        sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-    fi
 else
     echo "Installing $INSTALLER_APP from GitHub..."
     rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
@@ -144,35 +215,6 @@ else
         mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
         ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
         
-        # Fix BIOS GRUB install - patch config_script.py (for older versions)
-        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
-            echo "  Patching mados-installer BIOS GRUB install fix..."
-            sed -i 's/grub-install --target=i386-pc --recheck \$disk/grub-install --target=i386-pc --recheck "\$disk"/' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-            sed -i 's|/dev/sda2|/dev/sda3|' "$INSTALLER_PYTHON_DIR/installer/config_script.py" 2>/dev/null || true
-        fi
-
-        # Add pacman %INSTALLED_DB% cleanup to config_script.py
-        if [[ -f "$INSTALLER_PYTHON_DIR/installer/config_script.py" ]]; then
-            echo "  Adding pacman DB cleanup to config script..."
-            PACMAN_CLEANUP='
-# Clean %INSTALLED_DB% from pacman local database (fixes pacman 7.x compatibility)
-PACMAN_LOCAL_DB="/var/lib/pacman/local"
-if [ -d "$PACMAN_LOCAL_DB" ]; then
-    cleaned=0
-    for desc_file in "$PACMAN_LOCAL_DB"/*/desc; do
-        if [ -f "$desc_file" ] && grep -q "^%INSTALLED_DB%$" "$desc_file" 2>/dev/null; then
-            sed -i '/^%INSTALLED_DB%$/,+1d' "$desc_file"
-            cleaned=$((cleaned + 1))
-        fi
-    done
-    if [ "$cleaned" -gt 0 ]; then
-        echo "  Cleaned %INSTALLED_DB% from $cleaned package entries"
-    fi
-fi
-'
-            sed -i "/# Clean up archiso artifacts/a\\
-$PACMAN_CLEANUP" "$INSTALLER_PYTHON_DIR/installer/config_script.py"
-        fi
     else
         echo "⚠ Failed to install $INSTALLER_APP"
     fi
@@ -355,6 +397,29 @@ if [[ -d "$PACMAN_LOCAL_DB" ]]; then
         fi
     done
     echo "  → Cleaned $cleaned package entries"
+fi
+
+# ════════════════════════════════════════════════════════════════════════════
+# Yay (AUR helper) - Pre-install from binary
+# ════════════════════════════════════════════════════════════════════════════
+YAY_VERSION="12.4.1"
+YAY_BIN="/usr/local/bin/yay"
+
+if command -v yay &>/dev/null; then
+    echo "✓ yay already installed"
+else
+    echo "Installing yay ${YAY_VERSION}..."
+    YAY_TMP="/tmp/yay.tar.gz"
+    YAY_URL="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay-${YAY_VERSION}-x86_64.tar.gz"
+    if curl -fsSL --proto '=https' --tlsv1.2 -o "$YAY_TMP" "$YAY_URL" 2>&1; then
+        tar -xzf "$YAY_TMP" -C /tmp
+        mv "/tmp/yay-${YAY_VERSION}-x86_64/yay" "$YAY_BIN"
+        rm -rf "$YAY_TMP" "/tmp/yay-${YAY_VERSION}-x86_64"
+        chmod +x "$YAY_BIN"
+        echo "✓ yay installed to $YAY_BIN"
+    else
+        echo "⚠ Failed to download yay"
+    fi
 fi
 
 echo "=== madOS: Pre-installation complete ==="

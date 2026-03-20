@@ -46,9 +46,11 @@ set $indicator-color     #81A1C1
 ### Output Configuration
 # Brief placeholder background (overridden by mados-sway-wallpapers on startup)
 output * bg #2E3440 solid_color
-# Random per-workspace wallpapers from /usr/share/backgrounds/
-# Assigns a different wallpaper to each workspace and switches on focus
-exec mados-sway-wallpapers
+
+# Initialize wallpaper daemon (copy wallpapers from skel if empty, then init)
+exec mkdir -p ~/.local/share/mados/wallpapers && cp -n /etc/skel/.local/share/mados/wallpapers/* ~/.local/share/mados/wallpapers/ 2>/dev/null || true
+exec mados-wallpaperd init
+exec mados-wallpaperd -d
 
 # Display scaling - adjust scale value to your preference
 # scale 1.0 = 100% (default), 0.8 = 80% (smaller), 0.75 = 75% (even smaller)

@@ -1,0 +1,12 @@
+[Unit]
+Description=Rootkit Hunter Daily Scan
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rkhunter --check --cronjob --report-warnings-only
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

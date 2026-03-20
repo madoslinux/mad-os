@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for security updates
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/pacman -Syu --noconfirm
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

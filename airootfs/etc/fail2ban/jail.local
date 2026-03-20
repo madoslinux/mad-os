@@ -1,0 +1,46 @@
+# /etc/fail2ban/jail.local
+# Fail2Ban configuration for madOS
+
+[DEFAULT]
+# Ban time in seconds (15 minutes - enough to discourage, not too annoying)
+bantime = 900
+# Find time in seconds (5 minutes window)
+findtime = 300
+# Max retries before ban
+maxretry = 5
+# Email to receive notifications
+destemail = root@localhost
+sender = fail2ban@localhost
+# Action - only ban, don't kill services
+action = %(action_mwl)s
+
+# SSH jail - essential for remote access protection
+[sshd]
+enabled = true
+port = ssh
+filter = sshd
+logpath = /var/log/auth.log
+maxretry = 5
+bantime = 900
+findtime = 300
+# Use systemd backend
+backend = systemd
+
+# SSH jail for 2nd attempt (stricter)
+[sshd-ddos]
+enabled = true
+port = ssh
+filter = sshd-ddos
+logpath = /var/log/auth.log
+maxretry = 10
+bantime = 1800
+findtime = 600
+
+# Recidive jail - long ban for repeat offenders
+[recidive]
+enabled = true
+filter = recidive
+logpath = /var/log/fail2ban.log
+maxretry = 3
+bantime = 86400
+findtime = 86400
