@@ -1,23 +1,21 @@
 #!/usr/bin/env bash
-# mados-wallpaperd - Daemon for managing wallpapers via Unix socket
+# mados-wallpaperd - Daemon for managing wallpapers
 # Maintains SQLite DB and applies wallpapers on workspace changes
 
 set -uo pipefail
 
 DATA_DIR="${HOME}/.local/share/mados"
 DB_PATH="${DATA_DIR}/wallpapers.db"
-SOCK_PATH="${DATA_DIR}/daemon.sock"
-LOG_TAG="mados-wallpaperd"
 PID_FILE="${DATA_DIR}/mados-wallpaperd.pid"
 SYSTEM_WALLPAPERS="/usr/share/backgrounds"
-HANDLER_SCRIPT="${DATA_DIR}/socket-handler.sh"
+LOG_FILE="${DATA_DIR}/daemon.log"
 
 log() {
-    echo "[$(date '+%H:%M:%S')] $LOG_TAG: $*" >&2
+    echo "[$(date '+%H:%M:%S')] $*" >&2
 }
 
 cleanup() {
-    rm -f "$SOCK_PATH" "$PID_FILE"
+    rm -f "$PID_FILE"
     log "Daemon stopped"
 }
 
@@ -196,195 +194,6 @@ apply_wallpaper() {
     log "Wallpaper applied successfully"
 }
 
-watch_workspace_hyprland() {
-    log "Hyprland workspace watcher started"
-    local last_ws=""
-    
-    while true; do
-        local ws
-        ws=$(hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1")
-        
-        if [[ -z "$ws" || "$ws" == "null" ]]; then
-            ws="1"
-        fi
-        
-        if [[ "$ws" != "$last_ws" ]]; then
-            log "Hyprland workspace changed: $last_ws -> $ws"
-            
-            local wp mode
-            wp=$(get_wallpaper_for_workspace "$ws")
-            mode=$(get_mode_for_workspace "$ws")
-            
-            if [[ -n "$wp" && -f "$wp" ]]; then
-                apply_wallpaper "$wp" "$mode"
-            else
-                log "No wallpaper for workspace $ws (wp=$wp)"
-            fi
-            
-            last_ws="$ws"
-        fi
-        
-        sleep 0.5
-    done
-}
-
-watch_workspace_sway() {
-    log "Sway workspace watcher started"
-    
-    while read -r event; do
-        local ws
-        ws=$(echo "$event" | jq -r '.current.num' 2>/dev/null || echo "")
-        
-        if [[ -z "$ws" || "$ws" == "null" ]]; then
-            continue
-        fi
-        
-        log "Sway workspace event: $ws"
-        
-        local wp mode
-        wp=$(get_wallpaper_for_workspace "$ws")
-        mode=$(get_mode_for_workspace "$ws")
-        
-        if [[ -n "$wp" && -f "$wp" ]]; then
-            apply_wallpaper "$wp" "$mode"
-        else
-            log "No wallpaper for workspace $ws"
-        fi
-        
-    done < <(swaymsg -t subscribe -m '["workspace"]' 2>/dev/null)
-}
-
-create_handler_script() {
-    cat > "$HANDLER_SCRIPT" <<'HANDLER_EOF'
-#!/usr/bin/env bash
-# Socket handler - processes one request and exits
-
-DATA_DIR="${HOME}/.local/share/mados"
-DB_PATH="${DATA_DIR}/wallpapers.db"
-LOG_TAG="mados-wallpaperd-handler"
-
-log() {
-    echo "[$(date '+%H:%M:%S')] $LOG_TAG: $*" >&2
-}
-
-init_db() {
-    mkdir -p "$(dirname "$DB_PATH")"
-    
-    if [[ ! -f "$DB_PATH" ]]; then
-        sqlite3 "$DB_PATH" <<'SQL'
-PRAGMA journal_mode=WAL;
-CREATE TABLE IF NOT EXISTS wallpapers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    path TEXT UNIQUE NOT NULL
-);
-CREATE TABLE IF NOT EXISTS assignments (
-    workspace INTEGER PRIMARY KEY,
-    wallpaper_id INTEGER NOT NULL REFERENCES wallpapers(id),
-    mode TEXT DEFAULT 'fill'
-);
-SQL
-    fi
-    
-    has_mode=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM pragma_table_info('assignments') WHERE name='mode';" 2>/dev/null || echo "0")
-    if [[ "$has_mode" -eq 0 ]]; then
-        sqlite3 "$DB_PATH" "ALTER TABLE assignments ADD COLUMN mode TEXT DEFAULT 'fill';"
-    fi
-}
-
-detect_wm() {
-    if [[ "${XDG_CURRENT_DESKTOP:-}" == *"sway"* ]] || command -v swaymsg >/dev/null 2>&1; then
-        echo "sway"
-    elif [[ "${XDG_CURRENT_DESKTOP:-}" == *"hypr"* ]] || command -v hyprctl >/dev/null 2>&1; then
-        echo "hyprland"
-    elif command -v swaymsg >/dev/null 2>&1; then
-        echo "sway"
-    elif command -v hyprctl >/dev/null 2>&1; then
-        echo "hyprland"
-    else
-        echo "unknown"
-    fi
-}
-
-get_current_workspace() {
-    local wm=$1
-    case "$wm" in
-        sway)
-            swaymsg -t get_workspaces 2>/dev/null | jq -r '.[] | select(.focused==true) | .num' 2>/dev/null || echo "1"
-            ;;
-        hyprland)
-            hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1"
-            ;;
-        *)
-            echo "1"
-            ;;
-    esac
-}
-
-get_wallpaper_for_workspace() {
-    local ws=$1
-    sqlite3 "$DB_PATH" "SELECT w.path FROM wallpapers w JOIN assignments a ON w.id = a.wallpaper_id WHERE a.workspace = $ws" 2>/dev/null || echo ""
-}
-
-get_mode_for_workspace() {
-    local ws=$1
-    sqlite3 "$DB_PATH" "SELECT a.mode FROM assignments a WHERE a.workspace = $ws" 2>/dev/null || echo "fill"
-}
-
-apply_wallpaper() {
-    local wp=$1
-    local mode=${2:-fill}
-    
-    if [[ -z "$wp" || ! -f "$wp" ]]; then
-        return 1
-    fi
-    
-    if command -v swww >/dev/null 2>&1; then
-        if ! swww query >/dev/null 2>&1; then
-            swww-daemon &
-            disown
-            for _ in $(seq 1 30); do
-                swww query >/dev/null 2>&1 && break
-                sleep 0.3
-            done
-        fi
-        swww img "$wp" --transition-type wipe --transition-duration 0.3 2>/dev/null || \
-        swww img "$wp" 2>/dev/null || return 1
-        sleep 0.5
-    elif command -v swaybg >/dev/null 2>&1; then
-        pkill -f "swaybg.*-i" 2>/dev/null || true
-        swaybg -i "$wp" -m "$mode" &
-    fi
-}
-
-handle_list() {
-    local result
-    result=$(sqlite3 "$DB_PATH" "SELECT json_group_array(json_object('id', id, 'path', path)) FROM wallpapers" 2>/dev/null)
-    if [[ -z "$result" || "$result" == "null" ]]; then
-        echo '{"wallpapers":[]}'
-    else
-        echo "{\"wallpapers\":$result}"
-    fi
-}
-
-handle_get() {
-    local ws=$1
-    
-    if [[ -z "$ws" ]]; then
-        echo '{"error":"workspace required"}'
-        return
-    fi
-    
-    local wp mode
-    wp=$(get_wallpaper_for_workspace "$ws")
-    mode=$(get_mode_for_workspace "$ws")
-    
-    if [[ -n "$wp" ]]; then
-        echo "{\"workspace\":$ws,\"path\":\"$wp\",\"mode\":\"$mode\"}"
-    else
-        echo "{\"workspace\":$ws,\"path\":null,\"mode\":null}"
-    fi
-}
-
 handle_set() {
     local ws=$1
     local wp=$2
@@ -444,6 +253,35 @@ handle_set() {
     fi
 }
 
+handle_list() {
+    local result
+    result=$(sqlite3 "$DB_PATH" "SELECT json_group_array(json_object('id', id, 'path', path)) FROM wallpapers" 2>/dev/null)
+    if [[ -z "$result" || "$result" == "null" ]]; then
+        echo '{"wallpapers":[]}'
+    else
+        echo "{\"wallpapers\":$result}"
+    fi
+}
+
+handle_get() {
+    local ws=$1
+    
+    if [[ -z "$ws" ]]; then
+        echo '{"error":"workspace required"}'
+        return
+    fi
+    
+    local wp mode
+    wp=$(get_wallpaper_for_workspace "$ws")
+    mode=$(get_mode_for_workspace "$ws")
+    
+    if [[ -n "$wp" ]]; then
+        echo "{\"workspace\":$ws,\"path\":\"$wp\",\"mode\":\"$mode\"}"
+    else
+        echo "{\"workspace\":$ws,\"path\":null,\"mode\":null}"
+    fi
+}
+
 handle_current() {
     local wm
     wm=$(detect_wm)
@@ -452,43 +290,62 @@ handle_current() {
     echo "{\"workspace\":$ws,\"wm\":\"$wm\"}"
 }
 
-# Read request from stdin
-read -r request
+watch_workspace_hyprland() {
+    log "Hyprland workspace watcher started"
+    local last_ws=""
+    
+    while true; do
+        local ws
+        ws=$(hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1")
+        
+        if [[ -z "$ws" || "$ws" == "null" ]]; then
+            ws="1"
+        fi
+        
+        if [[ "$ws" != "$last_ws" ]]; then
+            log "Hyprland workspace changed: $last_ws -> $ws"
+            
+            local wp mode
+            wp=$(get_wallpaper_for_workspace "$ws")
+            mode=$(get_mode_for_workspace "$ws")
+            
+            if [[ -n "$wp" && -f "$wp" ]]; then
+                apply_wallpaper "$wp" "$mode"
+            else
+                log "No wallpaper for workspace $ws (wp=$wp)"
+            fi
+            
+            last_ws="$ws"
+        fi
+        
+        sleep 0.5
+    done
+}
 
-if [[ -z "$request" ]]; then
-    exit 0
-fi
-
-log "Received: $request"
-
-cmd=$(echo "$request" | jq -r '.cmd // empty' 2>/dev/null)
-ws=$(echo "$request" | jq -r '.workspace // empty' 2>/dev/null)
-wp=$(echo "$request" | jq -r '.path // empty' 2>/dev/null)
-mode=$(echo "$request" | jq -r '.mode // empty' 2>/dev/null)
-
-log "Parsed: cmd=$cmd, ws=$ws, wp=$wp, mode=$mode"
-
-case "$cmd" in
-    list)
-        handle_list
-        ;;
-    get)
-        handle_get "$ws"
-        ;;
-    set)
-        handle_set "$ws" "$wp" "$mode"
-        ;;
-    current)
-        handle_current
-        ;;
-    *)
-        log "Unknown command: $cmd"
-        echo "{\"error\":\"unknown command: $cmd\"}"
-        ;;
-esac
-HANDLER_EOF
-    chmod +x "$HANDLER_SCRIPT"
-    log "Handler script created at $HANDLER_SCRIPT"
+watch_workspace_sway() {
+    log "Sway workspace watcher started"
+    
+    while read -r event; do
+        local ws
+        ws=$(echo "$event" | jq -r '.current.num' 2>/dev/null || echo "")
+        
+        if [[ -z "$ws" || "$ws" == "null" ]]; then
+            continue
+        fi
+        
+        log "Sway workspace event: $ws"
+        
+        local wp mode
+        wp=$(get_wallpaper_for_workspace "$ws")
+        mode=$(get_mode_for_workspace "$ws")
+        
+        if [[ -n "$wp" && -f "$wp" ]]; then
+            apply_wallpaper "$wp" "$mode"
+        else
+            log "No wallpaper for workspace $ws"
+        fi
+        
+    done < <(swaymsg -t subscribe -m '["workspace"]' 2>/dev/null)
 }
 
 start_daemon() {
@@ -514,8 +371,6 @@ start_daemon() {
         assign_random_wallpapers 6
     fi
     
-    create_handler_script
-    
     local wm
     wm=$(detect_wm)
     log "Starting daemon (WM: $wm)"
@@ -540,53 +395,50 @@ start_daemon() {
         apply_wallpaper "$wp" "$mode"
     fi
     
-    log "Socket server ready on $SOCK_PATH"
+    log "Daemon ready"
     
+    # Keep daemon alive
     while true; do
-        rm -f "$SOCK_PATH"
-        socat UNIX-LISTEN:"$SOCK_PATH",fork,mode=0666 "EXEC:${HANDLER_SCRIPT}"
+        sleep 60
     done
 }
 
 client_mode() {
-    SOCK_PATH="${HOME}/.local/share/mados/daemon.sock"
-    if [[ ! -S "$SOCK_PATH" ]]; then
-        echo "{\"error\":\"daemon not running\"}"
-        exit 1
-    fi
+    local cmd=$1
+    shift
     
-    local request
-    case "$1" in
+    init_db
+    
+    case "$cmd" in
         list)
-            request='{"cmd":"list"}'
+            handle_list
             ;;
         get)
-            if [[ -z "${2:-}" ]]; then
+            local ws=${1:-}
+            if [[ -z "$ws" ]]; then
                 echo "Usage: $0 get <workspace>"
                 exit 1
             fi
-            request=$(jq -n --arg ws "$2" '{"cmd":"get","workspace":($ws | tonumber)}')
+            handle_get "$ws"
             ;;
         set)
-            local ws_arg="${2:-}"
-            if [[ -z "$ws_arg" ]]; then
+            local ws=${1:-}
+            local wp=${2:-}
+            local mode=${3:-fill}
+            if [[ -z "$ws" ]]; then
                 echo "Usage: $0 set <workspace> [path] [mode]"
                 exit 1
             fi
-            local path_arg="${3:-}"
-            local mode_arg="${4:-fill}"
-            if [[ -n "$path_arg" ]]; then
-                request=$(jq -n --arg ws "$ws_arg" --arg path "$path_arg" --arg mode "$mode_arg" '{"cmd":"set","workspace":($ws | tonumber),"path":$path,"mode":$mode}')
-            else
-                request=$(jq -n --arg ws "$ws_arg" '{"cmd":"set","workspace":($ws | tonumber)}')
-            fi
+            handle_set "$ws" "$wp" "$mode"
             ;;
         current)
-            request='{"cmd":"current"}'
+            handle_current
+            ;;
+        *)
+            echo "{\"error\":\"unknown command: $cmd\"}"
+            exit 1
             ;;
     esac
-    
-    echo "$request" | socat - UNIX-CONNECT:"$SOCK_PATH" 2>/dev/null
 }
 
 case "${1:-}" in
