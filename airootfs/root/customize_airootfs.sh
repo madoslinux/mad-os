@@ -180,6 +180,12 @@ if [[ -d "$WALLPAPER_APP_DIR" ]]; then
         copied_skel=$(ls -1 /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null | wc -l)
         echo "  → $copied_skel wallpapers copied to skel"
 
+        # Also copy wallpapers to /usr/share/backgrounds for daemon
+        mkdir -p /usr/share/backgrounds
+        cp "$WALLPAPER_APP_DIR"/*.png /usr/share/backgrounds/ 2>/dev/null || true
+        wp_sys=$(ls -1 /usr/share/backgrounds/*.png 2>/dev/null | wc -l)
+        echo "  → $wp_sys wallpapers copied to /usr/share/backgrounds"
+
         # Also copy wallpapers to existing mados user (for live ISO)
         if [[ -d /home/mados ]]; then
             mkdir -p /home/mados/.local/share/mados/wallpapers

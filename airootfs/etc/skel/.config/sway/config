@@ -44,12 +44,11 @@ set $border-color        #4C566A
 set $indicator-color     #81A1C1
 
 ### Output Configuration
-# Brief placeholder background (overridden by mados-sway-wallpapers on startup)
+# Brief placeholder background (overridden by mados-wallpaperd on startup)
 output * bg #2E3440 solid_color
 
-# Initialize wallpaper daemon (copy wallpapers from skel if empty, then init)
-exec mkdir -p ~/.local/share/mados/wallpapers && cp -n /etc/skel/.local/share/mados/wallpapers/* ~/.local/share/mados/wallpapers/ 2>/dev/null || true
-exec mados-wallpaperd init
+# Initialize wallpaper daemons
+exec swww-daemon
 exec mados-wallpaperd -d
 
 # Display scaling - adjust scale value to your preference

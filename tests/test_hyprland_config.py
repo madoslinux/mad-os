@@ -1485,13 +1485,13 @@ class TestSwayWallpaperStartup(unittest.TestCase):
         )
 
     def test_sway_config_launches_wallpaper_script(self):
-        """Sway config must exec mados-sway-wallpapers."""
+        """Sway config must exec mados-wallpaperd."""
         with open(self.SWAY_CONF) as f:
             content = f.read()
         self.assertIn(
-            "mados-sway-wallpapers",
+            "mados-wallpaperd",
             content,
-            "Sway config must launch mados-sway-wallpapers via exec",
+            "Sway config must launch mados-wallpaperd via exec",
         )
 
     def test_profiledef_has_wallpaper_script_permissions(self):
