@@ -1236,17 +1236,17 @@ class TestHyprlandConfigVariables(unittest.TestCase):
 class TestWallpaperGlitchScript(unittest.TestCase):
     """Verify the wallpaper glitch script exists and is well-formed."""
 
-    SCRIPT_PATH = os.path.join(BIN_DIR, "mados-wallpaper-glitch")
+    SCRIPT_PATH = os.path.join(BIN_DIR, "mados-wallpaper-hyprland")
 
     def test_script_exists(self):
-        """mados-wallpaper-glitch script must exist."""
+        """mados-wallpaper-hyprland script must exist."""
         self.assertTrue(
             os.path.isfile(self.SCRIPT_PATH),
-            "mados-wallpaper-glitch script missing from /usr/local/bin/",
+            "mados-wallpaper-hyprland script missing from /usr/local/bin/",
         )
 
     def test_script_has_shebang(self):
-        """mados-wallpaper-glitch must have a bash shebang."""
+        """mados-wallpaper-hyprland must have a bash shebang."""
         with open(self.SCRIPT_PATH) as f:
             first_line = f.readline().strip()
         self.assertTrue(
@@ -1255,19 +1255,19 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         )
 
     def test_script_uses_swww(self):
-        """mados-wallpaper-glitch must use swww for wallpaper transitions."""
+        """mados-wallpaper-hyprland must use swww for wallpaper transitions."""
         with open(self.SCRIPT_PATH) as f:
             content = f.read()
         self.assertIn("swww", content, "Script must use swww for transitions")
 
     def test_script_listens_for_workspace_events(self):
-        """mados-wallpaper-glitch must listen for workspace change events."""
+        """mados-wallpaper-hyprland must listen for workspace change events."""
         with open(self.SCRIPT_PATH) as f:
             content = f.read()
         self.assertIn("workspace", content, "Script must handle workspace events")
 
     def test_script_uses_share_backgrounds(self):
-        """mados-wallpaper-glitch must read wallpapers from /usr/share/backgrounds/."""
+        """mados-wallpaper-hyprland must read wallpapers from /usr/share/backgrounds/."""
         with open(self.SCRIPT_PATH) as f:
             content = f.read()
         self.assertIn(
@@ -1277,7 +1277,7 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         )
 
     def test_script_assigns_per_workspace_wallpapers(self):
-        """mados-wallpaper-glitch must assign different wallpapers per workspace."""
+        """mados-wallpaper-hyprland must assign different wallpapers per workspace."""
         with open(self.SCRIPT_PATH) as f:
             content = f.read()
         self.assertIn(
@@ -1292,7 +1292,7 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         )
 
     def test_script_kills_previous_instances(self):
-        """mados-wallpaper-glitch must prevent duplicate instances."""
+        """mados-wallpaper-hyprland must prevent duplicate instances."""
         with open(self.SCRIPT_PATH) as f:
             content = f.read()
         self.assertIn(
@@ -1305,24 +1305,24 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         """hyprland.conf must exec-once the wallpaper glitch script."""
         content = _read_config()
         self.assertIn(
-            "mados-wallpaper-glitch",
+            "mados-wallpaper-hyprland",
             content,
-            "hyprland.conf must launch mados-wallpaper-glitch via exec-once",
+            "hyprland.conf must launch mados-wallpaper-hyprland via exec-once",
         )
 
     def test_profiledef_has_permissions(self):
-        """profiledef.sh must set permissions for mados-wallpaper-glitch."""
+        """profiledef.sh must set permissions for mados-wallpaper-hyprland."""
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")
         with open(profiledef) as f:
             content = f.read()
         self.assertIn(
-            "mados-wallpaper-glitch",
+            "mados-wallpaper-hyprland",
             content,
-            "profiledef.sh must include permissions for mados-wallpaper-glitch",
+            "profiledef.sh must include permissions for mados-wallpaper-hyprland",
         )
 
     def test_script_sets_initial_wallpaper_without_transition(self):
-        """mados-wallpaper-glitch must set initial wallpaper without glitch transition.
+        """mados-wallpaper-hyprland must set initial wallpaper without glitch transition.
 
         The initial wallpaper should be set with no/fast transition for
         maximum reliability. Glitch transitions are only for workspace switching.
@@ -1342,7 +1342,7 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         )
 
     def test_script_checks_dependencies(self):
-        """mados-wallpaper-glitch must check for required tools before running.
+        """mados-wallpaper-hyprland must check for required tools before running.
 
         The script should exit gracefully if swww or socat are not
         available, to avoid interfering with the normal wallpaper setup.
@@ -1368,7 +1368,7 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         )
 
     def test_script_uses_sqlite(self):
-        """mados-wallpaper-glitch must use SQLite for wallpaper storage."""
+        """mados-wallpaper-hyprland must use SQLite for wallpaper storage."""
         with open(self.SCRIPT_PATH) as f:
             content = f.read()
         self.assertIn(
@@ -1395,7 +1395,7 @@ class TestWallpaperGlitchScript(unittest.TestCase):
     def test_hyprland_wallpaper_no_placeholder_line(self):
         """hyprland.conf must NOT have a swww img placeholder line.
 
-        The initial wallpaper is handled by mados-wallpaper-glitch daemon
+        The initial wallpaper is handled by mados-wallpaper-hyprland daemon
         which waits for swww-daemon and sets the wallpaper without transition.
         A separate swww img placeholder causes a race condition and flicker.
         """
@@ -1407,7 +1407,7 @@ class TestWallpaperGlitchScript(unittest.TestCase):
             if "swww img" in stripped and "/usr/share/backgrounds/" in stripped:
                 self.fail(
                     "hyprland.conf must NOT have a swww img placeholder line; "
-                    "mados-wallpaper-glitch handles initial wallpaper setup"
+                    "mados-wallpaper-hyprland handles initial wallpaper setup"
                 )
 
 
@@ -2062,21 +2062,21 @@ class TestHyprlandWorkspaceCycleScript(unittest.TestCase):
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Workspace count consistency (both compositors limited to 5)
+# Workspace count consistency (both compositors limited to 6)
 # ═══════════════════════════════════════════════════════════════════════════
 class TestWorkspaceCountConsistency(unittest.TestCase):
-    """Verify both compositors are limited to 5 workspaces."""
+    """Verify both compositors are limited to 6 workspaces."""
 
     HYPRLAND_CONF = os.path.join(SKEL_DIR, ".config", "hypr", "hyprland.conf")
     SWAY_CONF = os.path.join(SKEL_DIR, ".config", "sway", "config")
-    GLITCH_SCRIPT = os.path.join(BIN_DIR, "mados-wallpaper-glitch")
+    GLITCH_SCRIPT = os.path.join(BIN_DIR, "mados-wallpaper-hyprland")
     SWAY_WP_SCRIPT = os.path.join(BIN_DIR, "mados-sway-wallpapers")
 
-    def test_hyprland_no_workspace_6_to_10(self):
-        """Hyprland config must not bind workspaces 6-10."""
+    def test_hyprland_no_workspace_7_to_10(self):
+        """Hyprland config must not bind workspaces 7-10."""
         with open(self.HYPRLAND_CONF) as f:
             content = f.read()
-        for ws in range(6, 11):
+        for ws in range(7, 11):
             for pattern in [f"workspace, {ws}", f"workspace {ws}", f"movetoworkspace, {ws}"]:
                 for line in content.splitlines():
                     stripped = line.strip()
@@ -2085,14 +2085,14 @@ class TestWorkspaceCountConsistency(unittest.TestCase):
                     self.assertNotIn(
                         pattern,
                         stripped,
-                        f"Hyprland config must not bind workspace {ws} (only 5 workspaces allowed)",
+                        f"Hyprland config must not bind workspace {ws} (only 6 workspaces allowed)",
                     )
 
-    def test_sway_no_workspace_6_to_10(self):
-        """Sway config must not bind workspaces 6-10."""
+    def test_sway_no_workspace_7_to_10(self):
+        """Sway config must not bind workspaces 7-10."""
         with open(self.SWAY_CONF) as f:
             content = f.read()
-        for ws in range(6, 11):
+        for ws in range(7, 11):
             for pattern in [f"workspace number {ws}", f"to workspace number {ws}"]:
                 for line in content.splitlines():
                     stripped = line.strip()
@@ -2101,31 +2101,31 @@ class TestWorkspaceCountConsistency(unittest.TestCase):
                     self.assertNotIn(
                         pattern,
                         stripped,
-                        f"Sway config must not bind workspace {ws} (only 5 workspaces allowed)",
+                        f"Sway config must not bind workspace {ws} (only 6 workspaces allowed)",
                     )
 
-    def test_glitch_script_max_workspaces_5(self):
-        """mados-wallpaper-glitch must set MAX_WORKSPACES=5."""
+    def test_glitch_script_max_workspaces_6(self):
+        """mados-wallpaper-hyprland must set MAX_WORKSPACES=6."""
         with open(self.GLITCH_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "MAX_WORKSPACES=5",
+            "MAX_WORKSPACES=6",
             content,
-            "mados-wallpaper-glitch must limit to 5 workspaces",
+            "mados-wallpaper-hyprland must limit to 6 workspaces",
         )
 
-    def test_sway_wallpaper_script_max_workspaces_5(self):
-        """mados-sway-wallpapers must set MAX_WORKSPACES=5."""
+    def test_sway_wallpaper_script_max_workspaces_6(self):
+        """mados-sway-wallpapers must set MAX_WORKSPACES=6."""
         with open(self.SWAY_WP_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "MAX_WORKSPACES=5",
+            "MAX_WORKSPACES=6",
             content,
-            "mados-sway-wallpapers must limit to 5 workspaces",
+            "mados-sway-wallpapers must limit to 6 workspaces",
         )
 
     def test_glitch_script_ipc_uses_double_arrow(self):
-        """mados-wallpaper-glitch must parse workspace>> (double >) IPC events."""
+        """mados-wallpaper-hyprland must parse workspace>> (double >) IPC events."""
         with open(self.GLITCH_SCRIPT) as f:
             content = f.read()
         self.assertIn(

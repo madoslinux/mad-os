@@ -15,8 +15,11 @@ if [[ -f "$DB_PATH" ]] && command -v sqlite3 >/dev/null 2>&1; then
         "SELECT w.path, COALESCE(a.mode, 'fill') FROM assignments a JOIN wallpapers w ON a.wallpaper_id=w.id WHERE a.workspace=$ws LIMIT 1;" 2>/dev/null)"
     if [[ -n "$wallpaper" && -f "$wallpaper" ]]; then
         if command -v swww >/dev/null 2>&1 && swww query >/dev/null 2>&1; then
-            swww img "$wallpaper" --transition-type wipe --transition-duration 0.3 2>/dev/null || \
-            swww img "$wallpaper" 2>/dev/null || true
+            if swww img "$wallpaper" --transition-type wipe --transition-duration 0.3 2>/dev/null; then
+                sleep 0.5
+            elif swww img "$wallpaper" 2>/dev/null; then
+                sleep 0.5
+            fi
         elif command -v swaybg >/dev/null 2>&1; then
             pkill -f "swaybg.*-i" 2>/dev/null || true
             swaybg -i "$wallpaper" -m "$mode" &

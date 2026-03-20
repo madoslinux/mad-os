@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mados-wallpaper-glitch - Random per-workspace wallpapers with glitch transitions for Hyprland
+# mados-wallpaper-hyprland - Per-workspace wallpapers for Hyprland
 # On startup, assigns a random wallpaper from /usr/share/backgrounds/
 # to each workspace and switches wallpaper with cyberpunk glitch effects
 # on workspace focus events via Hyprland IPC socket.
@@ -9,8 +9,8 @@
 # reboots and can be read/edited by a future wallpaper-settings GUI.
 
 WALLPAPER_DIR="/usr/share/backgrounds"
-MAX_WORKSPACES=5
-LOG_TAG="mados-wallpaper-glitch"
+MAX_WORKSPACES=6
+LOG_TAG="mados-wallpaper-hyprland"
 DB_DIR="${HOME}/.local/share/mados"
 DB_PATH="${DB_DIR}/wallpapers.db"
 
@@ -31,7 +31,7 @@ trap cleanup EXIT
 kill_previous() {
     local my_pid=$$
     local pids
-    pids="$(pgrep -f "mados-wallpaper-glitch" 2>/dev/null)" || true
+    pids="$(pgrep -f "mados-wallpaper-hyprland" 2>/dev/null)" || true
     for pid in $pids; do
         if [[ "$pid" != "$my_pid" ]]; then
             kill "$pid" 2>/dev/null || true
@@ -170,6 +170,7 @@ preload_wallpapers() {
     for wp in "${WALLPAPERS[@]}"; do
         if [[ -f "$wp" ]]; then
             swww img "$wp" --transition-type none 2>/dev/null || true
+            sleep 0.1
         fi
     done
     log "Preloading complete"
@@ -193,8 +194,10 @@ set_wallpaper() {
             --transition-fps 60 \
             --transition-step 90 \
             --transition-angle 45 2>/dev/null
+        sleep 0.5
     else
         swww img "$wallpaper" --transition-type none 2>/dev/null
+        sleep 0.3
     fi
 }
 

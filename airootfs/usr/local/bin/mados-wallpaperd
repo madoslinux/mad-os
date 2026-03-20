@@ -8,7 +8,6 @@ DB_PATH="${HOME}/.local/share/mados/wallpapers.db"
 WALLPAPER_DIR="${HOME}/.local/share/mados/wallpapers"
 LOG_TAG="mados-wallpaperd"
 PID_FILE="${HOME}/.local/share/mados/mados-wallpaperd.pid"
-SOCKET_PATH="${HOME}/.local/share/mados/mados-wallpaperd.sock"
 
 log() {
     echo "$LOG_TAG: $*" >&2
@@ -116,7 +115,8 @@ mkdir -p "$TRANSFORM_CACHE"
 transform_wallpaper() {
     local wp=$1
     local mode=${2:-fill}
-    local cache_file="${TRANSFORM_CACHE}/$(basename "$wp" | sed 's/\.[^.]*$//')_${mode}.jpg"
+    local cache_file
+    cache_file="${TRANSFORM_CACHE}/$(basename "$wp" | sed 's/\.[^.]*$//')_${mode}.jpg"
     
     if [[ -f "$cache_file" ]]; then
         echo "$cache_file"
@@ -173,12 +173,22 @@ apply_wallpaper() {
     if command -v swww >/dev/null 2>&1; then
         if ! swww query >/dev/null 2>&1; then
             swww-daemon &
-            sleep 0.5
+            disown
+            for _ in $(seq 1 30); do
+                swww query >/dev/null 2>&1 && break
+                sleep 0.3
+            done
         fi
         local transformed
         transformed=$(transform_wallpaper "$wp" "$mode")
-        swww img "$transformed" --transition-type wipe --transition-duration 0.3 2>/dev/null || \
-        swww img "$transformed" 2>/dev/null || return 1
+        if swww img "$transformed" --transition-type wipe --transition-duration 0.3 2>/dev/null; then
+            sleep 0.5
+        elif swww img "$transformed" 2>/dev/null; then
+            sleep 0.5
+        else
+            log "swww img failed for $transformed"
+            return 1
+        fi
     elif command -v swaybg >/dev/null 2>&1; then
         pkill -f "swaybg.*-i" 2>/dev/null || true
         swaybg -i "$wp" -m "$mode" &
@@ -277,7 +287,7 @@ handle_client() {
             init_db
             sync_wallpapers
             # Fallback: copy wallpapers from skel if directory is empty
-            if [[ $(ls -1 "$WALLPAPER_DIR" 2>/dev/null | wc -l) -eq 0 ]]; then
+            if [[ $(find "$WALLPAPER_DIR" -maxdepth 1 -type f 2>/dev/null | wc -l) -eq 0 ]]; then
                 log "No wallpapers found, copying from skel..."
                 mkdir -p "$WALLPAPER_DIR"
                 cp /etc/skel/.local/share/mados/wallpapers/* "$WALLPAPER_DIR/" 2>/dev/null || true
@@ -337,7 +347,7 @@ daemon_loop() {
     sync_wallpapers
     
     # Fallback: copy wallpapers from skel if directory is empty
-    if [[ $(ls -1 "$WALLPAPER_DIR" 2>/dev/null | wc -l) -eq 0 ]]; then
+    if [[ $(find "$WALLPAPER_DIR" -maxdepth 1 -type f 2>/dev/null | wc -l) -eq 0 ]]; then
         log "No wallpapers found, copying from skel..."
         mkdir -p "$WALLPAPER_DIR"
         cp /etc/skel/.local/share/mados/wallpapers/* "$WALLPAPER_DIR/" 2>/dev/null || true

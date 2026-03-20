@@ -47,7 +47,11 @@ file_permissions=(
   ["/usr/local/bin/start-hyprland"]="0:0:755"
   ["/usr/local/bin/select-compositor"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
-  ["/usr/local/bin/mados-wallpaper-glitch"]="0:0:755"
+  ["/usr/local/bin/mados-install-yay"]="0:0:755"
+  ["/usr/local/bin/mados-wallpaper-hyprland"]="0:0:755"
+  ["/usr/local/bin/mados-wallpaperd"]="0:0:755"
+  ["/usr/local/bin/mados-hyprland-wallpaper"]="0:0:755"
+  ["/usr/local/bin/mados-sway-wallpaper"]="0:0:755"
   ["/usr/local/bin/mados-sway-wallpapers"]="0:0:755"
   ["/usr/local/bin/mados-sway-wallpaper-set"]="0:0:755"
   ["/usr/local/bin/mados-sway-workspace-cycle"]="0:0:755"
@@ -93,9 +97,11 @@ file_permissions=(
 
   # GUFW Firewall GUI
   ["/usr/local/bin/gufw"]="0:0:755"
+  ["/usr/local/bin/gufw-pkexec"]="0:0:755"
   ["/etc/sudoers.d/gufw"]="0:0:440"
   ["/etc/polkit-1/rules.d/49-nopasswd_gufw.rules"]="0:0:644"
   ["/usr/share/applications/gufw-sudo.desktop"]="0:0:644"
+  ["/usr/share/polkit-1/actions/org.archlinux.pkexec.gufw.policy"]="0:0:644"
 
   # Security hardening
   ["/etc/sysctl.d/99-security.conf"]="0:0:644"

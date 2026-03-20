@@ -12,7 +12,7 @@
 # per event — comparable to the Hyprland socat approach.
 
 WALLPAPER_DIR="${WALLPAPER_DIR:-/usr/share/backgrounds}"
-MAX_WORKSPACES=5
+MAX_WORKSPACES=6
 LOG_TAG="mados-sway-wallpapers"
 DB_DIR="${HOME}/.local/share/mados"
 DB_PATH="${DB_DIR}/wallpapers.db"
@@ -171,6 +171,7 @@ preload_wallpapers() {
     for wp in "${WALLPAPERS[@]}"; do
         if [[ -f "$wp" ]]; then
             swww img "$wp" --transition-type none 2>/dev/null || true
+            sleep 0.1
         fi
     done
     log "Preloading complete"
@@ -189,8 +190,10 @@ set_wallpaper() {
             --transition-type fade \
             --transition-duration 0.5 \
             --transition-fps 60 2>/dev/null
+        sleep 0.5
     else
         swww img "$wallpaper" --transition-type none 2>/dev/null
+        sleep 0.3
     fi
 }
 
