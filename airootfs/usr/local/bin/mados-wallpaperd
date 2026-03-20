@@ -227,7 +227,12 @@ set_wallpaper_db() {
         return 1
     fi
     
-    # If wallpaper path provided, ONLY update DB (don't apply)
+    # Detect current workspace
+    local wm current_ws
+    wm=$(detect_wm)
+    current_ws=$(get_current_workspace "$wm")
+    
+    # If wallpaper path provided, update DB
     if [[ -n "$wp" && -f "$wp" ]]; then
         # Get or insert wallpaper ID
         local wallpaper_id
@@ -244,7 +249,14 @@ set_wallpaper_db() {
             [[ -z "$mode" ]] && mode="fill"
             sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
         fi
-        log "Wallpaper for workspace $ws updated in DB (not applying - compositor will apply on next workspace change)"
+        
+        # Only apply immediately if we're setting the current workspace wallpaper
+        if [[ "$ws" == "$current_ws" ]]; then
+            log "Setting wallpaper for current workspace $ws"
+            apply_wallpaper "$wp" "$mode"
+        else
+            log "Wallpaper for workspace $ws updated in DB (will apply on workspace change)"
+        fi
         return 0
     fi
     
