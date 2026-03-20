@@ -1,461 +1,517 @@
-#!/usr/bin/env bash
-# mados-wallpaperd - Daemon for managing wallpapers
-# Maintains SQLite DB and applies wallpapers on workspace changes
+#!/usr/bin/env python3
+"""
+mados-wallpaperd - REST API daemon for wallpaper management
+Only listens on localhost to avoid security issues.
+"""
 
-set -uo pipefail
+import os
+import sys
+import json
+import sqlite3
+import subprocess
+import threading
+import re
+import time
+from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 
-DATA_DIR="${HOME}/.local/share/mados"
-DB_PATH="${DATA_DIR}/wallpapers.db"
-PID_FILE="${DATA_DIR}/mados-wallpaperd.pid"
-SYSTEM_WALLPAPERS="/usr/share/backgrounds"
-LOG_FILE="${DATA_DIR}/daemon.log"
+DATA_DIR = os.path.expanduser("~/.local/share/mados")
+DB_PATH = os.path.join(DATA_DIR, "wallpapers.db")
+SYSTEM_WALLPAPERS = "/usr/share/backgrounds"
+PID_FILE = os.path.join(DATA_DIR, "mados-wallpaperd.pid")
+PORT = 18765  # Non-privileged port on localhost
 
-log() {
-    echo "[$(date '+%H:%M:%S')] $*" >&2
-}
+def log(msg):
+    print(f"[mados-wallpaperd] {msg}", file=sys.stderr, flush=True)
 
-cleanup() {
-    rm -f "$PID_FILE"
-    log "Daemon stopped"
-}
+def init_db():
+    os.makedirs(DATA_DIR, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS wallpapers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            path TEXT UNIQUE NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS assignments (
+            workspace INTEGER PRIMARY KEY,
+            wallpaper_id INTEGER NOT NULL REFERENCES wallpapers(id),
+            mode TEXT DEFAULT 'fill'
+        )
+    """)
+    # Add mode column if missing (migration)
+    try:
+        conn.execute("SELECT mode FROM assignments LIMIT 1")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE assignments ADD COLUMN mode TEXT DEFAULT 'fill'")
+    conn.commit()
+    conn.close()
 
-trap cleanup EXIT
-
-init_db() {
-    mkdir -p "$DATA_DIR"
-    
-    if [[ ! -f "$DB_PATH" ]]; then
-        sqlite3 "$DB_PATH" <<'SQL'
-PRAGMA journal_mode=WAL;
-CREATE TABLE IF NOT EXISTS wallpapers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    path TEXT UNIQUE NOT NULL
-);
-CREATE TABLE IF NOT EXISTS assignments (
-    workspace INTEGER PRIMARY KEY,
-    wallpaper_id INTEGER NOT NULL REFERENCES wallpapers(id),
-    mode TEXT DEFAULT 'fill'
-);
-SQL
-        log "Database created at $DB_PATH"
-    fi
-    
-    has_mode=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM pragma_table_info('assignments') WHERE name='mode';" 2>/dev/null || echo "0")
-    if [[ "$has_mode" -eq 0 ]]; then
-        log "Migrating database: adding mode column..."
-        sqlite3 "$DB_PATH" "ALTER TABLE assignments ADD COLUMN mode TEXT DEFAULT 'fill';"
-    fi
-}
-
-populate_from_system() {
-    local count
-    count=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM wallpapers" 2>/dev/null || echo "0")
-    
-    if [[ "$count" -gt 0 ]]; then
-        log "DB already has $count wallpapers"
+def populate_from_system():
+    conn = sqlite3.connect(DB_PATH)
+    count = conn.execute("SELECT COUNT(*) FROM wallpapers").fetchone()[0]
+    if count > 0:
+        conn.close()
         return
-    fi
     
-    log "DB empty, populating from $SYSTEM_WALLPAPERS..."
-    
-    if [[ ! -d "$SYSTEM_WALLPAPERS" ]]; then
-        log "ERROR: $SYSTEM_WALLPAPERS does not exist"
+    if not os.path.isdir(SYSTEM_WALLPAPERS):
+        log(f"System wallpapers dir not found: {SYSTEM_WALLPAPERS}")
+        conn.close()
         return
-    fi
     
-    shopt -s nullglob
-    local files=()
-    files=("$SYSTEM_WALLPAPERS"/*.png "$SYSTEM_WALLPAPERS"/*.jpg "$SYSTEM_WALLPAPERS"/*.jpeg "$SYSTEM_WALLPAPERS"/*.webp)
+    import glob
+    files = glob.glob(os.path.join(SYSTEM_WALLPAPERS, "*.png"))
+    files += glob.glob(os.path.join(SYSTEM_WALLPAPERS, "*.jpg"))
+    files += glob.glob(os.path.join(SYSTEM_WALLPAPERS, "*.jpeg"))
+    files += glob.glob(os.path.join(SYSTEM_WALLPAPERS, "*.webp"))
     
-    if [[ ${#files[@]} -eq 0 ]]; then
-        log "ERROR: No wallpapers found in $SYSTEM_WALLPAPERS"
+    if not files:
+        log(f"No wallpapers found in {SYSTEM_WALLPAPERS}")
+        conn.close()
         return
-    fi
     
-    local shuffled
-    shuffled=$(printf '%s\n' "${files[@]}" | shuf)
+    import random
+    random.shuffle(files)
     
-    local inserted=0
-    while IFS= read -r file; do
-        local escaped="${file//\'/\'\'}"
-        if sqlite3 "$DB_PATH" "INSERT OR IGNORE INTO wallpapers(path) VALUES('$escaped');" 2>/dev/null; then
-            ((inserted++)) || true
-        fi
-    done <<< "$shuffled"
+    inserted = 0
+    for f in files:
+        try:
+            escaped = f.replace("'", "''")
+            conn.execute(f"INSERT OR IGNORE INTO wallpapers(path) VALUES('{escaped}')")
+            inserted += 1
+        except Exception as e:
+            log(f"Error inserting wallpaper: {e}")
     
-    log "Inserted $inserted wallpapers from system"
-}
+    conn.commit()
+    conn.close()
+    log(f"Inserted {inserted} wallpapers from system")
 
-assign_random_wallpapers() {
-    local max_ws=${1:-6}
-    
-    local wallpapers
-    wallpapers=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers" 2>/dev/null)
-    
-    if [[ -z "$wallpapers" ]]; then
-        log "No wallpapers to assign"
-        return 1
-    fi
-    
-    local wallpapers_array
-    IFS=$'\n' read -d '' -r -a wallpapers_array <<< "$wallpapers" || true
-    local total=${#wallpapers_array[@]}
-    
-    if [[ $total -eq 0 ]]; then
+def assign_random_wallpapers(max_ws=6):
+    conn = sqlite3.connect(DB_PATH)
+    wallpapers = conn.execute("SELECT id FROM wallpapers").fetchall()
+    if not wallpapers:
+        conn.close()
+        log("No wallpapers to assign")
         return
-    fi
     
-    for ws in $(seq 1 "$max_ws"); do
-        local random_idx=$((RANDOM % total))
-        local wallpaper_id="${wallpapers_array[$random_idx]}"
-        local mode="fill"
-        sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
-    done
+    wallpapers = [w[0] for w in wallpapers]
+    import random
     
-    log "Assigned random wallpapers to $max_ws workspaces"
-}
+    for ws in range(1, max_ws + 1):
+        wp_id = random.choice(wallpapers)
+        conn.execute(f"INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES({ws}, {wp_id}, 'fill')")
+    
+    conn.commit()
+    conn.close()
+    log(f"Assigned random wallpapers to {max_ws} workspaces")
 
-detect_wm() {
-    if [[ "${XDG_CURRENT_DESKTOP:-}" == *"sway"* ]] || command -v swaymsg >/dev/null 2>&1; then
-        echo "sway"
-    elif [[ "${XDG_CURRENT_DESKTOP:-}" == *"hypr"* ]] || command -v hyprctl >/dev/null 2>&1; then
-        echo "hyprland"
-    elif command -v swaymsg >/dev/null 2>&1; then
-        echo "sway"
-    elif command -v hyprctl >/dev/null 2>&1; then
-        echo "hyprland"
-    else
-        echo "unknown"
-    fi
-}
+def detect_wm():
+    desktop = os.environ.get("XDG_CURRENT_DESKTOP", "").lower()
+    if "sway" in desktop:
+        return "sway"
+    elif "hypr" in desktop:
+        return "hyprland"
+    # Fallback checks
+    try:
+        subprocess.run(["swaymsg"], capture_output=True, timeout=2)
+        return "sway"
+    except Exception:
+        pass
+    try:
+        subprocess.run(["hyprctl"], capture_output=True, timeout=2)
+        return "hyprland"
+    except Exception:
+        pass
+    return "unknown"
 
-get_current_workspace() {
-    local wm=$1
-    case "$wm" in
-        sway)
-            swaymsg -t get_workspaces 2>/dev/null | jq -r '.[] | select(.focused==true) | .num' 2>/dev/null || echo "1"
-            ;;
-        hyprland)
-            hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1"
-            ;;
-        *)
-            echo "1"
-            ;;
-    esac
-}
+def get_current_workspace(wm):
+    try:
+        if wm == "sway":
+            result = subprocess.run(
+                ["swaymsg", "-t", "get_workspaces"],
+                capture_output=True, text=True, timeout=5
+            )
+            for ws in json.loads(result.stdout):
+                if ws.get("focused"):
+                    return ws.get("num", 1)
+        elif wm == "hyprland":
+            result = subprocess.run(
+                ["hyprctl", "activeworkspace"],
+                capture_output=True, text=True, timeout=5
+            )
+            match = re.search(r"workspace ID (\d+)", result.stdout)
+            if match:
+                return int(match.group(1))
+    except Exception as e:
+        log(f"Error getting workspace: {e}")
+    return 1
 
-get_wallpaper_for_workspace() {
-    local ws=$1
-    sqlite3 "$DB_PATH" "SELECT w.path FROM wallpapers w JOIN assignments a ON w.id = a.wallpaper_id WHERE a.workspace = $ws" 2>/dev/null || echo ""
-}
+def get_wallpaper_for_workspace(ws):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        result = conn.execute(
+            "SELECT w.path FROM wallpapers w JOIN assignments a ON w.id = a.wallpaper_id WHERE a.workspace = ?",
+            (ws,)
+        ).fetchone()
+        conn.close()
+        return result[0] if result else None
+    except Exception as e:
+        log(f"Error getting wallpaper: {e}")
+        return None
 
-get_mode_for_workspace() {
-    local ws=$1
-    sqlite3 "$DB_PATH" "SELECT a.mode FROM assignments a WHERE a.workspace = $ws" 2>/dev/null || echo "fill"
-}
+def get_mode_for_workspace(ws):
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        result = conn.execute("SELECT mode FROM assignments WHERE workspace = ?", (ws,)).fetchone()
+        conn.close()
+        return result[0] if result else "fill"
+    except Exception:
+        return "fill"
 
-apply_wallpaper() {
-    local wp=$1
-    local mode=${2:-fill}
+def apply_wallpaper(wp, mode="fill"):
+    if not wp or not os.path.isfile(wp):
+        log(f"Wallpaper not found: {wp}")
+        return False
     
-    if [[ -z "$wp" ]]; then
-        log "apply_wallpaper: no wallpaper path provided"
-        return 1
-    fi
+    log(f"Applying wallpaper: {wp} (mode: {mode})")
     
-    if [[ ! -f "$wp" ]]; then
-        log "apply_wallpaper: wallpaper not found: $wp"
-        return 1
-    fi
+    # Check for swww
+    try:
+        result = subprocess.run(["swww", "query"], capture_output=True, timeout=2)
+        swww_running = result.returncode == 0
+    except Exception:
+        swww_running = False
     
-    log "Applying wallpaper: $wp (mode: $mode)"
+    if not swww_running:
+        log("Starting swww-daemon...")
+        subprocess.Popen(["swww-daemon"], detached=True)
+        for _ in range(30):
+            time.sleep(0.3)
+            try:
+                result = subprocess.run(["swww", "query"], capture_output=True, timeout=1)
+                if result.returncode == 0:
+                    swww_running = True
+                    break
+            except Exception:
+                pass
     
-    if command -v swww >/dev/null 2>&1; then
-        if ! swww query >/dev/null 2>&1; then
-            log "Starting swww-daemon..."
-            swww-daemon &
-            disown
-            for _ in $(seq 1 30); do
-                swww query >/dev/null 2>&1 && break
-                sleep 0.3
-            done
-        fi
-        swww img "$wp" --transition-type wipe --transition-duration 0.3 2>/dev/null || \
-        swww img "$wp" 2>/dev/null || return 1
-        sleep 0.5
-    elif command -v swaybg >/dev/null 2>&1; then
-        pkill -f "swaybg.*-i" 2>/dev/null || true
-        swaybg -i "$wp" -m "$mode" &
-    else
-        log "ERROR: No wallpaper setter found (swww/swaybg)"
-        return 1
-    fi
+    if swww_running:
+        try:
+            subprocess.run(
+                ["swww", "img", wp, "--transition-type", "wipe", "--transition-duration", "0.3"],
+                capture_output=True, timeout=10
+            )
+            time.sleep(0.5)
+            log("Wallpaper applied via swww")
+            return True
+        except Exception as e:
+            log(f"swww error: {e}")
     
-    log "Wallpaper applied successfully"
-}
+    # Fallback to swaybg
+    try:
+        subprocess.run(["pkill", "-f", "swaybg.*-i"], capture_output=True)
+        subprocess.Popen(["swaybg", "-i", wp, "-m", mode])
+        log("Wallpaper applied via swaybg")
+        return True
+    except Exception as e:
+        log(f"swaybg error: {e}")
+    
+    log("No wallpaper setter available")
+    return False
 
-handle_set() {
-    local ws=$1
-    local wp=$2
-    local mode=${3:-}
+def watch_workspace_hyprland():
+    last_ws = None
+    while True:
+        try:
+            ws = get_current_workspace("hyprland")
+            if ws != last_ws:
+                log(f"Hyprland workspace changed: {last_ws} -> {ws}")
+                wp = get_wallpaper_for_workspace(ws)
+                mode = get_mode_for_workspace(ws)
+                if wp:
+                    apply_wallpaper(wp, mode)
+                last_ws = ws
+        except Exception as e:
+            log(f"Hyprland watcher error: {e}")
+        time.sleep(0.5)
+
+def watch_workspace_sway():
+    try:
+        proc = subprocess.Popen(
+            ["swaymsg", "-t", "subscribe", "-m", '["workspace"]'],
+            stdout=subprocess.PIPE, text=True
+        )
+        for line in proc.stdout:
+            try:
+                event = json.loads(line)
+                ws = event.get("current", {}).get("num")
+                if ws:
+                    log(f"Sway workspace event: {ws}")
+                    wp = get_wallpaper_for_workspace(ws)
+                    mode = get_mode_for_workspace(ws)
+                    if wp:
+                        apply_wallpaper(wp, mode)
+            except Exception as e:
+                log(f"Sway event error: {e}")
+    except Exception as e:
+        log(f"Sway watcher error: {e}")
+
+
+class WallpaperHandler(BaseHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass  # Suppress HTTP logging
     
-    if [[ -z "$ws" ]]; then
-        echo '{"error":"workspace required"}'
-        return
-    fi
+    def send_json(self, data, status=200):
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(data).encode())
     
-    local wm current_ws
-    wm=$(detect_wm)
-    current_ws=$(get_current_workspace "$wm")
-    
-    log "handle_set: ws=$ws, wp=$wp, mode=$mode, current_ws=$current_ws"
-    
-    if [[ -n "$wp" && -f "$wp" ]]; then
-        [[ -z "$mode" ]] && mode="fill"
+    def do_GET(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
         
-        local wallpaper_id
-        wallpaper_id=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers WHERE path = '$wp'" 2>/dev/null | head -1)
+        if path == "/wallpapers":
+            conn = sqlite3.connect(DB_PATH)
+            wallpapers = conn.execute("SELECT id, path FROM wallpapers").fetchall()
+            conn.close()
+            self.send_json({"wallpapers": [{"id": w[0], "path": w[1]} for w in wallpapers]})
         
-        if [[ -z "$wallpaper_id" ]]; then
-            local escaped="${wp//\'/\'\'}"
-            sqlite3 "$DB_PATH" "INSERT INTO wallpapers(path) VALUES('$escaped')" 2>/dev/null || true
-            wallpaper_id=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers WHERE path = '$wp'" 2>/dev/null | head -1)
-        fi
+        elif path == "/current":
+            wm = detect_wm()
+            ws = get_current_workspace(wm)
+            self.send_json({"workspace": ws, "wm": wm})
         
-        if [[ -n "$wallpaper_id" ]]; then
-            sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
-            log "handle_set: updated DB for workspace $ws"
-        fi
-        
-        if [[ "$ws" == "$current_ws" ]]; then
-            log "handle_set: applying wallpaper for current workspace"
-            apply_wallpaper "$wp" "$mode"
-            echo "{\"ok\":true,\"applied\":true,\"workspace\":$ws}"
-        else
-            log "handle_set: not current workspace ($current_ws), not applying"
-            echo "{\"ok\":true,\"applied\":false,\"workspace\":$ws}"
-        fi
-        return
-    fi
-    
-    local db_wp db_mode
-    db_wp=$(get_wallpaper_for_workspace "$ws")
-    db_mode=$(get_mode_for_workspace "$ws")
-    
-    log "handle_set: no path provided, reading from DB: wp=$db_wp"
-    
-    if [[ -n "$db_wp" && -f "$db_wp" ]]; then
-        apply_wallpaper "$db_wp" "$db_mode"
-        echo "{\"ok\":true,\"applied\":true,\"workspace\":$ws,\"path\":\"$db_wp\",\"mode\":\"$db_mode\"}"
-    else
-        log "handle_set: no wallpaper in DB for workspace $ws"
-        echo "{\"ok\":true,\"applied\":false,\"workspace\":$ws,\"error\":\"no wallpaper assigned\"}"
-    fi
-}
-
-handle_list() {
-    local result
-    result=$(sqlite3 "$DB_PATH" "SELECT json_group_array(json_object('id', id, 'path', path)) FROM wallpapers" 2>/dev/null)
-    if [[ -z "$result" || "$result" == "null" ]]; then
-        echo '{"wallpapers":[]}'
-    else
-        echo "{\"wallpapers\":$result}"
-    fi
-}
-
-handle_get() {
-    local ws=$1
-    
-    if [[ -z "$ws" ]]; then
-        echo '{"error":"workspace required"}'
-        return
-    fi
-    
-    local wp mode
-    wp=$(get_wallpaper_for_workspace "$ws")
-    mode=$(get_mode_for_workspace "$ws")
-    
-    if [[ -n "$wp" ]]; then
-        echo "{\"workspace\":$ws,\"path\":\"$wp\",\"mode\":\"$mode\"}"
-    else
-        echo "{\"workspace\":$ws,\"path\":null,\"mode\":null}"
-    fi
-}
-
-handle_current() {
-    local wm
-    wm=$(detect_wm)
-    local ws
-    ws=$(get_current_workspace "$wm")
-    echo "{\"workspace\":$ws,\"wm\":\"$wm\"}"
-}
-
-watch_workspace_hyprland() {
-    log "Hyprland workspace watcher started"
-    local last_ws=""
-    
-    while true; do
-        local ws
-        ws=$(hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1")
-        
-        if [[ -z "$ws" || "$ws" == "null" ]]; then
-            ws="1"
-        fi
-        
-        if [[ "$ws" != "$last_ws" ]]; then
-            log "Hyprland workspace changed: $last_ws -> $ws"
+        elif path.startswith("/wallpaper/"):
+            try:
+                ws = int(path.split("/")[-1])
+            except ValueError:
+                self.send_json({"error": "Invalid workspace"}, 400)
+                return
             
-            local wp mode
-            wp=$(get_wallpaper_for_workspace "$ws")
-            mode=$(get_mode_for_workspace "$ws")
+            wp = get_wallpaper_for_workspace(ws)
+            mode = get_mode_for_workspace(ws)
+            self.send_json({"workspace": ws, "path": wp, "mode": mode})
+        
+        else:
+            self.send_json({"error": "Not found"}, 404)
+    
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+        
+        if not path.startswith("/wallpaper/"):
+            self.send_json({"error": "Not found"}, 404)
+            return
+        
+        try:
+            ws = int(path.split("/")[-1])
+        except ValueError:
+            self.send_json({"error": "Invalid workspace"}, 400)
+            return
+        
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length).decode() if content_length > 0 else "{}"
+        
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            self.send_json({"error": "Invalid JSON"}, 400)
+            return
+        
+        wp = data.get("path")
+        mode = data.get("mode", "fill")
+        
+        wm = detect_wm()
+        current_ws = get_current_workspace(wm)
+        
+        # Update DB if path provided
+        if wp and os.path.isfile(wp):
+            conn = sqlite3.connect(DB_PATH)
             
-            if [[ -n "$wp" && -f "$wp" ]]; then
-                apply_wallpaper "$wp" "$mode"
-            else
-                log "No wallpaper for workspace $ws (wp=$wp)"
-            fi
+            # Get or insert wallpaper
+            result = conn.execute("SELECT id FROM wallpapers WHERE path = ?", (wp,)).fetchone()
+            if result:
+                wp_id = result[0]
+            else:
+                escaped = wp.replace("'", "''")
+                conn.execute(f"INSERT INTO wallpapers(path) VALUES('{escaped}')")
+                wp_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
             
-            last_ws="$ws"
-        fi
-        
-        sleep 0.5
-    done
-}
+            conn.execute(
+                "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES(?, ?, ?)",
+                (ws, wp_id, mode)
+            )
+            conn.commit()
+            conn.close()
+            log(f"Updated DB: workspace {ws} = {wp}")
+            
+            # Apply if current workspace
+            if ws == current_ws:
+                apply_wallpaper(wp, mode)
+                self.send_json({"ok": True, "applied": True, "workspace": ws})
+            else:
+                self.send_json({"ok": True, "applied": False, "workspace": ws})
+        else:
+            # No path = apply from DB
+            wp = get_wallpaper_for_workspace(ws)
+            mode = get_mode_for_workspace(ws)
+            
+            if wp:
+                apply_wallpaper(wp, mode)
+                self.send_json({"ok": True, "applied": True, "workspace": ws, "path": wp, "mode": mode})
+            else:
+                self.send_json({"ok": True, "applied": False, "workspace": ws, "error": "no wallpaper"})
 
-watch_workspace_sway() {
-    log "Sway workspace watcher started"
-    
-    while read -r event; do
-        local ws
-        ws=$(echo "$event" | jq -r '.current.num' 2>/dev/null || echo "")
-        
-        if [[ -z "$ws" || "$ws" == "null" ]]; then
-            continue
-        fi
-        
-        log "Sway workspace event: $ws"
-        
-        local wp mode
-        wp=$(get_wallpaper_for_workspace "$ws")
-        mode=$(get_mode_for_workspace "$ws")
-        
-        if [[ -n "$wp" && -f "$wp" ]]; then
-            apply_wallpaper "$wp" "$mode"
-        else
-            log "No wallpaper for workspace $ws"
-        fi
-        
-    done < <(swaymsg -t subscribe -m '["workspace"]' 2>/dev/null)
-}
 
-start_daemon() {
-    if [[ -f "$PID_FILE" ]]; then
-        local old_pid
-        old_pid=$(cat "$PID_FILE" 2>/dev/null)
-        if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null; then
-            log "Already running (PID: $old_pid)"
-            exit 0
-        fi
-        rm -f "$PID_FILE"
-    fi
+def run_daemon():
+    log(f"Starting daemon on localhost:{PORT}")
     
-    echo $$ > "$PID_FILE"
-    log "Daemon starting (PID: $$)"
+    # Init DB
+    init_db()
+    populate_from_system()
     
-    init_db
-    populate_from_system
+    # Assign wallpapers if needed
+    conn = sqlite3.connect(DB_PATH)
+    count = conn.execute("SELECT COUNT(*) FROM assignments").fetchone()[0]
+    conn.close()
+    if count == 0:
+        assign_random_wallpapers(6)
     
-    local count
-    count=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM assignments" 2>/dev/null || echo "0")
-    if [[ "$count" -eq 0 ]]; then
-        assign_random_wallpapers 6
-    fi
+    # Apply current workspace wallpaper
+    wm = detect_wm()
+    ws = get_current_workspace(wm)
+    wp = get_wallpaper_for_workspace(ws)
+    mode = get_mode_for_workspace(ws)
+    log(f"Current workspace: {ws}, wallpaper: {wp}")
+    if wp:
+        apply_wallpaper(wp, mode)
     
-    local wm
-    wm=$(detect_wm)
-    log "Starting daemon (WM: $wm)"
+    # Start workspace watcher in background
+    if wm == "hyprland":
+        threading.Thread(target=watch_workspace_hyprland, daemon=True).start()
+    elif wm == "sway":
+        threading.Thread(target=watch_workspace_sway, daemon=True).start()
     
-    case "$wm" in
-        sway)
-            watch_workspace_sway &
-            ;;
-        hyprland)
-            watch_workspace_hyprland &
-            ;;
-    esac
+    # Save PID
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(PID_FILE, "w") as f:
+        f.write(str(os.getpid()))
     
-    local current_ws wp mode
-    current_ws=$(get_current_workspace "$wm")
-    wp=$(get_wallpaper_for_workspace "$current_ws")
-    mode=$(get_mode_for_workspace "$current_ws")
-    
-    log "Current workspace: $current_ws, wallpaper: $wp"
-    
-    if [[ -n "$wp" && -f "$wp" ]]; then
-        apply_wallpaper "$wp" "$mode"
-    fi
-    
-    log "Daemon ready"
-    
-    # Keep daemon alive
-    while true; do
-        sleep 60
-    done
-}
+    # Start HTTP server
+    server = HTTPServer(("127.0.0.1", PORT), WallpaperHandler)
+    log(f"Daemon ready on http://localhost:{PORT}")
+    server.serve_forever()
 
-client_mode() {
-    local cmd=$1
-    shift
-    
-    init_db
-    
-    case "$cmd" in
-        list)
-            handle_list
-            ;;
-        get)
-            local ws=${1:-}
-            if [[ -z "$ws" ]]; then
-                echo "Usage: $0 get <workspace>"
-                exit 1
-            fi
-            handle_get "$ws"
-            ;;
-        set)
-            local ws=${1:-}
-            local wp=${2:-}
-            local mode=${3:-fill}
-            if [[ -z "$ws" ]]; then
-                echo "Usage: $0 set <workspace> [path] [mode]"
-                exit 1
-            fi
-            handle_set "$ws" "$wp" "$mode"
-            ;;
-        current)
-            handle_current
-            ;;
-        *)
-            echo "{\"error\":\"unknown command: $cmd\"}"
-            exit 1
-            ;;
-    esac
-}
 
-case "${1:-}" in
-    -d|--daemon|daemon)
-        start_daemon
-        ;;
-    list|get|set|current)
-        client_mode "$@"
-        ;;
-    *)
-        echo "Usage: $0 <command>"
-        echo "Commands:"
-        echo "  list              - List all wallpapers in DB"
-        echo "  get <workspace>   - Get wallpaper for workspace"
-        echo "  set <ws> [path] [mode] - Set wallpaper for workspace"
-        echo "  current           - Get current workspace"
-        echo "  -d, --daemon     - Start daemon mode"
-        exit 1
-        ;;
-esac
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="mados-wallpaperd")
+    parser.add_argument("-d", "--daemon", action="store_true", help="Start as daemon")
+    parser.add_argument("command", nargs="?", help="Command: list, get WS, set WS [PATH] [MODE]")
+    parser.add_argument("args", nargs="*", help="Arguments for command")
+    
+    args = parser.parse_args()
+    
+    if args.command in ("list", "get", "set", "current"):
+        # CLI mode - init DB and handle command directly
+        init_db()
+        populate_from_system()
+        
+        # Assign if needed
+        conn = sqlite3.connect(DB_PATH)
+        count = conn.execute("SELECT COUNT(*) FROM assignments").fetchone()[0]
+        conn.close()
+        if count == 0:
+            assign_random_wallpapers(6)
+        
+        if args.command == "list":
+            conn = sqlite3.connect(DB_PATH)
+            wallpapers = conn.execute("SELECT id, path FROM wallpapers").fetchall()
+            conn.close()
+            print(json.dumps({"wallpapers": [{"id": w[0], "path": w[1]} for w in wallpapers]}))
+        
+        elif args.command == "current":
+            wm = detect_wm()
+            ws = get_current_workspace(wm)
+            print(json.dumps({"workspace": ws, "wm": wm}))
+        
+        elif args.command == "get":
+            if not args.args:
+                print(json.dumps({"error": "workspace required"}))
+            else:
+                try:
+                    ws = int(args.args[0])
+                except ValueError:
+                    print(json.dumps({"error": "invalid workspace"}))
+                else:
+                    wp = get_wallpaper_for_workspace(ws)
+                    mode = get_mode_for_workspace(ws)
+                    print(json.dumps({"workspace": ws, "path": wp, "mode": mode}))
+        
+        elif args.command == "set":
+            if not args.args:
+                print(json.dumps({"error": "workspace required"}))
+            else:
+                try:
+                    ws = int(args.args[0])
+                except ValueError:
+                    print(json.dumps({"error": "invalid workspace"}))
+                else:
+                    wp = args.args[1] if len(args.args) > 1 else None
+                    mode = args.args[2] if len(args.args) > 2 else "fill"
+                    
+                    wm = detect_wm()
+                    current_ws = get_current_workspace(wm)
+                    
+                    if wp and os.path.isfile(wp):
+                        conn = sqlite3.connect(DB_PATH)
+                        result = conn.execute("SELECT id FROM wallpapers WHERE path = ?", (wp,)).fetchone()
+                        if result:
+                            wp_id = result[0]
+                        else:
+                            escaped = wp.replace("'", "''")
+                            conn.execute(f"INSERT INTO wallpapers(path) VALUES('{escaped}')")
+                            wp_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+                        conn.execute(
+                            "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES(?, ?, ?)",
+                            (ws, wp_id, mode)
+                        )
+                        conn.commit()
+                        conn.close()
+                        
+                        if ws == current_ws:
+                            apply_wallpaper(wp, mode)
+                            print(json.dumps({"ok": True, "applied": True, "workspace": ws}))
+                        else:
+                            print(json.dumps({"ok": True, "applied": False, "workspace": ws}))
+                    else:
+                        # No path = apply from DB
+                        wp = get_wallpaper_for_workspace(ws)
+                        mode = get_mode_for_workspace(ws)
+                        if wp:
+                            apply_wallpaper(wp, mode)
+                            print(json.dumps({"ok": True, "applied": True, "workspace": ws}))
+                        else:
+                            print(json.dumps({"ok": True, "applied": False, "workspace": ws, "error": "no wallpaper"}))
+    
+    elif args.daemon:
+        # Check if already running
+        if os.path.exists(PID_FILE):
+            with open(PID_FILE) as f:
+                old_pid = int(f.read().strip())
+            try:
+                os.kill(old_pid, 0)
+                log(f"Already running (PID: {old_pid})")
+                sys.exit(0)
+            except OSError:
+                pass
+        
+        run_daemon()
+    
+    else:
+        parser.print_help()
+        sys.exit(1)
