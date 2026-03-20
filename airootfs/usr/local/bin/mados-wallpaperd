@@ -31,15 +31,6 @@ detect_wm() {
 init_db() {
     mkdir -p "$(dirname "$DB_PATH")"
     
-    # Check if DB needs migration
-    if [[ -f "$DB_PATH" ]]; then
-        has_mode=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM pragma_table_info('assignments') WHERE name='mode';" 2>/dev/null || echo "0")
-        if [[ "$has_mode" -eq 0 ]]; then
-            log "Migrating database..."
-            rm -f "$DB_PATH"
-        fi
-    fi
-    
     if [[ ! -f "$DB_PATH" ]]; then
         sqlite3 "$DB_PATH" <<'SQL'
 PRAGMA journal_mode=WAL;
@@ -54,6 +45,13 @@ CREATE TABLE IF NOT EXISTS assignments (
 );
 SQL
         log "Database created at $DB_PATH"
+        return
+    fi
+    
+    has_mode=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM pragma_table_info('assignments') WHERE name='mode';" 2>/dev/null || echo "0")
+    if [[ "$has_mode" -eq 0 ]]; then
+        log "Migrating database: adding mode column..."
+        sqlite3 "$DB_PATH" "ALTER TABLE assignments ADD COLUMN mode TEXT DEFAULT 'fill';"
     fi
 }
 
