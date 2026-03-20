@@ -179,6 +179,7 @@ libjxl
 poppler-glib
 
 # Firewall
+gufw
 ufw
 
 # Security
@@ -187,5 +188,4 @@ rkhunter
 clamav
 fail2ban
 zenity
-gufw
 steam
