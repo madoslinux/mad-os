@@ -190,6 +190,7 @@ systemctl enable iwd
 systemctl enable bluetooth
 systemctl enable plymouth-quit-wait.service 2>/dev/null || true
 systemctl enable ufw
+systemctl enable load-iptables-modules
 systemctl enable usbguard 2>/dev/null || true
 systemctl enable rkhunter.timer 2>/dev/null || true
 systemctl enable fail2ban 2>/dev/null || true

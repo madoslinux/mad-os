@@ -2,9 +2,9 @@
 Description=Uncomplicated Firewall
 Documentation=man:ufw(8)
 DefaultDependencies=no
-After=network-pre.target
+After=network-pre.target load-iptables-modules.service
 Before=network.target
-Wants=network-pre.target
+Wants=network-pre.target load-iptables-modules.service
 
 [Service]
 Type=forking

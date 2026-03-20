@@ -1,0 +1,14 @@
+[Unit]
+Description=Load iptables modules for UFW
+DefaultDependencies=no
+Before=ufw.service
+Before=network.target
+After=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/systemd/systemd-modules-load
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

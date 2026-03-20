@@ -260,6 +260,7 @@ if command -v ufw &>/dev/null; then
     ufw --force enable 2>/dev/null || true
     ufw default deny incoming 2>/dev/null || true
     ufw default allow outgoing 2>/dev/null || true
+    ufw reload 2>/dev/null || true
     echo "  ✓ UFW enabled"
 fi
 
