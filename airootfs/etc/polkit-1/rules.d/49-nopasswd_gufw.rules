@@ -1,0 +1,9 @@
+/* Allow mados user to run pkexec without password in Wayland */
+polkit.addRule(function(action, subject) {
+    if (subject.user === "mados") {
+        // Allow any pkexec action without password
+        if (action.id && action.id.indexOf("pkexec") !== -1) {
+            return polkit.Result.YES;
+        }
+    }
+});
