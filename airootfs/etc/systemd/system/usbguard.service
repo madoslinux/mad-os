@@ -1,0 +1,13 @@
+[Unit]
+Description=USBGuard
+Documentation=man:usbguard-daemon(8)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/usbguard-daemon -c /etc/usbguard/usbguard-daemon.conf
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

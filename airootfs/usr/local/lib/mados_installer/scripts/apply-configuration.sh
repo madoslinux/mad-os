@@ -255,6 +255,14 @@ fi
 
 systemctl enable getty@tty2.service 2>/dev/null || true
 
+if command -v ufw &>/dev/null; then
+    echo "Configuring UFW firewall..."
+    ufw --force enable 2>/dev/null || true
+    ufw default deny incoming 2>/dev/null || true
+    ufw default allow outgoing 2>/dev/null || true
+    echo "  ✓ UFW enabled"
+fi
+
 if [ "$GRAPHICAL_OK" -eq 0 ]; then
     echo "  ⚠ Some graphical components are missing. Enabling getty@tty1 as fallback..."
     systemctl enable getty@tty1.service 2>/dev/null || true

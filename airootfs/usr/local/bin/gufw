@@ -1,0 +1,5 @@
+#!/bin/bash
+# Wrapper for gufw that bypasses pkexec (which fails in Wayland)
+# Explicitly passes Wayland environment to sudo
+
+sudo env WAYLAND_DISPLAY="${WAYLAND_DISPLAY}" XDG_CURRENT_DESKTOP=Hyprland XDG_SESSION_TYPE=wayland GDK_BACKEND=wayland DISPLAY="${DISPLAY}" /usr/bin/python3 /usr/lib/python3.14/site-packages/gufw/gufw.py

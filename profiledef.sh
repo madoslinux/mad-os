@@ -82,4 +82,35 @@ file_permissions=(
   ["/usr/share/grub/themes/mados"]="0:0:755"
   ["/usr/share/grub/themes/mados/theme.txt"]="0:0:644"
   ["/usr/share/grub/themes/mados/logo.png"]="0:0:644"
+
+  # UFW Firewall
+  ["/etc/ufw/ufw.conf"]="0:0:644"
+  ["/etc/ufw/user.rules"]="0:0:600"
+  ["/etc/ufw/user6.rules"]="0:0:600"
+  ["/etc/systemd/system/ufw.service"]="0:0:644"
+  ["/etc/systemd/system/multi-user.target.wants/ufw.service"]="0:0:644"
+
+  # Security hardening
+  ["/etc/sysctl.d/99-security.conf"]="0:0:644"
+
+  # USBGuard
+  ["/etc/usbguard/usbguard-daemon.conf"]="0:0:644"
+  ["/etc/usbguard/rules.conf"]="0:0:600"
+  ["/etc/usbguard/usbguard-notify.sh"]="0:0:755"
+  ["/etc/systemd/system/usbguard.service"]="0:0:644"
+
+  # RKHunter
+  ["/etc/rkhunter.conf"]="0:0:644"
+  ["/etc/systemd/system/rkhunter.service"]="0:0:644"
+  ["/etc/systemd/system/rkhunter.timer"]="0:0:644"
+
+  # Fail2Ban
+  ["/etc/fail2ban/jail.local"]="0:0:644"
+
+  # Security notifications
+  ["/etc/profile.d/mados-security-notify.sh"]="0:0:755"
+
+  # ClamAV
+  ["/etc/systemd/system/clamav-scan.service"]="0:0:644"
+  ["/etc/systemd/system/clamav-scan.timer"]="0:0:644"
 )

@@ -73,7 +73,7 @@ passwd -d "$USERNAME" 2>/dev/null || true
 echo "%wheel ALL=(ALL:ALL) ALL" > /etc/sudoers.d/wheel
 chmod 440 /etc/sudoers.d/wheel
 
-echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/opencode,/usr/local/bin/ollama,/usr/bin/pacman,/usr/bin/systemctl" > /etc/sudoers.d/opencode-nopasswd
+echo "$USERNAME ALL=(ALL:ALL) NOPASSWD: /usr/local/bin/opencode,/usr/local/bin/ollama,/usr/bin/pacman,/usr/bin/systemctl,/usr/bin/usbguard" > /etc/sudoers.d/opencode-nopasswd
 chmod 440 /etc/sudoers.d/opencode-nopasswd
 
 echo '[PROGRESS 3/8] Installing GRUB bootloader...'
@@ -189,6 +189,11 @@ systemctl enable greetd
 systemctl enable iwd
 systemctl enable bluetooth
 systemctl enable plymouth-quit-wait.service 2>/dev/null || true
+systemctl enable ufw
+systemctl enable usbguard 2>/dev/null || true
+systemctl enable rkhunter.timer 2>/dev/null || true
+systemctl enable fail2ban 2>/dev/null || true
+systemctl enable clamav-scan.timer 2>/dev/null || true
 
 systemctl --global enable pipewire.socket pipewire-pulse.socket wireplumber.service 2>/dev/null || true
 
