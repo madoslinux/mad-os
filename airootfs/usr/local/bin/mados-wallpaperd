@@ -2,7 +2,7 @@
 # mados-wallpaperd - Daemon for managing wallpapers across workspaces
 # Handles SQLite database, wallpaper assignments, and workspace events
 
-set -euo pipefail
+set -uo pipefail
 
 DB_PATH="${HOME}/.local/share/mados/wallpapers.db"
 WALLPAPER_DIR="${HOME}/.local/share/mados/wallpapers"
@@ -12,6 +12,19 @@ PID_FILE="${HOME}/.local/share/mados/mados-wallpaperd.pid"
 log() {
     echo "$LOG_TAG: $*" >&2
 }
+
+# Don't run if already running
+if [[ -f "$PID_FILE" ]]; then
+    old_pid=$(cat "$PID_FILE" 2>/dev/null)
+    if [[ -n "$old_pid" ]] && kill -0 "$old_pid" 2>/dev/null; then
+        log "Already running (PID: $old_pid)"
+        exit 0
+    fi
+    rm -f "$PID_FILE"
+fi
+
+echo $$ > "$PID_FILE"
+log "Daemon starting (PID: $$)"
 
 detect_wm() {
     if [[ "${XDG_CURRENT_DESKTOP:-}" == *"sway"* ]] || command -v swaymsg >/dev/null 2>&1; then
@@ -367,11 +380,20 @@ daemon_loop() {
     sync_wallpapers
     
     # Fallback: copy wallpapers from skel if directory is empty
-    if [[ $(find "$WALLPAPER_DIR" -maxdepth 1 -type f 2>/dev/null | wc -l) -eq 0 ]]; then
+    local wp_count
+    wp_count=$(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" \) 2>/dev/null | wc -l)
+    if [[ "$wp_count" -eq 0 ]]; then
         log "No wallpapers found, copying from skel..."
         mkdir -p "$WALLPAPER_DIR"
         if [[ -d /etc/skel/.local/share/mados/wallpapers ]]; then
-            cp /etc/skel/.local/share/mados/wallpapers/* "$WALLPAPER_DIR/" 2>/dev/null && log "Copied wallpapers from skel" || log "Failed to copy wallpapers"
+            shopt -s nullglob
+            local files=(/etc/skel/.local/share/mados/wallpapers/*.png /etc/skel/.local/share/mados/wallpapers/*.jpg /etc/skel/.local/share/mados/wallpapers/*.jpeg /etc/skel/.local/share/mados/wallpapers/*.webp)
+            if [[ ${#files[@]} -gt 0 ]]; then
+                cp "${files[@]}" "$WALLPAPER_DIR/" 2>/dev/null && log "Copied ${#files[@]} wallpapers from skel" || log "Failed to copy wallpapers"
+            else
+                log "No wallpapers found in skel directory either"
+            fi
+            shopt -u nullglob
         else
             log "Source wallpapers dir not found: /etc/skel/.local/share/mados/wallpapers"
         fi
