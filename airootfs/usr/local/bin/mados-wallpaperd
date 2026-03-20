@@ -243,7 +243,6 @@ watch_workspace_sway() {
 }
 
 watch_workspace_hyprland() {
-    log "Watch loop started"
     sleep 2
     local last_ws=""
     while true; do
@@ -253,9 +252,7 @@ watch_workspace_hyprland() {
         if [[ -z "$ws" ]]; then
             ws="1"
         fi
-        log "DEBUG: raw='${raw:0:50}' ws='$ws' last_ws='$last_ws'"
         if [[ "$ws" != "$last_ws" ]]; then
-            log "Workspace changed: $last_ws -> $ws"
             on_workspace_change "$ws"
             last_ws="$ws"
         fi
