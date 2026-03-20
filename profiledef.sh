@@ -82,6 +82,7 @@ file_permissions=(
   ["/usr/share/grub/themes/mados"]="0:0:755"
   ["/usr/share/grub/themes/mados/theme.txt"]="0:0:644"
   ["/usr/share/grub/themes/mados/logo.png"]="0:0:644"
+  ["/usr/share/icons/hicolor/48x48/apps/mados-wallpaper.png"]="0:0:644"
 
   # UFW Firewall
   ["/etc/ufw/ufw.conf"]="0:0:644"
@@ -89,6 +90,12 @@ file_permissions=(
   ["/etc/ufw/user6.rules"]="0:0:600"
   ["/etc/systemd/system/ufw.service"]="0:0:644"
   ["/etc/systemd/system/multi-user.target.wants/ufw.service"]="0:0:644"
+
+  # GUFW Firewall GUI
+  ["/usr/local/bin/gufw"]="0:0:755"
+  ["/etc/sudoers.d/gufw"]="0:0:440"
+  ["/etc/polkit-1/rules.d/49-nopasswd_gufw.rules"]="0:0:644"
+  ["/usr/share/applications/gufw-sudo.desktop"]="0:0:644"
 
   # Security hardening
   ["/etc/sysctl.d/99-security.conf"]="0:0:644"
