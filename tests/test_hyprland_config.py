@@ -1302,12 +1302,12 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         )
 
     def test_hyprland_conf_references_script(self):
-        """hyprland.conf must exec-once the wallpaper glitch script."""
+        """hyprland.conf must exec-once the wallpaper daemon."""
         content = _read_config()
         self.assertIn(
-            "mados-wallpaper-hyprland",
+            "mados-wallpaperd",
             content,
-            "hyprland.conf must launch mados-wallpaper-hyprland via exec-once",
+            "hyprland.conf must launch mados-wallpaperd via exec-once",
         )
 
     def test_profiledef_has_permissions(self):
@@ -1781,13 +1781,13 @@ class TestSwayWallpaperSetHelper(unittest.TestCase):
         )
 
     def test_sway_config_calls_helper_on_workspace_switch(self):
-        """Sway config must call wallpaper helper on workspace switch bindings."""
+        """Sway config must call wallpaper daemon on workspace switch."""
         with open(self.SWAY_CONF) as f:
             content = f.read()
         self.assertIn(
-            "mados-sway-wallpaper-set",
+            "mados-wallpaperd set",
             content,
-            "Sway config workspace bindings must call mados-sway-wallpaper-set",
+            "Sway config workspace bindings must call mados-wallpaperd set",
         )
 
     def test_sway_workspace_switch_uses_super_alt_arrows(self):
@@ -1865,9 +1865,9 @@ class TestSwayWorkspaceCycleScript(unittest.TestCase):
         with open(self.CYCLE_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "mados-sway-wallpaper-set",
+            "mados-wallpaperd set",
             content,
-            "Script must call mados-sway-wallpaper-set after switching workspace",
+            "Script must call mados-wallpaperd set after switching workspace",
         )
 
     def test_profiledef_has_cycle_script_permissions(self):
@@ -1886,20 +1886,20 @@ class TestSwayWorkspaceCycleScript(unittest.TestCase):
 # Hyprland wallpaper helper scripts (dual coverage: daemon + keybinding)
 # ═══════════════════════════════════════════════════════════════════════════
 class TestHyprlandWallpaperSetHelper(unittest.TestCase):
-    """Verify mados-hyprland-wallpaper-set helper script."""
+    """Verify mados-wallpaperd helper script."""
 
-    HELPER_SCRIPT = os.path.join(BIN_DIR, "mados-hyprland-wallpaper-set")
+    HELPER_SCRIPT = os.path.join(BIN_DIR, "mados-wallpaperd")
     HYPRLAND_CONF = os.path.join(SKEL_DIR, ".config", "hypr", "hyprland.conf")
 
     def test_helper_script_exists(self):
-        """mados-hyprland-wallpaper-set helper must exist."""
+        """mados-wallpaperd helper must exist."""
         self.assertTrue(
             os.path.isfile(self.HELPER_SCRIPT),
-            "mados-hyprland-wallpaper-set script missing from /usr/local/bin/",
+            "mados-wallpaperd script missing from /usr/local/bin/",
         )
 
     def test_helper_script_has_shebang(self):
-        """mados-hyprland-wallpaper-set must have a bash shebang."""
+        """mados-wallpaperd must have a bash shebang."""
         with open(self.HELPER_SCRIPT) as f:
             first_line = f.readline()
         self.assertIn("bash", first_line)
@@ -1949,14 +1949,14 @@ class TestHyprlandWallpaperSetHelper(unittest.TestCase):
         )
 
     def test_profiledef_has_helper_permissions(self):
-        """profiledef.sh must set permissions for mados-hyprland-wallpaper-set."""
+        """profiledef.sh must set permissions for mados-wallpaperd."""
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")
         with open(profiledef) as f:
             content = f.read()
         self.assertIn(
-            "mados-hyprland-wallpaper-set",
+            "mados-wallpaperd",
             content,
-            "profiledef.sh must include permissions for mados-hyprland-wallpaper-set",
+            "profiledef.sh must include permissions for mados-wallpaperd",
         )
 
     def test_hyprland_config_calls_helper_on_workspace_switch(self):
@@ -1964,9 +1964,9 @@ class TestHyprlandWallpaperSetHelper(unittest.TestCase):
         with open(self.HYPRLAND_CONF) as f:
             content = f.read()
         self.assertIn(
-            "mados-hyprland-wallpaper-set",
+            "mados-wallpaperd",
             content,
-            "Hyprland config workspace bindings must call mados-hyprland-wallpaper-set",
+            "Hyprland config workspace bindings must call mados-wallpaperd",
         )
 
     def test_hyprland_workspace_switch_uses_super_alt_arrows(self):
@@ -2028,9 +2028,9 @@ class TestHyprlandWorkspaceCycleScript(unittest.TestCase):
         with open(self.CYCLE_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "mados-hyprland-wallpaper-set",
+            "mados-wallpaperd",
             content,
-            "Script must call mados-hyprland-wallpaper-set after switching workspace",
+            "Script must call mados-wallpaperd after switching workspace",
         )
 
     def test_profiledef_has_cycle_script_permissions(self):

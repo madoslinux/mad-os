@@ -201,28 +201,39 @@ apply_wallpaper() {
 set_wallpaper_db() {
     local ws=$1
     local wp=$2
-    local mode=${3:-fill}
+    local mode=${3:-}
     
-    if [[ -z "$wp" || ! -f "$wp" ]]; then
+    if [[ -z "$ws" ]]; then
         return 1
     fi
     
-    # Get or insert wallpaper ID
-    local wallpaper_id
-    wallpaper_id=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers WHERE path = '$wp'" 2>/dev/null | head -1)
-    
-    if [[ -z "$wallpaper_id" ]]; then
-        local escaped
-        escaped="${wp//\'/\'\'}"
-        sqlite3 "$DB_PATH" "INSERT INTO wallpapers(path) VALUES('$escaped')" 2>/dev/null || true
+    # If wallpaper path provided, update DB
+    if [[ -n "$wp" && -f "$wp" ]]; then
+        # Get or insert wallpaper ID
+        local wallpaper_id
         wallpaper_id=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers WHERE path = '$wp'" 2>/dev/null | head -1)
+        
+        if [[ -z "$wallpaper_id" ]]; then
+            local escaped
+            escaped="${wp//\'/\'\'}"
+            sqlite3 "$DB_PATH" "INSERT INTO wallpapers(path) VALUES('$escaped')" 2>/dev/null || true
+            wallpaper_id=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers WHERE path = '$wp'" 2>/dev/null | head -1)
+        fi
+        
+        if [[ -n "$wallpaper_id" ]]; then
+            [[ -z "$mode" ]] && mode="fill"
+            sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
+        fi
     fi
     
-    if [[ -n "$wallpaper_id" ]]; then
-        sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
-    fi
+    # Always apply wallpaper from DB for this workspace
+    local db_wp db_mode
+    db_wp=$(get_wallpaper_for_workspace "$ws")
+    db_mode=$(get_mode_for_workspace "$ws")
     
-    apply_wallpaper "$wp" "$mode"
+    if [[ -n "$db_wp" && -f "$db_wp" ]]; then
+        apply_wallpaper "$db_wp" "$db_mode"
+    fi
 }
 
 get_current_workspace() {

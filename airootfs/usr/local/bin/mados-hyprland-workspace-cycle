@@ -9,7 +9,7 @@
 # Super+Alt+Arrow keybindings always move between workspaces even when
 # only one exists.
 
-MAX_WS=5
+MAX_WS=6
 
 direction="${1:-next}"
 
@@ -31,4 +31,4 @@ fi
 hyprctl dispatch workspace "$target" 2>/dev/null || true
 
 # Set the wallpaper for the new workspace
-exec mados-hyprland-wallpaper-set "$target"
+mados-wallpaperd set "$target"

@@ -133,12 +133,13 @@ bindsym $mod+Shift+Down move down
 bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
-# Workspaces (each binding also triggers wallpaper change via helper script)
-bindsym $mod+1 workspace number 1; exec mados-sway-wallpaper-set 1
-bindsym $mod+2 workspace number 2; exec mados-sway-wallpaper-set 2
-bindsym $mod+3 workspace number 3; exec mados-sway-wallpaper-set 3
-bindsym $mod+4 workspace number 4; exec mados-sway-wallpaper-set 4
-bindsym $mod+5 workspace number 5; exec mados-sway-wallpaper-set 5
+# Workspaces (each binding also triggers wallpaper change)
+bindsym $mod+1 workspace number 1; exec mados-wallpaperd set 1
+bindsym $mod+2 workspace number 2; exec mados-wallpaperd set 2
+bindsym $mod+3 workspace number 3; exec mados-wallpaperd set 3
+bindsym $mod+4 workspace number 4; exec mados-wallpaperd set 4
+bindsym $mod+5 workspace number 5; exec mados-wallpaperd set 5
+bindsym $mod+6 workspace number 6; exec mados-wallpaperd set 6
 
 # Switch workspaces with Super+Alt+arrows (cycles 1-5 with wrap-around)
 bindsym $mod+Mod1+Left exec mados-sway-workspace-cycle prev
