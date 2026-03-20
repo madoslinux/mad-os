@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+YAY_VERSION="12.4.1"
+YAY_URL="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay-${YAY_VERSION}-x86_64.tar.gz"
+YAY_TMP="/tmp/yay.tar.gz"
+YAY_BIN="/usr/local/bin/yay"
+
+install_yay() {
+    if command -v yay &>/dev/null; then
+        echo "yay ya esta instalado"
+        return 0
+    fi
+
+    echo "Descargando yay ${YAY_VERSION}..."
+    curl -L --proto '=https' --tlsv1.2 -sSf -o "$YAY_TMP" "$YAY_URL"
+
+    echo "Extrayendo..."
+    tar -xzf "$YAY_TMP" -C /tmp
+    mv "/tmp/yay-${YAY_VERSION}-x86_64/yay" "$YAY_BIN"
+    rm -rf "$YAY_TMP" "/tmp/yay-${YAY_VERSION}-x86_64"
+    chmod +x "$YAY_BIN"
+
+    echo "yay instalado en $YAY_BIN"
+}
+
+install_yay
