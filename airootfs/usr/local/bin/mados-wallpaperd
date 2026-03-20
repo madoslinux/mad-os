@@ -227,7 +227,7 @@ set_wallpaper_db() {
         return 1
     fi
     
-    # If wallpaper path provided, update DB
+    # If wallpaper path provided, ONLY update DB (don't apply)
     if [[ -n "$wp" && -f "$wp" ]]; then
         # Get or insert wallpaper ID
         local wallpaper_id
@@ -244,9 +244,11 @@ set_wallpaper_db() {
             [[ -z "$mode" ]] && mode="fill"
             sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
         fi
+        log "Wallpaper for workspace $ws updated in DB (not applying - compositor will apply on next workspace change)"
+        return 0
     fi
     
-    # Always apply wallpaper from DB for this workspace
+    # No wallpaper path provided - this is a workspace switch, apply from DB
     local db_wp db_mode
     db_wp=$(get_wallpaper_for_workspace "$ws")
     db_mode=$(get_mode_for_workspace "$ws")
