@@ -57,6 +57,7 @@ SQL
 sync_wallpapers() {
     mkdir -p "$WALLPAPER_DIR"
     
+    log "Syncing wallpapers from $WALLPAPER_DIR"
     local count=0
     while IFS= read -r -d '' file; do
         local escaped
@@ -66,6 +67,12 @@ sync_wallpapers() {
     done < <(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" \) -print0 2>/dev/null)
     
     log "Synced $count wallpapers from $WALLPAPER_DIR"
+    
+    # Debug: list what was synced
+    if [[ $count -eq 0 ]]; then
+        log "WARNING: No wallpapers found in $WALLPAPER_DIR"
+        ls -la "$WALLPAPER_DIR" 2>/dev/null || log "Directory does not exist or is empty"
+    fi
 }
 
 get_wallpaper_for_workspace() {
@@ -262,11 +269,13 @@ watch_workspace_sway() {
 }
 
 watch_workspace_hyprland() {
+    log "Starting Hyprland workspace watcher"
     local last_ws=""
     while true; do
         local ws
         ws=$(hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1")
         if [[ "$ws" != "$last_ws" ]]; then
+            log "Hyprland workspace changed: $ws"
             on_workspace_change "$ws"
             last_ws="$ws"
         fi
@@ -361,20 +370,27 @@ daemon_loop() {
     if [[ $(find "$WALLPAPER_DIR" -maxdepth 1 -type f 2>/dev/null | wc -l) -eq 0 ]]; then
         log "No wallpapers found, copying from skel..."
         mkdir -p "$WALLPAPER_DIR"
-        cp /etc/skel/.local/share/mados/wallpapers/* "$WALLPAPER_DIR/" 2>/dev/null || true
+        if [[ -d /etc/skel/.local/share/mados/wallpapers ]]; then
+            cp /etc/skel/.local/share/mados/wallpapers/* "$WALLPAPER_DIR/" 2>/dev/null && log "Copied wallpapers from skel" || log "Failed to copy wallpapers"
+        else
+            log "Source wallpapers dir not found: /etc/skel/.local/share/mados/wallpapers"
+        fi
         sync_wallpapers
     fi
     
     local count
     count=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM assignments" 2>/dev/null || echo "0")
+    log "Current assignments count: $count"
     if [[ "$count" -eq 0 ]]; then
         assign_random_wallpapers 6
     fi
     
     local current_ws wp mode
     current_ws=$(get_current_workspace "$wm")
+    log "Current workspace: $current_ws"
     wp=$(get_wallpaper_for_workspace "$current_ws")
     mode=$(get_mode_for_workspace "$current_ws")
+    log "Wallpaper for workspace $current_ws: $wp (mode: $mode)"
     if [[ -n "$wp" && -f "$wp" ]]; then
         apply_wallpaper "$wp" "$mode"
     fi
