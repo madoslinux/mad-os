@@ -17,22 +17,254 @@ log() {
 }
 
 cleanup() {
-    rm -f "$SOCK_PATH" "$PID_FILE" "$HANDLER_SCRIPT"
+    rm -f "$SOCK_PATH" "$PID_FILE"
     log "Daemon stopped"
 }
 
 trap cleanup EXIT
 
-# Create the socket handler script (sourced by child processes)
+init_db() {
+    mkdir -p "$DATA_DIR"
+    
+    if [[ ! -f "$DB_PATH" ]]; then
+        sqlite3 "$DB_PATH" <<'SQL'
+PRAGMA journal_mode=WAL;
+CREATE TABLE IF NOT EXISTS wallpapers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    path TEXT UNIQUE NOT NULL
+);
+CREATE TABLE IF NOT EXISTS assignments (
+    workspace INTEGER PRIMARY KEY,
+    wallpaper_id INTEGER NOT NULL REFERENCES wallpapers(id),
+    mode TEXT DEFAULT 'fill'
+);
+SQL
+        log "Database created at $DB_PATH"
+    fi
+    
+    has_mode=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM pragma_table_info('assignments') WHERE name='mode';" 2>/dev/null || echo "0")
+    if [[ "$has_mode" -eq 0 ]]; then
+        log "Migrating database: adding mode column..."
+        sqlite3 "$DB_PATH" "ALTER TABLE assignments ADD COLUMN mode TEXT DEFAULT 'fill';"
+    fi
+}
+
+populate_from_system() {
+    local count
+    count=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM wallpapers" 2>/dev/null || echo "0")
+    
+    if [[ "$count" -gt 0 ]]; then
+        log "DB already has $count wallpapers"
+        return
+    fi
+    
+    log "DB empty, populating from $SYSTEM_WALLPAPERS..."
+    
+    if [[ ! -d "$SYSTEM_WALLPAPERS" ]]; then
+        log "ERROR: $SYSTEM_WALLPAPERS does not exist"
+        return
+    fi
+    
+    shopt -s nullglob
+    local files=()
+    files=("$SYSTEM_WALLPAPERS"/*.png "$SYSTEM_WALLPAPERS"/*.jpg "$SYSTEM_WALLPAPERS"/*.jpeg "$SYSTEM_WALLPAPERS"/*.webp)
+    
+    if [[ ${#files[@]} -eq 0 ]]; then
+        log "ERROR: No wallpapers found in $SYSTEM_WALLPAPERS"
+        return
+    fi
+    
+    local shuffled
+    shuffled=$(printf '%s\n' "${files[@]}" | shuf)
+    
+    local inserted=0
+    while IFS= read -r file; do
+        local escaped="${file//\'/\'\'}"
+        if sqlite3 "$DB_PATH" "INSERT OR IGNORE INTO wallpapers(path) VALUES('$escaped');" 2>/dev/null; then
+            ((inserted++)) || true
+        fi
+    done <<< "$shuffled"
+    
+    log "Inserted $inserted wallpapers from system"
+}
+
+assign_random_wallpapers() {
+    local max_ws=${1:-6}
+    
+    local wallpapers
+    wallpapers=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers" 2>/dev/null)
+    
+    if [[ -z "$wallpapers" ]]; then
+        log "No wallpapers to assign"
+        return 1
+    fi
+    
+    local wallpapers_array
+    IFS=$'\n' read -d '' -r -a wallpapers_array <<< "$wallpapers" || true
+    local total=${#wallpapers_array[@]}
+    
+    if [[ $total -eq 0 ]]; then
+        return
+    fi
+    
+    for ws in $(seq 1 "$max_ws"); do
+        local random_idx=$((RANDOM % total))
+        local wallpaper_id="${wallpapers_array[$random_idx]}"
+        local mode="fill"
+        sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
+    done
+    
+    log "Assigned random wallpapers to $max_ws workspaces"
+}
+
+detect_wm() {
+    if [[ "${XDG_CURRENT_DESKTOP:-}" == *"sway"* ]] || command -v swaymsg >/dev/null 2>&1; then
+        echo "sway"
+    elif [[ "${XDG_CURRENT_DESKTOP:-}" == *"hypr"* ]] || command -v hyprctl >/dev/null 2>&1; then
+        echo "hyprland"
+    elif command -v swaymsg >/dev/null 2>&1; then
+        echo "sway"
+    elif command -v hyprctl >/dev/null 2>&1; then
+        echo "hyprland"
+    else
+        echo "unknown"
+    fi
+}
+
+get_current_workspace() {
+    local wm=$1
+    case "$wm" in
+        sway)
+            swaymsg -t get_workspaces 2>/dev/null | jq -r '.[] | select(.focused==true) | .num' 2>/dev/null || echo "1"
+            ;;
+        hyprland)
+            hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1"
+            ;;
+        *)
+            echo "1"
+            ;;
+    esac
+}
+
+get_wallpaper_for_workspace() {
+    local ws=$1
+    sqlite3 "$DB_PATH" "SELECT w.path FROM wallpapers w JOIN assignments a ON w.id = a.wallpaper_id WHERE a.workspace = $ws" 2>/dev/null || echo ""
+}
+
+get_mode_for_workspace() {
+    local ws=$1
+    sqlite3 "$DB_PATH" "SELECT a.mode FROM assignments a WHERE a.workspace = $ws" 2>/dev/null || echo "fill"
+}
+
+apply_wallpaper() {
+    local wp=$1
+    local mode=${2:-fill}
+    
+    if [[ -z "$wp" ]]; then
+        log "apply_wallpaper: no wallpaper path provided"
+        return 1
+    fi
+    
+    if [[ ! -f "$wp" ]]; then
+        log "apply_wallpaper: wallpaper not found: $wp"
+        return 1
+    fi
+    
+    log "Applying wallpaper: $wp (mode: $mode)"
+    
+    if command -v swww >/dev/null 2>&1; then
+        if ! swww query >/dev/null 2>&1; then
+            log "Starting swww-daemon..."
+            swww-daemon &
+            disown
+            for _ in $(seq 1 30); do
+                swww query >/dev/null 2>&1 && break
+                sleep 0.3
+            done
+        fi
+        swww img "$wp" --transition-type wipe --transition-duration 0.3 2>/dev/null || \
+        swww img "$wp" 2>/dev/null || return 1
+        sleep 0.5
+    elif command -v swaybg >/dev/null 2>&1; then
+        pkill -f "swaybg.*-i" 2>/dev/null || true
+        swaybg -i "$wp" -m "$mode" &
+    else
+        log "ERROR: No wallpaper setter found (swww/swaybg)"
+        return 1
+    fi
+    
+    log "Wallpaper applied successfully"
+}
+
+watch_workspace_hyprland() {
+    log "Hyprland workspace watcher started"
+    local last_ws=""
+    
+    while true; do
+        local ws
+        ws=$(hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1")
+        
+        if [[ -z "$ws" || "$ws" == "null" ]]; then
+            ws="1"
+        fi
+        
+        if [[ "$ws" != "$last_ws" ]]; then
+            log "Hyprland workspace changed: $last_ws -> $ws"
+            
+            local wp mode
+            wp=$(get_wallpaper_for_workspace "$ws")
+            mode=$(get_mode_for_workspace "$ws")
+            
+            if [[ -n "$wp" && -f "$wp" ]]; then
+                apply_wallpaper "$wp" "$mode"
+            else
+                log "No wallpaper for workspace $ws (wp=$wp)"
+            fi
+            
+            last_ws="$ws"
+        fi
+        
+        sleep 0.5
+    done
+}
+
+watch_workspace_sway() {
+    log "Sway workspace watcher started"
+    
+    while read -r event; do
+        local ws
+        ws=$(echo "$event" | jq -r '.current.num' 2>/dev/null || echo "")
+        
+        if [[ -z "$ws" || "$ws" == "null" ]]; then
+            continue
+        fi
+        
+        log "Sway workspace event: $ws"
+        
+        local wp mode
+        wp=$(get_wallpaper_for_workspace "$ws")
+        mode=$(get_mode_for_workspace "$ws")
+        
+        if [[ -n "$wp" && -f "$wp" ]]; then
+            apply_wallpaper "$wp" "$mode"
+        else
+            log "No wallpaper for workspace $ws"
+        fi
+        
+    done < <(swaymsg -t subscribe -m '["workspace"]' 2>/dev/null)
+}
+
 create_handler_script() {
     cat > "$HANDLER_SCRIPT" <<'HANDLER_EOF'
 #!/usr/bin/env bash
 # Socket handler - processes one request and exits
 
-DB_PATH="${HOME}/.local/share/mados/wallpapers.db"
+DATA_DIR="${HOME}/.local/share/mados"
+DB_PATH="${DATA_DIR}/wallpapers.db"
+LOG_TAG="mados-wallpaperd-handler"
 
 log() {
-    echo "[$(date '+%H:%M:%S')] handler: $*" >&2
+    echo "[$(date '+%H:%M:%S')] $LOG_TAG: $*" >&2
 }
 
 init_db() {
@@ -167,6 +399,8 @@ handle_set() {
     wm=$(detect_wm)
     current_ws=$(get_current_workspace "$wm")
     
+    log "handle_set: ws=$ws, wp=$wp, mode=$mode, current_ws=$current_ws"
+    
     if [[ -n "$wp" && -f "$wp" ]]; then
         [[ -z "$mode" ]] && mode="fill"
         
@@ -181,12 +415,15 @@ handle_set() {
         
         if [[ -n "$wallpaper_id" ]]; then
             sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
+            log "handle_set: updated DB for workspace $ws"
         fi
         
         if [[ "$ws" == "$current_ws" ]]; then
+            log "handle_set: applying wallpaper for current workspace"
             apply_wallpaper "$wp" "$mode"
             echo "{\"ok\":true,\"applied\":true,\"workspace\":$ws}"
         else
+            log "handle_set: not current workspace ($current_ws), not applying"
             echo "{\"ok\":true,\"applied\":false,\"workspace\":$ws}"
         fi
         return
@@ -196,10 +433,13 @@ handle_set() {
     db_wp=$(get_wallpaper_for_workspace "$ws")
     db_mode=$(get_mode_for_workspace "$ws")
     
+    log "handle_set: no path provided, reading from DB: wp=$db_wp"
+    
     if [[ -n "$db_wp" && -f "$db_wp" ]]; then
         apply_wallpaper "$db_wp" "$db_mode"
         echo "{\"ok\":true,\"applied\":true,\"workspace\":$ws,\"path\":\"$db_wp\",\"mode\":\"$db_mode\"}"
     else
+        log "handle_set: no wallpaper in DB for workspace $ws"
         echo "{\"ok\":true,\"applied\":false,\"workspace\":$ws,\"error\":\"no wallpaper assigned\"}"
     fi
 }
@@ -212,17 +452,21 @@ handle_current() {
     echo "{\"workspace\":$ws,\"wm\":\"$wm\"}"
 }
 
-# Process one request from stdin
+# Read request from stdin
 read -r request
 
 if [[ -z "$request" ]]; then
     exit 0
 fi
 
+log "Received: $request"
+
 cmd=$(echo "$request" | jq -r '.cmd // empty' 2>/dev/null)
 ws=$(echo "$request" | jq -r '.workspace // empty' 2>/dev/null)
 wp=$(echo "$request" | jq -r '.path // empty' 2>/dev/null)
 mode=$(echo "$request" | jq -r '.mode // empty' 2>/dev/null)
+
+log "Parsed: cmd=$cmd, ws=$ws, wp=$wp, mode=$mode"
 
 case "$cmd" in
     list)
@@ -238,201 +482,13 @@ case "$cmd" in
         handle_current
         ;;
     *)
+        log "Unknown command: $cmd"
         echo "{\"error\":\"unknown command: $cmd\"}"
         ;;
 esac
 HANDLER_EOF
     chmod +x "$HANDLER_SCRIPT"
-}
-
-init_db() {
-    mkdir -p "$(dirname "$DB_PATH")"
-    
-    if [[ ! -f "$DB_PATH" ]]; then
-        sqlite3 "$DB_PATH" <<'SQL'
-PRAGMA journal_mode=WAL;
-CREATE TABLE IF NOT EXISTS wallpapers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    path TEXT UNIQUE NOT NULL
-);
-CREATE TABLE IF NOT EXISTS assignments (
-    workspace INTEGER PRIMARY KEY,
-    wallpaper_id INTEGER NOT NULL REFERENCES wallpapers(id),
-    mode TEXT DEFAULT 'fill'
-);
-SQL
-        log "Database created at $DB_PATH"
-    fi
-    
-    has_mode=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM pragma_table_info('assignments') WHERE name='mode';" 2>/dev/null || echo "0")
-    if [[ "$has_mode" -eq 0 ]]; then
-        log "Migrating database: adding mode column..."
-        sqlite3 "$DB_PATH" "ALTER TABLE assignments ADD COLUMN mode TEXT DEFAULT 'fill';"
-    fi
-}
-
-populate_from_system() {
-    local count
-    count=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM wallpapers" 2>/dev/null || echo "0")
-    
-    if [[ "$count" -gt 0 ]]; then
-        return
-    fi
-    
-    log "DB empty, populating from $SYSTEM_WALLPAPERS..."
-    
-    shopt -s nullglob
-    local files=()
-    files=("$SYSTEM_WALLPAPERS"/*.png "$SYSTEM_WALLPAPERS"/*.jpg "$SYSTEM_WALLPAPERS"/*.jpeg "$SYSTEM_WALLPAPERS"/*.webp)
-    
-    if [[ ${#files[@]} -eq 0 ]]; then
-        log "No wallpapers found in $SYSTEM_WALLPAPERS"
-        return
-    fi
-    
-    local shuffled
-    shuffled=$(printf '%s\n' "${files[@]}" | shuf)
-    
-    while IFS= read -r file; do
-        local escaped="${file//\'/\'\'}"
-        sqlite3 "$DB_PATH" "INSERT OR IGNORE INTO wallpapers(path) VALUES('$escaped');" 2>/dev/null
-    done <<< "$shuffled"
-    
-    count=$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM wallpapers" 2>/dev/null || echo "0")
-    log "Populated $count wallpapers from system"
-}
-
-assign_random_wallpapers() {
-    local max_ws=${1:-6}
-    
-    local wallpapers
-    wallpapers=$(sqlite3 "$DB_PATH" "SELECT id FROM wallpapers" 2>/dev/null)
-    
-    if [[ -z "$wallpapers" ]]; then
-        log "No wallpapers to assign"
-        return 1
-    fi
-    
-    local wallpapers_array
-    IFS=$'\n' read -d '' -r -a wallpapers_array <<< "$wallpapers" || true
-    local total=${#wallpapers_array[@]}
-    
-    if [[ $total -eq 0 ]]; then
-        return
-    fi
-    
-    for ws in $(seq 1 "$max_ws"); do
-        local random_idx=$((RANDOM % total))
-        local wallpaper_id="${wallpapers_array[$random_idx]}"
-        local mode="fill"
-        sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO assignments(workspace, wallpaper_id, mode) VALUES($ws, $wallpaper_id, '$mode')" 2>/dev/null || true
-    done
-    
-    log "Assigned random wallpapers to $max_ws workspaces"
-}
-
-detect_wm() {
-    if [[ "${XDG_CURRENT_DESKTOP:-}" == *"sway"* ]] || command -v swaymsg >/dev/null 2>&1; then
-        echo "sway"
-    elif [[ "${XDG_CURRENT_DESKTOP:-}" == *"hypr"* ]] || command -v hyprctl >/dev/null 2>&1; then
-        echo "hyprland"
-    elif command -v swaymsg >/dev/null 2>&1; then
-        echo "sway"
-    elif command -v hyprctl >/dev/null 2>&1; then
-        echo "hyprland"
-    else
-        echo "unknown"
-    fi
-}
-
-get_current_workspace() {
-    local wm=$1
-    case "$wm" in
-        sway)
-            swaymsg -t get_workspaces 2>/dev/null | jq -r '.[] | select(.focused==true) | .num' 2>/dev/null || echo "1"
-            ;;
-        hyprland)
-            hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1"
-            ;;
-        *)
-            echo "1"
-            ;;
-    esac
-}
-
-get_wallpaper_for_workspace() {
-    local ws=$1
-    sqlite3 "$DB_PATH" "SELECT w.path FROM wallpapers w JOIN assignments a ON w.id = a.wallpaper_id WHERE a.workspace = $ws" 2>/dev/null || echo ""
-}
-
-get_mode_for_workspace() {
-    local ws=$1
-    sqlite3 "$DB_PATH" "SELECT a.mode FROM assignments a WHERE a.workspace = $ws" 2>/dev/null || echo "fill"
-}
-
-apply_wallpaper() {
-    local wp=$1
-    local mode=${2:-fill}
-    
-    if [[ -z "$wp" || ! -f "$wp" ]]; then
-        log "Wallpaper not found: $wp"
-        return 1
-    fi
-    
-    if command -v swww >/dev/null 2>&1; then
-        if ! swww query >/dev/null 2>&1; then
-            swww-daemon &
-            disown
-            for _ in $(seq 1 30); do
-                swww query >/dev/null 2>&1 && break
-                sleep 0.3
-            done
-        fi
-        swww img "$wp" --transition-type wipe --transition-duration 0.3 2>/dev/null || \
-        swww img "$wp" 2>/dev/null || return 1
-        sleep 0.5
-    elif command -v swaybg >/dev/null 2>&1; then
-        pkill -f "swaybg.*-i" 2>/dev/null || true
-        swaybg -i "$wp" -m "$mode" &
-    else
-        log "No wallpaper setter found"
-        return 1
-    fi
-}
-
-watch_workspace_hyprland() {
-    local last_ws=""
-    while true; do
-        local ws
-        ws=$(hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1")
-        if [[ "$ws" != "$last_ws" ]]; then
-            local wp mode
-            wp=$(get_wallpaper_for_workspace "$ws")
-            mode=$(get_mode_for_workspace "$ws")
-            if [[ -n "$wp" && -f "$wp" ]]; then
-                apply_wallpaper "$wp" "$mode"
-                log "Workspace $ws: $(basename "$wp")"
-            fi
-            last_ws="$ws"
-        fi
-        sleep 0.5
-    done
-}
-
-watch_workspace_sway() {
-    while read -r event; do
-        local ws
-        ws=$(echo "$event" | jq -r '.current.num' 2>/dev/null || echo "")
-        if [[ -n "$ws" && "$ws" != "null" ]]; then
-            local wp mode
-            wp=$(get_wallpaper_for_workspace "$ws")
-            mode=$(get_mode_for_workspace "$ws")
-            if [[ -n "$wp" && -f "$wp" ]]; then
-                apply_wallpaper "$wp" "$mode"
-                log "Workspace $ws: $(basename "$wp")"
-            fi
-        fi
-    done < <(swaymsg -t subscribe -m '["workspace"]' 2>/dev/null)
+    log "Handler script created at $HANDLER_SCRIPT"
 }
 
 start_daemon() {
@@ -477,6 +533,9 @@ start_daemon() {
     current_ws=$(get_current_workspace "$wm")
     wp=$(get_wallpaper_for_workspace "$current_ws")
     mode=$(get_mode_for_workspace "$current_ws")
+    
+    log "Current workspace: $current_ws, wallpaper: $wp"
+    
     if [[ -n "$wp" && -f "$wp" ]]; then
         apply_wallpaper "$wp" "$mode"
     fi
@@ -485,7 +544,7 @@ start_daemon() {
     
     while true; do
         rm -f "$SOCK_PATH"
-        socat UNIX-LISTEN:"$SOCK_PATH",fork,reuseaddr,mode=0666 "EXEC:$HANDLER_SCRIPT,bind=*"
+        socat UNIX-LISTEN:"$SOCK_PATH",fork,mode=0666 "EXEC:${HANDLER_SCRIPT}"
     done
 }
 
