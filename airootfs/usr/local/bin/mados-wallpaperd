@@ -243,11 +243,19 @@ watch_workspace_sway() {
 }
 
 watch_workspace_hyprland() {
+    log "Watch loop started"
+    sleep 2
     local last_ws=""
     while true; do
-        local ws
-        ws=$(hyprctl activeworkspace 2>/dev/null | grep -oP 'workspace ID \K\d+' || echo "1")
+        local ws raw
+        raw=$(hyprctl activeworkspace 2>/dev/null)
+        ws=$(echo "$raw" | grep -E '^workspace ID' | grep -oP '\d+' | head -1 || echo "")
+        if [[ -z "$ws" ]]; then
+            ws="1"
+        fi
+        log "DEBUG: raw='${raw:0:50}' ws='$ws' last_ws='$last_ws'"
         if [[ "$ws" != "$last_ws" ]]; then
+            log "Workspace changed: $last_ws -> $ws"
             on_workspace_change "$ws"
             last_ws="$ws"
         fi
@@ -270,9 +278,9 @@ on_workspace_change() {
 
 handle_client() {
     local cmd=$1
-    local arg1=$2
-    local arg2=$3
-    local arg3=$4
+    local arg1=${2:-}
+    local arg2=${3:-}
+    local arg3=${4:-}
     
     case "$cmd" in
         init)
@@ -307,7 +315,25 @@ handle_client() {
             echo "OK"
             ;;
         set)
-            set_wallpaper_db "$arg1" "$arg2" "$arg3"
+            if [[ -n "$arg1" && -n "$arg2" ]]; then
+                set_wallpaper_db "$arg1" "$arg2" "$arg3"
+            elif [[ -n "$arg1" ]]; then
+                local wp mode
+                wp=$(get_wallpaper_for_workspace "$arg1")
+                mode=$(get_mode_for_workspace "$arg1")
+                if [[ -n "$wp" && -f "$wp" ]]; then
+                    apply_wallpaper "$wp" "$mode"
+                fi
+            else
+                local wm ws wp mode
+                wm=$(detect_wm)
+                ws=$(get_current_workspace "$wm")
+                wp=$(get_wallpaper_for_workspace "$ws")
+                mode=$(get_mode_for_workspace "$ws")
+                if [[ -n "$wp" && -f "$wp" ]]; then
+                    apply_wallpaper "$wp" "$mode"
+                fi
+            fi
             echo "OK"
             ;;
         get)
