@@ -429,11 +429,47 @@ else
 fi
 
 echo "=== madOS: Installing AUR packages ==="
-if command -v yay &>/dev/null; then
-    echo "Installing onlyoffice-bin and photogimp from AUR..."
-    sudo -u nobody yay -S --noconfirm onlyoffice-bin photogimp 2>&1 || echo "⚠ AUR packages installation failed (may need network)"
-else
-    echo "⚠ yay not installed, skipping AUR packages"
+LOCAL_REPO_DIR="/var/cache/pacman/pkg-local"
+mkdir -p "$LOCAL_REPO_DIR"
+
+install_aur_package() {
+    local pkgname="$1"
+    
+    if pacman -Q "$pkgname" &>/dev/null; then
+        echo "  ✓ $pkgname already installed"
+        return 0
+    fi
+    
+    echo "  → Building $pkgname from AUR..."
+    
+    local build_dir=$(mktemp -d)
+    cd "$build_dir"
+    
+    if git clone --depth=1 "https://aur.archlinux.org/${pkgname}.git" "$pkgname" 2>&1; then
+        cd "$pkgname"
+        if makepkg --noconfirm -s --install 2>&1; then
+            local pkg_file=$(ls -t *.pkg.tar.zst 2>/dev/null | head -1)
+            if [[ -n "$pkg_file" ]]; then
+                cp "$pkg_file" "$LOCAL_REPO_DIR/"
+                echo "  ✓ $pkgname built and installed"
+            fi
+        else
+            echo "  ⚠ Failed to build $pkgname"
+        fi
+    else
+        echo "  ⚠ Failed to clone $pkgname"
+    fi
+    
+    cd /
+    rm -rf "$build_dir"
+}
+
+install_aur_package "onlyoffice-bin"
+install_aur_package "photogimp"
+
+# Update local repo database
+if ls "$LOCAL_REPO_DIR"/*.pkg.tar.zst &>/dev/null; then
+    repo-add "$LOCAL_REPO_DIR/custom.db.tar.gz" "$LOCAL_REPO_DIR"/*.pkg.tar.zst 2>/dev/null || true
 fi
 
 echo "=== madOS: Pre-installation complete ==="
