@@ -192,6 +192,20 @@ Depends = sed
 Exec = /usr/bin/sed -i -e 's|^Exec=.*|Exec=/usr/local/bin/hyprland-session|' -e 's|^Comment=.*|Comment=madOS Hyprland session|' /usr/share/wayland-sessions/hyprland.desktop
 EOFHOOK2
 
+cat > /etc/pacman.d/hooks/niri-desktop-override.hook <<'EOFHOOK3'
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = niri
+
+[Action]
+Description = Customizing Niri session for madOS...
+When = PostTransaction
+Depends = sed
+Exec = /usr/bin/sed -i -e 's|^Exec=.*|Exec=/usr/local/bin/niri-session|' -e 's|^Comment=.*|Comment=madOS Niri session|' /usr/share/wayland-sessions/niri.desktop
+EOFHOOK3
+
 echo "Verifying graphical environment components..."
 GRAPHICAL_OK=1
 for bin in cage regreet sway; do
@@ -203,7 +217,7 @@ for bin in cage regreet sway; do
     fi
 done
 
-for script in /usr/local/bin/cage-greeter /usr/local/bin/sway-session /usr/local/bin/hyprland-session /usr/local/bin/start-hyprland /usr/local/bin/select-compositor; do
+for script in /usr/local/bin/cage-greeter /usr/local/bin/sway-session /usr/local/bin/hyprland-session /usr/local/bin/niri-session /usr/local/bin/start-hyprland /usr/local/bin/select-compositor; do
     if [ -x "$script" ]; then
         echo "  ✓ $script is executable"
     elif [ -f "$script" ]; then

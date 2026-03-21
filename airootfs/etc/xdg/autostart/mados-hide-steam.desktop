@@ -1,0 +1,6 @@
+[Desktop Entry]
+Type=Application
+Name=madOS Hide Steam
+Exec=/usr/local/bin/mados-hide-steam
+X-GNOME-Autostart-enabled=true
+X-Systemd-After=graphical.target

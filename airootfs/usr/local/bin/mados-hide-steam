@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+HIDE_THRESHOLD_MB=300
+STEAM_DESKTOP="/usr/share/applications/steam.desktop"
+STEAM_HIDDEN="/usr/share/applications/steam.desktop.hidden"
+
+check_disk_space() {
+    local target_dir="${1:-${HOME}}"
+    local available_mb
+
+    if [ -d "$target_dir" ]; then
+        available_mb=$(df -BM --output=avail "$target_dir" 2>/dev/null | tail -1 | sed 's/M//')
+    else
+        available_mb=$(df -BM --output=avail ~ 2>/dev/null | tail -1 | sed 's/M//')
+    fi
+
+    echo "$available_mb"
+}
+
+hide_steam() {
+    if [ -f "$STEAM_DESKTOP" ] && [ ! -f "$STEAM_HIDDEN" ]; then
+        mv "$STEAM_DESKTOP" "$STEAM_HIDDEN"
+        echo "Hidden Steam launcher (only ${available_mb}MB available, need ${HIDE_THRESHOLD_MB}MB)"
+    fi
+}
+
+restore_steam() {
+    if [ -f "$STEAM_HIDDEN" ] && [ ! -f "$STEAM_DESKTOP" ]; then
+        mv "$STEAM_HIDDEN" "$STEAM_DESKTOP"
+        echo "Restored Steam launcher"
+    fi
+}
+
+main() {
+    if [ ! -d /run/archiso ]; then
+        restore_steam 2>/dev/null || true
+        exit 0
+    fi
+
+    available_mb=$(check_disk_space)
+
+    if [ "$available_mb" -lt "$HIDE_THRESHOLD_MB" ]; then
+        hide_steam
+    else
+        restore_steam 2>/dev/null || true
+    fi
+}
+
+main
