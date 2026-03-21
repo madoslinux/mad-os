@@ -191,3 +191,7 @@ clamav
 fail2ban
 zenity
 steam
+
+# Office and Graphics
+gimp
+libreoffice-still
