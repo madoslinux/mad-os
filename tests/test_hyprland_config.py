@@ -1899,10 +1899,10 @@ class TestHyprlandWallpaperSetHelper(unittest.TestCase):
         )
 
     def test_helper_script_has_shebang(self):
-        """mados-wallpaperd must have a bash shebang."""
+        """mados-wallpaperd must have a python3 shebang."""
         with open(self.HELPER_SCRIPT) as f:
             first_line = f.readline()
-        self.assertIn("bash", first_line)
+        self.assertIn("python3", first_line)
 
     def test_helper_reads_sqlite_db(self):
         """Helper must read from the same SQLite database as the daemon."""
@@ -1934,9 +1934,9 @@ class TestHyprlandWallpaperSetHelper(unittest.TestCase):
         with open(self.HELPER_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "swww img",
+            "swww",
             content,
-            "Helper must use swww img for smooth wallpaper transitions",
+            "Helper must use swww for smooth wallpaper transitions",
         )
 
     def test_helper_accepts_workspace_argument(self):
@@ -1944,8 +1944,8 @@ class TestHyprlandWallpaperSetHelper(unittest.TestCase):
         with open(self.HELPER_SCRIPT) as f:
             content = f.read()
         self.assertTrue(
-            "$1" in content or "${1" in content,
-            "Helper must accept workspace number as first argument",
+            "args.args" in content or "parse_args()" in content,
+            "Helper must accept workspace number as argument via argparse",
         )
 
     def test_profiledef_has_helper_permissions(self):

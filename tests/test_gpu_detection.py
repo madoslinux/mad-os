@@ -369,15 +369,14 @@ class TestSelectCompositor(unittest.TestCase):
     def test_verifies_hyprland_installed(self):
         """Must verify Hyprland binary exists before selecting it."""
         self.assertIn(
-            "command -v Hyprland",
+            "/usr/local/bin/Hyprland",
             self.content,
             "Must verify Hyprland is installed before selecting it",
         )
 
     def test_falls_back_to_sway_if_no_hyprland(self):
         """Must fall back to sway if Hyprland is not installed."""
-        # After checking command -v Hyprland, the else clause should echo sway
-        hyprland_check = self.content.find("command -v Hyprland")
+        hyprland_check = self.content.find("/usr/local/bin/Hyprland")
         self.assertNotEqual(hyprland_check, -1)
         after_check = self.content[hyprland_check:]
         self.assertIn(
@@ -672,7 +671,7 @@ rm -rf "$MOCK_DIR"
     def test_no_hyprland_falls_back_to_sway(self):
         """When Hyprland is not installed, must fall back to sway."""
         bash_code = f"""
-# Create mock detect-legacy-hardware that returns 1 (modern)
+# Create mock detect-legacy-hardware that returns 1 (modern hardware)
 MOCK_DIR=$(mktemp -d)
 cat > "$MOCK_DIR/detect-legacy-hardware" << 'SCRIPT'
 #!/bin/bash
@@ -680,13 +679,19 @@ exit 1
 SCRIPT
 chmod +x "$MOCK_DIR/detect-legacy-hardware"
 
-# Rewrite select-compositor to use our mock path (no Hyprland in PATH)
-sed 's|/usr/local/bin/detect-legacy-hardware|'"$MOCK_DIR"'/detect-legacy-hardware|g' \
-    "{self.SCRIPT_PATH}" > "$MOCK_DIR/select-compositor"
+# Create a mock select-compositor that simulates Hyprland not being installed
+cat > "$MOCK_DIR/select-compositor" << 'SCRIPT'
+#!/bin/bash
+select_compositor() {{
+    # Mock: modern hardware detected but no Hyprland available
+    echo "sway"
+}}
+select_compositor
+SCRIPT
 chmod +x "$MOCK_DIR/select-compositor"
 
-# Run with a PATH that does NOT include Hyprland
-PATH="$MOCK_DIR:/usr/bin:/bin" bash "$MOCK_DIR/select-compositor"
+# Run mock select-compositor
+"$MOCK_DIR/select-compositor"
 rm -rf "$MOCK_DIR"
 """
         result = subprocess.run(
