@@ -95,13 +95,19 @@ file_permissions=(
   ["/etc/systemd/system/ufw.service"]="0:0:644"
   ["/etc/systemd/system/multi-user.target.wants/ufw.service"]="0:0:644"
 
+  # Sudoers configuration
+  ["/etc/sudoers"]="0:0:440"
+  ["/etc/sudoers.d/gufw"]="0:0:440"
+
   # GUFW Firewall GUI
   ["/usr/local/bin/gufw"]="0:0:755"
   ["/usr/local/bin/gufw-pkexec"]="0:0:755"
-  ["/etc/sudoers.d/gufw"]="0:0:440"
   ["/etc/polkit-1/rules.d/49-nopasswd_gufw.rules"]="0:0:644"
   ["/usr/share/applications/gufw-sudo.desktop"]="0:0:644"
   ["/usr/share/polkit-1/actions/org.archlinux.pkexec.gufw.policy"]="0:0:644"
+
+  # UFW enable at login
+  ["/etc/profile.d/mados-ufw-enable.sh"]="0:0:755"
 
   # Security hardening
   ["/etc/sysctl.d/99-security.conf"]="0:0:644"

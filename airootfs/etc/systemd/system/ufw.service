@@ -1,16 +1,16 @@
 [Unit]
 Description=Uncomplicated Firewall
 Documentation=man:ufw(8)
-DefaultDependencies=no
 After=network-pre.target load-iptables-modules.service
 Before=network.target
 Wants=network-pre.target load-iptables-modules.service
 
 [Service]
-Type=forking
-ExecStart=/usr/bin/ufw --enable
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/ufw --force enable
+ExecStop=/usr/bin/ufw disable
 ExecReload=/usr/bin/ufw reload
-Restart=on-failure
 RuntimeDirectory=ufw
 RuntimeDirectoryMode=0755
 

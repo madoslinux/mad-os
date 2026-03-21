@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Firewall Configuration
 Comment=Configure firewall rules
-Exec=pkexec /usr/bin/gufw-pkexec
+Exec=sudo gufw
 Icon=gufw
 Terminal=false
 Type=Application

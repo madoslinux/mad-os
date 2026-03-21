@@ -1,0 +1,4 @@
+## sudoers base configuration for madOS
+## Includes all files in /etc/sudoers.d/
+
+@includedir /etc/sudoers.d

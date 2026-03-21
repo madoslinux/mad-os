@@ -59,6 +59,7 @@ xdg-user-dirs
 
 # Utilidades del sistema
 htop
+btop
 wget
 curl
 jq

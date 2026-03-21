@@ -217,28 +217,30 @@ window#waybar {
 #pulseaudio {
     padding: 3px 12px;
     margin: 3px 2px;
-    color: #9d4edd;
-    background: linear-gradient(135deg, rgba(157, 78, 221, 0.12), rgba(120, 50, 180, 0.08));
+    color: #c77dff;
+    background: rgba(157, 78, 221, 0.25);
     border-radius: 6px;
     font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
-        0 0 8px #9d4edd,
-        0 0 12px #9d4edd,
-        0 0 16px rgba(157, 78, 221, 0.8),
-        0 0 20px rgba(157, 78, 221, 0.5);
+        0 0 10px #9d4edd,
+        0 0 15px #9d4edd,
+        0 0 20px #9d4edd,
+        0 0 25px rgba(157, 78, 221, 0.9),
+        0 0 30px rgba(157, 78, 221, 0.6);
 }
 
 #pulseaudio:hover {
-    background: linear-gradient(135deg, rgba(157, 78, 221, 0.2), rgba(120, 50, 180, 0.12));
+    background: rgba(157, 78, 221, 0.35);
     text-shadow:
-        0 0 10px #9d4edd,
-        0 0 15px #9d4edd,
-        0 0 20px rgba(157, 78, 221, 0.9),
-        0 0 25px rgba(157, 78, 221, 0.6);
+        0 0 12px #9d4edd,
+        0 0 18px #9d4edd,
+        0 0 25px #9d4edd,
+        0 0 32px rgba(157, 78, 221, 0.95),
+        0 0 40px rgba(157, 78, 221, 0.7);
 }
 
 #pulseaudio.muted {

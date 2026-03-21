@@ -428,4 +428,32 @@ else
     fi
 fi
 
+echo "=== madOS: Installing AUR packages ==="
+if command -v yay &>/dev/null; then
+    echo "Installing onlyoffice-bin and photogimp from AUR..."
+    sudo -u nobody yay -S --noconfirm onlyoffice-bin photogimp 2>&1 || echo "⚠ AUR packages installation failed (may need network)"
+else
+    echo "⚠ yay not installed, skipping AUR packages"
+fi
+
 echo "=== madOS: Pre-installation complete ==="
+
+# ── Replace gufw.desktop with our sudo-enabled version ────────────────────
+# The package installs its own .desktop with Exec=gufw (which uses pkexec and fails in Wayland).
+# We must replace it after pacman installation.
+rm -f /usr/share/applications/gufw.desktop
+cat > /usr/share/applications/gufw.desktop << 'EOF'
+[Desktop Entry]
+Version=1.0
+Name=Firewall Configuration
+Comment=Configure firewall with GUFW
+Exec=sudo gufw
+Icon=gufw
+Terminal=false
+Type=Application
+Categories=System;Settings;Security;
+Keywords=firewall;ufw;security;
+EOF
+chmod 644 /usr/share/applications/gufw.desktop
+echo "  → Replaced gufw.desktop with sudo-enabled version"
+cat /usr/share/applications/gufw.desktop | grep "^Exec="
