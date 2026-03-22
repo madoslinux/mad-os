@@ -3,7 +3,7 @@
 * {
     margin: 0;
     padding: 0;
-    border: none;
+    padding: 1px 7px;
     border-radius: 0;
     min-height: 0;
 }
@@ -11,28 +11,24 @@
 window#waybar {
     background: linear-gradient(90deg, rgba(46, 52, 64, 0.75) 0%, rgba(59, 66, 82, 0.75) 50%, rgba(46, 52, 64, 0.75) 100%);
     color: #ECEFF4;
-    border-bottom: 2px solid rgba(136, 192, 208, 0.3);
-    padding-bottom: 1px;
     font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
-    font-size: 12px;
+    font-size: 8px;
     font-weight: 500;
 }
 
 /* ===== Left: Workspaces ===== */
 
 #workspaces {
-    padding: 0 6px;
+    padding: 0 3px;
 }
 
 #workspaces button {
-    padding: 3px 10px;
-    margin: 3px 2px;
+    padding: 2px 7px;
+    margin: 2px 1px;
     color: #88C0D0;
     background: transparent;
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     text-shadow:
@@ -77,8 +73,8 @@ window#waybar {
 
 /* Mode indicator */
 #mode {
-    padding: 3px 12px;
-    margin: 3px 6px;
+    padding: 1px 9px;
+    margin: 2px 4px;
     background: linear-gradient(135deg, rgba(191, 97, 106, 0.15), rgba(235, 203, 139, 0.1));
     color: #BF616A;
     border-radius: 6px;
@@ -88,12 +84,10 @@ window#waybar {
 /* ===== Center: Clock - LED Rojo ===== */
 
 #clock {
-    padding: 3px 18px;
-    margin: 3px 0;
+    padding: 1px 15px;
+    margin: 2px 0;
     color: #ff3366;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     background: linear-gradient(135deg, rgba(255, 51, 102, 0.15), rgba(220, 30, 80, 0.1));
     border-radius: 8px;
@@ -117,22 +111,20 @@ window#waybar {
 /* ===== Right Modules ===== */
 
 #tray {
-    padding: 3px 10px;
-    margin: 3px 2px;
+    padding: 2px 7px;
+    margin: 2px 1px;
     background: rgba(76, 86, 106, 0.3);
     border-radius: 6px;
 }
 
 /* CPU - LED Verde Cian */
 #cpu {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #00ff9f;
     background: linear-gradient(135deg, rgba(0, 255, 159, 0.12), rgba(0, 200, 120, 0.08));
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
@@ -153,14 +145,12 @@ window#waybar {
 
 /* Memory - LED Azul Cian */
 #memory {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #00d4ff;
     background: linear-gradient(135deg, rgba(0, 212, 255, 0.12), rgba(0, 170, 220, 0.08));
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
@@ -181,14 +171,12 @@ window#waybar {
 
 /* Network - LED Verde Menta */
 #network {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #00ffaa;
     background: linear-gradient(135deg, rgba(0, 255, 170, 0.12), rgba(0, 200, 140, 0.08));
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
@@ -215,14 +203,12 @@ window#waybar {
 
 /* PulseAudio - LED Púrpura */
 #pulseaudio {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #c77dff;
     background: rgba(157, 78, 221, 0.25);
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 11px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
@@ -251,14 +237,12 @@ window#waybar {
 
 /* Backlight - LED Naranja/Ámbar */
 #backlight {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #ffaa00;
     background: linear-gradient(135deg, rgba(255, 170, 0, 0.12), rgba(220, 140, 0, 0.08));
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
@@ -279,14 +263,12 @@ window#waybar {
 
 /* Battery - LED Verde Neón */
 #battery {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #39ff14;
     background: linear-gradient(135deg, rgba(57, 255, 20, 0.12), rgba(30, 200, 10, 0.08));
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
@@ -348,14 +330,12 @@ window#waybar {
 
 /* Custom Help - LED Amarillo/Azulado */
 #custom-help {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #81A1C1;
     background: linear-gradient(135deg, rgba(129, 161, 193, 0.12), rgba(94, 129, 172, 0.08));
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:
@@ -376,14 +356,12 @@ window#waybar {
 
 /* Custom Power - LED Rojo/Púrpura */
 #custom-power {
-    padding: 3px 12px;
-    margin: 3px 2px;
+    padding: 1px 9px;
+    margin: 2px 1px;
     color: #BF616A;
     background: linear-gradient(135deg, rgba(191, 97, 106, 0.12), rgba(180, 80, 90, 0.08));
     border-radius: 6px;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
     font-weight: 700;
-    font-size: 10px;
     letter-spacing: 1.5px;
     transition: all 0.3s ease;
     text-shadow:

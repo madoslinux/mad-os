@@ -5,8 +5,6 @@
     "exclusive": true,
     "passthrough": false,
     "gtk-layer-shell": true,
-    "height": 28,
-    "spacing": 0,
     "modules-left": [
         "sway/workspaces",
         "sway/mode",
