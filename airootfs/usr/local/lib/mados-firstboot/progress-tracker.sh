@@ -45,7 +45,7 @@ save_checkpoint() {
     local phase="$1"
     local checkpoint_data="${2:-    return 0
 }"
-    echo "$(date +%s)" > "/var/lib/mados-firstboot/${phase}.checkpoint"
+    date +%s > "/var/lib/mados-firstboot/${phase}.checkpoint"
     if [[ -n "$checkpoint_data" ]]; then
         echo "$checkpoint_data" >> "/var/lib/mados-firstboot/${phase}.checkpoint"
     fi
@@ -84,7 +84,7 @@ set_phase_failed() {
 }"
     echo "failed" > "/var/lib/mados-firstboot/${phase}.status"
     echo "error=$error_msg" >> "/var/lib/mados-firstboot/${phase}.checkpoint"
-    echo "$(date +%s)" > "$ROLLBACK_FILE"
+    date +%s > "$ROLLBACK_FILE"
     log_message "Phase failed: $phase - $error_msg"
     show_alert "$phase" "$error_msg"
 }

@@ -670,7 +670,7 @@ rm -rf "$MOCK_DIR"
 
     def test_no_hyprland_falls_back_to_sway(self):
         """When Hyprland is not installed, must fall back to sway."""
-        bash_code = f"""
+        bash_code = """
 # Create mock detect-legacy-hardware that returns 1 (modern hardware)
 MOCK_DIR=$(mktemp -d)
 cat > "$MOCK_DIR/detect-legacy-hardware" << 'SCRIPT'

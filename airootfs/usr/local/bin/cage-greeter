@@ -20,7 +20,8 @@ fi
 
 # Ensure XDG_RUNTIME_DIR is set (required by Wayland compositors)
 if [ -z "$XDG_RUNTIME_DIR" ]; then
-    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    XDG_RUNTIME_DIR="/run/user/$(id -u)"
+    export XDG_RUNTIME_DIR
     mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null
     log "XDG_RUNTIME_DIR was not set, using $XDG_RUNTIME_DIR"
 fi

@@ -54,7 +54,7 @@ export GDK_BACKEND=wayland
 # Get the current user's display and runtime dir
 CURRENT_USER=$(whoami)
 WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
-XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u $CURRENT_USER)}"
+XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}"
 
 log "Current user: $CURRENT_USER"
 log "WAYLAND_DISPLAY: $WAYLAND_DISPLAY"

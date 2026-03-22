@@ -6,7 +6,7 @@
 if [ -n "$SSH_CONNECTION" ]; then
     IP=$(echo "$SSH_CONNECTION" | awk '{print $3}')
     notify-send -u normal "🔐 SSH Connection" "New SSH connection from $IP" 2>/dev/null || true
-    echo "$(date): SSH login from $IP - User: $USER" >> /var/log/login.log 2>/dev/null || true
+    echo "$(date): SSH login from $IP - User: $USER" >> /var/log/login.log || true
 fi
 
 # Verificar fail2ban al iniciar sesión
