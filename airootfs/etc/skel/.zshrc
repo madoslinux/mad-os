@@ -20,6 +20,9 @@ else
     PROMPT='%F{green}%n@%m%f:%F{blue}%~%f%# '
 fi
 
+# User PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 # Aliases
 alias ls='ls --color=auto'
 alias ll='ls -lah'

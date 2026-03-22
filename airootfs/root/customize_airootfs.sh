@@ -409,18 +409,19 @@ fi
 # Yay (AUR helper) - Pre-install from binary
 # ════════════════════════════════════════════════════════════════════════════
 YAY_VERSION="12.4.1"
-YAY_BIN="/usr/local/bin/yay"
+    YAY_BIN="$HOME/.local/bin/yay"
 
 if command -v yay &>/dev/null; then
     echo "✓ yay already installed"
 else
     echo "Installing yay ${YAY_VERSION}..."
     YAY_TMP="/tmp/yay.tar.gz"
-    YAY_URL="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay-${YAY_VERSION}-x86_64.tar.gz"
+    YAY_URL="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay_${YAY_VERSION}_x86_64.tar.gz"
     if curl -fsSL --proto '=https' --tlsv1.2 -o "$YAY_TMP" "$YAY_URL" 2>&1; then
         tar -xzf "$YAY_TMP" -C /tmp
-        mv "/tmp/yay-${YAY_VERSION}-x86_64/yay" "$YAY_BIN"
-        rm -rf "$YAY_TMP" "/tmp/yay-${YAY_VERSION}-x86_64"
+        mkdir -p "$HOME/.local/bin"
+        mv "/tmp/yay_${YAY_VERSION}_x86_64/yay" "$YAY_BIN"
+        rm -rf "$YAY_TMP" "/tmp/yay_${YAY_VERSION}_x86_64"
         chmod +x "$YAY_BIN"
         echo "✓ yay installed to $YAY_BIN"
     else

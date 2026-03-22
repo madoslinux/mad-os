@@ -3,6 +3,9 @@
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
+# User PATH
+export PATH="$HOME/.local/bin:$PATH"
+
 # Aliases
 alias ls='ls --color=auto'
 alias ll='ls -lah'
