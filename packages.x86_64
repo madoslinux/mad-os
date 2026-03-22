@@ -2,7 +2,6 @@
 base
 linux
 linux-firmware
-linux-firmware-nvme
 nvme-cli
 mkinitcpio-archiso
 intel-ucode
