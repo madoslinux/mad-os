@@ -208,7 +208,7 @@ jobs:
           VERSION="${{ steps.build.outputs.version }}"
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
 
-          ia upload "madoslinux/mados-${VERSION}" \
+          python -m internetarchive upload "madoslinux/mados-${VERSION}" \
             "out/${ISO_NAME}" \
             --metadata="title:madOS ${VERSION}" \
             --metadata="creator:madoslinux" \
