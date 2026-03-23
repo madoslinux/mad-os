@@ -369,14 +369,14 @@ class TestSelectCompositor(unittest.TestCase):
     def test_verifies_hyprland_installed(self):
         """Must verify Hyprland binary exists before selecting it."""
         self.assertIn(
-            "/usr/local/bin/Hyprland",
+            "command -v Hyprland",
             self.content,
             "Must verify Hyprland is installed before selecting it",
         )
 
     def test_falls_back_to_sway_if_no_hyprland(self):
         """Must fall back to sway if Hyprland is not installed."""
-        hyprland_check = self.content.find("/usr/local/bin/Hyprland")
+        hyprland_check = self.content.find("command -v Hyprland")
         self.assertNotEqual(hyprland_check, -1)
         after_check = self.content[hyprland_check:]
         self.assertIn(
@@ -682,10 +682,10 @@ chmod +x "$MOCK_DIR/detect-legacy-hardware"
 # Create a mock select-compositor that simulates Hyprland not being installed
 cat > "$MOCK_DIR/select-compositor" << 'SCRIPT'
 #!/bin/bash
-select_compositor() {{
+select_compositor() {
     # Mock: modern hardware detected but no Hyprland available
     echo "sway"
-}}
+}
 select_compositor
 SCRIPT
 chmod +x "$MOCK_DIR/select-compositor"

@@ -25,7 +25,7 @@ select_compositor() {
 
     # Modern hardware: use Hyprland (GPU-accelerated compositor)
     # Verify Hyprland is installed, fall back to Sway if not
-    if [ -x /usr/local/bin/Hyprland ] || [ -x /usr/bin/Hyprland ]; then
+    if command -v Hyprland >/dev/null 2>&1; then
         logger -p user.info -t mados-compositor "Modern hardware detected - selecting hyprland"
         echo "hyprland"
     else
