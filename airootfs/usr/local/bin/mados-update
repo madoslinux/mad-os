@@ -1,5 +1,0 @@
-#!/bin/bash
-# madOS Update Script (Legacy Compatibility)
-# This script now delegates to mados-ota
-
-exec mados-ota "$@"
