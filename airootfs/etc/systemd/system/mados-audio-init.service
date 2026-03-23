@@ -3,6 +3,7 @@ Description=madOS Audio Initialization - Unmute ALSA Controls
 # Run after sound hardware is available
 Wants=systemd-udev-settle.service
 After=systemd-udev-settle.service sound.target
+Before=multi-user.target
 
 [Service]
 Type=oneshot

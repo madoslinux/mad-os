@@ -134,4 +134,8 @@ file_permissions=(
   # ClamAV
   ["/etc/systemd/system/clamav-scan.service"]="0:0:644"
   ["/etc/systemd/system/clamav-scan.timer"]="0:0:644"
+
+  # SSH daemon override for network dependency
+  ["/etc/systemd/system/sshd.service.d/"]="0:0:755"
+  ["/etc/systemd/system/sshd.service.d/override.conf"]="0:0:644"
 )
