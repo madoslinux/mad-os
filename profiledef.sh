@@ -32,6 +32,7 @@ file_permissions=(
   ["/usr/local/bin/choose-mirror"]="0:0:755"
   ["/usr/local/bin/Installation_guide"]="0:0:755"
   ["/usr/local/bin/livecd-sound"]="0:0:755"
+  ["/usr/local/bin/mados-fb-resolution.sh"]="0:0:755"
   ["/usr/local/bin/mados-audio-init.sh"]="0:0:755"
   ["/usr/local/bin/mados-audio-quality.sh"]="0:0:755"
   ["/usr/local/bin/setup-opencode.sh"]="0:0:755"
@@ -77,6 +78,14 @@ file_permissions=(
   ["/usr/local/bin/mados-update"]="0:0:755"
   ["/usr/local/bin/mados-ota"]="0:0:755"
   ["/usr/local/lib/mados_update/"]="0:0:755"
+
+  # Installer scripts (modular)
+  ["/usr/local/lib/mados_installer/scripts/setup-locale.sh"]="0:0:755"
+  ["/usr/local/lib/mados_installer/scripts/setup-user.sh"]="0:0:755"
+  ["/usr/local/lib/mados_installer/scripts/clean-live-artifacts.sh"]="0:0:755"
+  ["/usr/local/lib/mados_installer/scripts/setup-bootloader.sh"]="0:0:755"
+  ["/usr/local/lib/mados_installer/scripts/configure-grub.sh"]="0:0:755"
+  ["/usr/local/lib/mados_installer/scripts/enable-services.sh"]="0:0:755"
 
   ["/etc/mados/"]="0:0:755"
   ["/etc/mados/version.json"]="0:0:644"
@@ -135,7 +144,7 @@ file_permissions=(
   ["/etc/systemd/system/clamav-scan.service"]="0:0:644"
   ["/etc/systemd/system/clamav-scan.timer"]="0:0:644"
 
-  # SSH daemon override for network dependency
-  ["/etc/systemd/system/sshd.service.d/"]="0:0:755"
-  ["/etc/systemd/system/sshd.service.d/override.conf"]="0:0:644"
+  # Framebuffer and GPU early services
+  ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
+  ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
 )

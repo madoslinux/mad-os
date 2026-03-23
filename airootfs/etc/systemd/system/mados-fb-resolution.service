@@ -1,0 +1,18 @@
+[Unit]
+Description=madOS Framebuffer Resolution Configuration
+Documentation=man:fbset(1)
+After=systemd-modules-load.service
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+Before=plymouth-start.service
+Before=display-manager.service
+ConditionKernelCommandLine=!plymouth.enable=0
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-fb-resolution.sh
+RemainAfterExit=yes
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target
