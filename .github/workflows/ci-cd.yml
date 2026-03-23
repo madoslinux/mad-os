@@ -205,6 +205,13 @@ jobs:
           pip install --user internetarchive
           export PATH="$HOME/.local/bin:$PATH"
           
+          mkdir -p ~/.config
+          cat > ~/.config/internetarchive.cfg << 'EOF'
+[secrets]
+access_key = "$IA_ACCESS_KEY"
+secret_key = "$IA_SECRET_KEY"
+EOF
+          
           ISO_NAME="${{ steps.build.outputs.iso_name }}"
           VERSION="${{ steps.build.outputs.version }}"
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
