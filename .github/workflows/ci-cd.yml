@@ -205,25 +205,32 @@ jobs:
           pip install --user internetarchive
           export PATH="$HOME/.local/bin:$PATH"
           
-          mkdir -p ~/.config
-          printf '[secrets]\naccess_key = "%s"\nsecret_key = "%s"\n' "$IA_ACCESS_KEY" "$IA_SECRET_KEY" > ~/.config/internetarchive.cfg
-          
           ISO_NAME="${{ steps.build.outputs.iso_name }}"
           VERSION="${{ steps.build.outputs.version }}"
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
 
-          ia upload "mados-${VERSION}" \
-            "out/${ISO_NAME}" \
-            --metadata="title:madOS ${VERSION}" \
-            --metadata="creator:madoslinux" \
-            --metadata="date:${BUILD_DATE}" \
-            --metadata="description:madOS ${VERSION} - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support." \
-            --metadata="subject:madOS;Arch Linux;Linux distribution;Wayland;Sway" \
-            --metadata="collection:opensource" \
-            --metadata="license:CC0-1.0" \
-            --checksum \
-            --delete \
-            --retries 5
+          python3 -c "
+import internetarchive
+import os
+
+item = internetarchive.get_item('mados-${VERSION}')
+item.upload(
+    'out/${ISO_NAME}',
+    metadata={
+        'title': 'madOS ${VERSION}',
+        'creator': 'madoslinux',
+        'date': '${BUILD_DATE}',
+        'description': 'madOS ${VERSION} - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support.',
+        'subject': 'madOS;Arch Linux;Linux distribution;Wayland;Sway',
+        'collection': 'opensource',
+        'license': 'CC0-1.0',
+    },
+    access_key=os.environ['IA_ACCESS_KEY'],
+    secret_key=os.environ['IA_SECRET_KEY'],
+    checksum=True,
+    delete=True,
+)
+"
 
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
