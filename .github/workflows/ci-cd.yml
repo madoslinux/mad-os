@@ -209,18 +209,18 @@ jobs:
           VERSION="${{ steps.build.outputs.version }}"
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
 
-          python3 -c "
+          python3 << 'PYEOF'
 import internetarchive
 import os
 
-item = internetarchive.get_item('mados-${VERSION}')
+item = internetarchive.get_item('mados-' + os.environ['VERSION'])
 item.upload(
-    'out/${ISO_NAME}',
+    os.environ['ISO_NAME'],
     metadata={
-        'title': 'madOS ${VERSION}',
+        'title': 'madOS ' + os.environ['VERSION'],
         'creator': 'madoslinux',
-        'date': '${BUILD_DATE}',
-        'description': 'madOS ${VERSION} - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support.',
+        'date': os.environ['BUILD_DATE'],
+        'description': 'madOS ' + os.environ['VERSION'] + ' - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support.',
         'subject': 'madOS;Arch Linux;Linux distribution;Wayland;Sway',
         'collection': 'opensource',
         'license': 'CC0-1.0',
@@ -230,7 +230,7 @@ item.upload(
     checksum=True,
     delete=True,
 )
-"
+PYEOF
 
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
