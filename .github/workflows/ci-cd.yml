@@ -210,30 +210,7 @@ jobs:
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
           export IA_ACCESS_KEY IA_SECRET_KEY ISO_NAME VERSION BUILD_DATE
 
-          cat > /tmp/ia_upload.py << 'PYEOF'
-import internetarchive
-import os
-
-item = internetarchive.get_item('mados-' + os.environ['VERSION'])
-item.upload(
-    'out/' + os.environ['ISO_NAME'],
-    metadata={
-        'title': 'madOS ' + os.environ['VERSION'],
-        'creator': 'madoslinux',
-        'date': os.environ['BUILD_DATE'],
-        'description': 'madOS ' + os.environ['VERSION'] + ' - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support.',
-        'subject': 'madOS;Arch Linux;Linux distribution;Wayland;Sway',
-        'collection': 'opensource',
-        'license': 'CC0-1.0',
-    },
-    access_key=os.environ['IA_ACCESS_KEY'],
-    secret_key=os.environ['IA_SECRET_KEY'],
-    checksum=True,
-    delete=True,
-)
-PYEOF
-
-          python3 /tmp/ia_upload.py
+          python3 "${{ github.workspace }}/.github/scripts/ia_upload.py"
 
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
