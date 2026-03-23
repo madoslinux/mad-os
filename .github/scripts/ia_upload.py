@@ -10,7 +10,13 @@ access_key = os.environ["IA_ACCESS_KEY"]
 secret_key = os.environ["IA_SECRET_KEY"]
 
 item = internetarchive.get_item(f"mados-{version}")
-item.upload(
+
+print(f"Uploading {iso_name} to Internet Archive as 'mados-{version}'")
+print(f"Delete existing files: YES (file will be replaced)")
+print(f"Checksum verification: YES")
+print("---")
+
+response = item.upload(
     f"out/{iso_name}",
     metadata={
         "title": f"madOS {version}",
@@ -26,3 +32,11 @@ item.upload(
     checksum=True,
     delete=True,
 )
+
+print(f"---")
+if response:
+    print(f"Upload completed successfully!")
+    print(f"URL: https://archive.org/details/mados-{version}")
+else:
+    print(f"Upload failed: {response}")
+    sys.exit(1)
