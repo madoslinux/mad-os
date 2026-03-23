@@ -208,14 +208,15 @@ jobs:
           ISO_NAME="${{ steps.build.outputs.iso_name }}"
           VERSION="${{ steps.build.outputs.version }}"
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
+          export IA_ACCESS_KEY IA_SECRET_KEY ISO_NAME VERSION BUILD_DATE
 
-          python3 << 'PYEOF'
+          cat > /tmp/ia_upload.py << 'PYEOF'
 import internetarchive
 import os
 
 item = internetarchive.get_item('mados-' + os.environ['VERSION'])
 item.upload(
-    os.environ['ISO_NAME'],
+    'out/' + os.environ['ISO_NAME'],
     metadata={
         'title': 'madOS ' + os.environ['VERSION'],
         'creator': 'madoslinux',
@@ -231,6 +232,8 @@ item.upload(
     delete=True,
 )
 PYEOF
+
+          python3 /tmp/ia_upload.py
 
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
