@@ -4,12 +4,14 @@ on:
   push:
     branches: [main, develop]
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
   repository_dispatch:
     types: [app-updated]
+  create:
+  delete:
 
 permissions:
   contents: write
@@ -171,7 +173,6 @@ jobs:
           
           sha256sum out/*.iso > out/SHA256SUMS || true
           
-          # Rename ISO to use version for predictable naming
           VERSION="${GITHUB_REF_NAME#v}"
           [ -n "$VERSION" ] || VERSION="dev-$(date +%Y%m%d)"
           
@@ -179,7 +180,6 @@ jobs:
           NEW_ISO_NAME="madOS-${VERSION}-x86_64.iso"
           mv "$ISO_FILE" "out/${NEW_ISO_NAME}"
           
-          # Update SHA256SUMS with new name
           sed -i "s/$(basename "$ISO_FILE")/${NEW_ISO_NAME}/g" out/SHA256SUMS
           
           ISO_NAME="$NEW_ISO_NAME"
@@ -197,7 +197,6 @@ jobs:
           echo "Build successful!"
 
       - name: Upload to Internet Archive
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
           IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
           IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
