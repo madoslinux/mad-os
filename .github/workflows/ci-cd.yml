@@ -206,11 +206,7 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           
           mkdir -p ~/.config
-          cat > ~/.config/internetarchive.cfg << 'EOF'
-[secrets]
-access_key = "$IA_ACCESS_KEY"
-secret_key = "$IA_SECRET_KEY"
-EOF
+          printf '[secrets]\naccess_key = "%s"\nsecret_key = "%s"\n' "$IA_ACCESS_KEY" "$IA_SECRET_KEY" > ~/.config/internetarchive.cfg
           
           ISO_NAME="${{ steps.build.outputs.iso_name }}"
           VERSION="${{ steps.build.outputs.version }}"
