@@ -28,5 +28,7 @@ fi
 
 rm -f /etc/mkinitcpio.conf.d/archiso.conf
 
+sed -i 's/^MODULES=(/MODULES=(nvme ahci /' /etc/mkinitcpio.conf 2>/dev/null || true
+
 mkinitcpio -P
 echo "  Initramfs rebuilt successfully"
