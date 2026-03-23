@@ -202,13 +202,14 @@ jobs:
           IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
           IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
         run: |
-          pip install internetarchive
+          pip install --user internetarchive
+          export PATH="$HOME/.local/bin:$PATH"
           
           ISO_NAME="${{ steps.build.outputs.iso_name }}"
           VERSION="${{ steps.build.outputs.version }}"
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
 
-          python -m internetarchive upload "madoslinux/mados-${VERSION}" \
+          ia upload "madoslinux/mados-${VERSION}" \
             "out/${ISO_NAME}" \
             --metadata="title:madOS ${VERSION}" \
             --metadata="creator:madoslinux" \
