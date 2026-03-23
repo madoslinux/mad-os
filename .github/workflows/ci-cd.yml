@@ -220,8 +220,7 @@ jobs:
             --metadata="license:CC0-1.0" \
             --checksum \
             --delete \
-            --retries 5 \
-            --wait-interval 30
+            --retries 5
 
     outputs:
       iso_name: ${{ steps.build.outputs.iso_name }}
