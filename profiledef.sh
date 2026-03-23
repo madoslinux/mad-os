@@ -79,14 +79,6 @@ file_permissions=(
   ["/usr/local/bin/mados-ota"]="0:0:755"
   ["/usr/local/lib/mados_update/"]="0:0:755"
 
-  # Installer scripts (modular)
-  ["/usr/local/lib/mados_installer/scripts/setup-locale.sh"]="0:0:755"
-  ["/usr/local/lib/mados_installer/scripts/setup-user.sh"]="0:0:755"
-  ["/usr/local/lib/mados_installer/scripts/clean-live-artifacts.sh"]="0:0:755"
-  ["/usr/local/lib/mados_installer/scripts/setup-bootloader.sh"]="0:0:755"
-  ["/usr/local/lib/mados_installer/scripts/configure-grub.sh"]="0:0:755"
-  ["/usr/local/lib/mados_installer/scripts/enable-services.sh"]="0:0:755"
-
   ["/etc/mados/"]="0:0:755"
   ["/etc/mados/version.json"]="0:0:644"
   ["/etc/mados/ventoy-persist.conf"]="0:0:644"
