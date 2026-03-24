@@ -118,6 +118,7 @@ file_permissions=(
   ["/etc/rkhunter.conf"]="0:0:644"
   ["/etc/systemd/system/rkhunter.service"]="0:0:644"
   ["/etc/systemd/system/rkhunter.timer"]="0:0:644"
+  ["/etc/systemd/system/rkhunter-init.service"]="0:0:644"
 
   # Fail2Ban
   ["/etc/fail2ban/jail.local"]="0:0:644"

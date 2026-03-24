@@ -1,0 +1,14 @@
+[Unit]
+Description=Rootkit Hunter Database Update
+After=network-online.target
+RefuseManualStart=yes
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rkhunter --update --propupd
+StandardOutput=journal
+StandardError=journal
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

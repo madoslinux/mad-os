@@ -65,7 +65,7 @@ if systemd-detect-virt --vm --quiet 2>/dev/null; then
     # VM performance: generate optimized sway config drop-in
     # Reduces visual overhead (solid bg, no gaps) for smoother experience
     VM_CONF="/etc/sway/config.d/99-vm-performance.conf"
-    if [ ! -f "$VM_CONF" ]; then
+    if [ ! -f "$VM_CONF" ] && [ "$(id -u)" -eq 0 ]; then
         mkdir -p /etc/sway/config.d
         cat > "$VM_CONF" << 'VMCONF'
 # Auto-generated VM performance optimizations

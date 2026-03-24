@@ -1,6 +1,8 @@
 [Unit]
 Description=Rootkit Hunter Daily Scan
-After=network.target
+After=network-online.target
+Requires=rkhunter-init.service
+After=rkhunter-init.service
 
 [Service]
 Type=oneshot

@@ -1,6 +1,6 @@
 [Unit]
 Description=Daily rootkit hunter scan
-After=network.target
+After=network-online.target
 
 [Timer]
 OnCalendar=daily
