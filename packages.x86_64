@@ -140,6 +140,7 @@ wpa_supplicant
 dosfstools
 e2fsprogs
 ntfs-3g
+btrfs-progs
 unzip
 
 # Soporte VM
