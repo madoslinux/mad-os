@@ -9,4 +9,3 @@ Target = *
 Description = Creating pre-update snapshot with snapper...
 When = PreTransaction
 Exec = /usr/local/bin/snapper-pre-update
-Needs = OK
