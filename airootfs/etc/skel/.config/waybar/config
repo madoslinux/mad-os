@@ -37,8 +37,7 @@
             "4": [],
             "5": [],
             "6": []
-        },
-        "on-click": "mados-wallpaperd set {}"
+        }
     },
     "sway/mode": {
         "format": "<span style=\"italic\">󰕷  {}</span>",
@@ -55,8 +54,7 @@
             "4": [],
             "5": [],
             "6": []
-        },
-        "on-click": "mados-wallpaperd set {}"
+        }
     },
     "hyprland/submap": {
         "format": "<span style=\"italic\">󰕷  {}</span>",
@@ -72,8 +70,7 @@
             "4": [],
             "5": [],
             "6": []
-        },
-        "on-click": "mados-wallpaperd set {}"
+        }
     },
     "clock": {
         "format": "<span size='x-large'>󰥔</span>  {:%a %d %b  %H:%M}",
