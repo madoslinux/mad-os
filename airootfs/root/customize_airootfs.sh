@@ -242,6 +242,84 @@ fi
 
 echo "✓ madOS applications suite installed"
 
+# ── mados-updater (OTA update client from madkoding) ─────────────────────
+UPDATER_APP="mados-updater"
+UPDATER_DIR="/usr/local/lib/${UPDATER_APP}"
+UPDATER_PYTHON_DIR="/usr/local/lib/mados_updater"
+UPDATER_LAUNCHER="/usr/local/bin/${UPDATER_APP}"
+UPDATER_GITHUB_REPO="madkoding"
+
+if [[ -d "$UPDATER_PYTHON_DIR/.git" ]]; then
+    echo "Updating $UPDATER_APP..."
+    cd "$UPDATER_PYTHON_DIR"
+    git pull --ff-only origin main 2>/dev/null || true
+    cd /
+else
+    echo "Installing $UPDATER_APP from GitHub..."
+    rm -rf "$UPDATER_DIR" "$UPDATER_PYTHON_DIR"
+    UPDATER_BUILD_DIR=$(mktemp -d)
+    if git clone --depth=1 "https://github.com/${UPDATER_GITHUB_REPO}/${UPDATER_APP}.git" "$UPDATER_BUILD_DIR/${UPDATER_APP}" 2>&1; then
+        mkdir -p /usr/local/lib
+        mv "$UPDATER_BUILD_DIR/${UPDATER_APP}" "$UPDATER_PYTHON_DIR"
+        ln -sf "$UPDATER_PYTHON_DIR" "$UPDATER_DIR"
+        echo "✓ $UPDATER_APP installed"
+    else
+        echo "⚠ Failed to install $UPDATER_APP"
+    fi
+    rm -rf "$UPDATER_BUILD_DIR"
+fi
+
+# Create launcher script (always, whether new or update)
+if [[ -d "$UPDATER_PYTHON_DIR" ]]; then
+    cat > "$UPDATER_LAUNCHER" << 'EOF'
+#!/bin/bash
+# madOS Updater - OTA update client
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+cd "/usr/local/lib/mados_updater"
+exec python3 -m mados_updater "$@"
+EOF
+    chmod +x "$UPDATER_LAUNCHER"
+    echo "✓ $UPDATER_APP launcher created at $UPDATER_LAUNCHER"
+fi
+
+# Install systemd units for mados-updater
+if [[ -d "$UPDATER_PYTHON_DIR" ]]; then
+    mkdir -p /etc/systemd/system
+    cat > /etc/systemd/system/mados-updater.service << 'EOF'
+[Unit]
+Description=mados-updater check for updates
+Documentation=https://github.com/madkoding/mados-updater
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-updater --check
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    cat > /etc/systemd/system/mados-updater.timer << 'EOF'
+[Unit]
+Description=mados-updater periodic update check
+Documentation=https://github.com/madkoding/mados-updater
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target
+EOF
+    chmod 644 /etc/systemd/system/mados-updater.service
+    chmod 644 /etc/systemd/system/mados-updater.timer
+    echo "✓ $UPDATER_APP systemd units installed"
+fi
+
 # ════════════════════════════════════════════════════════════════════════════
 # NVM (Node Version Manager) y Node
 # NOTA: No se instala en la imagen ISO para reducir tamaño.
