@@ -76,6 +76,18 @@ file_permissions=(
   ["/usr/local/bin/mados-power"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
 
+  # mados-updater
+  ["/usr/local/bin/mados-updater"]="0:0:755"
+  ["/usr/local/lib/mados_updater/__init__.py"]="0:0:644"
+  ["/usr/local/lib/mados_updater/config.py"]="0:0:644"
+  ["/usr/local/lib/mados_updater/github.py"]="0:0:644"
+  ["/usr/local/lib/mados_updater/pacman.py"]="0:0:644"
+  ["/usr/local/lib/mados_updater/snapper.py"]="0:0:644"
+  ["/etc/systemd/system/mados-updater.service"]="0:0:644"
+  ["/etc/systemd/system/mados-updater.timer"]="0:0:644"
+  ["/usr/share/libalpm/hooks/pre-update.hook"]="0:0:644"
+  ["/usr/local/bin/snapper-pre-update"]="0:0:755"
+
   ["/etc/mados/"]="0:0:755"
   ["/usr/share/grub/themes/mados/theme.txt"]="0:0:644"
   ["/usr/share/grub/themes/mados/logo.png"]="0:0:644"

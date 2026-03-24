@@ -1,0 +1,12 @@
+[Unit]
+Description=mados-updater periodic update check
+Documentation=https://github.com/madkoding/mados-updater
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+Persistent=true
+RandomizedDelaySec=30min
+
+[Install]
+WantedBy=timers.target
