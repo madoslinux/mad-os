@@ -50,7 +50,6 @@ file_permissions=(
   ["/usr/local/bin/mados-logs"]="0:0:755"
   ["/usr/local/bin/mados-install-yay"]="0:0:755"
   ["/usr/local/bin/mados-wallpaper-hyprland"]="0:0:755"
-  ["/usr/local/bin/mados-wallpaperd"]="0:0:755"
   ["/usr/local/bin/mados-hyprland-wallpaper"]="0:0:755"
   ["/usr/local/bin/mados-sway-wallpaper"]="0:0:755"
   ["/usr/local/bin/mados-sway-wallpapers"]="0:0:755"

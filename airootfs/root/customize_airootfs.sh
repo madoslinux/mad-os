@@ -110,39 +110,19 @@ export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
 exec python3 -m "${PYTHON_APP_NAME}" "\$@"
 EOF
             chmod +x "$LAUNCHER"
+            
+            # Install mados-wallpaperd daemon if present in daemon/ folder
+            if [[ "$app" == "mados-wallpaper" && -f "$PYTHON_APP_DIR/daemon/mados-wallpaperd" ]]; then
+                cp "$PYTHON_APP_DIR/daemon/mados-wallpaperd" /usr/local/bin/mados-wallpaperd
+                chmod +x /usr/local/bin/mados-wallpaperd
+                echo "  → daemon installed"
+            fi
+            
             echo "✓ $app installed"
         else
             echo "⚠ Failed to install $app"
         fi
         rm -rf "$APP_BUILD_DIR"
-    fi
-    
-    # Fix mados-wallpaper: needs GTK3 fixes and no CSS
-    if [[ "$app" == "mados-wallpaper" && -f "$PYTHON_APP_DIR/workspace_card.py" ]]; then
-        # Fix GTK version
-        sed -i 's/gi.require_version("Gtk", "4.0")/gi.require_version("Gtk", "3.0")/' "$PYTHON_APP_DIR/workspace_card.py"
-        sed -i 's/gi.require_version("Gdk", "4.0")/gi.require_version("Gdk", "3.0")/' "$PYTHON_APP_DIR/workspace_card.py"
-        # Remove all EventController (GTK4) and use VBox instead
-        sed -i 's/class WorkspaceCard(Gtk.Box)/class WorkspaceCard(Gtk.VBox)/g' "$PYTHON_APP_DIR/workspace_card.py"
-        sed -i 's/set_css_classes/get_style_context().add_class/g' "$PYTHON_APP_DIR/workspace_card.py"
-        # Fix GTK4 Picture to GTK3 Image
-        sed -i 's/Gtk.Picture.new_for_pixbuf/Gtk.Image().set_from_pixbuf/g' "$PYTHON_APP_DIR/workspace_card.py"
-        # Remove EventController and GestureClick
-        sed -i '/EventController/d' "$PYTHON_APP_DIR/workspace_card.py"
-        sed -i '/GestureClick/d' "$PYTHON_APP_DIR/workspace_card.py"
-        sed -i '/add_controller/d' "$PYTHON_APP_DIR/workspace_card.py"
-        # Add Pango import
-        sed -i '/from gi.repository import Gtk, Gdk/ a from gi.repository import Pango' "$PYTHON_APP_DIR/workspace_card.py"
-    fi
-    
-    # Fix app.py for GTK3 - remove CSS and use show_all
-    if [[ "$app" == "mados-wallpaper" && -f "$PYTHON_APP_DIR/app.py" ]]; then
-        sed -i 's/window.show()/window.show_all()/g' "$PYTHON_APP_DIR/app.py"
-        sed -i 's/add_provider_for_display/add_provider_for_screen/g' "$PYTHON_APP_DIR/app.py"
-        sed -i 's/Gdk\.Display\.get_default()/Gdk.Screen.get_default()/g' "$PYTHON_APP_DIR/app.py"
-        # Replace CSS with simple header
-        sed -i '/css = f"""{/,/^        """/d' "$PYTHON_APP_DIR/app.py"
-        sed -i '/provider = Gtk.CssProvider()/,/Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION/d' "$PYTHON_APP_DIR/app.py"
     fi
 done
 
