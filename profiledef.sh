@@ -126,10 +126,6 @@ file_permissions=(
   # Security notifications
   ["/etc/profile.d/mados-security-notify.sh"]="0:0:755"
 
-  # ClamAV
-  ["/etc/systemd/system/clamav-scan.service"]="0:0:644"
-  ["/etc/systemd/system/clamav-scan.timer"]="0:0:644"
-
   # Framebuffer and GPU early services
   ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
