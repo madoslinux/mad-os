@@ -9,6 +9,3 @@ ExecStart=/usr/bin/rkhunter --update --propupd
 StandardOutput=journal
 StandardError=journal
 RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
