@@ -8,8 +8,6 @@ on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
-  repository_dispatch:
-    types: [app-updated]
 
 permissions:
   contents: write
@@ -215,26 +213,3 @@ jobs:
       build_date: ${{ steps.build.outputs.build_date }}
       iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
       short_sha: ${{ steps.build.outputs.short_sha }}
-
-  # ================================================================
-  # App Update Notification (triggered from mados apps)
-  # ================================================================
-  app-update-notify:
-    name: "App Update Received"
-    runs-on: ubuntu-latest
-    if: github.event_name == 'repository_dispatch'
-    
-    steps:
-      - name: Notify app update received
-        run: |
-          echo "========================================"
-          echo "  🔄 App Update Notification"
-          echo "========================================"
-          echo "Repository: ${{ github.event.client_payload.repo }}"
-          echo "Ref: ${{ github.event.client_payload.ref }}"
-          echo ""
-          echo "The mados-update script will fetch the latest version"
-          echo "on next run."
-          echo ""
-          echo "To update now, run: mados-update"
-          echo "========================================"
