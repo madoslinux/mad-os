@@ -3,8 +3,7 @@ name: Auto Update
 on:
   push:
     branches: [main, master]
-    tags:
-      - 'v*'
+    # Only branches, not tags
 
 jobs:
   notify:

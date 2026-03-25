@@ -10,15 +10,13 @@ on:
   workflow_dispatch:
   repository_dispatch:
     types: [app-updated]
-  create:
-  delete:
 
 permissions:
   contents: write
 
 concurrency:
   group: cicd-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   ARCHLINUX_IMAGE: archlinux:latest
