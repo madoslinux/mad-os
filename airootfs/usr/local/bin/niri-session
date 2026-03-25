@@ -12,4 +12,9 @@ if [ -x /usr/local/bin/detect-legacy-hardware ]; then
     fi
 fi
 
+# Start wallpaper daemon
+if command -v mados-wallpaperd >/dev/null 2>&1; then
+    mados-wallpaperd -d &
+fi
+
 exec niri
