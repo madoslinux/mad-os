@@ -1176,6 +1176,8 @@ class TestHyprlandConfigVariables(unittest.TestCase):
         "cursor:hide_on_key_press",
         "cursor:hide_on_touch",
         "cursor:allow_dumb_copy",
+        # debug section
+        "debug:disable_logs",
         # ecosystem section
         "ecosystem:no_update_news",
         "ecosystem:no_donation_nag",
