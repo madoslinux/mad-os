@@ -1,7 +1,6 @@
 [Unit]
 Description=madOS Persistence Sync (rsync-based)
 After=mados-persistence-detect.service
-Requires=mados-persistence-detect.service
 
 [Service]
 Type=simple
