@@ -1,42 +1,53 @@
 #!/usr/bin/env python3
-import internetarchive
 import os
 import sys
+import time
 
-version = os.environ["VERSION"]
-iso_name = os.environ["ISO_NAME"]
-build_date = os.environ["BUILD_DATE"]
-access_key = os.environ["IA_ACCESS_KEY"]
-secret_key = os.environ["IA_SECRET_KEY"]
+import internetarchive
 
-item = internetarchive.get_item(f"mados-{version}")
+VERSION = os.environ["VERSION"]
+ISO_NAME = os.environ["ISO_NAME"]
+BUILD_DATE = os.environ["BUILD_DATE"]
+IA_ACCESS_KEY = os.environ["IA_ACCESS_KEY"]
+IA_SECRET_KEY = os.environ["IA_SECRET_KEY"]
 
-print(f"Uploading {iso_name} to Internet Archive as 'mados-{version}'")
-print(f"Delete existing files: YES (file will be replaced)")
-print(f"Checksum verification: YES")
+ITEM = internetarchive.get_item(f"mados-{VERSION}")
+ISO_PATH = f"out/{ISO_NAME}"
+ISO_SIZE = os.path.getsize(ISO_PATH)
+ISO_SIZE_MB = ISO_SIZE / (1024 * 1024)
+
+print(f"Uploading {ISO_NAME} ({ISO_SIZE_MB:.1f} MB) to Internet Archive as 'mados-{VERSION}'")
+print("Delete existing files: YES (file will be replaced)")
+print("Checksum verification: YES")
 print("---")
 
-response = item.upload(
-    f"out/{iso_name}",
+START_TIME = time.time()
+
+response = ITEM.upload(
+    ISO_PATH,
     metadata={
-        "title": f"madOS {version}",
+        "title": f"madOS {VERSION}",
         "creator": "madoslinux",
-        "date": build_date,
-        "description": f"madOS {version} - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support.",
+        "date": BUILD_DATE,
+        "description": f"madOS {VERSION} - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support.",
         "subject": "madOS;Arch Linux;Linux distribution;Wayland;Sway",
         "collection": "opensource",
         "license": "CC0-1.0",
     },
-    access_key=access_key,
-    secret_key=secret_key,
+    access_key=IA_ACCESS_KEY,
+    secret_key=IA_SECRET_KEY,
     checksum=True,
     delete=True,
+    verbose=True,
 )
 
-print(f"---")
+ELAPSED = time.time() - START_TIME
+SPEED_MBPS = ISO_SIZE_MB / ELAPSED if ELAPSED > 0 else 0
+
+print("---")
 if response:
-    print(f"Upload completed successfully!")
-    print(f"URL: https://archive.org/details/mados-{version}")
+    print(f"Upload completed successfully in {ELAPSED:.1f}s ({SPEED_MBPS:.1f} MB/s)")
+    print(f"URL: https://archive.org/details/mados-{VERSION}")
 else:
     print(f"Upload failed: {response}")
     sys.exit(1)
