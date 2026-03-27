@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ARCHLINUX_IMAGE: archlinux:latest
+  ARCHLINUX_IMAGE: ghcr.io/archlinux/archlinux:latest
 
 jobs:
   # ================================================================
