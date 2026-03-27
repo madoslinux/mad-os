@@ -42,8 +42,8 @@ def create_power_window():
     window.set_default_size(400, 180)
     window.set_resizable(False)
     window.set_decorated(False)
-    window.set_hide_on_close(True)
     window.set_transient_for(None)
+    window.connect("close_request", lambda w: w.destroy())
 
     controller = Gtk.EventControllerKey()
     controller.connect("key-pressed", on_key_pressed, window)
