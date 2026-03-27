@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-import sys
 import gi
 import os
 import subprocess
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gdk, GLib
+from gi.repository import Gtk, Gdk
 
 lang = os.environ.get("LANG", "C").split(".")[0]
 if "-" in lang:
@@ -35,18 +34,6 @@ window { background: rgba(46, 52, 64, 0.85); border-radius: 12px; }
 .btn-label { font-weight: bold; color: #ECEFF4; }
 .btn-desc { color: #D8DEE9; font-size: 11px; }
 """
-
-
-class PowerApp(Gtk.Application):
-    def __init__(self):
-        super().__init__(application_id="com.mados.power")
-        self.window = None
-
-    def do_activate(self):
-        if not self.window:
-            self.window = create_power_window()
-            self.window.set_application(self)
-        self.window.present()
 
 
 def create_power_window():
@@ -166,5 +153,6 @@ def on_key_pressed(controller, keyval, keycode, state, window):
 
 
 if __name__ == "__main__":
-    app = PowerApp()
-    app.run(None)
+    win = create_power_window()
+    win.present()
+    Gtk.main()

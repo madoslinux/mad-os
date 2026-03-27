@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import sys
 import gi
 import os
 
@@ -86,18 +85,6 @@ css_provider = """
 window { background: #2E3440; }
 .key-label { background: #3B4252; border: 1px solid #4C566A; border-radius: 4px; padding: 2px 6px; }
 """
-
-
-class HelpApp(Gtk.Application):
-    def __init__(self):
-        super().__init__(application_id="com.mados.help")
-        self.window = None
-
-    def do_activate(self):
-        if not self.window:
-            self.window = create_help_window()
-            self.window.set_application(self)
-        self.window.present()
 
 
 def create_help_window():
@@ -189,5 +176,6 @@ def create_help_window():
 
 
 if __name__ == "__main__":
-    app = HelpApp()
-    app.run(None)
+    win = create_help_window()
+    win.present()
+    Gtk.main()
