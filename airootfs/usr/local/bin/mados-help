@@ -4,57 +4,81 @@ import sys
 import gi
 import os
 
-gi.require_version('Gtk', '4.0')
+gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk
 
 help_data = [
-    ("General", [
-        ("Super + Return", "Open terminal (foot)"),
-        ("Super + D", "Open app launcher (wofi)"),
-        ("Super + Q", "Close window"),
-        ("Super + E", "Open file manager"),
-        ("Super + F", "Toggle fullscreen"),
-        ("Super+Shift+E", "Exit Hyprland"),
-    ]),
-    ("Workspaces", [
-        ("Super + 1-5", "Switch to workspace"),
-        ("Super+Shift+1-5", "Move window to workspace"),
-        ("Super+Alt+←/→", "Cycle workspaces"),
-    ]),
-    ("Navigation", [
-        ("Super+H/J/K/L", "Move focus (vim keys)"),
-        ("Super+Arrows", "Move focus (arrows)"),
-        ("Super + A", "Focus urgent/last"),
-    ]),
-    ("Window Mgmt", [
-        ("Super+Space", "Cycle next window"),
-        ("Super+Shift+Space", "Toggle floating"),
-        ("Super + B", "Preselect right"),
-        ("Super + V", "Preselect down"),
-        ("Super + S", "Pseudo tile"),
-        ("Super + W", "Toggle split"),
-    ]),
-    ("Resize Mode", [
-        ("Super + R", "Enter resize mode"),
-        ("H/J/K/L", "Resize window"),
-        ("Esc/Return", "Exit resize mode"),
-    ]),
-    ("Scratchpad", [
-        ("Super + -", "Toggle scratchpad"),
-        ("Super+Shift+-", "Move to scratchpad"),
-    ]),
-    ("Screenshots", [
-        ("Print", "Screenshot selection"),
-        ("Shift+Print", "Screenshot fullscreen"),
-        ("Super+Shift+S", "Screenshot to clipboard"),
-    ]),
-    ("Multimedia", [
-        ("XF86AudioMute", "Toggle mute"),
-        ("XF86Audio-", "Volume down"),
-        ("XF86Audio+", "Volume up"),
-        ("XF86Bright-", "Brightness down"),
-        ("XF86Bright+", "Brightness up"),
-    ]),
+    (
+        "General",
+        [
+            ("Super + Return", "Open terminal (foot)"),
+            ("Super + D", "Open app launcher (wofi)"),
+            ("Super + Q", "Close window"),
+            ("Super + E", "Open file manager"),
+            ("Super + F", "Toggle fullscreen"),
+            ("Super+Shift+E", "Exit Hyprland"),
+        ],
+    ),
+    (
+        "Workspaces",
+        [
+            ("Super + 1-5", "Switch to workspace"),
+            ("Super+Shift+1-5", "Move window to workspace"),
+            ("Super+Alt+←/→", "Cycle workspaces"),
+        ],
+    ),
+    (
+        "Navigation",
+        [
+            ("Super+H/J/K/L", "Move focus (vim keys)"),
+            ("Super+Arrows", "Move focus (arrows)"),
+            ("Super + A", "Focus urgent/last"),
+        ],
+    ),
+    (
+        "Window Mgmt",
+        [
+            ("Super+Space", "Cycle next window"),
+            ("Super+Shift+Space", "Toggle floating"),
+            ("Super + B", "Preselect right"),
+            ("Super + V", "Preselect down"),
+            ("Super + S", "Pseudo tile"),
+            ("Super + W", "Toggle split"),
+        ],
+    ),
+    (
+        "Resize Mode",
+        [
+            ("Super + R", "Enter resize mode"),
+            ("H/J/K/L", "Resize window"),
+            ("Esc/Return", "Exit resize mode"),
+        ],
+    ),
+    (
+        "Scratchpad",
+        [
+            ("Super + -", "Toggle scratchpad"),
+            ("Super+Shift+-", "Move to scratchpad"),
+        ],
+    ),
+    (
+        "Screenshots",
+        [
+            ("Print", "Screenshot selection"),
+            ("Shift+Print", "Screenshot fullscreen"),
+            ("Super+Shift+S", "Screenshot to clipboard"),
+        ],
+    ),
+    (
+        "Multimedia",
+        [
+            ("XF86AudioMute", "Toggle mute"),
+            ("XF86Audio-", "Volume down"),
+            ("XF86Audio+", "Volume up"),
+            ("XF86Bright-", "Brightness down"),
+            ("XF86Bright+", "Brightness up"),
+        ],
+    ),
 ]
 
 css_provider = """
@@ -63,12 +87,24 @@ window { background: #2E3440; }
 .key-label { background: #3B4252; border: 1px solid #4C566A; border-radius: 4px; padding: 2px 6px; }
 """
 
+
+class HelpApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="com.mados.help")
+        self.window = None
+
+    def do_activate(self):
+        if not self.window:
+            self.window = create_help_window()
+            self.window.set_application(self)
+        self.window.present()
+
+
 def create_help_window():
     window = Gtk.Window()
     window.set_title("MadOS Help")
     window.set_default_size(450, 550)
     window.set_resizable(True)
-    window.connect("destroy", Gtk.main_quit)
 
     css = Gtk.CssProvider()
     css.load_from_string(css_provider)
@@ -76,7 +112,9 @@ def create_help_window():
     Gtk.StyleContext.add_provider_for_display(display, css, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
     header = Gtk.Label()
-    header.set_markup("<span size='large' weight='bold' color='#88C0D0'>⌨  Keyboard Shortcuts</span>")
+    header.set_markup(
+        "<span size='large' weight='bold' color='#88C0D0'>⌨  Keyboard Shortcuts</span>"
+    )
     header.set_halign(Gtk.Align.START)
     header.set_margin_start(20)
     header.set_margin_top(20)
@@ -149,7 +187,7 @@ def create_help_window():
 
     return window
 
+
 if __name__ == "__main__":
-    win = create_help_window()
-    win.present()
-    Gtk.main()
+    app = HelpApp()
+    app.run(None)

@@ -5,12 +5,12 @@ import gi
 import os
 import subprocess
 
-gi.require_version('Gtk', '4.0')
+gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gdk, GLib
 
-lang = os.environ.get('LANG', 'C').split('.')[0]
-if '-' in lang:
-    lang = lang.split('-')[0]
+lang = os.environ.get("LANG", "C").split(".")[0]
+if "-" in lang:
+    lang = lang.split("-")[0]
 
 translations = {
     "es": {"logout": "Cerrar sesión", "restart": "Reiniciar", "poweroff": "Apagar"},
@@ -21,7 +21,7 @@ translations = {
     "de": {"logout": "Abmelden", "restart": "Neu starten", "poweroff": "Herunterfahren"},
     "zh": {"logout": "注销", "restart": "重启", "poweroff": "关机"},
     "ja": {"logout": "ログアウト", "restart": "再起動", "poweroff": "電源オフ"},
-    "ko": {"logout": "로그아웃", "restart": "재시작", "poweroff": "전源 끄기"},
+    "ko": {"logout": "ログアウト", "restart": "再起動", "poweroff": "電源オフ"},
 }
 
 t = translations.get(lang, translations["en"])
@@ -36,6 +36,19 @@ window { background: rgba(46, 52, 64, 0.85); border-radius: 12px; }
 .btn-desc { color: #D8DEE9; font-size: 11px; }
 """
 
+
+class PowerApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="com.mados.power")
+        self.window = None
+
+    def do_activate(self):
+        if not self.window:
+            self.window = create_power_window()
+            self.window.set_application(self)
+        self.window.present()
+
+
 def create_power_window():
     window = Gtk.Window()
     window.set_title("Power Menu")
@@ -44,7 +57,6 @@ def create_power_window():
     window.set_decorated(False)
     window.set_hide_on_close(True)
     window.set_transient_for(None)
-    window.connect("destroy", Gtk.main_quit)
 
     controller = Gtk.EventControllerKey()
     controller.connect("key-pressed", on_key_pressed, window)
@@ -82,6 +94,7 @@ def create_power_window():
 
     return window
 
+
 def create_button(icon, label, color, action):
     btn = Gtk.Button()
     btn.set_css_name("btn")
@@ -105,6 +118,7 @@ def create_button(icon, label, color, action):
 
     return btn
 
+
 def get_window_manager():
     if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
         return "hyprland"
@@ -121,6 +135,7 @@ def get_window_manager():
         elif "niri" in session:
             return "niri"
     return None
+
 
 def logout():
     wm = get_window_manager()
@@ -142,13 +157,14 @@ def on_button_clicked(btn, action):
     elif action == "poweroff":
         subprocess.run(["systemctl", "poweroff"])
 
+
 def on_key_pressed(controller, keyval, keycode, state, window):
     if keyval == Gdk.KEY_Escape:
         window.close()
         return True
     return False
 
+
 if __name__ == "__main__":
-    win = create_power_window()
-    win.present()
-    Gtk.main()
+    app = PowerApp()
+    app.run(None)

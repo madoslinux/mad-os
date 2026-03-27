@@ -2,6 +2,7 @@
 Description=madOS Persistence Mount
 After=mados-ventoy-setup.service local-fs.target
 Before=mados-persist-sync.service
+Requires=mados-ventoy-setup.service
 
 [Service]
 Type=oneshot
