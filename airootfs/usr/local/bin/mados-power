@@ -5,7 +5,7 @@ import os
 import subprocess
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 
 lang = os.environ.get("LANG", "C").split(".")[0]
 if "-" in lang:
@@ -43,7 +43,6 @@ def create_power_window():
     window.set_resizable(False)
     window.set_decorated(False)
     window.set_transient_for(None)
-    window.connect("close_request", lambda w: w.destroy())
 
     controller = Gtk.EventControllerKey()
     controller.connect("key-pressed", on_key_pressed, window)
@@ -153,6 +152,13 @@ def on_key_pressed(controller, keyval, keycode, state, window):
 
 
 if __name__ == "__main__":
+    loop = GLib.MainLoop()
+
+    def on_close(window):
+        GLib.idle_add(loop.quit)
+        return False
+
     win = create_power_window()
+    win.connect("close-request", on_close)
     win.present()
-    Gtk.main()
+    loop.run()

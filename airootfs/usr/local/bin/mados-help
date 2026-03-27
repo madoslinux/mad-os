@@ -4,7 +4,7 @@ import gi
 import os
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 
 help_data = [
     (
@@ -176,6 +176,13 @@ def create_help_window():
 
 
 if __name__ == "__main__":
+    loop = GLib.MainLoop()
+
+    def on_close(window):
+        GLib.idle_add(loop.quit)
+        return False
+
     win = create_help_window()
+    win.connect("close-request", on_close)
     win.present()
-    Gtk.main()
+    loop.run()
