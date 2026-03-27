@@ -175,12 +175,12 @@
     },
     "custom/help": {
         "format": "?",
-        "on-click": "gtk-launch mados-help",
+        "on-click": "/usr/local/bin/mados-help &",
         "tooltip": false
     },
     "custom/power": {
         "format": "⏻",
-        "on-click": "gtk-launch mados-power",
+        "on-click": "/usr/local/bin/mados-power &",
         "tooltip": false
     }
 }
