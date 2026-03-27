@@ -64,10 +64,11 @@ window { background: #2E3440; }
 """
 
 def create_help_window():
-    window = Gtk.ApplicationWindow()
+    window = Gtk.Window()
     window.set_title("MadOS Help")
     window.set_default_size(450, 550)
     window.set_resizable(True)
+    window.connect("destroy", Gtk.main_quit)
 
     css = Gtk.CssProvider()
     css.load_from_string(css_provider)
@@ -97,7 +98,7 @@ def create_help_window():
     header_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
     header_box.set_halign(Gtk.Align.FILL)
     header_box.append(header)
-    
+
     corner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
     corner.set_halign(Gtk.Align.END)
     corner.set_hexpand(True)
@@ -141,22 +142,14 @@ def create_help_window():
             box.append(row)
 
     scrolled.set_child(box)
-    
+
     main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
     main_box.append(scrolled)
     window.set_child(main_box)
 
     return window
 
-def on_activate(app):
-    win = create_help_window()
-    win.set_application(app)
-    win.present()
-
-def main():
-    app = Gtk.Application()
-    app.connect('activate', on_activate)
-    app.run(None)
-
 if __name__ == "__main__":
-    main()
+    win = create_help_window()
+    win.present()
+    Gtk.main()

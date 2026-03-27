@@ -129,4 +129,11 @@ file_permissions=(
   # Framebuffer and GPU early services
   ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
+
+  # Audio quality profile script
+  ["/etc/profile.d/mados-audio-quality.sh"]="0:0:755"
+
+  # Desktop entries for waybar buttons
+  ["/usr/share/applications/mados-help.desktop"]="0:0:644"
+  ["/usr/share/applications/mados-power.desktop"]="0:0:644"
 )

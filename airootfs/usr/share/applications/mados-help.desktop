@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=MadOS Help
+Comment=Keyboard shortcuts reference
+Exec=/usr/bin/env python3 /usr/local/bin/mados-help
+Icon=help
+Terminal=false
+Type=Application
+Categories=System;Utility;
+Keywords=help;shortcuts;keyboard;
+StartupNotify=true

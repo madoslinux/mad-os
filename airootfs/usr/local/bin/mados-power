@@ -3,6 +3,7 @@
 import sys
 import gi
 import os
+import subprocess
 
 gi.require_version('Gtk', '4.0')
 from gi.repository import Gtk, Gdk, GLib
@@ -20,7 +21,7 @@ translations = {
     "de": {"logout": "Abmelden", "restart": "Neu starten", "poweroff": "Herunterfahren"},
     "zh": {"logout": "注销", "restart": "重启", "poweroff": "关机"},
     "ja": {"logout": "ログアウト", "restart": "再起動", "poweroff": "電源オフ"},
-    "ko": {"logout": "로그아웃", "restart": "재시작", "poweroff": "전원 끄기"},
+    "ko": {"logout": "로그아웃", "restart": "재시작", "poweroff": "전源 끄기"},
 }
 
 t = translations.get(lang, translations["en"])
@@ -36,13 +37,14 @@ window { background: rgba(46, 52, 64, 0.85); border-radius: 12px; }
 """
 
 def create_power_window():
-    window = Gtk.ApplicationWindow()
+    window = Gtk.Window()
     window.set_title("Power Menu")
     window.set_default_size(400, 180)
     window.set_resizable(False)
     window.set_decorated(False)
     window.set_hide_on_close(True)
     window.set_transient_for(None)
+    window.connect("destroy", Gtk.main_quit)
 
     controller = Gtk.EventControllerKey()
     controller.connect("key-pressed", on_key_pressed, window)
@@ -103,10 +105,38 @@ def create_button(icon, label, color, action):
 
     return btn
 
-def on_button_clicked(btn, action):
-    import subprocess
-    if action == "logout":
+def get_window_manager():
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        return "hyprland"
+    elif os.environ.get("SWAYSOCK"):
+        return "sway"
+    elif os.environ.get("WAYLAND_DISPLAY"):
+        return "niri"
+    elif os.environ.get("DESKTOP_SESSION"):
+        session = os.environ["DESKTOP_SESSION"].lower()
+        if "sway" in session:
+            return "sway"
+        elif "hypr" in session:
+            return "hyprland"
+        elif "niri" in session:
+            return "niri"
+    return None
+
+def logout():
+    wm = get_window_manager()
+    if wm == "hyprland":
         subprocess.run(["hyprctl", "dispatch", "exit"])
+    elif wm == "sway":
+        subprocess.run(["swaymsg", "exit"])
+    elif wm == "niri":
+        subprocess.run(["niri", "msg", "exit"])
+    else:
+        subprocess.run(["loginctl", "terminate-user", os.environ.get("USER", "")])
+
+
+def on_button_clicked(btn, action):
+    if action == "logout":
+        logout()
     elif action == "restart":
         subprocess.run(["systemctl", "reboot"])
     elif action == "poweroff":
@@ -118,15 +148,7 @@ def on_key_pressed(controller, keyval, keycode, state, window):
         return True
     return False
 
-def on_activate(app):
-    win = create_power_window()
-    win.set_application(app)
-    win.present()
-
-def main():
-    app = Gtk.Application()
-    app.connect('activate', on_activate)
-    app.run(None)
-
 if __name__ == "__main__":
-    main()
+    win = create_power_window()
+    win.present()
+    Gtk.main()
