@@ -116,6 +116,11 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 ### GTK/Python Installer
 
 - Uses GTK3 with Nord color scheme (polar night background, frost accents)
+- Some standalone tools (`mados-help`, `mados-power`) use GTK4 for better theming
+- Check existing scripts to determine which GTK version to use:
+  - GTK3: `gi.require_version("Gtk", "3.0")` — Installer and older tools
+  - GTK4: `gi.require_version("Gtk", "4.0")` — Standalone UI tools (help, power menu)
+- Both versions require `python-gobject` and `gtk3`/`gtk4` packages respectively
 - For headless testing, use mocks from `tests/test_helpers.py`:
   ```python
   from tests.test_helpers import install_gtk_mocks
