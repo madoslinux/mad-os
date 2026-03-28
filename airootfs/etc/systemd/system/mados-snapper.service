@@ -9,6 +9,3 @@ Type=oneshot
 ExecStart=/usr/local/bin/mados-snapper auto
 Nice=19
 IOSchedulingClass=best-effort
-
-[Install]
-WantedBy=multi-user.target
