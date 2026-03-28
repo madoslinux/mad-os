@@ -1,0 +1,162 @@
+#!/usr/bin/env bash
+# mados-select-desktop - Desktop environment and window manager selector
+# Allows users to select their preferred DE/WM during or after installation
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "$0")"
+DESKTOP_CONFIGS_DIR="/etc/skel/.config"
+SELECTED_DESKTOP=""
+
+usage() {
+    cat << EOF
+${SCRIPT_NAME} - Select desktop environment or window manager
+
+USAGE:
+    ${SCRIPT_NAME} [OPTIONS]
+
+OPTIONS:
+    list                List available desktop environments
+    set DESKTOP        Set the desktop environment (requires restart)
+    current             Show current desktop environment
+    help                Show this help message
+
+AVAILABLE DESKTOPS:
+    hyprland    - Modern Wayland compositor (GPU accelerated)
+    sway        - i3-compatible Wayland compositor (software rendering)
+    kde         - KDE Plasma 6 (full featured desktop)
+    xfce        - XFCE4 (lightweight, traditional desktop)
+    i3          - i3wm (tiling window manager)
+    qtile       - Qtile (Python-based tiling WM)
+
+EXAMPLES:
+    ${SCRIPT_NAME} list
+    ${SCRIPT_NAME} set hyprland
+    ${SCRIPT_NAME} current
+
+EOF
+}
+
+list_desktops() {
+    echo "Available Desktop Environments:"
+    echo "================================"
+    echo ""
+
+    local desktops=(
+        "hyprland:Modern Wayland compositor - GPU accelerated"
+        "sway:i3-compatible Wayland compositor - Software rendering"
+        "kde:KDE Plasma 6 - Full featured desktop environment"
+        "xfce:XFCE4 - Lightweight traditional desktop"
+        "i3:i3wm - Tiling window manager (X11)"
+        "qtile:Qtile - Python-based tiling window manager"
+    )
+
+    for entry in "${desktops[@]}"; do
+        local id="${entry%%:*}"
+        local desc="${entry#*:}"
+        echo "  $id"
+        echo "    $desc"
+        echo ""
+    done
+
+    echo "To set a desktop: ${SCRIPT_NAME} set <desktop>"
+}
+
+check_desktop_available() {
+    local desktop="$1"
+
+    case "$desktop" in
+        hyprland)
+            command -v Hyprland &>/dev/null
+            ;;
+        sway)
+            command -v sway &>/dev/null
+            ;;
+        kde|plasma)
+            command -v startplasma-x11 &>/dev/null || command -v startplasma-wayland &>/dev/null
+            ;;
+        xfce)
+            command -v startxfce4 &>/dev/null
+            ;;
+        i3)
+            command -v i3 &>/dev/null
+            ;;
+        qtile)
+            command -v qtile &>/dev/null
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+set_desktop() {
+    local desktop="$1"
+
+    if ! check_desktop_available "$desktop"; then
+        echo "ERROR: Desktop '$desktop' is not installed or not available." >&2
+        return 1
+    fi
+
+    echo "Setting default desktop to: $desktop"
+
+    local desktop_file="${DESKTOP_CONFIGS_DIR}/desktop-selected"
+
+    mkdir -p "$(dirname "$desktop_file")"
+    echo "$desktop" > "$desktop_file"
+
+    echo "✓ Default desktop set to '$desktop'"
+    echo ""
+    echo "To apply changes:"
+    echo "  - Log out and log back in"
+    echo "  - Or restart your session"
+}
+
+get_current_desktop() {
+    if [[ -f "${DESKTOP_CONFIGS_DIR}/desktop-selected" ]]; then
+        cat "${DESKTOP_CONFIGS_DIR}/desktop-selected"
+    elif [[ -n "$XDG_CURRENT_DESKTOP" ]]; then
+        echo "$XDG_CURRENT_DESKTOP"
+    elif [[ -n "$DESKTOP_SESSION" ]]; then
+        echo "$DESKTOP_SESSION"
+    else
+        echo "unknown"
+    fi
+}
+
+main() {
+    if [[ $# -eq 0 ]]; then
+        usage
+        return 1
+    fi
+
+    local command="$1"
+    shift || true
+
+    case "$command" in
+        list)
+            list_desktops
+            ;;
+        set)
+            if [[ -z "${1:-}" ]]; then
+                echo "ERROR: Desktop name required" >&2
+                echo "Usage: ${SCRIPT_NAME} set <desktop>" >&2
+                return 1
+            fi
+            set_desktop "$1"
+            ;;
+        current)
+            echo "Current desktop: $(get_current_desktop)"
+            ;;
+        help|--help|-h)
+            usage
+            ;;
+        *)
+            echo "ERROR: Unknown command: $command" >&2
+            usage
+            return 1
+            ;;
+    esac
+}
+
+main "$@"
