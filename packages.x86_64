@@ -1,7 +1,9 @@
 # Sistema base
 base
 linux-zen
+linux-zen-headers
 linux-lts
+linux-lts-headers
 linux-firmware
 nvme-cli
 mkinitcpio-archiso
