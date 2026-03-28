@@ -29,8 +29,7 @@ xorg-xwayland
 xdg-desktop-portal-hyprland
 
 # Additional Desktop Environments
-kde-plasma
-plasma-wayland-session
+plasma-meta
 xfce4
 xfce4-goodies
 i3-wm
