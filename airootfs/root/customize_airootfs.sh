@@ -7,6 +7,48 @@
 
 set -e
 
+echo "=== madOS: Setting up kernel and initramfs ==="
+
+# Create /boot directory
+mkdir -p /boot
+
+# Kernel versions
+ZEN_KVER="6.19.10-zen1-1-zen"
+LTS_KVER="6.18.20-1-lts"
+
+# Copy vmlinuz to /boot/ for each kernel
+for kver in "$ZEN_KVER" "$LTS_KVER"; do
+    SRC_VMLINUZ="/usr/lib/modules/${kver}/vmlinuz"
+    if [ -f "$SRC_VMLINUZ" ]; then
+        case "$kver" in
+            *-zen*)
+                cp "$SRC_VMLINUZ" /boot/vmlinuz-linux-zen
+                ;;
+            *-lts*)
+                cp "$SRC_VMLINUZ" /boot/vmlinuz-linux-lts
+                ;;
+        esac
+        echo "✓ Copied vmlinuz for $kver"
+    fi
+done
+
+# Generate initramfs inside the chroot (this is safe because we're inside airootfs)
+echo "Generating initramfs images..."
+for kver in "$ZEN_KVER" "$LTS_KVER"; do
+    if [ -d "/usr/lib/modules/${kver}" ]; then
+        case "$kver" in
+            *-zen*)
+                mkinitcpio -k "$kver" -g /boot/initramfs-linux-zen.img
+                ;;
+            *-lts*)
+                mkinitcpio -k "$kver" -g /boot/initramfs-linux-lts.img
+                ;;
+        esac
+        echo "✓ Created initramfs for $kver"
+    fi
+done
+
+echo ""
 echo "=== madOS: Pre-installing Oh My Zsh and OpenCode ==="
 
 # ── Nordic GTK Theme (from EliverLara/Nordic) ─────────────────────────────
