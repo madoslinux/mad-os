@@ -1,0 +1,241 @@
+#!/usr/bin/env bash
+# mados-snapper - Btrfs snapshot management tool for madOS
+# Manages automatic and manual snapshots for system recovery
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "$0")"
+SNAPPER_CONFIG="${SNAPPER_CONFIG:-root}"
+MOUNT_POINT="${MOUNT_POINT:-/}"
+
+usage() {
+    cat << EOF
+${SCRIPT_NAME} - Btrfs snapshot management for madOS
+
+USAGE:
+    ${SCRIPT_NAME} [COMMAND] [OPTIONS]
+
+COMMANDS:
+    list                           List all snapshots
+    create [NAME]                  Create a manual snapshot (default: pre-install)
+    delete SNAPSHOT                Delete a snapshot by number or name
+    rollback [SNAPSHOT]           Rollback to a snapshot (default: latest)
+    auto                           Create automatic snapshot (called by timer)
+    status                         Show current filesystem and snapshot status
+    help                           Show this help message
+
+OPTIONS:
+    -c, --config CONFIG            Snapper config to use (default: root)
+    -m, --mount-point PATH         Mount point (default: /)
+    -t, --type TYPE                Snapshot type: single, pre, post (default: single)
+    -d, --description DESC         Description for snapshot
+
+EXAMPLES:
+    ${SCRIPT_NAME} list
+    ${SCRIPT_NAME} create "before-update"
+    ${SCRIPT_NAME} rollback 5
+    ${SCRIPT_NAME} status
+
+SNAPSHOT TYPES:
+    single  - Manual snapshot, kept according to NUMBER_LIMIT
+    pre     - Created before system changes (e.g., package install)
+    post    - Created after system changes, paired with pre snapshot
+
+EOF
+}
+
+check_btrfs() {
+    if ! mount | grep -q "btrfs"; then
+        echo "ERROR: This system does not appear to use Btrfs." >&2
+        echo "mados-snapper requires Btrfs filesystem." >&2
+        return 1
+    fi
+    return 0
+}
+
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        echo "ERROR: This script must be run as root." >&2
+        return 1
+    fi
+}
+
+list_snapshots() {
+    echo "Btrfs Snapshots:"
+    echo "================"
+    if ! command -v snapper &>/dev/null; then
+        echo "snapper is not installed. Run: sudo pacman -S snapper"
+        return 1
+    fi
+    snapper list -c "${SNAPPER_CONFIG}" 2>/dev/null || {
+        echo "No snapper configuration found for ${SNAPPER_CONFIG}"
+        echo "Run: sudo snapper -c ${SNAPPER_CONFIG} create-config ${MOUNT_POINT}"
+    }
+}
+
+create_snapshot() {
+    local name="${1:-manual}"
+    local description="${2:-Manual snapshot: ${name}}"
+
+    check_btrfs || return 1
+    check_root || return 1
+
+    echo "Creating snapshot: ${name}"
+    echo "Description: ${description}"
+
+    local snap_num
+    snap_num=$(snapper -c "${SNAPPER_CONFIG}" create \
+        --description "${description}" \
+        --type single 2>/dev/null) || {
+        echo "ERROR: Failed to create snapshot" >&2
+        return 1
+    }
+
+    echo "✓ Created snapshot #${snap_num}"
+    return 0
+}
+
+delete_snapshot() {
+    local snapshot="$1"
+
+    check_root || return 1
+
+    if ! command -v snapper &>/dev/null; then
+        echo "snapper is not installed"
+        return 1
+    fi
+
+    echo "Deleting snapshot ${snapshot}..."
+    snapper -c "${SNAPPER_CONFIG}" delete "$snapshot" 2>/dev/null || {
+        echo "ERROR: Failed to delete snapshot ${snapshot}" >&2
+        return 1
+    }
+
+    echo "✓ Deleted snapshot ${snapshot}"
+}
+
+rollback() {
+    local snapshot="${1:-latest}"
+
+    check_btrfs || return 1
+    check_root || return 1
+
+    echo "WARNING: Rollback will replace current system with snapshot."
+    echo "This may cause data loss for files created after the snapshot."
+    read -p "Are you sure you want to continue? [y/N] " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Rollback cancelled."
+        return 1
+    fi
+
+    if [[ "$snapshot" == "latest" ]]; then
+        snapshot=$(snapper -c "${SNAPPER_CONFIG}" list | tail -1 | awk '{print $1}')
+        echo "Using latest snapshot: ${snapshot}"
+    fi
+
+    echo "Rolling back to snapshot ${snapshot}..."
+    snapper -c "${SNAPPER_CONFIG}" rollback "$snapshot" 2>/dev/null || {
+        echo "ERROR: Rollback failed" >&2
+        echo "You may need to boot from a live ISO and manually restore." >&2
+        return 1
+    }
+
+    echo "✓ Rollback complete. Please reboot."
+}
+
+auto_snapshot() {
+    check_btrfs || return 1
+    check_root || return 1
+
+    local timestamp
+    timestamp=$(date +%Y-%m-%d_%H:%M)
+    local description="Automatic: ${timestamp}"
+
+    echo "Creating automatic snapshot: ${description}"
+
+    local snap_num
+    snap_num=$(snapper -c "${SNAPPER_CONFIG}" create \
+        --description "${description}" \
+        --type single \
+        --cleanup-algorithm timeline 2>/dev/null) || {
+        echo "ERROR: Failed to create automatic snapshot" >&2
+        return 1
+    }
+
+    echo "✓ Created automatic snapshot #${snap_num}"
+    return 0
+}
+
+status() {
+    echo "Btrfs Filesystem Status"
+    echo "======================="
+    echo ""
+
+    echo "Filesystem:"
+    df -T | grep -E "btrfs|Filesystem" | head -5
+    echo ""
+
+    echo "Btrfs device:"
+    btrfs device stats "${MOUNT_POINT}" 2>/dev/null | head -5 || echo "  Unable to read device stats"
+    echo ""
+
+    echo "Snapshot count:"
+    if command -v snapper &>/dev/null; then
+        snapper list -c "${SNAPPER_CONFIG}" 2>/dev/null | wc -l | xargs -I {} echo "  {} snapshots (including header)"
+    else
+        echo "  snapper not installed"
+    fi
+    echo ""
+
+    echo "Space usage:"
+    btrfs filesystem df "${MOUNT_POINT}" 2>/dev/null || echo "  Unable to read space usage"
+}
+
+main() {
+    if [[ $# -eq 0 ]]; then
+        usage
+        return 1
+    fi
+
+    local command="$1"
+    shift
+
+    case "$command" in
+        list)
+            list_snapshots
+            ;;
+        create)
+            local name="${1:-manual}"
+            local description="${2:-Manual snapshot: ${name}}"
+            create_snapshot "$name" "$description"
+            ;;
+        delete)
+            if [[ -z "${1:-}" ]]; then
+                echo "ERROR: Snapshot ID required" >&2
+                usage
+                return 1
+            fi
+            delete_snapshot "$1"
+            ;;
+        rollback)
+            rollback "${1:-latest}"
+            ;;
+        auto)
+            auto_snapshot
+            ;;
+        status)
+            status
+            ;;
+        help|--help|-h)
+            usage
+            ;;
+        *)
+            echo "Unknown command: $command" >&2
+            usage
+            return 1
+            ;;
+    esac
+}
+
+main "$@"

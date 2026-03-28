@@ -144,6 +144,7 @@ e2fsprogs
 ntfs-3g
 btrfs-progs
 unzip
+snapper
 
 # Soporte VM
 virtualbox-guest-utils

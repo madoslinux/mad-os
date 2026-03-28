@@ -1,0 +1,11 @@
+[Unit]
+Description=mados-snapper daily snapshot timer
+Documentation=man:mados-snapper(1)
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1h
+
+[Install]
+WantedBy=timers.target

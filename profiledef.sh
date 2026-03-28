@@ -134,4 +134,11 @@ file_permissions=(
   # Framebuffer and GPU early services
   ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
+
+  # Btrfs Snapper
+  ["/usr/local/bin/mados-snapper"]="0:0:755"
+  ["/usr/local/bin/mados-autoinstall"]="0:0:755"
+  ["/etc/systemd/system/mados-snapper.service"]="0:0:644"
+  ["/etc/systemd/system/mados-snapper.timer"]="0:0:644"
+  ["/etc/snapper/configs/root"]="0:0:644"
 )

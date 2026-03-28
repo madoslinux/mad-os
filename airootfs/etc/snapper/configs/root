@@ -1,0 +1,23 @@
+# /etc/snapper/configs/root
+# Configuration for root filesystem snapshots
+
+# Timeline settings
+TIMELINE_CREATE="yes"
+TIMELINE_LIMIT_HOURLY="5"
+TIMELINE_LIMIT_DAILY="7"
+TIMELINE_LIMIT_WEEKLY="4"
+TIMELINE_LIMIT_MONTHLY="6"
+TIMELINE_LIMIT_YEARLY="3"
+TIMELINE_MIN_AGE="1800"
+TIMELINE_THRESHOLD_HOURLY="50"
+TIMELINE_THRESHOLD_DAILY="100"
+
+# Number of snapshots to keep
+NUMBER_LIMIT="10"
+NUMBER_LIMIT_IMPORTANT="5"
+
+# Automatic cleanup
+AUTO_CLEANUP="yes"
+
+# Background comparison
+BACKGROUND_COMPARISON="no"
