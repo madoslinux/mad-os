@@ -175,12 +175,12 @@
     },
     "custom/help": {
         "format": "?",
-        "on-click": "/usr/local/bin/mados-help &",
+        "on-click": "bash -c 'export WAYLAND_DISPLAY=$WAYLAND_DISPLAY && export DISPLAY=$DISPLAY && /usr/local/bin/mados-help'",
         "tooltip": false
     },
     "custom/power": {
         "format": "⏻",
-        "on-click": "/usr/local/bin/mados-power &",
+        "on-click": "bash -c 'export WAYLAND_DISPLAY=$WAYLAND_DISPLAY && export DISPLAY=$DISPLAY && /usr/local/bin/mados-power'",
         "tooltip": false
     }
 }

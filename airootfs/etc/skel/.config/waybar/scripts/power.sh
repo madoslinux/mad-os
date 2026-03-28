@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-}
+export DISPLAY=${DISPLAY:-}
+
 options="<span size='14000' font_family='monospace'><span color='#BF616A' weight='bold'>⎋  Logout   </span> Cerrar sesión</span>
 <span size='14000' font_family='monospace'><span color='#E5C07B' weight='bold'>⟳  Restart </span> Reiniciar</span>
 <span size='14000' font_family='monospace'><span color='#61AFEF' weight='bold'>⏻  PowerOff</span> Apagar</span>"
