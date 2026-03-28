@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+# mados-gpu-detect - Simple GPU detection for madOS
+# Output: nvidia | amdgpu | intel | nouveau | virtual | unknown
+
+set -euo pipefail
+
+detect_gpu() {
+    local gpu_info
+    gpu_info=$(lspci 2>/dev/null | grep -iE "vga|3d|display" || true)
+
+    if [ -z "$gpu_info" ]; then
+        echo "unknown"
+        return
+    fi
+
+    if echo "$gpu_info" | grep -qiE "nvidia|geforce|rtx|gtx"; then
+        echo "nvidia"
+    elif echo "$gpu_info" | grep -qiE "amd|radeon|ati"; then
+        echo "amdgpu"
+    elif echo "$gpu_info" | grep -qiE "intel|uhd|iris"; then
+        echo "intel"
+    elif echo "$gpu_info" | grep -qiE "nouveau"; then
+        echo "nouveau"
+    elif echo "$gpu_info" | grep -qiE "virtio|vmware|virtualbox|vbox"; then
+        echo "virtual"
+    else
+        echo "unknown"
+    fi
+}
+
+get_gpu_info() {
+    local gpu_vendor
+    gpu_vendor=$(detect_gpu)
+
+    case "$gpu_vendor" in
+        nvidia)
+            lspci | grep -iE "vga|3d|display" | grep -i nvidia | sed 's/.*: //'
+            ;;
+        amdgpu)
+            lspci | grep -iE "vga|3d|display" | grep -iE "amd|radeon" | sed 's/.*: //'
+            ;;
+        intel)
+            lspci | grep -iE "vga|3d|display" | grep -i intel | sed 's/.*: //'
+            ;;
+        nouveau)
+            echo "Nouveau (open source NVIDIA)"
+            ;;
+        virtual)
+            echo "Virtual GPU"
+            ;;
+        *)
+            echo "Unknown GPU"
+            ;;
+    esac
+}
+
+show_help() {
+    cat << EOF
+mados-gpu-detect - Simple GPU detection for madOS
+
+USAGE:
+    mados-gpu-detect [OPTIONS]
+
+OPTIONS:
+    -v, --verbose    Show detailed GPU information
+    -h, --help       Show this help message
+
+EXIT CODES:
+    0   Success
+    1   Detection failed
+
+OUTPUT:
+    Outputs the GPU type: nvidia, amdgpu, intel, nouveau, virtual, or unknown
+
+EXAMPLES:
+    mados-gpu-detect           # Output: nvidia
+    mados-gpu-detect --verbose # Output detailed GPU info
+
+EOF
+}
+
+main() {
+    case "${1:-}" in
+        -v|--verbose)
+            echo "GPU Detection Results:"
+            echo "====================="
+            echo -n "GPU Type: "
+            detect_gpu
+            echo -n "GPU Info: "
+            get_gpu_info
+            ;;
+        -h|--help)
+            show_help
+            ;;
+        "")
+            detect_gpu
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            show_help >&2
+            return 1
+            ;;
+    esac
+}
+
+main "$@"

@@ -75,6 +75,11 @@ file_permissions=(
   ["/usr/local/bin/mados-power"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
 
+  # mados-chwd (hardware detection)
+  ["/usr/local/bin/mados-chwd"]="0:0:755"
+  ["/usr/local/bin/mados-kernel-select"]="0:0:755"
+  ["/usr/local/bin/mados-gpu-detect"]="0:0:755"
+
   # mados-updater (installed dynamically from github.com/madkoding/mados-updater)
   ["/usr/share/libalpm/hooks/pre-update.hook"]="0:0:644"
   ["/usr/local/bin/snapper-pre-update"]="0:0:755"

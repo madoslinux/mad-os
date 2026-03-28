@@ -1,6 +1,7 @@
 # Sistema base
 base
-linux
+linux-zen
+linux-lts
 linux-firmware
 nvme-cli
 mkinitcpio-archiso
@@ -117,6 +118,7 @@ cava
 # Build tools
 make
 pkgconf
+pciutils
 
 # Tema GTK oscuro (Nordic theme installed from git in customize_airootfs.sh)
 
