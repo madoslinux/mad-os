@@ -8,7 +8,7 @@
 set -e
 
 # ── madOS Custom Kernel (from GitHub releases) ──────────────────────────────
-MADOS_KERNEL_VERSION="6.19.10.zen1-13"
+MADOS_KERNEL_VERSION="6.19.10.zen1-14"
 MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-6.19.10-zen1-x86_64.pkg.tar.xz"
 
 if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
@@ -32,7 +32,6 @@ mkdir -p /boot
 
 # Kernel versions
 ZEN_KVER="6.19.10-zen1-mados-zen"
-LTS_KVER="6.18.20-1-lts"
 
 # madOS custom kernel (already extracted to /boot/vmlinuz-linux-mados-zen)
 if [[ -f /boot/vmlinuz-linux-mados-zen && ! -f /boot/vmlinuz-linux-zen ]]; then
