@@ -1,0 +1,8 @@
+[environment]
+XDG_SESSION_TYPE = "wayland"
+XDG_CURRENT_DESKTOP = "niri"
+WAYLAND_DISPLAY = "wayland-0"
+
+[initial_session]
+command = "/usr/local/bin/niri-session"
+user = "mados"
