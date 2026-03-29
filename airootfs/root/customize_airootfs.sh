@@ -55,14 +55,15 @@ if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
     echo "✓ Created initramfs for madOS kernel"
 fi
 
-# Generate initramfs for LTS kernel (find the actual lts kernel version)
-LTS_KVER=$(ls /lib/modules/ 2>/dev/null | grep -E '-lts$' | head -1)
-if [ -n "$LTS_KVER" ] && [ -d "/lib/modules/$LTS_KVER" ]; then
-    mkinitcpio -k "$LTS_KVER" -g /boot/initramfs-linux-lts.img
-    echo "✓ Created initramfs for LTS kernel ($LTS_KVER)"
-else
-    echo "⚠ LTS kernel modules not found, skipping initramfs"
-fi
+# Generate initramfs for LTS kernel
+for kdir in /lib/modules/*; do
+    if [[ -d "$kdir" && "$(basename "$kdir")" == *lts* ]]; then
+        LTS_KVER="$(basename "$kdir")"
+        mkinitcpio -k "$LTS_KVER" -g /boot/initramfs-linux-lts.img 2>&1 || true
+        echo "✓ Created initramfs for LTS kernel ($LTS_KVER)"
+        break
+    fi
+done
 
 echo ""
 echo "=== madOS: Pre-installing Oh My Zsh and OpenCode ==="
