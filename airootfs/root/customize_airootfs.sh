@@ -56,10 +56,13 @@ if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
     echo "✓ Created initramfs for madOS kernel"
 fi
 
-if [ -f /boot/vmlinuz-linux-lts ]; then
-    mkinitcpio -k "$(ls /lib/modules/ | grep -E '^6\.[0-9]+\.[0-9]+-lts$' | head -1)" -g /boot/initramfs-linux-lts.img 2>/dev/null || \
-    mkinitcpio -k "linux" -g /boot/initramfs-linux-lts.img
-    echo "✓ Created initramfs for LTS kernel"
+# Generate initramfs for LTS kernel (find the actual lts kernel version)
+LTS_KVER=$(ls /lib/modules/ 2>/dev/null | grep -E '.*-lts$' | head -1)
+if [ -n "$LTS_KVER" ] && [ -d "/lib/modules/$LTS_KVER" ]; then
+    mkinitcpio -k "$LTS_KVER" -g /boot/initramfs-linux-lts.img
+    echo "✓ Created initramfs for LTS kernel ($LTS_KVER)"
+elif [ -f /boot/vmlinuz-linux-lts ]; then
+    echo "⚠ LTS vmlinuz exists but no modules dir found, skipping initramfs"
 fi
 
 echo ""
