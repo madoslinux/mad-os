@@ -56,8 +56,9 @@ DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 SERIAL_LOG="/tmp/mados-serial.log"
 SERIAL_OPTS="-serial file:${SERIAL_LOG}"
 
-# Clear previous serial log
-: > "$SERIAL_LOG"
+# Create serial log file with proper permissions (owned by current user)
+touch "$SERIAL_LOG" 2>/dev/null || sudo touch "$SERIAL_LOG"
+chmod 666 "$SERIAL_LOG" 2>/dev/null || sudo chmod 666 "$SERIAL_LOG"
 
 # Cleanup function to show serial log on exit
 show_serial_log() {
