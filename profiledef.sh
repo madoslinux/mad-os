@@ -135,9 +135,10 @@ file_permissions=(
   ["/etc/rkhunter.conf"]="0:0:644"
   ["/etc/systemd/system/rkhunter.service"]="0:0:644"
   ["/etc/systemd/system/rkhunter.timer"]="0:0:644"
-  ["/etc/systemd/system/rkhunter-init.service"]="0:0:644"
   ["/etc/systemd/system/rkhunter.timer.d/"]="0:0:755"
   ["/etc/systemd/system/rkhunter.timer.d/skip-live.conf"]="0:0:644"
+  ["/etc/systemd/system/rkhunter.service.d/"]="0:0:755"
+  ["/etc/systemd/system/rkhunter.service.d/skip-live.conf"]="0:0:644"
 
   # USBGuard (disabled by default)
   ["/etc/systemd/system/usbguard.service.d/"]="0:0:755"
