@@ -79,9 +79,6 @@ file_permissions=(
   ["/usr/local/bin/mados-power"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
 
-  # Greetd display manager
-  ["/etc/greetd/config.toml"]="0:0:644"
-
   # mados-chwd (hardware detection)
   ["/usr/local/bin/mados-chwd"]="0:0:755"
   ["/usr/local/bin/mados-kernel-select"]="0:0:755"
