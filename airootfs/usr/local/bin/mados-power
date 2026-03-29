@@ -110,16 +110,12 @@ def get_window_manager():
         return "hyprland"
     elif os.environ.get("SWAYSOCK"):
         return "sway"
-    elif os.environ.get("WAYLAND_DISPLAY"):
-        return "niri"
     elif os.environ.get("DESKTOP_SESSION"):
         session = os.environ["DESKTOP_SESSION"].lower()
         if "sway" in session:
             return "sway"
         elif "hypr" in session:
             return "hyprland"
-        elif "niri" in session:
-            return "niri"
     return None
 
 
@@ -129,8 +125,6 @@ def logout():
         subprocess.run(["hyprctl", "dispatch", "exit"])
     elif wm == "sway":
         subprocess.run(["swaymsg", "exit"])
-    elif wm == "niri":
-        subprocess.run(["niri", "msg", "exit"])
     else:
         subprocess.run(["loginctl", "terminate-user", os.environ.get("USER", "")])
 

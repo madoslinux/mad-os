@@ -74,7 +74,6 @@ file_permissions=(
   ["/usr/local/bin/mados-firstboot-recover"]="0:0:755"
   ["/usr/local/bin/mados-health-check"]="0:0:755"
   ["/usr/local/bin/mados-hide-steam"]="0:0:755"
-  ["/usr/local/bin/niri-session"]="0:0:755"
   ["/usr/local/bin/mados-help"]="0:0:755"
   ["/usr/local/bin/mados-power"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
