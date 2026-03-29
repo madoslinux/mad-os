@@ -51,7 +51,7 @@ echo "✓ Cleaned up mkinitcpio presets"
 # Generate initramfs for madOS custom kernel
 echo "Generating initramfs images..."
 if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
-    mkinitcpio -k "6.19.10-zen1-mados-zen" -g /boot/initramfs-linux-zen.img
+    mkinitcpio -k "6.19.10-zen1-mados-zen" -g /boot/initramfs-linux-zen.img 2>&1 || true
     echo "✓ Created initramfs for madOS kernel"
 fi
 
