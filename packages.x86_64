@@ -58,6 +58,7 @@ sqlite
 python
 python-gobject
 python-cairo
+python-qrcode
 gtk3
 gtk4
 libadwaita
