@@ -9,7 +9,7 @@ set -e
 
 # ── madOS Custom Kernel (from GitHub releases) ──────────────────────────────
 MADOS_KERNEL_VERSION="6.19.10.zen1-12"
-MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_VERSION}-x86_64.pkg.tar.xz"
+MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-6.19.10-zen1-x86_64.pkg.tar.xz"
 
 if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
     echo "✓ madOS custom kernel already installed"
@@ -57,12 +57,12 @@ if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
 fi
 
 # Generate initramfs for LTS kernel (find the actual lts kernel version)
-LTS_KVER=$(ls /lib/modules/ 2>/dev/null | grep -E '.*-lts$' | head -1)
+LTS_KVER=$(ls /lib/modules/ 2>/dev/null | grep -E '-lts$' | head -1)
 if [ -n "$LTS_KVER" ] && [ -d "/lib/modules/$LTS_KVER" ]; then
     mkinitcpio -k "$LTS_KVER" -g /boot/initramfs-linux-lts.img
     echo "✓ Created initramfs for LTS kernel ($LTS_KVER)"
-elif [ -f /boot/vmlinuz-linux-lts ]; then
-    echo "⚠ LTS vmlinuz exists but no modules dir found, skipping initramfs"
+else
+    echo "⚠ LTS kernel modules not found, skipping initramfs"
 fi
 
 echo ""
