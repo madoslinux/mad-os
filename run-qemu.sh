@@ -88,6 +88,7 @@ QEMU_CMD=(
     -vga virtio
     -global virtio-vga.max_outputs=1
     -display gtk
+    -device qemu-xhci
     -device usb-tablet
     $SERIAL_OPTS
 )
