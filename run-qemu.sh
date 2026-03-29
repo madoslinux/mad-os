@@ -56,9 +56,9 @@ DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 SERIAL_LOG="${OUT_DIR}/mados-serial.log"
 SERIAL_OPTS="-serial file:${SERIAL_LOG}"
 
-# Create serial log file before sudo (so current user can read it after)
-: > "$SERIAL_LOG"
-chmod 666 "$SERIAL_LOG"
+# Create serial log file with sudo (out dir is owned by root)
+sudo rm -f "$SERIAL_LOG"
+sudo bash -c "echo -n '' > '$SERIAL_LOG' && chmod 666 '$SERIAL_LOG'"
 
 # Cleanup function to show serial log on exit
 show_serial_log() {
