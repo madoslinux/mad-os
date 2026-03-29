@@ -146,4 +146,8 @@ file_permissions=(
   ["/etc/systemd/system/mados-snapper.service"]="0:0:644"
   ["/etc/systemd/system/mados-snapper.timer"]="0:0:644"
   ["/etc/snapper/configs/root"]="0:0:644"
+
+  # Network wait service
+  ["/usr/local/bin/mados-network-wait.sh"]="0:0:755"
+  ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
 )

@@ -1,0 +1,12 @@
+[Unit]
+Description=Wait for Network to be Ready
+After=NetworkManager.service
+Requires=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-network-wait.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

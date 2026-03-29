@@ -567,3 +567,9 @@ EOF
 chmod 644 /usr/share/applications/gufw.desktop
 echo "  → Replaced gufw.desktop with sudo-enabled version"
 cat /usr/share/applications/gufw.desktop | grep "^Exec="
+
+# ── Enable network wait service ──────────────────────────────────────────────
+if [[ -f /etc/systemd/system/network-wait-online.service && ! -L /etc/systemd/system/multi-user.target.wants/network-wait-online.service ]]; then
+    ln -sf /etc/systemd/system/network-wait-online.service /etc/systemd/system/multi-user.target.wants/
+    echo "✓ Enabled network-wait-online service"
+fi
