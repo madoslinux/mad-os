@@ -1,12 +1,15 @@
 [Unit]
 Description=Check for security updates
 After=network-online.target
+ConditionPathExists=!/var/lib/pacman/db.lck
+ConditionPathExists=!/run/archiso
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/pacman -Syu --noconfirm
 StandardOutput=journal
 StandardError=journal
+TimeoutSec=60
 
 [Install]
 WantedBy=multi-user.target
