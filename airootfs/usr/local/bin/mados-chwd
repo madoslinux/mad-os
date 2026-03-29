@@ -1,0 +1,398 @@
+#!/usr/bin/env python3
+"""
+mados-chwd - CachyOS-style hardware detection for madOS
+
+This tool automatically detects hardware and installs the appropriate
+drivers and packages for optimal system performance.
+"""
+
+import argparse
+import subprocess
+import sys
+import os
+import re
+from dataclasses import dataclass
+from typing import Optional
+
+PROFILES = {
+    "nvidia-open": {
+        "packages": ["nvidia-open-dkms"],
+        "description": "NVIDIA open kernel module (recommended)",
+    },
+    "nvidia-dkms": {
+        "packages": ["nvidia-dkms", "nvidia-settings", "nvidia-utils"],
+        "description": "NVIDIA proprietary driver",
+    },
+    "nvidia-470xx": {
+        "packages": ["nvidia-470xx-dkms", "nvidia-470xx-settings", "nvidia-470xx-utils"],
+        "description": "NVIDIA 470xx legacy driver (GeForce GTX 10xx and older)",
+    },
+    "amdgpu": {
+        "packages": ["xf86-video-amdgpu", "libva-mesa-driver", "vulkan-radeon"],
+        "description": "AMD GPU (built-in, most modern GPUs)",
+    },
+    "intel": {
+        "packages": ["xf86-video-intel", "libva-intel-driver", "vulkan-intel"],
+        "description": "Intel GPU (integrated graphics)",
+    },
+    "nouveau": {
+        "packages": ["xf86-video-nouveau"],
+        "description": "Open NVIDIA driver (legacy, not recommended)",
+    },
+    "virtualmachine": {
+        "packages": ["open-vm-tools", "virtualbox-guest-utils"],
+        "description": "VirtualBox and VMware guest tools",
+    },
+    "handheld.steam-deck": {
+        "packages": ["steam", "steamtinkerlaunch"],
+        "description": "Steam Deck specific configuration",
+    },
+    "handheld.rog-ally": {
+        "packages": ["steam", "rog-core", "asusctl"],
+        "description": "ROG Ally specific configuration",
+    },
+    "handheld.msi-claw": {
+        "packages": ["steam", "msi-ec"],
+        "description": "MSI Claw specific configuration",
+    },
+}
+
+
+@dataclass
+class HardwareInfo:
+    gpu_vendor: str
+    gpu_model: str
+    is_virtual_machine: bool
+    is_handheld: bool
+    handheld_type: str | None
+
+
+def run_cmd(cmd: list[str]) -> tuple[int, str, str]:
+    """Run a command and return (returncode, stdout, stderr)"""
+    try:
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = proc.communicate()
+        return proc.returncode, stdout, stderr
+    except FileNotFoundError:
+        return -1, "", f"Command not found: {cmd[0]}"
+
+
+def detect_gpu() -> tuple[str, str]:
+    """Detect GPU vendor and model using lspci"""
+    returncode, stdout, _ = run_cmd(["lspci"])
+    if returncode != 0:
+        return "unknown", "unknown"
+
+    gpu_vendor = "unknown"
+    gpu_model = "unknown"
+
+    for line in stdout.splitlines():
+        line_lower = line.lower()
+        if "vga" in line_lower or "display" in line_lower or "3d" in line_lower:
+            if "nvidia" in line_lower or "geforce" in line_lower:
+                gpu_vendor = "nvidia"
+                match = re.search(r"(GeForce\s+\S+|RTX\s+\S+|GTX\s+\S+)", line, re.IGNORECASE)
+                if match:
+                    gpu_model = match.group(1)
+            elif "amd" in line_lower or "radeon" in line_lower or "ati" in line_lower:
+                gpu_vendor = "amd"
+                match = re.search(r"(Radeon\s+\S+|RX\s+\S+)", line, re.IGNORECASE)
+                if match:
+                    gpu_model = match.group(1)
+            elif "intel" in line_lower:
+                gpu_vendor = "intel"
+                match = re.search(r"(UHD|Iris|RXe?\s+\S+)", line, re.IGNORECASE)
+                if match:
+                    gpu_model = match.group(1)
+
+    return gpu_vendor, gpu_model
+
+
+def detect_virtual_machine() -> bool:
+    """Detect if running in a virtual machine"""
+    returncode, stdout, _ = run_cmd(["systemd-detect-virt"])
+    if returncode == 0:
+        virt = stdout.strip().lower()
+        if virt != "none":
+            return True
+    return False
+
+
+def detect_handheld() -> tuple[bool, str | None]:
+    """Detect handheld devices (Steam Deck, ROG Ally, MSI Claw)"""
+    returncode, dmi, _ = run_cmd(["cat", "/sys/class/dmi/id/product_name"])
+
+    if returncode == 0:
+        product_name = dmi.strip().lower()
+        if "steam" in product_name and "deck" in product_name:
+            return True, "steam-deck"
+        elif "rog" in product_name and "ally" in product_name:
+            return True, "rog-ally"
+        elif "claw" in product_name and "msi" in product_name:
+            return True, "msi-claw"
+
+    return False, None
+
+
+def get_installed_packages() -> set[str]:
+    """Get list of currently installed packages"""
+    returncode, stdout, _ = run_cmd(["pacman", "-Qq"])
+    if returncode == 0:
+        return set(stdout.splitlines())
+    return set()
+
+
+def detect_current_gpu_driver() -> str | None:
+    """Detect currently loaded GPU driver"""
+    driver_path = "/sys/class/drm/card0/device/driver"
+
+    if os.path.exists(driver_path):
+        driver = os.path.basename(os.path.realpath(driver_path))
+        driver_mapping = {
+            "nvidia": "nvidia-dkms",
+            "nvidia_470": "nvidia-470xx",
+            "nvidia_open": "nvidia-open",
+            "amdgpu": "amdgpu",
+            "i915": "intel",
+            "nouveau": "nouveau",
+        }
+        for d, profile in driver_mapping.items():
+            if d in driver:
+                return profile
+
+    return None
+
+
+def get_hardware_info() -> HardwareInfo:
+    """Gather all hardware information"""
+    gpu_vendor, gpu_model = detect_gpu()
+    is_vm = detect_virtual_machine()
+    is_handheld, handheld_type = detect_handheld()
+
+    return HardwareInfo(
+        gpu_vendor=gpu_vendor,
+        gpu_model=gpu_model,
+        is_virtual_machine=is_vm,
+        is_handheld=is_handheld,
+        handheld_type=handheld_type,
+    )
+
+
+def get_recommended_profile(hw_info: HardwareInfo) -> str:
+    """Determine recommended profile based on hardware"""
+    if hw_info.is_virtual_machine:
+        return "virtualmachine"
+
+    if hw_info.is_handheld:
+        return f"handheld.{hw_info.handheld_type}"
+
+    if hw_info.gpu_vendor == "nvidia":
+        return "nvidia-open"
+
+    if hw_info.gpu_vendor == "amd":
+        return "amdgpu"
+
+    if hw_info.gpu_vendor == "intel":
+        return "intel"
+
+    return "amdgpu"
+
+
+def install_packages(packages: list[str]) -> bool:
+    """Install packages using pacman"""
+    if not packages:
+        return True
+
+    print(f"Installing packages: {', '.join(packages)}")
+
+    returncode, stdout, stderr = run_cmd(["sudo", "pacman", "-S", "--noconfirm"] + packages)
+
+    if returncode != 0:
+        print(f"Error installing packages: {stderr}", file=sys.stderr)
+        return False
+
+    print("Packages installed successfully")
+    return True
+
+
+def remove_packages(packages: list[str]) -> bool:
+    """Remove packages using pacman"""
+    if not packages:
+        return True
+
+    print(f"Removing packages: {', '.join(packages)}")
+
+    returncode, stdout, stderr = run_cmd(["sudo", "pacman", "-R", "--noconfirm"] + packages)
+
+    if returncode != 0:
+        print(f"Error removing packages: {stderr}", file=sys.stderr)
+        return False
+
+    print("Packages removed successfully")
+    return True
+
+
+def list_profiles(detailed: bool = False) -> None:
+    """List available profiles"""
+    print("Available profiles:")
+    for name, info in PROFILES.items():
+        if detailed:
+            print(f"  {name}")
+            print(f"    Description: {info['description']}")
+            print(f"    Packages: {', '.join(info['packages'])}")
+            print()
+        else:
+            print(f"  {name}")
+
+
+def list_installed() -> None:
+    """List currently installed profiles"""
+    installed = get_installed_packages()
+    current_driver = detect_current_gpu_driver()
+
+    print("Installed GPU profile:", current_driver or "none")
+
+    for name, info in PROFILES.items():
+        if any(pkg in installed for pkg in info["packages"]):
+            print(f"  {name}: installed")
+
+
+def autocofigure() -> bool:
+    """Automatically detect hardware and install appropriate drivers"""
+    print("Detecting hardware...")
+
+    hw_info = get_hardware_info()
+
+    print(f"  GPU: {hw_info.gpu_vendor} {hw_info.gpu_model}")
+    if hw_info.is_virtual_machine:
+        print("  Virtual Machine: detected")
+    if hw_info.is_handheld:
+        print(f"  Handheld: {hw_info.handheld_type}")
+
+    profile = get_recommended_profile(hw_info)
+
+    print(f"\nRecommended profile: {profile}")
+
+    if profile in PROFILES:
+        packages = PROFILES[profile]["packages"]
+        return install_packages(packages)
+
+    return True
+
+
+def install_profile(profile_name: str, force: bool = False) -> bool:
+    """Install a specific profile"""
+    if profile_name not in PROFILES:
+        print(f"Unknown profile: {profile_name}", file=sys.stderr)
+        print("Use --list to see available profiles")
+        return False
+
+    packages = PROFILES[profile_name]["packages"]
+
+    if not force:
+        installed = get_installed_packages()
+        already_installed = [p for p in packages if p in installed]
+        if already_installed:
+            print(f"Packages already installed: {', '.join(already_installed)}")
+            response = input("Reinstall? [y/N] ")
+            if response.lower() != "y":
+                return False
+
+    return install_packages(packages)
+
+
+def remove_profile(profile_name: str) -> bool:
+    """Remove a specific profile"""
+    if profile_name not in PROFILES:
+        print(f"Unknown profile: {profile_name}", file=sys.stderr)
+        return False
+
+    packages = PROFILES[profile_name]["packages"]
+    return remove_packages(packages)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="mados-chwd - Hardware detection and driver management for madOS"
+    )
+    parser.add_argument(
+        "-a",
+        "--autoconfigure",
+        action="store_true",
+        help="Automatically detect hardware and install drivers",
+    )
+    parser.add_argument(
+        "-i",
+        "--install",
+        metavar="PROFILE",
+        help="Install a specific profile",
+    )
+    parser.add_argument(
+        "-r",
+        "--remove",
+        metavar="PROFILE",
+        help="Remove a specific profile",
+    )
+    parser.add_argument(
+        "-l",
+        "--list",
+        action="store_true",
+        help="List available profiles",
+    )
+    parser.add_argument(
+        "--list-installed",
+        action="store_true",
+        help="List installed profiles",
+    )
+    parser.add_argument(
+        "-d",
+        "--detail",
+        action="store_true",
+        help="Show detailed information for profiles",
+    )
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force reinstall without prompting",
+    )
+    parser.add_argument(
+        "-V",
+        "--version",
+        action="version",
+        version="mados-chwd 1.0.0",
+    )
+
+    args = parser.parse_args()
+
+    if args.list:
+        list_profiles(detailed=args.detail)
+        return 0
+
+    if args.list_installed:
+        list_installed()
+        return 0
+
+    if args.autoconfigure:
+        success = autocofigure()
+        return 0 if success else 1
+
+    if args.install:
+        success = install_profile(args.install, force=args.force)
+        return 0 if success else 1
+
+    if args.remove:
+        success = remove_profile(args.remove)
+        return 0 if success else 1
+
+    parser.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

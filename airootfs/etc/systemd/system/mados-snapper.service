@@ -1,0 +1,11 @@
+[Unit]
+Description=mados-snapper daily automatic snapshot
+Documentation=man:mados-snapper(1)
+After=boot-check.target
+ConditionVirtualization=!container
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-snapper auto
+Nice=19
+IOSchedulingClass=best-effort

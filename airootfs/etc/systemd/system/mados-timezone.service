@@ -1,9 +1,8 @@
 [Unit]
 Description=madOS Timezone Auto-Detection
 Documentation=https://github.com/madkoding/mad-os
-After=systemd-remount-fs.service local-fs.target
-Before=systemd-timesyncd.service time-set.target
-Wants=local-fs.target
+After=systemd-remount-fs.service
+Before=time-set.target
 
 [Service]
 Type=oneshot
@@ -12,6 +11,3 @@ ExecStart=/usr/local/bin/mados-timezone-detect.sh
 StandardOutput=journal
 StandardError=journal
 TimeoutSec=60
-
-[Install]
-WantedBy=multi-user.target

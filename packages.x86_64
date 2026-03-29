@@ -1,6 +1,9 @@
 # Sistema base
 base
-linux
+linux-zen
+linux-zen-headers
+linux-lts
+linux-lts-headers
 linux-firmware
 nvme-cli
 mkinitcpio-archiso
@@ -27,6 +30,17 @@ mako
 xorg-xwayland
 xdg-desktop-portal-hyprland
 
+# Additional Desktop Environments
+# plasma-meta
+# xfce4
+# xfce4-goodies
+# i3-wm
+# i3status
+# i3lock
+# qtile
+# niri
+# steam
+
 # Aplicaciones principales
 foot
 firefox
@@ -46,8 +60,12 @@ sqlite
 python
 python-gobject
 python-cairo
+python-qrcode
+uwsm
 gtk3
 gtk4
+libadwaita
+bc
 gst-plugin-gtk
 gtk-layer-shell
 noto-fonts-cjk
@@ -117,6 +135,7 @@ cava
 # Build tools
 make
 pkgconf
+pciutils
 
 # Tema GTK oscuro (Nordic theme installed from git in customize_airootfs.sh)
 
@@ -142,14 +161,15 @@ e2fsprogs
 ntfs-3g
 btrfs-progs
 unzip
+snapper
 
 # Soporte VM
 virtualbox-guest-utils
 open-vm-tools
 
-# Login manager (greeter)
-greetd
-greetd-regreet
+# Login manager
+lightdm
+lightdm-gtk-greeter
 cage
 
 # Gamepad/Steam Deck support
@@ -194,9 +214,6 @@ rkhunter
 clamav
 fail2ban
 zenity
-steam
-niri
 
 # Office and Graphics
 gimp
-libreoffice-still

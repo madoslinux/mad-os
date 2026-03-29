@@ -1,21 +1,12 @@
 [Unit]
 Description=madOS Wait for GPU Modules
 After=systemd-modules-load.service
-Before=plymouth-start.service
 Before=mados-fb-resolution.service
 Before=display-manager.service
 
 [Service]
 Type=oneshot
-ExecStart=/bin/bash -c '
-    for i in /sys/class/drm/card*/device/driver; do
-        driver=$(basename "$(readlink "$i" 2>/dev/null)" 2>/dev/null);
-        case "$driver" in
-            i915|amdgpu|nouveau) exit 0 ;;
-        esac;
-    done;
-    exit 1
-'
+ExecStart=/usr/local/bin/mados-gpu-wait.sh
 RemainAfterExit=yes
 
 [Install]
