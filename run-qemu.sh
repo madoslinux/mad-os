@@ -122,6 +122,7 @@ if [ -n "$UEFI_FW" ]; then
         -global virtio-vga.max_outputs=1 \
         -display gtk \
         -bios "$UEFI_FW" \
+        -device usb-tablet \
         $SERIAL_OPTS \
         "$@"
 else
@@ -137,6 +138,7 @@ else
         -vga virtio \
         -global virtio-vga.max_outputs=1 \
         -display gtk \
+        -device usb-tablet \
         $SERIAL_OPTS \
         "$@"
 fi
