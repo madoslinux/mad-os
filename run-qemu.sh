@@ -52,13 +52,13 @@ RESOLUTION="${RESOLUTION:-1920x1080}"
 DISK_SIZE="${DISK_SIZE:-10G}"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 
-# Serial console output file for debugging
-SERIAL_LOG="/tmp/mados-serial.log"
+# Serial console output file for debugging (in OUT_DIR to avoid permissions)
+SERIAL_LOG="${OUT_DIR}/mados-serial.log"
 SERIAL_OPTS="-serial file:${SERIAL_LOG}"
 
-# Create serial log file with proper permissions (owned by current user)
-touch "$SERIAL_LOG" 2>/dev/null || sudo touch "$SERIAL_LOG"
-chmod 666 "$SERIAL_LOG" 2>/dev/null || sudo chmod 666 "$SERIAL_LOG"
+# Create serial log file before sudo (so current user can read it after)
+: > "$SERIAL_LOG"
+chmod 666 "$SERIAL_LOG"
 
 # Cleanup function to show serial log on exit
 show_serial_log() {
