@@ -7,6 +7,72 @@
 
 set -e
 
+# ── madOS Custom Kernel (from GitHub releases) ──────────────────────────────
+# Fetch latest kernel version dynamically from GitHub API
+MADOS_KERNEL_VERSION=$(curl -fsSL "https://api.github.com/repos/madoslinux/mados-kernel/releases/latest" | jq -r '.tag_name // empty' | sed 's/^v//')
+if [[ -z "$MADOS_KERNEL_VERSION" ]]; then
+    MADOS_KERNEL_VERSION="6.19.10.zen1-17"
+    echo "⚠ Failed to fetch latest kernel version, using default: $MADOS_KERNEL_VERSION"
+else
+    echo "Latest madOS kernel version: $MADOS_KERNEL_VERSION"
+fi
+MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_VERSION}-x86_64.pkg.tar.xz"
+
+if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
+    echo "✓ madOS custom kernel already installed"
+else
+    echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
+    KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
+    if curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" 2>&1; then
+        tar -xJf "$KERNEL_TMP" -C / 2>&1
+        rm -f "$KERNEL_TMP"
+        echo "✓ madOS custom kernel extracted"
+    else
+        echo "⚠ Failed to download madOS custom kernel"
+    fi
+fi
+
+echo "=== madOS: Setting up kernel and initramfs ==="
+
+# Create /boot directory
+mkdir -p /boot
+
+# Kernel versions
+ZEN_KVER="6.19.10-zen1-mados-zen"
+
+# madOS custom kernel (already extracted to /boot/vmlinuz-linux-mados-zen)
+if [[ -f /boot/vmlinuz-linux-mados-zen && ! -f /boot/vmlinuz-linux-zen ]]; then
+    cp /boot/vmlinuz-linux-mados-zen /boot/vmlinuz-linux-zen
+    echo "✓ Using madOS custom kernel vmlinuz"
+fi
+
+# Remove conflicting mkinitcpio presets that expect standard kernel names
+rm -f /etc/mkinitcpio.d/linux-zen.preset
+rm -f /etc/mkinitcpio.d/linux-lts.preset
+rm -f /etc/mkinitcpio.d/linux.preset
+echo "✓ Cleaned up mkinitcpio presets"
+
+# madOS custom kernel modules are in /lib/modules/6.19.10-zen1-mados-zen
+# linux-lts already has its vmlinuz in /boot/vmlinuz-linux-lts from the package
+
+# Generate initramfs for madOS custom kernel
+echo "Generating initramfs images..."
+if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
+    mkinitcpio -k "6.19.10-zen1-mados-zen" -g /boot/initramfs-linux-zen.img 2>&1 || true
+    echo "✓ Created initramfs for madOS kernel"
+fi
+
+# Generate initramfs for LTS kernel
+for kdir in /lib/modules/*; do
+    if [[ -d "$kdir" && "$(basename "$kdir")" == *lts* ]]; then
+        LTS_KVER="$(basename "$kdir")"
+        mkinitcpio -k "$LTS_KVER" -g /boot/initramfs-linux-lts.img 2>&1 || true
+        echo "✓ Created initramfs for LTS kernel ($LTS_KVER)"
+        break
+    fi
+done
+
+echo ""
 echo "=== madOS: Pre-installing Oh My Zsh and OpenCode ==="
 
 # ── Nordic GTK Theme (from EliverLara/Nordic) ─────────────────────────────
@@ -508,3 +574,9 @@ EOF
 chmod 644 /usr/share/applications/gufw.desktop
 echo "  → Replaced gufw.desktop with sudo-enabled version"
 cat /usr/share/applications/gufw.desktop | grep "^Exec="
+
+# ── Enable network wait service ──────────────────────────────────────────────
+if [[ -f /etc/systemd/system/network-wait-online.service && ! -L /etc/systemd/system/multi-user.target.wants/network-wait-online.service ]]; then
+    ln -sf /etc/systemd/system/network-wait-online.service /etc/systemd/system/multi-user.target.wants/
+    echo "✓ Enabled network-wait-online service"
+fi

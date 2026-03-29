@@ -9,8 +9,7 @@
         "sway/workspaces",
         "sway/mode",
         "hyprland/workspaces",
-        "hyprland/submap",
-        "niri/workspaces"
+        "hyprland/submap"
     ],
     "modules-center": [
         "clock"
@@ -59,18 +58,6 @@
     "hyprland/submap": {
         "format": "<span style=\"italic\">󰕷  {}</span>",
         "tooltip": false
-    },
-    "niri/workspaces": {
-        "format": "{name}",
-        "all-outputs": true,
-        "persistent-workspaces": {
-            "1": [],
-            "2": [],
-            "3": [],
-            "4": [],
-            "5": [],
-            "6": []
-        }
     },
     "clock": {
         "format": "<span size='x-large'>󰥔</span>  {:%a %d %b  %H:%M}",

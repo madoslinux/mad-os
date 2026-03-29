@@ -60,6 +60,10 @@ file_permissions=(
   ["/usr/local/lib/mados-media-helper.sh"]="0:0:755"
   ["/usr/local/bin/mados-persistence"]="0:0:755"
   ["/usr/local/bin/mados-installer-autostart"]="0:0:755"
+
+  # XDG autostart for desktop environments
+  ["/etc/xdg/autostart/nm-applet.desktop"]="0:0:644"
+
   ["/usr/local/bin/mados-vbox-guest"]="0:0:755"
   ["/usr/local/bin/mados-persist-sync.sh"]="0:0:755"
   ["/usr/local/bin/mados-persist-detect.sh"]="0:0:755"
@@ -70,10 +74,19 @@ file_permissions=(
   ["/usr/local/bin/mados-firstboot-recover"]="0:0:755"
   ["/usr/local/bin/mados-health-check"]="0:0:755"
   ["/usr/local/bin/mados-hide-steam"]="0:0:755"
-  ["/usr/local/bin/niri-session"]="0:0:755"
   ["/usr/local/bin/mados-help"]="0:0:755"
   ["/usr/local/bin/mados-power"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
+
+  # mados-chwd (hardware detection)
+  ["/usr/local/bin/mados-chwd"]="0:0:755"
+  ["/usr/local/bin/mados-kernel-select"]="0:0:755"
+  ["/usr/local/bin/mados-gpu-detect"]="0:0:755"
+
+  # mados-welcome and tools
+  ["/usr/local/bin/mados-welcome"]="0:0:755"
+  ["/usr/local/bin/mados-rate-mirrors"]="0:0:755"
+  ["/usr/local/bin/mados-select-desktop"]="0:0:755"
 
   # mados-updater (installed dynamically from github.com/madkoding/mados-updater)
   ["/usr/share/libalpm/hooks/pre-update.hook"]="0:0:644"
@@ -114,11 +127,18 @@ file_permissions=(
   ["/etc/usbguard/usbguard-notify.sh"]="0:0:755"
   ["/etc/systemd/system/usbguard.service"]="0:0:644"
 
-  # RKHunter
+  # RKHunter (disabled by default)
   ["/etc/rkhunter.conf"]="0:0:644"
   ["/etc/systemd/system/rkhunter.service"]="0:0:644"
   ["/etc/systemd/system/rkhunter.timer"]="0:0:644"
-  ["/etc/systemd/system/rkhunter-init.service"]="0:0:644"
+  ["/etc/systemd/system/rkhunter.timer.d/"]="0:0:755"
+  ["/etc/systemd/system/rkhunter.timer.d/skip-live.conf"]="0:0:644"
+  ["/etc/systemd/system/rkhunter.service.d/"]="0:0:755"
+  ["/etc/systemd/system/rkhunter.service.d/skip-live.conf"]="0:0:644"
+
+  # USBGuard (disabled by default)
+  ["/etc/systemd/system/usbguard.service.d/"]="0:0:755"
+  ["/etc/systemd/system/usbguard.service.d/skip-live.conf"]="0:0:644"
 
   # Fail2Ban
   ["/etc/fail2ban/jail.local"]="0:0:644"
@@ -128,5 +148,17 @@ file_permissions=(
 
   # Framebuffer and GPU early services
   ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
+  ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
+
+  # Btrfs Snapper
+  ["/usr/local/bin/mados-snapper"]="0:0:755"
+  ["/usr/local/bin/mados-autoinstall"]="0:0:755"
+  ["/etc/systemd/system/mados-snapper.service"]="0:0:644"
+  ["/etc/systemd/system/mados-snapper.timer"]="0:0:644"
+  ["/etc/snapper/configs/root"]="0:0:644"
+
+  # Network wait service
+  ["/usr/local/bin/mados-network-wait.sh"]="0:0:755"
+  ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
 )

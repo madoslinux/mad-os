@@ -4,7 +4,7 @@
 
 [[ -f ~/.bashrc ]] && . ~/.bashrc
 
-# Auto-start compositor on TTY1 (live ISO only — installed system uses greetd)
+# Auto-start compositor on TTY1 (live ISO only — installed system uses lightdm)
 # Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
 if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ] && [ -d /run/archiso ]; then
   export XDG_SESSION_TYPE=wayland

@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# mados-kernel-select - Selector de scheduler en runtime para madOS
+# Usage: mados-kernel-select [bore|eevdf|status]
+
+set -euo pipefail
+
+SCRIPT_NAME="$(basename "$0")"
+SYSCTL_SCHED="/proc/sys/kernel/sched"
+
+show_status() {
+    echo "Scheduler Status:"
+    echo "================"
+
+    if [ -f "${SYSCTL_SCHED}/sched_eevdf" ]; then
+        eevdf_value="$(cat "${SYSCTL_SCHED}/sched_eevdf" 2>/dev/null || echo "unknown")"
+        echo "EEVDF: ${eevdf_value}"
+    fi
+
+    if [ -f "${SYSCTL_SCHED}/sched_bore" ]; then
+        bore_value="$(cat "${SYSCTL_SCHED}/sched_bore" 2>/dev/null || echo "unknown")"
+        echo "BORE:  ${bore_value}"
+    fi
+
+    echo ""
+    echo "Current kernel: $(uname -r)"
+    echo "Available schedulers: BORE, EEVDF"
+}
+
+set_bore() {
+    echo "Activating BORE scheduler..."
+
+    if [ ! -f "${SYSCTL_SCHED}/sched_bore" ]; then
+        echo "ERROR: BORE scheduler not available in this kernel" >&2
+        echo "BORE requires linux-mados-zen or a kernel with BORE patch" >&2
+        return 1
+    fi
+
+    echo 1 > "${SYSCTL_SCHED}/sched_bore" 2>/dev/null || {
+        echo "ERROR: Failed to activate BORE" >&2
+        return 1
+    }
+
+    echo 0 > "${SYSCTL_SCHED}/sched_eevdf" 2>/dev/null || true
+
+    echo "BORE scheduler activated"
+    echo "Note: Full effect may require logout/reboot"
+    return 0
+}
+
+set_eevdf() {
+    echo "Activating EEVDF scheduler..."
+
+    echo 0 > "${SYSCTL_SCHED}/sched_bore" 2>/dev/null || {
+        echo "Warning: Could not disable BORE" >&2
+    }
+
+    echo 1 > "${SYSCTL_SCHED}/sched_eevdf" 2>/dev/null || {
+        echo "ERROR: Failed to activate EEVDF" >&2
+        return 1
+    }
+
+    echo "EEVDF scheduler activated (immediate)"
+    return 0
+}
+
+show_help() {
+    cat << EOF
+${SCRIPT_NAME} - madOS Kernel Scheduler Selector
+
+USAGE:
+    ${SCRIPT_NAME} [COMMAND]
+
+COMMANDS:
+    bore     Activate BORE scheduler (Burst-Oriented Response Enhancer)
+             Best for: Interactive desktop use, gaming, low-latency tasks
+             BORE prioritizes interactive tasks over throughput
+
+    eevdf    Activate EEVDF scheduler (Earliest Eligible Virtual Deadline First)
+             Best for: Server workloads, compilation, batch processing
+             EEVDF is the default Linux kernel scheduler
+
+    status   Show current scheduler status
+
+    help     Show this help message
+
+EXAMPLES:
+    ${SCRIPT_NAME} bore      # Activate BORE for better interactivity
+    ${SCRIPT_NAME} eevdf     # Activate EEVDF for throughput
+    ${SCRIPT_NAME} status    # Check current scheduler
+
+NOTES:
+    - BORE and EEVDF are runtime-switchable on kernels that support both
+    - Full benefits of BORE may require logout/reboot
+    - Some applications may need restart to benefit from scheduler change
+
+EOF
+}
+
+main() {
+    case "${1:-help}" in
+        bore)
+            set_bore
+            ;;
+        eevdf)
+            set_eevdf
+            ;;
+        status)
+            show_status
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            echo "Run '${SCRIPT_NAME} help' for usage" >&2
+            return 1
+            ;;
+    esac
+}
+
+main "$@"
