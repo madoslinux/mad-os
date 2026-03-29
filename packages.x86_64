@@ -167,9 +167,10 @@ snapper
 virtualbox-guest-utils
 open-vm-tools
 
-# Login manager (greeter)
-greetd
-greetd-regreet
+# Login manager
+lightdm
+lightdm-gtk-greeter
+nordic-theme
 cage
 
 # Gamepad/Steam Deck support

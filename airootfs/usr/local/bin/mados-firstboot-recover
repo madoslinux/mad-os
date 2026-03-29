@@ -102,11 +102,11 @@ recover_phase() {
                 print_success "Created user config directory"
             fi
             
-            if [[ -f /etc/greetd/config.toml ]]; then
-                print_success "greetd configuration exists"
+            if [[ -f /etc/lightdm/lightdm.conf ]]; then
+                print_success "lightdm configuration exists"
                 return 0
             else
-                print_error "greetd configuration missing"
+                print_error "lightdm configuration missing"
                 return 1
             fi
             ;;
@@ -115,7 +115,7 @@ recover_phase() {
             local services=(
                 "NetworkManager"
                 "systemd-resolved"
-                "greetd"
+                "lightdm"
                 "bluetooth"
                 "earlyoom"
             )
