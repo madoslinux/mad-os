@@ -52,14 +52,14 @@ echo "✓ Cleaned up mkinitcpio presets"
 # Generate initramfs for madOS custom kernel
 echo "Generating initramfs images..."
 if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
-    mkinitcpio -k "6.19.10-zen1-mados-zen" -g /boot/initramfs-linux-zen.img
+    mkinitcpio -k "6.19.10-zen1-mados-zen" -g /boot/initramfs-linux-zen.img 2>&1 || true
     echo "✓ Created initramfs for madOS kernel"
 fi
 
 # Generate initramfs for LTS kernel (find the actual lts kernel version)
 LTS_KVER=$(ls /lib/modules/ 2>/dev/null | grep -E '-lts$' | head -1)
 if [ -n "$LTS_KVER" ] && [ -d "/lib/modules/$LTS_KVER" ]; then
-    mkinitcpio -k "$LTS_KVER" -g /boot/initramfs-linux-lts.img
+    mkinitcpio -k "$LTS_KVER" -g /boot/initramfs-linux-lts.img 2>&1 || true
     echo "✓ Created initramfs for LTS kernel ($LTS_KVER)"
 else
     echo "⚠ LTS kernel modules not found, skipping initramfs"
