@@ -8,3 +8,6 @@ Before=display-manager.service
 Type=oneshot
 ExecStart=/usr/local/bin/mados-gpu-wait.sh
 RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
