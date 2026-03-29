@@ -26,7 +26,7 @@ fi
 MEMORY="${MEMORY:-4G}"
 CPU="${CPU:-4}"
 RESOLUTION="${RESOLUTION:-1920x1080}"
-DISK_SIZE="${DISK_SIZE:-10G}"
+DISK_SIZE="${DISK_SIZE:-30G}"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 
 # Serial console output file for debugging (in OUT_DIR to avoid permissions)
@@ -45,7 +45,7 @@ echo "  Disk: ${DISK_FILE}"
 echo "  Serial log: ${SERIAL_LOG}"
 echo ""
 
-# Create virtual disk if it doesn't exist
+# Create virtual disk if it doesn't exist (default 30GB)
 if [ ! -f "$DISK_FILE" ]; then
     echo "Creating ${DISK_SIZE} virtual disk..."
     sudo qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
