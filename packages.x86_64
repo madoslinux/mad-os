@@ -59,6 +59,7 @@ python
 python-gobject
 python-cairo
 python-qrcode
+uwsm
 gtk3
 gtk4
 libadwaita
