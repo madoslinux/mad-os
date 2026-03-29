@@ -23,29 +23,6 @@ if ! sudo -v 2>/dev/null; then
     fi
 fi
 
-# Extend sudo timestamp to avoid timeout during execution
-while true; do
-    sleep 60
-    sudo -v 2>/dev/null || break &
-done &
-SUDO_KEEPALIVE=$!
-
-cleanup() {
-    kill "$SUDO_KEEPALIVE" 2>/dev/null || true
-}
-
-show_serial_log() {
-    echo ""
-    echo "=== Serial Log Contents ==="
-    if [ -f "$SERIAL_LOG" ]; then
-        cat "$SERIAL_LOG"
-    else
-        echo "Serial log not found: $SERIAL_LOG"
-    fi
-}
-
-trap show_serial_log EXIT
-
 MEMORY="${MEMORY:-4G}"
 CPU="${CPU:-4}"
 RESOLUTION="${RESOLUTION:-1920x1080}"
@@ -59,17 +36,6 @@ SERIAL_OPTS="-serial file:${SERIAL_LOG}"
 # Create serial log file with sudo (out dir is owned by root)
 sudo rm -f "$SERIAL_LOG"
 sudo bash -c "echo -n '' > '$SERIAL_LOG' && chmod 666 '$SERIAL_LOG'"
-
-# Cleanup function to show serial log on exit
-show_serial_log() {
-    echo ""
-    echo "=== Serial Log Contents ==="
-    if [ -f "$SERIAL_LOG" ]; then
-        cat "$SERIAL_LOG"
-    else
-        echo "Serial log not found: $SERIAL_LOG"
-    fi
-}
 
 echo "Configuration:"
 echo "  ISO: ${ISO_FILE}"
@@ -108,37 +74,55 @@ echo "Starting QEMU..."
 echo "Serial output will be logged to: ${SERIAL_LOG}"
 echo ""
 
+# Build QEMU command
+QEMU_CMD=(
+    qemu-system-x86_64
+    -m "$MEMORY"
+    -smp "$CPU"
+    $KVM_ACCEL
+    -cdrom "$ISO_FILE"
+    -boot d
+    -drive file="$DISK_FILE",format=qcow2,if=virtio
+    -net nic
+    -net user,hostfwd=tcp::2222-:22
+    -vga virtio
+    -global virtio-vga.max_outputs=1
+    -display gtk
+    -device usb-tablet
+    $SERIAL_OPTS
+)
+
 if [ -n "$UEFI_FW" ]; then
-    sudo qemu-system-x86_64 \
-        -m "$MEMORY" \
-        -smp "$CPU" \
-        $KVM_ACCEL \
-        -cdrom "$ISO_FILE" \
-        -boot d \
-        -drive file="$DISK_FILE",format=qcow2,if=virtio \
-        -net nic \
-        -net user,hostfwd=tcp::2222-:22 \
-        -vga virtio \
-        -global virtio-vga.max_outputs=1 \
-        -display gtk \
-        -bios "$UEFI_FW" \
-        -device usb-tablet \
-        $SERIAL_OPTS \
-        "$@"
-else
-    sudo qemu-system-x86_64 \
-        -m "$MEMORY" \
-        -smp "$CPU" \
-        $KVM_ACCEL \
-        -cdrom "$ISO_FILE" \
-        -boot d \
-        -drive file="$DISK_FILE",format=qcow2,if=virtio \
-        -net nic \
-        -net user,hostfwd=tcp::2222-:22 \
-        -vga virtio \
-        -global virtio-vga.max_outputs=1 \
-        -display gtk \
-        -device usb-tablet \
-        $SERIAL_OPTS \
-        "$@"
+    QEMU_CMD+=(-bios "$UEFI_FW")
 fi
+
+echo ""
+echo "Starting QEMU..."
+echo "Serial output will be logged to: ${SERIAL_LOG}"
+echo ""
+
+# Start QEMU in background
+sudo "${QEMU_CMD[@]}" "$@" &
+QEMU_PID=$!
+
+# Monitor serial log in real-time
+tail -n 50 -f "$SERIAL_LOG" 2>/dev/null &
+TAIL_PID=$!
+
+# Cleanup function
+cleanup() {
+    kill $TAIL_PID 2>/dev/null || true
+    kill $QEMU_PID 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+# Wait for QEMU to finish
+wait $QEMU_PID
+RESULT=$?
+
+# Show final serial log
+echo ""
+echo "=== Serial Log Contents ==="
+cat "$SERIAL_LOG"
+
+exit ${RESULT:-0}
