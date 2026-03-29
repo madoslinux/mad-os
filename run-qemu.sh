@@ -33,7 +33,18 @@ SUDO_KEEPALIVE=$!
 cleanup() {
     kill "$SUDO_KEEPALIVE" 2>/dev/null || true
 }
-trap cleanup EXIT
+
+show_serial_log() {
+    echo ""
+    echo "=== Serial Log Contents ==="
+    if [ -f "$SERIAL_LOG" ]; then
+        cat "$SERIAL_LOG"
+    else
+        echo "Serial log not found: $SERIAL_LOG"
+    fi
+}
+
+trap show_serial_log EXIT
 
 MEMORY="${MEMORY:-4G}"
 CPU="${CPU:-4}"
@@ -41,11 +52,30 @@ RESOLUTION="${RESOLUTION:-1920x1080}"
 DISK_SIZE="${DISK_SIZE:-10G}"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 
+# Serial console output file for debugging
+SERIAL_LOG="/tmp/mados-serial.log"
+SERIAL_OPTS="-serial file:${SERIAL_LOG}"
+
+# Clear previous serial log
+: > "$SERIAL_LOG"
+
+# Cleanup function to show serial log on exit
+show_serial_log() {
+    echo ""
+    echo "=== Serial Log Contents ==="
+    if [ -f "$SERIAL_LOG" ]; then
+        cat "$SERIAL_LOG"
+    else
+        echo "Serial log not found: $SERIAL_LOG"
+    fi
+}
+
 echo "Configuration:"
 echo "  ISO: ${ISO_FILE}"
 echo "  Memory: ${MEMORY}"
 echo "  CPU: ${CPU}"
 echo "  Disk: ${DISK_FILE}"
+echo "  Serial log: ${SERIAL_LOG}"
 echo ""
 
 # Create virtual disk if it doesn't exist
@@ -74,6 +104,7 @@ fi
 
 echo ""
 echo "Starting QEMU..."
+echo "Serial output will be logged to: ${SERIAL_LOG}"
 echo ""
 
 if [ -n "$UEFI_FW" ]; then
@@ -90,6 +121,7 @@ if [ -n "$UEFI_FW" ]; then
         -global virtio-vga.max_outputs=1 \
         -display gtk \
         -bios "$UEFI_FW" \
+        $SERIAL_OPTS \
         "$@"
 else
     sudo qemu-system-x86_64 \
@@ -104,5 +136,6 @@ else
         -vga virtio \
         -global virtio-vga.max_outputs=1 \
         -display gtk \
+        $SERIAL_OPTS \
         "$@"
 fi

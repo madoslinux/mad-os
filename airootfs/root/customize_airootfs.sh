@@ -7,46 +7,60 @@
 
 set -e
 
+# ── madOS Custom Kernel (from GitHub releases) ──────────────────────────────
+MADOS_KERNEL_VERSION="6.19.10.zen1-12"
+MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_VERSION}-x86_64.pkg.tar.xz"
+
+if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
+    echo "✓ madOS custom kernel already installed"
+else
+    echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
+    KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
+    if curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" 2>&1; then
+        tar -xJf "$KERNEL_TMP" -C / 2>&1
+        rm -f "$KERNEL_TMP"
+        echo "✓ madOS custom kernel extracted"
+    else
+        echo "⚠ Failed to download madOS custom kernel"
+    fi
+fi
+
 echo "=== madOS: Setting up kernel and initramfs ==="
 
 # Create /boot directory
 mkdir -p /boot
 
 # Kernel versions
-ZEN_KVER="6.19.10-zen1-1-zen"
+ZEN_KVER="6.19.10-zen1-mados-zen"
 LTS_KVER="6.18.20-1-lts"
 
-# Copy vmlinuz to /boot/ for each kernel
-for kver in "$ZEN_KVER" "$LTS_KVER"; do
-    SRC_VMLINUZ="/usr/lib/modules/${kver}/vmlinuz"
-    if [ -f "$SRC_VMLINUZ" ]; then
-        case "$kver" in
-            *-zen*)
-                cp "$SRC_VMLINUZ" /boot/vmlinuz-linux-zen
-                ;;
-            *-lts*)
-                cp "$SRC_VMLINUZ" /boot/vmlinuz-linux-lts
-                ;;
-        esac
-        echo "✓ Copied vmlinuz for $kver"
-    fi
-done
+# madOS custom kernel (already extracted to /boot/vmlinuz-linux-mados-zen)
+if [[ -f /boot/vmlinuz-linux-mados-zen && ! -f /boot/vmlinuz-linux-zen ]]; then
+    cp /boot/vmlinuz-linux-mados-zen /boot/vmlinuz-linux-zen
+    echo "✓ Using madOS custom kernel vmlinuz"
+fi
 
-# Generate initramfs inside the chroot (this is safe because we're inside airootfs)
+# Remove conflicting mkinitcpio presets that expect standard kernel names
+rm -f /etc/mkinitcpio.d/linux-zen.preset
+rm -f /etc/mkinitcpio.d/linux-lts.preset
+rm -f /etc/mkinitcpio.d/linux.preset
+echo "✓ Cleaned up mkinitcpio presets"
+
+# madOS custom kernel modules are in /lib/modules/6.19.10-zen1-mados-zen
+# linux-lts already has its vmlinuz in /boot/vmlinuz-linux-lts from the package
+
+# Generate initramfs for madOS custom kernel
 echo "Generating initramfs images..."
-for kver in "$ZEN_KVER" "$LTS_KVER"; do
-    if [ -d "/usr/lib/modules/${kver}" ]; then
-        case "$kver" in
-            *-zen*)
-                mkinitcpio -k "$kver" -g /boot/initramfs-linux-zen.img
-                ;;
-            *-lts*)
-                mkinitcpio -k "$kver" -g /boot/initramfs-linux-lts.img
-                ;;
-        esac
-        echo "✓ Created initramfs for $kver"
-    fi
-done
+if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
+    mkinitcpio -k "6.19.10-zen1-mados-zen" -g /boot/initramfs-linux-zen.img
+    echo "✓ Created initramfs for madOS kernel"
+fi
+
+if [ -f /boot/vmlinuz-linux-lts ]; then
+    mkinitcpio -k "$(ls /lib/modules/ | grep -E '^6\.[0-9]+\.[0-9]+-lts$' | head -1)" -g /boot/initramfs-linux-lts.img 2>/dev/null || \
+    mkinitcpio -k "linux" -g /boot/initramfs-linux-lts.img
+    echo "✓ Created initramfs for LTS kernel"
+fi
 
 echo ""
 echo "=== madOS: Pre-installing Oh My Zsh and OpenCode ==="
