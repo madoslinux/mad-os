@@ -20,23 +20,6 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 CLEAN_WORK_DIR="${WORK_DIR}-${TIMESTAMP}"
 
 #-------------------------------------------------------------------------------
-# Progress bar
-#-------------------------------------------------------------------------------
-spin() {
-    local pid=$1
-    local delay=0.1
-    local chars=('▸▸' '▸▸' '▸ ▸' ' ▸▸')
-    local i=0
-    while kill -0 $pid 2>/dev/null; do
-        printf "\r  Building... %s" "${chars[i]}"
-        i=$(( (i+1) % 4 ))
-        sleep $delay
-    done
-    wait $pid
-    return $?
-}
-
-#-------------------------------------------------------------------------------
 # Main build
 #-------------------------------------------------------------------------------
 
@@ -54,32 +37,31 @@ sudo rm -rf "${WORK_DIR}-"* 2>/dev/null || true
 rm -rf "${WORK_DIR}/x86_64/airootfs/home/mados/.oh-my-zsh" 2>/dev/null || true
 rm -rf "${WORK_DIR}/x86_64/airootfs/root/.oh-my-zsh" 2>/dev/null || true
 echo -e "\r  ✓ Cleaned"
-
-# Build with progress
-printf "  Building ISO..."
 echo ""
 
-# Run mkarchiso in background and capture output
-mkarchiso_output=$(sudo mkarchiso -o "${OUT_DIR}" -w "${CLEAN_WORK_DIR}" . 2>&1) &
-pid=$!
-spin $pid
-wait $pid
-exit_code=$?
+# Run mkarchiso and show stages
+echo "  Building ISO..."
+echo ""
 
-# Check for warnings/errors
-warnings=$(echo "$mkarchiso_output" | grep -c "WARNING" || true)
-errors=$(echo "$mkarchiso_output" | grep -cE "ERROR|FAIL" || true)
+sudo mkarchiso -o "${OUT_DIR}" -w "${CLEAN_WORK_DIR}" . 2>&1 | while IFS= read -r line; do
+    # Parse mkarchiso stages
+    if [[ "$line" =~ ^\[mkarchiso\]\ INFO:\ (.*) ]]; then
+        stage="${BASH_REMATCH[1]}"
+        # Shorten common stages
+        stage="${stage//Copying/•}"
+        stage="${stage//Creating/•}"
+        stage="${stage//Preparing/•}"
+        stage="${stage//Running/•}"
+        stage="${stage//Setting up/•}"
+        stage="${stage//Generating/•}"
+        stage="${stage//Done!/✓}"
+        printf "\r    %-50s " "$stage"
+    elif [[ "$line" =~ ^\[mkarchiso\]\ (WARNING|ERROR|FAIL) ]]; then
+        printf "\n  ⚠ %s\n" "$line"
+    fi
+done
 
-if [[ $exit_code -ne 0 ]] || [[ $errors -gt 0 ]]; then
-    echo ""
-    echo "$mkarchiso_output" | grep -E "^\[mkarchiso\] (ERROR|FAIL)" || echo "  ✗ Build failed"
-    exit 1
-fi
-
-# Show warnings if any
-if [[ $warnings -gt 0 ]]; then
-    echo "$mkarchiso_output" | grep "WARNING" | sed 's/^/  ⚠ /'
-fi
+echo ""
 
 # Find ISO
 ISO_FILE=$(ls "${OUT_DIR}"/mados-${_iso_tag}-*.iso 2>/dev/null | head -1)
