@@ -21,12 +21,33 @@ MADOS_KERNEL_PKGVER=$(echo "$MADOS_KERNEL_VERSION" | awk '{gsub(/\.zen1-[0-9]+$/
 MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
 
 # Always install madOS kernel fresh - verify after extraction
+echo "=== madOS: Installing custom kernel ==="
 echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
+echo "  Kernel URL: ${MADOS_KERNEL_URL}"
 KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
-curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" || { echo "FATAL: Failed to download madOS kernel"; exit 1; }
 
-tar -xJf "$KERNEL_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel"; exit 1; }
+if ! curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" 2>&1; then
+    echo "FATAL: Failed to download madOS kernel from ${MADOS_KERNEL_URL}"
+    echo "  curl exit code: $?"
+    ls -la "$KERNEL_TMP" 2>/dev/null || echo "  File not created"
+    exit 1
+fi
+
+echo "  Downloaded kernel size: $(stat -c%s "$KERNEL_TMP" 2>/dev/null || echo 'unknown') bytes"
+
+if ! tar -xJf "$KERNEL_TMP" -C / 2>&1; then
+    echo "FATAL: Failed to extract madOS kernel"
+    exit 1
+fi
 rm -f "$KERNEL_TMP"
+
+# Debug: list what was extracted
+echo "  Checking /boot for kernel files:"
+ls -la /boot/vmlinuz* 2>/dev/null || echo "  No vmlinuz in /boot"
+echo "  Checking /lib/modules for kernel versions:"
+ls -la /lib/modules/ 2>/dev/null || echo "  No modules in /lib/modules"
+echo "  Checking for specific mados-zen modules:"
+find /lib/modules/ -name "*mados*" -type d 2>/dev/null || echo "  No mados modules found"
 
 # Fix broken symlink in modules directory if present
 if [[ -L /lib/modules/6.19.10-zen1-mados-zen/build ]]; then

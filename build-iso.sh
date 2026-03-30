@@ -7,6 +7,9 @@ WORK_DIR="${SCRIPT_DIR}/work"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 CLEAN_WORK_DIR="${WORK_DIR}-${TIMESTAMP}"
 
+_iso_tag="$(git -C "$SCRIPT_DIR" tag -l --sort=-version:refname 'v*' 2>/dev/null | head -1)"
+_iso_tag="${_iso_tag:-dev}"
+
 echo "=== Building madOS ISO ==="
 echo "Output: ${OUT_DIR}"
 echo "Work:   ${CLEAN_WORK_DIR}"
@@ -24,6 +27,8 @@ if [[ -d "$WORK_DIR" && -d "$WORK_DIR/x86_64/airootfs/home/mados" ]]; then
     rm -rf "$WORK_DIR/x86_64/airootfs/root/.oh-my-zsh" 2>/dev/null || true
 fi
 
+echo ""
+echo "=== Building ISO with archiso ==="
 sudo mkarchiso \
     -o "${OUT_DIR}" \
     -w "${CLEAN_WORK_DIR}" \
