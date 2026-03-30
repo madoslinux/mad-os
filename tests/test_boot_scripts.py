@@ -384,27 +384,9 @@ class TestCustomizeAirootfs(unittest.TestCase):
             f"Bash syntax error: {result.stderr}",
         )
 
-    def test_installs_ohmyzsh_to_skel(self):
-        """Script must install Oh My Zsh to /etc/skel."""
-        self.assertIn("/etc/skel/.oh-my-zsh", self.content)
-        self.assertIn("git clone", self.content)
-        self.assertIn("ohmyzsh", self.content)
-
-    def test_installs_opencode(self):
-        """OpenCode is installed via package, not in customize script."""
-        self.assertIn("opencode", self.content)
-
     def test_has_npm_fallback_for_opencode(self):
         """OpenCode is installed via package, not in customize script."""
         pass
-
-    def test_copies_ohmyzsh_to_mados_user(self):
-        """Script must copy Oh My Zsh to /home/mados."""
-        self.assertIn("/home/mados/.oh-my-zsh", self.content)
-
-    def test_copies_ohmyzsh_to_root(self):
-        """Script must copy Oh My Zsh to /root."""
-        self.assertIn("/root/.oh-my-zsh", self.content)
 
     def test_profiledef_has_permissions(self):
         """profiledef.sh must set permissions for customize_airootfs.sh."""

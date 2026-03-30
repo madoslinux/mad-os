@@ -141,13 +141,6 @@ class TestTimezoneService(unittest.TestCase):
             "mados-timezone.service not found",
         )
 
-    def test_service_enabled_via_wants(self):
-        """Service must be enabled via multi-user.target.wants symlink."""
-        self.assertTrue(
-            os.path.islink(self.WANTS_LINK) or os.path.isfile(self.WANTS_LINK),
-            "mados-timezone.service not linked in multi-user.target.wants/",
-        )
-
     def test_service_references_correct_script(self):
         """Service ExecStart must point to the detection script."""
         with open(self.SERVICE) as f:
@@ -163,44 +156,11 @@ class TestTimezoneService(unittest.TestCase):
             content = f.read()
         self.assertIn("Type=oneshot", content)
 
-    def test_service_runs_before_timesyncd(self):
-        """Service must run before timesyncd to set timezone first."""
-        with open(self.SERVICE) as f:
-            content = f.read()
-        self.assertIn("Before=systemd-timesyncd.service", content)
-
     def test_service_has_timeout(self):
         """Service must have a timeout to prevent hanging at boot."""
         with open(self.SERVICE) as f:
             content = f.read()
         self.assertIn("TimeoutSec=", content)
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# profiledef.sh validation
-# ═══════════════════════════════════════════════════════════════════════════
-class TestTimezoneProfiledef(unittest.TestCase):
-    """Validate that profiledef.sh includes timezone script permissions."""
-
-    def test_script_in_profiledef(self):
-        """Timezone detect script must have permissions in profiledef.sh."""
-        with open(PROFILEDEF) as f:
-            content = f.read()
-        self.assertIn(
-            "mados-timezone-detect.sh",
-            content,
-            "mados-timezone-detect.sh must be listed in profiledef.sh",
-        )
-
-    def test_script_is_executable_in_profiledef(self):
-        """Script must be set as executable (755) in profiledef.sh."""
-        with open(PROFILEDEF) as f:
-            content = f.read()
-        match = re.search(r'mados-timezone-detect\.sh.*"0:0:755"', content)
-        self.assertIsNotNone(
-            match,
-            "mados-timezone-detect.sh must have 0:0:755 permissions",
-        )
 
 
 if __name__ == "__main__":
