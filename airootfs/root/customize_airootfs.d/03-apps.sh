@@ -3,6 +3,9 @@
 # Atomic module for apps installation
 set -euo pipefail
 
+# Ensure we're always in a valid directory
+cd / || cd /tmp || cd /root
+
 MADOS_APPS=(
     "mados-audio-player"
     "mados-equalizer"
@@ -20,6 +23,8 @@ UPDATER_APP="mados-updater"
 UPDATER_GITHUB_REPO="madkoding"
 
 install_single_app() {
+    cd / || return 1
+    
     local app="$1"
     local python_app_name="${app//-/_}"
     local app_dir="/usr/local/lib/${app}"
@@ -29,50 +34,56 @@ install_single_app() {
     
     if [[ -d "$python_app_dir/.git" ]]; then
         echo "Updating $app..."
-        cd "$python_app_dir"
+        cd "$python_app_dir" || return 1
         git pull --ff-only origin main 2>/dev/null || true
-        cd /
+        cd / || return 1
         return 0
     fi
     
     echo "Installing $app from GitHub..."
     rm -rf "$app_dir" "$python_app_dir"
-    local build_dir=$(mktemp -d)
+    local build_dir
+    build_dir=$(mktemp -d)
     
-    if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$build_dir/${app}" 2>&1; then
-        mkdir -p /usr/local/lib
-        mv "$build_dir/${app}" "$python_app_dir"
-        
-        cat > "$launcher" << EOF
+    git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$build_dir/${app}" 2>&1 || {
+        rm -rf "$build_dir"
+        return 1
+    }
+    
+    mkdir -p /usr/local/lib
+    mv "$build_dir/${app}" "$python_app_dir"
+    rm -rf "$build_dir"
+    
+    cat > "$launcher" << 'EOF'
 #!/bin/bash
 cd "/usr/local/lib/${python_app_name}"
-export PYTHONPATH="/usr/local/lib:\${PYTHONPATH:-}"
-exec python3 -m "${python_app_name}" "\$@"
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
+exec python3 -m "${python_app_name}" "$@"
 EOF
-        chmod +x "$launcher"
-        
-        if [[ "$app" == "mados-wallpaper" && -f "$python_app_dir/daemon/mados-wallpaperd" ]]; then
-            cp "$python_app_dir/daemon/mados-wallpaperd" /usr/local/bin/mados-wallpaperd
-            chmod +x /usr/local/bin/mados-wallpaperd
-        fi
-        
-        echo "✓ $app installed"
-    else
-        echo "WARNING: Failed to install $app"
+    chmod +x "$launcher"
+    
+    if [[ "$app" == "mados-wallpaper" && -f "$python_app_dir/daemon/mados-wallpaperd" ]]; then
+        cp "$python_app_dir/daemon/mados-wallpaperd" /usr/local/bin/mados-wallpaperd
+        chmod +x /usr/local/bin/mados-wallpaperd
     fi
-    rm -rf "$build_dir"
+    
+    echo "✓ $app installed"
     return 0
 }
 
 install_mados_apps() {
+    local failed=0
     for app in "${MADOS_APPS[@]}"; do
-        install_single_app "$app"
+        if ! install_single_app "$app"; then
+            echo "WARNING: Failed to install $app"
+            failed=1
+        fi
     done
-    echo "✓ madOS apps installation complete"
-    return 0
+    return $failed
 }
 
 setup_wallpaper_desktop_entry() {
+    cd / || return 1
     local wallpaper_dir="/usr/local/lib/mados_wallpaper"
     
     if [[ ! -d "$wallpaper_dir" ]]; then
@@ -108,6 +119,8 @@ setup_wallpaper_desktop_entry() {
 }
 
 install_installer() {
+    cd / || return 1
+    
     local installer_dir="/usr/local/lib/${INSTALLER_APP}"
     local installer_python_dir="/usr/local/lib/mados_installer"
     local installer_launcher="/usr/local/bin/${INSTALLER_APP}"
@@ -118,30 +131,33 @@ install_installer() {
     fi
     
     echo "Installing $INSTALLER_APP from GitHub..."
-    local build_dir=$(mktemp -d)
+    local build_dir
+    build_dir=$(mktemp -d)
     
-    if git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${INSTALLER_APP}.git" "$build_dir/${INSTALLER_APP}" 2>&1; then
-        mkdir -p /usr/local/lib
-        mv "$build_dir/${INSTALLER_APP}" "$installer_python_dir"
-        ln -sf "$installer_python_dir" "$installer_dir"
-        
-        cat > "$installer_launcher" << 'EOF'
+    git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${INSTALLER_APP}.git" "$build_dir/${INSTALLER_APP}" 2>&1 || {
+        rm -rf "$build_dir"
+        return 1
+    }
+    
+    mkdir -p /usr/local/lib
+    mv "$build_dir/${INSTALLER_APP}" "$installer_python_dir"
+    ln -sf "$installer_python_dir" "$installer_dir"
+    rm -rf "$build_dir"
+    
+    cat > "$installer_launcher" << 'EOF'
 #!/bin/bash
 export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
 cd "/usr/local/lib/mados_installer"
 exec python3 -m mados_installer "$@"
 EOF
-        chmod +x "$installer_launcher"
-        echo "✓ $INSTALLER_APP installed"
-        echo "  Version: $(cd "$installer_python_dir" && git describe --tags 2>/dev/null || git rev-parse --short HEAD)"
-    else
-        echo "WARNING: Failed to install $INSTALLER_APP"
-    fi
-    rm -rf "$build_dir"
+    chmod +x "$installer_launcher"
+    echo "✓ $INSTALLER_APP installed"
     return 0
 }
 
 install_updater() {
+    cd / || return 1
+    
     local updater_dir="/usr/local/lib/${UPDATER_APP}"
     local updater_python_dir="/usr/local/lib/mados_updater"
     local updater_launcher="/usr/local/bin/${UPDATER_APP}"
@@ -151,29 +167,32 @@ install_updater() {
     fi
     
     echo "Installing $UPDATER_APP from GitHub..."
-    local build_dir=$(mktemp -d)
+    local build_dir
+    build_dir=$(mktemp -d)
     
-    if git clone --depth=1 "https://github.com/${UPDATER_GITHUB_REPO}/${UPDATER_APP}.git" "$build_dir/${UPDATER_APP}" 2>&1; then
-        mkdir -p /usr/local/lib
-        mv "$build_dir/${UPDATER_APP}" "$updater_python_dir"
-        ln -sf "$updater_python_dir" "$updater_dir"
-        
-        cat > "$updater_launcher" << 'EOF'
+    git clone --depth=1 "https://github.com/${UPDATER_GITHUB_REPO}/${UPDATER_APP}.git" "$build_dir/${UPDATER_APP}" 2>&1 || {
+        rm -rf "$build_dir"
+        return 1
+    }
+    
+    mkdir -p /usr/local/lib
+    mv "$build_dir/${UPDATER_APP}" "$updater_python_dir"
+    ln -sf "$updater_python_dir" "$updater_dir"
+    rm -rf "$build_dir"
+    
+    cat > "$updater_launcher" << 'EOF'
 #!/bin/bash
 export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
 cd "/usr/local/lib/mados_updater"
 exec python3 -m mados_updater "$@"
 EOF
-        chmod +x "$updater_launcher"
-        echo "✓ $UPDATER_APP installed"
-    else
-        echo "WARNING: Failed to install $UPDATER_APP"
-    fi
-    rm -rf "$build_dir"
+    chmod +x "$updater_launcher"
+    echo "✓ $UPDATER_APP installed"
     return 0
 }
 
 install_oh_my_zsh() {
+    cd / || return 1
     local omz_dir="/usr/share/oh-my-zsh"
     
     if [[ -d "$omz_dir" ]]; then
@@ -182,24 +201,23 @@ install_oh_my_zsh() {
     fi
     
     echo "Installing Oh My Zsh..."
-    if git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$omz_dir" 2>&1; then
-        echo "✓ Oh My Zsh installed"
-        
-        if [[ -d /home/mados ]]; then
-            rm -rf /home/mados/.oh-my-zsh
-            ln -sf /usr/share/oh-my-zsh /home/mados/.oh-my-zsh
-            chown -h 1000:1000 /home/mados/.oh-my-zsh
-        fi
-        
-        rm -rf /root/.oh-my-zsh
-        ln -sf /usr/share/oh-my-zsh /root/.oh-my-zsh
-        
-        if [[ -d "$omz_dir" && ! -d /etc/skel/.oh-my-zsh ]]; then
-            ln -sf /usr/share/oh-my-zsh /etc/skel/.oh-my-zsh
-        fi
-    else
-        echo "WARNING: Failed to clone Oh My Zsh"
+    git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$omz_dir" 2>&1 || return 1
+    
+    echo "✓ Oh My Zsh installed"
+    
+    if [[ -d /home/mados ]]; then
+        rm -rf /home/mados/.oh-my-zsh
+        ln -sf /usr/share/oh-my-zsh /home/mados/.oh-my-zsh
+        chown -h 1000:1000 /home/mados/.oh-my-zsh
     fi
+    
+    rm -rf /root/.oh-my-zsh
+    ln -sf /usr/share/oh-my-zsh /root/.oh-my-zsh
+    
+    if [[ -d "$omz_dir" && ! -d /etc/skel/.oh-my-zsh ]]; then
+        ln -sf /usr/share/oh-my-zsh /etc/skel/.oh-my-zsh
+    fi
+    
     return 0
 }
 
