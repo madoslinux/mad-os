@@ -61,6 +61,19 @@ if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
 fi
 echo "✓ madOS custom kernel vmlinuz extracted"
 
+# Remove Arch's default linux kernel to avoid conflicts
+if [[ -f /boot/vmlinuz-linux ]]; then
+    echo "Removing Arch's default linux kernel to avoid conflicts..."
+    rm -f /boot/vmlinuz-linux
+    rm -f /boot/initramfs-linux.img
+    rm -f /boot/initramfs-linux-fallback.img
+    rm -f /boot/System.map-linux
+    rm -f /boot/config-linux
+    # Remove any linux kernel modules
+    rm -rf /lib/modules/[0-9]*.[0-9]*-ARCH 2>/dev/null || true
+    echo "✓ Removed Arch's default linux kernel"
+fi
+
 # ── madOS Kernel Headers ───────────────────────────────────────────────
 # Download kernel headers for compiling external modules (NVIDIA, wireguard, etc.)
 MADOS_HEADERS_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-headers-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
