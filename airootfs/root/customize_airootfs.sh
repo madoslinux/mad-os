@@ -14,8 +14,8 @@ echo "=== madOS: Running post-installation customizations ==="
 echo "Started at: $(date '+%Y-%m-%d %H:%M:%S')"
 echo ""
 
-# Source all modules
-for module in "${MODULES_DIR}"/*.sh; do
+# Source all modules in order
+for module in "${MODULES_DIR}"/[0-9][0-9]-*.sh; do
     if [[ -f "$module" && -r "$module" ]]; then
         echo "Loading: $(basename "$module")"
         # shellcheck source=/dev/null

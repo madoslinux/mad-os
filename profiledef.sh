@@ -30,7 +30,6 @@ file_permissions=(
   ["/root/customize_airootfs.d/02-themes.sh"]="0:0:755"
   ["/root/customize_airootfs.d/03-apps.sh"]="0:0:755"
   ["/root/customize_airootfs.d/04-cleanup.sh"]="0:0:755"
-  ["/root/customize_airootfs.d/run-parts.sh"]="0:0:755"
   ["/root/.automated_script.sh"]="0:0:755"
   ["/root/.zlogin"]="0:0:644"
   ["/root/.gnupg"]="0:0:700"
