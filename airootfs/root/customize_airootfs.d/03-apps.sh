@@ -3,9 +3,6 @@
 # Atomic module for apps installation
 set -euo pipefail
 
-# Ensure we're always in a valid directory
-cd / || cd /tmp || cd /root
-
 MADOS_APPS=(
     "mados-audio-player"
     "mados-equalizer"
@@ -23,30 +20,27 @@ UPDATER_APP="mados-updater"
 UPDATER_GITHUB_REPO="madkoding"
 
 install_single_app() {
-    cd / || return 1
-    
     local app="$1"
     local python_app_name="${app//-/_}"
     local app_dir="/usr/local/lib/${app}"
     local python_app_dir="/usr/local/lib/${python_app_name}"
     local launcher="/usr/local/bin/${app}"
-    local app_name="${app#mados-}"
     
     if [[ -d "$python_app_dir/.git" ]]; then
         echo "Updating $app..."
-        cd "$python_app_dir" || return 1
-        git pull --ff-only origin main 2>/dev/null || true
-        cd / || return 1
+        (cd "$python_app_dir" && git pull --ff-only origin main) 2>/dev/null || true
         return 0
     fi
     
     echo "Installing $app from GitHub..."
     rm -rf "$app_dir" "$python_app_dir"
+    
     local build_dir
     build_dir=$(mktemp -d)
     
-    git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$build_dir/${app}" 2>&1 || {
+    GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$build_dir/${app}" || {
         rm -rf "$build_dir"
+        echo "WARNING: Failed to clone $app"
         return 1
     }
     
@@ -83,7 +77,6 @@ install_mados_apps() {
 }
 
 setup_wallpaper_desktop_entry() {
-    cd / || return 1
     local wallpaper_dir="/usr/local/lib/mados_wallpaper"
     
     if [[ ! -d "$wallpaper_dir" ]]; then
@@ -119,13 +112,10 @@ setup_wallpaper_desktop_entry() {
 }
 
 install_installer() {
-    cd / || return 1
-    
     local installer_dir="/usr/local/lib/${INSTALLER_APP}"
     local installer_python_dir="/usr/local/lib/mados_installer"
     local installer_launcher="/usr/local/bin/${INSTALLER_APP}"
     
-    # Always install fresh
     if [[ -d "$installer_python_dir/.git" ]]; then
         rm -rf "$installer_dir" "$installer_python_dir"
     fi
@@ -134,8 +124,9 @@ install_installer() {
     local build_dir
     build_dir=$(mktemp -d)
     
-    git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${INSTALLER_APP}.git" "$build_dir/${INSTALLER_APP}" 2>&1 || {
+    GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${INSTALLER_APP}.git" "$build_dir/${INSTALLER_APP}" || {
         rm -rf "$build_dir"
+        echo "WARNING: Failed to install $INSTALLER_APP"
         return 1
     }
     
@@ -156,8 +147,6 @@ EOF
 }
 
 install_updater() {
-    cd / || return 1
-    
     local updater_dir="/usr/local/lib/${UPDATER_APP}"
     local updater_python_dir="/usr/local/lib/mados_updater"
     local updater_launcher="/usr/local/bin/${UPDATER_APP}"
@@ -170,8 +159,9 @@ install_updater() {
     local build_dir
     build_dir=$(mktemp -d)
     
-    git clone --depth=1 "https://github.com/${UPDATER_GITHUB_REPO}/${UPDATER_APP}.git" "$build_dir/${UPDATER_APP}" 2>&1 || {
+    GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${UPDATER_GITHUB_REPO}/${UPDATER_APP}.git" "$build_dir/${UPDATER_APP}" || {
         rm -rf "$build_dir"
+        echo "WARNING: Failed to install $UPDATER_APP"
         return 1
     }
     
@@ -192,7 +182,6 @@ EOF
 }
 
 install_oh_my_zsh() {
-    cd / || return 1
     local omz_dir="/usr/share/oh-my-zsh"
     
     if [[ -d "$omz_dir" ]]; then
@@ -201,7 +190,10 @@ install_oh_my_zsh() {
     fi
     
     echo "Installing Oh My Zsh..."
-    git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$omz_dir" 2>&1 || return 1
+    GIT_TERMINAL_PROMPT=0 git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$omz_dir" || {
+        echo "WARNING: Failed to clone Oh My Zsh"
+        return 1
+    }
     
     echo "✓ Oh My Zsh installed"
     
