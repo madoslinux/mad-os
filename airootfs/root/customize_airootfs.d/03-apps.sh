@@ -19,10 +19,17 @@ INSTALLER_GITHUB_REPO="madoslinux"
 UPDATER_APP="mados-updater"
 UPDATER_GITHUB_REPO="madkoding"
 
+clone_repo() {
+    local repo="$1"
+    local dest="$2"
+    local url="https://github.com/${repo}.git"
+    
+    git clone --depth=1 "$url" "$dest"
+}
+
 install_single_app() {
     local app="$1"
     local python_app_name="${app//-/_}"
-    local app_dir="/usr/local/lib/${app}"
     local python_app_dir="/usr/local/lib/${python_app_name}"
     local launcher="/usr/local/bin/${app}"
     
@@ -33,16 +40,14 @@ install_single_app() {
     fi
     
     echo "Installing $app from GitHub..."
-    rm -rf "$app_dir" "$python_app_dir"
     
     local build_dir
     build_dir=$(mktemp -d)
     
-    GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${GITHUB_REPO}/${app}.git" "$build_dir/${app}" || {
+    if ! clone_repo "${GITHUB_REPO}/${app}" "$build_dir/${app}"; then
         rm -rf "$build_dir"
-        echo "WARNING: Failed to clone $app"
         return 1
-    }
+    fi
     
     mkdir -p /usr/local/lib
     mv "$build_dir/${app}" "$python_app_dir"
@@ -66,14 +71,9 @@ EOF
 }
 
 install_mados_apps() {
-    local failed=0
     for app in "${MADOS_APPS[@]}"; do
-        if ! install_single_app "$app"; then
-            echo "WARNING: Failed to install $app"
-            failed=1
-        fi
+        install_single_app "$app" || true
     done
-    return $failed
 }
 
 setup_wallpaper_desktop_entry() {
@@ -83,17 +83,13 @@ setup_wallpaper_desktop_entry() {
         return 0
     fi
     
-    echo "Setting up mados-wallpaper desktop entry..."
-    
     if [[ -f "$wallpaper_dir/mados-wallpaper.desktop" ]]; then
         cp "$wallpaper_dir/mados-wallpaper.desktop" /usr/share/applications/
-        echo "  → Desktop entry installed"
     fi
     
     if [[ -f "$wallpaper_dir/mados-wallpaper.svg" ]]; then
         mkdir -p /usr/share/icons/hicolor/scalable/apps
         cp "$wallpaper_dir/mados-wallpaper.svg" /usr/share/icons/hicolor/scalable/apps/
-        echo "  → Icon installed"
     fi
     
     mkdir -p /etc/skel/.local/share/mados/wallpapers
@@ -107,32 +103,28 @@ setup_wallpaper_desktop_entry() {
         cp "$wallpaper_dir"/*.png /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
         chown -R 1000:1000 /home/mados/.local/share/mados
     fi
-    
-    return 0
 }
 
 install_installer() {
-    local installer_dir="/usr/local/lib/${INSTALLER_APP}"
     local installer_python_dir="/usr/local/lib/mados_installer"
     local installer_launcher="/usr/local/bin/${INSTALLER_APP}"
     
     if [[ -d "$installer_python_dir/.git" ]]; then
-        rm -rf "$installer_dir" "$installer_python_dir"
+        rm -rf "$installer_python_dir"
     fi
     
     echo "Installing $INSTALLER_APP from GitHub..."
+    
     local build_dir
     build_dir=$(mktemp -d)
     
-    GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${INSTALLER_APP}.git" "$build_dir/${INSTALLER_APP}" || {
+    if ! clone_repo "${INSTALLER_GITHUB_REPO}/${INSTALLER_APP}" "$build_dir/${INSTALLER_APP}"; then
         rm -rf "$build_dir"
-        echo "WARNING: Failed to install $INSTALLER_APP"
         return 1
-    }
+    fi
     
     mkdir -p /usr/local/lib
     mv "$build_dir/${INSTALLER_APP}" "$installer_python_dir"
-    ln -sf "$installer_python_dir" "$installer_dir"
     rm -rf "$build_dir"
     
     cat > "$installer_launcher" << 'EOF'
@@ -147,27 +139,25 @@ EOF
 }
 
 install_updater() {
-    local updater_dir="/usr/local/lib/${UPDATER_APP}"
     local updater_python_dir="/usr/local/lib/mados_updater"
     local updater_launcher="/usr/local/bin/${UPDATER_APP}"
     
     if [[ -d "$updater_python_dir/.git" ]]; then
-        rm -rf "$updater_dir" "$updater_python_dir"
+        rm -rf "$updater_python_dir"
     fi
     
     echo "Installing $UPDATER_APP from GitHub..."
+    
     local build_dir
     build_dir=$(mktemp -d)
     
-    GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${UPDATER_GITHUB_REPO}/${UPDATER_APP}.git" "$build_dir/${UPDATER_APP}" || {
+    if ! clone_repo "${UPDATER_GITHUB_REPO}/${UPDATER_APP}" "$build_dir/${UPDATER_APP}"; then
         rm -rf "$build_dir"
-        echo "WARNING: Failed to install $UPDATER_APP"
         return 1
-    }
+    fi
     
     mkdir -p /usr/local/lib
     mv "$build_dir/${UPDATER_APP}" "$updater_python_dir"
-    ln -sf "$updater_python_dir" "$updater_dir"
     rm -rf "$build_dir"
     
     cat > "$updater_launcher" << 'EOF'
@@ -185,17 +175,14 @@ install_oh_my_zsh() {
     local omz_dir="/usr/share/oh-my-zsh"
     
     if [[ -d "$omz_dir" ]]; then
-        echo "Oh My Zsh already present"
         return 0
     fi
     
     echo "Installing Oh My Zsh..."
-    GIT_TERMINAL_PROMPT=0 git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$omz_dir" || {
-        echo "WARNING: Failed to clone Oh My Zsh"
-        return 1
-    }
     
-    echo "✓ Oh My Zsh installed"
+    if ! clone_repo "ohmyzsh/ohmyzsh" "$omz_dir"; then
+        return 1
+    fi
     
     if [[ -d /home/mados ]]; then
         rm -rf /home/mados/.oh-my-zsh
@@ -206,7 +193,7 @@ install_oh_my_zsh() {
     rm -rf /root/.oh-my-zsh
     ln -sf /usr/share/oh-my-zsh /root/.oh-my-zsh
     
-    if [[ -d "$omz_dir" && ! -d /etc/skel/.oh-my-zsh ]]; then
+    if [[ ! -d /etc/skel/.oh-my-zsh ]]; then
         ln -sf /usr/share/oh-my-zsh /etc/skel/.oh-my-zsh
     fi
     
@@ -215,11 +202,9 @@ install_oh_my_zsh() {
 
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "=== madOS Apps Installation ==="
     install_mados_apps
     setup_wallpaper_desktop_entry
     install_installer
     install_updater
     install_oh_my_zsh
-    echo "=== Apps installation complete ==="
 fi
