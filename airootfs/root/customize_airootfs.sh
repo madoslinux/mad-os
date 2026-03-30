@@ -25,13 +25,20 @@ if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
 else
     echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
     KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
-    if curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" 2>&1; then
-        tar -xJf "$KERNEL_TMP" -C / 2>&1
-        rm -f "$KERNEL_TMP"
-        echo "✓ madOS custom kernel extracted"
-    else
-        echo "⚠ Failed to download madOS custom kernel"
+    curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" || { echo "FATAL: Failed to download madOS kernel"; exit 1; }
+    tar -xJf "$KERNEL_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel"; exit 1; }
+    rm -f "$KERNEL_TMP"
+    
+    if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
+        echo "FATAL: madOS kernel vmlinuz not found after extraction!"
+        exit 1
     fi
+    KVER_CHECK=$(basename /lib/modules/*mados-zen* 2>/dev/null | head -1)
+    if [[ -z "$KVER_CHECK" ]]; then
+        echo "FATAL: madOS kernel modules not found after extraction!"
+        exit 1
+    fi
+    echo "✓ madOS custom kernel extracted successfully (modules: $KVER_CHECK)"
 fi
 
 # ── madOS Kernel Headers (from GitHub releases) ───────────────────────────
@@ -44,13 +51,15 @@ if [[ -f "${MADOS_HEADERS_PATH}/.config" ]]; then
 else
     echo "Installing madOS kernel headers v${MADOS_KERNEL_VERSION}..."
     HEADERS_TMP="/tmp/linux-mados-zen-headers.pkg.tar.xz"
-    if curl -fsSL -o "$HEADERS_TMP" "$MADOS_HEADERS_URL" 2>&1; then
-        tar -xJf "$HEADERS_TMP" -C / 2>&1
-        rm -f "$HEADERS_TMP"
-        echo "✓ madOS kernel headers extracted to ${MADOS_HEADERS_PATH}"
-    else
-        echo "⚠ Failed to download madOS kernel headers"
+    curl -fsSL -o "$HEADERS_TMP" "$MADOS_HEADERS_URL" || { echo "FATAL: Failed to download madOS kernel headers"; exit 1; }
+    tar -xJf "$HEADERS_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel headers"; exit 1; }
+    rm -f "$HEADERS_TMP"
+    
+    if [[ ! -d "${MADOS_HEADERS_PATH}" ]]; then
+        echo "FATAL: madOS kernel headers not found after extraction!"
+        exit 1
     fi
+    echo "✓ madOS kernel headers extracted to ${MADOS_HEADERS_PATH}"
 fi
 
 echo "=== madOS: Setting up kernel and initramfs ==="
@@ -58,30 +67,41 @@ echo "=== madOS: Setting up kernel and initramfs ==="
 # Create /boot directory
 mkdir -p /boot
 
-# Kernel versions
-ZEN_KVER="6.19.10-zen1-mados-zen"
+# Detect installed madOS kernel version dynamically
+MADOS_KVER=""
+if [[ -d /lib/modules/*mados-zen* ]]; then
+    MADOS_KVER=$(basename /lib/modules/*mados-zen* | head -1)
+fi
 
-# madOS custom kernel (already extracted to /boot/vmlinuz-linux-mados-zen)
-if [[ -f /boot/vmlinuz-linux-mados-zen && ! -f /boot/vmlinuz-linux-zen ]]; then
-    cp /boot/vmlinuz-linux-mados-zen /boot/vmlinuz-linux-zen
-    echo "✓ Using madOS custom kernel vmlinuz"
+if [[ -z "$MADOS_KVER" ]]; then
+    echo "FATAL: madOS kernel modules not found in /lib/modules/"
+    exit 1
+fi
+
+echo "Detected madOS kernel version: $MADOS_KVER"
+
+# Ensure vmlinuz exists for the detected kernel version
+if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
+    echo "✓ madOS kernel vmlinuz found"
+elif [[ -f /lib/modules/${MADOS_KVER}/vmlinuz ]]; then
+    cp /lib/modules/${MADOS_KVER}/vmlinuz /boot/vmlinuz-linux-mados-zen
+    echo "✓ Copied vmlinuz from modules directory"
+else
+    echo "FATAL: madOS kernel vmlinuz not found!"
+    exit 1
 fi
 
 # Remove conflicting mkinitcpio presets that expect standard kernel names
 rm -f /etc/mkinitcpio.d/linux-zen.preset
 rm -f /etc/mkinitcpio.d/linux-lts.preset
 rm -f /etc/mkinitcpio.d/linux.preset
+rm -f /etc/mkinitcpio.d/linux-mados-zen.preset
 echo "✓ Cleaned up mkinitcpio presets"
-
-# madOS custom kernel modules are in /lib/modules/6.19.10-zen1-mados-zen
-# linux-lts already has its vmlinuz in /boot/vmlinuz-linux-lts from the package
 
 # Generate initramfs for madOS custom kernel
 echo "Generating initramfs images..."
-if [ -d "/lib/modules/6.19.10-zen1-mados-zen" ]; then
-    mkinitcpio -k "6.19.10-zen1-mados-zen" -g /boot/initramfs-linux-zen.img 2>&1 || true
-    echo "✓ Created initramfs for madOS kernel"
-fi
+mkinitcpio -k "$MADOS_KVER" -g /boot/initramfs-linux-mados-zen.img 2>&1 || { echo "FATAL: mkinitcpio failed"; exit 1; }
+echo "✓ Created initramfs for madOS kernel ($MADOS_KVER)"
 
 # Generate initramfs for LTS kernel
 for kdir in /lib/modules/*; do
