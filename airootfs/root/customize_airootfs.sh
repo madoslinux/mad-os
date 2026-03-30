@@ -25,27 +25,22 @@ echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
 KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
 curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" || { echo "FATAL: Failed to download madOS kernel"; exit 1; }
 
-# Extract and see what actually gets extracted
-tar -xJf "$KERNEL_TMP" -v 2>&1 | head -20
-echo "--- Extraction complete ---"
-
-# Check both possible locations
-echo "Checking /lib/modules/:"
-ls -la /lib/modules/ 2>/dev/null || echo "  /lib/modules/ does not exist"
-echo "Checking /usr/lib/modules/:"
-ls -la /usr/lib/modules/ 2>/dev/null || echo "  /usr/lib/modules/ does not exist"
-
+tar -xJf "$KERNEL_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel"; exit 1; }
 rm -f "$KERNEL_TMP"
 
-# For madOS, kernel modules aren't critical since we build everything into the kernel
-# Just verify vmlinuz exists
+# Fix broken symlink in modules directory if present
+if [[ -L /lib/modules/6.19.10-zen1-mados-zen/build ]]; then
+    rm -f /lib/modules/6.19.10-zen1-mados-zen/build
+fi
+
+# For madOS kernel, we only need vmlinuz and initramfs - modules are built-in
 if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
     echo "FATAL: madOS kernel vmlinuz not found after extraction!"
     exit 1
 fi
 echo "✓ madOS custom kernel vmlinuz extracted"
 
-# ── madOS Kernel Headers (from GitHub releases) ───────────────────────────
+# ── madOS Kernel Headers ───────────────────────────────────────────────
 # Download kernel headers for compiling external modules (NVIDIA, wireguard, etc.)
 MADOS_HEADERS_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-headers-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
 MADOS_HEADERS_PATH="/usr/src/linux-${MADOS_KERNEL_PKGVER}-mados-zen"
@@ -65,42 +60,17 @@ echo "✓ madOS kernel headers extracted to ${MADOS_HEADERS_PATH}"
 
 echo "=== madOS: Setting up kernel and initramfs ==="
 
-# Create /boot directory
-mkdir -p /boot
+# madOS kernel version (hardcoded to match our built kernel)
+MADOS_KVER="6.19.10-zen1-mados-zen"
 
-# Debug: show what's in /lib/modules
-echo "DEBUG: Contents of /lib/modules/:"
-ls -la /lib/modules/ 2>/dev/null || echo "  /lib/modules/ does not exist"
-echo "DEBUG: Contents of /usr/lib/modules/:"
-ls -la /usr/lib/modules/ 2>/dev/null || echo "  /usr/lib/modules/ does not exist"
-
-# Detect installed madOS kernel version dynamically
-MADOS_KVER=""
-if [[ -d /lib/modules/*mados-zen* ]]; then
-    MADOS_KVER=$(basename /lib/modules/*mados-zen* | head -1)
-elif [[ -d /usr/lib/modules/*mados-zen* ]]; then
-    MADOS_KVER=$(basename /usr/lib/modules/*mados-zen* | head -1)
-fi
-
-if [[ -z "$MADOS_KVER" ]]; then
-    echo "FATAL: madOS kernel modules not found in /lib/modules/"
-    exit 1
-fi
-
-echo "Detected madOS kernel version: $MADOS_KVER"
-
-# Ensure vmlinuz exists for the detected kernel version
-if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
-    echo "✓ madOS kernel vmlinuz found"
-elif [[ -f /lib/modules/${MADOS_KVER}/vmlinuz ]]; then
-    cp /lib/modules/${MADOS_KVER}/vmlinuz /boot/vmlinuz-linux-mados-zen
-    echo "✓ Copied vmlinuz from modules directory"
-else
+# Ensure vmlinuz exists
+if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
     echo "FATAL: madOS kernel vmlinuz not found!"
     exit 1
 fi
+echo "✓ madOS kernel vmlinuz found"
 
-# Remove conflicting mkinitcpio presets that expect standard kernel names
+# Remove conflicting mkinitcpio presets
 rm -f /etc/mkinitcpio.d/linux-zen.preset
 rm -f /etc/mkinitcpio.d/linux-lts.preset
 rm -f /etc/mkinitcpio.d/linux.preset
