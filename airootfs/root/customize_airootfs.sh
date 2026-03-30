@@ -20,47 +20,41 @@ fi
 MADOS_KERNEL_PKGVER=$(echo "$MADOS_KERNEL_VERSION" | awk '{gsub(/\.zen1-[0-9]+$/, "-zen1"); print}')
 MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
 
-if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
-    echo "✓ madOS custom kernel already installed"
-else
-    echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
-    KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
-    curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" || { echo "FATAL: Failed to download madOS kernel"; exit 1; }
-    tar -xJf "$KERNEL_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel"; exit 1; }
-    rm -f "$KERNEL_TMP"
-    
-    if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
-        echo "FATAL: madOS kernel vmlinuz not found after extraction!"
-        exit 1
-    fi
-    KVER_CHECK=$(basename /lib/modules/*mados-zen* 2>/dev/null | head -1)
-    if [[ -z "$KVER_CHECK" ]]; then
-        echo "FATAL: madOS kernel modules not found after extraction!"
-        exit 1
-    fi
-    echo "✓ madOS custom kernel extracted successfully (modules: $KVER_CHECK)"
+# Always install madOS kernel fresh - verify after extraction
+echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
+KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
+curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" || { echo "FATAL: Failed to download madOS kernel"; exit 1; }
+tar -xJf "$KERNEL_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel"; exit 1; }
+rm -f "$KERNEL_TMP"
+
+if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
+    echo "FATAL: madOS kernel vmlinuz not found after extraction!"
+    exit 1
 fi
+KVER_CHECK=$(basename /lib/modules/*mados-zen* 2>/dev/null | head -1)
+if [[ -z "$KVER_CHECK" ]]; then
+    echo "FATAL: madOS kernel modules not found after extraction!"
+    exit 1
+fi
+echo "✓ madOS custom kernel extracted successfully (modules: $KVER_CHECK)"
 
 # ── madOS Kernel Headers (from GitHub releases) ───────────────────────────
 # Download kernel headers for compiling external modules (NVIDIA, wireguard, etc.)
 MADOS_HEADERS_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-headers-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
 MADOS_HEADERS_PATH="/usr/src/linux-${MADOS_KERNEL_PKGVER}-mados-zen"
 
-if [[ -f "${MADOS_HEADERS_PATH}/.config" ]]; then
-    echo "✓ madOS kernel headers already installed"
-else
-    echo "Installing madOS kernel headers v${MADOS_KERNEL_VERSION}..."
-    HEADERS_TMP="/tmp/linux-mados-zen-headers.pkg.tar.xz"
-    curl -fsSL -o "$HEADERS_TMP" "$MADOS_HEADERS_URL" || { echo "FATAL: Failed to download madOS kernel headers"; exit 1; }
-    tar -xJf "$HEADERS_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel headers"; exit 1; }
-    rm -f "$HEADERS_TMP"
-    
-    if [[ ! -d "${MADOS_HEADERS_PATH}" ]]; then
-        echo "FATAL: madOS kernel headers not found after extraction!"
-        exit 1
-    fi
-    echo "✓ madOS kernel headers extracted to ${MADOS_HEADERS_PATH}"
+# Always install headers fresh
+echo "Installing madOS kernel headers v${MADOS_KERNEL_VERSION}..."
+HEADERS_TMP="/tmp/linux-mados-zen-headers.pkg.tar.xz"
+curl -fsSL -o "$HEADERS_TMP" "$MADOS_HEADERS_URL" || { echo "FATAL: Failed to download madOS kernel headers"; exit 1; }
+tar -xJf "$HEADERS_TMP" -C / || { echo "FATAL: Failed to extract madOS kernel headers"; exit 1; }
+rm -f "$HEADERS_TMP"
+
+if [[ ! -d "${MADOS_HEADERS_PATH}" ]]; then
+    echo "FATAL: madOS kernel headers not found after extraction!"
+    exit 1
 fi
+echo "✓ madOS kernel headers extracted to ${MADOS_HEADERS_PATH}"
 
 echo "=== madOS: Setting up kernel and initramfs ==="
 
