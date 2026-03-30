@@ -46,7 +46,7 @@ install_single_app() {
         cat > "$launcher" << EOF
 #!/bin/bash
 cd "/usr/local/lib/${python_app_name}"
-export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+export PYTHONPATH="/usr/local/lib:\${PYTHONPATH:-}"
 exec python3 -m "${python_app_name}" "\$@"
 EOF
         chmod +x "$launcher"
@@ -127,7 +127,7 @@ install_installer() {
         
         cat > "$installer_launcher" << 'EOF'
 #!/bin/bash
-export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
 cd "/usr/local/lib/mados_installer"
 exec python3 -m mados_installer "$@"
 EOF
@@ -160,7 +160,7 @@ install_updater() {
         
         cat > "$updater_launcher" << 'EOF'
 #!/bin/bash
-export PYTHONPATH="/usr/local/lib:${PYTHONPATH}"
+export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
 cd "/usr/local/lib/mados_updater"
 exec python3 -m mados_updater "$@"
 EOF
