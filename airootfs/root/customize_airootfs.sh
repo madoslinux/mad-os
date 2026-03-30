@@ -45,57 +45,57 @@ run_module() {
     return 0
 }
 
-# Execute modules in order
-failed=0
-
+# Execute modules in order - stop on first failure
 # 00-kernel.sh - Install madOS kernel
 if ! run_module "00-kernel.sh" "install_mados_kernel"; then
     echo "FATAL: Kernel installation failed"
-    failed=1
+    exit 1
 fi
 
 # 01-initramfs.sh - Generate initramfs  
 if ! run_module "01-initramfs.sh" "generate_initramfs"; then
     echo "FATAL: Initramfs generation failed"
-    failed=1
+    exit 1
 fi
 
 # 02-themes.sh - Install themes
 if ! run_module "02-themes.sh" "install_themes"; then
-    echo "WARNING: Themes installation had issues"
+    echo "FATAL: Themes installation failed"
+    exit 1
 fi
 
 # 03-apps.sh - Install applications
 if ! run_module "03-apps.sh" "install_mados_apps"; then
-    echo "WARNING: Apps installation had issues"
+    echo "FATAL: Apps installation failed"
+    exit 1
 fi
 
 # Install mados-installer
 if ! run_module "03-apps.sh" "install_installer"; then
-    echo "WARNING: Installer installation had issues"
+    echo "FATAL: Installer installation failed"
+    exit 1
 fi
 
 # Install mados-updater
 if ! run_module "03-apps.sh" "install_updater"; then
-    echo "WARNING: Updater installation had issues"
+    echo "FATAL: Updater installation failed"
+    exit 1
 fi
 
 # Install Oh My Zsh
 if ! run_module "03-apps.sh" "install_oh_my_zsh"; then
-    echo "WARNING: Oh My Zsh installation had issues"
+    echo "FATAL: Oh My Zsh installation failed"
+    exit 1
 fi
 
 # 04-cleanup.sh - Cleanup
 if ! run_module "04-cleanup.sh" "cleanup_all"; then
-    echo "WARNING: Cleanup had issues"
+    echo "FATAL: Cleanup failed"
+    exit 1
 fi
 
 echo ""
 echo "=== madOS: Post-installation complete ==="
 echo "Finished at: $(date '+%Y-%m-%d %H:%M:%S')"
-
-if [[ $failed -eq 1 ]]; then
-    exit 1
-fi
 
 exit 0
