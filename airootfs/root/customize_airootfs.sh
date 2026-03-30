@@ -9,6 +9,7 @@ set -e
 
 # ── madOS Custom Kernel (from GitHub releases) ──────────────────────────────
 # Fetch latest kernel version dynamically from GitHub API
+# Tag format: v6.19.10.zen1-18 -> package version: 6.19.10-zen1
 MADOS_KERNEL_VERSION=$(curl -fsSL "https://api.github.com/repos/madoslinux/mados-kernel/releases/latest" | jq -r '.tag_name // empty' | sed 's/^v//')
 if [[ -z "$MADOS_KERNEL_VERSION" ]]; then
     MADOS_KERNEL_VERSION="6.19.10.zen1-17"
@@ -16,7 +17,8 @@ if [[ -z "$MADOS_KERNEL_VERSION" ]]; then
 else
     echo "Latest madOS kernel version: $MADOS_KERNEL_VERSION"
 fi
-MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_VERSION}-x86_64.pkg.tar.xz"
+MADOS_KERNEL_PKGVER=$(echo "$MADOS_KERNEL_VERSION" | awk '{gsub(/\.zen1-[0-9]+$/, "-zen1"); print}')
+MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
 
 if [[ -f /boot/vmlinuz-linux-mados-zen ]]; then
     echo "✓ madOS custom kernel already installed"
@@ -29,6 +31,25 @@ else
         echo "✓ madOS custom kernel extracted"
     else
         echo "⚠ Failed to download madOS custom kernel"
+    fi
+fi
+
+# ── madOS Kernel Headers (from GitHub releases) ───────────────────────────
+# Download kernel headers for compiling external modules (NVIDIA, wireguard, etc.)
+MADOS_HEADERS_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-headers-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
+MADOS_HEADERS_PATH="/usr/src/linux-${MADOS_KERNEL_PKGVER}-mados-zen"
+
+if [[ -f "${MADOS_HEADERS_PATH}/.config" ]]; then
+    echo "✓ madOS kernel headers already installed"
+else
+    echo "Installing madOS kernel headers v${MADOS_KERNEL_VERSION}..."
+    HEADERS_TMP="/tmp/linux-mados-zen-headers.pkg.tar.xz"
+    if curl -fsSL -o "$HEADERS_TMP" "$MADOS_HEADERS_URL" 2>&1; then
+        tar -xJf "$HEADERS_TMP" -C / 2>&1
+        rm -f "$HEADERS_TMP"
+        echo "✓ madOS kernel headers extracted to ${MADOS_HEADERS_PATH}"
+    else
+        echo "⚠ Failed to download madOS kernel headers"
     fi
 fi
 
@@ -530,26 +551,29 @@ if [[ -d "$PACMAN_LOCAL_DB" ]]; then
 fi
 
 # ════════════════════════════════════════════════════════════════════════════
-# Yay (AUR helper) - Pre-install from binary
+# Yay (AUR helper) - Pre-install from binary (offline-aware)
+# Saved to /usr/local/bin/yay so it persists through rsync to target system
 # ════════════════════════════════════════════════════════════════════════════
 YAY_VERSION="12.4.1"
-    YAY_BIN="$HOME/.local/bin/yay"
+YAY_BIN="/usr/local/bin/yay"
+YAY_TMP="/tmp/yay.tar.gz"
+YAY_URL="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay_${YAY_VERSION}_x86_64.tar.gz"
 
 if command -v yay &>/dev/null; then
     echo "✓ yay already installed"
+elif [ -x "$YAY_BIN" ]; then
+    echo "✓ yay binary found in /usr/local/bin (offline mode)"
 else
     echo "Installing yay ${YAY_VERSION}..."
-    YAY_TMP="/tmp/yay.tar.gz"
-    YAY_URL="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay_${YAY_VERSION}_x86_64.tar.gz"
     if curl -fsSL --proto '=https' --tlsv1.2 -o "$YAY_TMP" "$YAY_URL" 2>&1; then
         tar -xzf "$YAY_TMP" -C /tmp
-        mkdir -p "$HOME/.local/bin"
+        mkdir -p /usr/local/bin
         mv "/tmp/yay_${YAY_VERSION}_x86_64/yay" "$YAY_BIN"
         rm -rf "$YAY_TMP" "/tmp/yay_${YAY_VERSION}_x86_64"
         chmod +x "$YAY_BIN"
         echo "✓ yay installed to $YAY_BIN"
     else
-        echo "⚠ Failed to download yay"
+        echo "⚠ Failed to download yay (offline mode requires pre-built ISO)"
     fi
 fi
 

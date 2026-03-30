@@ -36,6 +36,9 @@ ruff check --fix .
 
 # Run ruff formatter
 ruff format .
+
+# Run both lint and format
+ruff check --fix . && ruff format .
 ```
 
 ### Pre-commit Hooks
@@ -52,11 +55,21 @@ pre-commit run --all-files
 ```
 
 ### Ruff Configuration (pyproject.toml)
-- Line length: 100
-- Target Python: 3.13
-- Quote style: double
-- Indent style: space
-- Disabled rules: E501 (line too long), E402 (module level import not at top of file), F401 (unused import)
+
+```toml
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["E501", "E402", "F401"]
+```
+
+**Per-file ignores** (defined in `pyproject.toml`):
+- `tests/*`: B011, F841, I001, F811, N806, E741, UP015, W293, W291, B905, B007, N802, UP024
+- `airootfs/usr/local/lib/mados_*/**`: E402, F401, I001, B904, UP024, W293, W291, UP041, UP015, B905, UP032, B007, F541, F841
+- `airootfs/usr/local/bin/*`: I001
 
 ---
 
@@ -77,6 +90,9 @@ python3 -m pytest -k "boot_scripts" -v
 
 # Run with verbose output
 python3 -m pytest tests/ -vv
+
+# Run with less output
+python3 -m pytest tests/ -q
 ```
 
 ### Integration Tests (require Docker with Arch Linux container)
@@ -101,10 +117,29 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 - **Shebang**: `#!/usr/bin/env python3`
 - **Formatter**: ruff with double quotes, 100 char line length
 - **Target version**: Python 3.13
-- **Imports**: Standard library preferred; group: stdlib, third-party, local
+- **Imports**: Group in order: stdlib, third-party, local; each group separated by blank line
+  ```python
+  import sys
+  import types
+  
+  from pathlib import Path
+  
+  from tests.test_helpers import install_gtk_mocks
+  ```
 - **Types**: Use type hints where beneficial; prefer explicit over implicit
 - **Error handling**: Use specific exceptions; avoid bare `except:`
+  ```python
+  # Good
+  except FileNotFoundError as e:
+      log.error(f"Config missing: {e}")
+  
+  # Bad
+  except:
+      pass
+  ```
 - **Naming**: snake_case for functions/variables, PascalCase for classes, UPPER_SNAKE for constants
+- **Strings**: Use double quotes consistently
+- **Docstrings**: Use triple double quotes, present tense, imperative mood
 
 ### Shell Scripts
 
@@ -137,6 +172,12 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 - `packages.x86_64` — Package list for the ISO (one package per line)
 - `pacman.conf` — Pacman configuration for the build
 
+### Boot Configuration
+
+- `grub/` — GRUB bootloader config (UEFI)
+- `syslinux/` — Syslinux config (BIOS)
+- `efiboot/` — EFI boot loader configuration
+
 ### Root Filesystem (`airootfs/`)
 
 - `airootfs/etc/` — System configuration (sysctl, systemd, skel configs)
@@ -146,13 +187,21 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 ### Key Scripts
 
 - `airootfs/usr/local/bin/mados-installer-autostart` — Launcher for external installer
+- `airootfs/usr/local/bin/setup-opencode.sh` — OpenCode setup script
+- `airootfs/usr/local/bin/setup-persistence.sh` — Persistent storage setup
 - `airootfs/usr/local/lib/mados_installer/` — Installer Python modules
 
 ### Test Structure
 
-- Unit tests: `tests/test_*.py` (Python, use unittest/pytest)
+- Unit tests: `tests/test_*.py` (Python, pytest with unittest conventions)
 - Integration tests: `tests/test-*.sh` (Shell scripts)
 - Test helpers: `tests/test_helpers.py` (GTK mocks for headless testing)
+
+### Documentation
+
+- `docs/` — Project documentation and GitHub Pages site
+- `docs/PERSISTENCE.md` — Persistent storage documentation
+- `docs/DEBUGGING.md` — Debugging guide
 
 ---
 
@@ -166,6 +215,7 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 - System name: "madOS" (all lowercase in filenames, styled in display text)
 - File permissions: New executable scripts must be added to `profiledef.sh` `file_permissions` array
 - Package additions: Add one package per line to `packages.x86_64`
+- ZRAM and kernel tuning configs are in `airootfs/etc/sysctl.d/` and `airootfs/etc/systemd/`
 
 ---
 

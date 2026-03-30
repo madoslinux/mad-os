@@ -4,11 +4,16 @@ set -euo pipefail
 YAY_VERSION="12.4.1"
 YAY_URL="https://github.com/Jguer/yay/releases/download/v${YAY_VERSION}/yay_${YAY_VERSION}_x86_64.tar.gz"
 YAY_TMP="/tmp/yay.tar.gz"
-YAY_BIN="$HOME/.local/bin/yay"
+YAY_BIN="/usr/local/bin/yay"
 
 install_yay() {
     if command -v yay &>/dev/null; then
         echo "yay ya esta instalado"
+        return 0
+    fi
+
+    if [ -x "$YAY_BIN" ]; then
+        echo "yay binary found in /usr/local/bin (offline mode)"
         return 0
     fi
 
@@ -17,7 +22,7 @@ install_yay() {
 
     echo "Extrayendo..."
     tar -xzf "$YAY_TMP" -C /tmp
-    mkdir -p "$HOME/.local/bin"
+    mkdir -p /usr/local/bin
     mv "/tmp/yay_${YAY_VERSION}_x86_64/yay" "$YAY_BIN"
     rm -rf "$YAY_TMP" "/tmp/yay_${YAY_VERSION}_x86_64"
     chmod +x "$YAY_BIN"
