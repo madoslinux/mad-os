@@ -61,10 +61,18 @@ echo "=== madOS: Setting up kernel and initramfs ==="
 # Create /boot directory
 mkdir -p /boot
 
+# Debug: show what's in /lib/modules
+echo "DEBUG: Contents of /lib/modules/:"
+ls -la /lib/modules/ 2>/dev/null || echo "  /lib/modules/ does not exist"
+echo "DEBUG: Contents of /usr/lib/modules/:"
+ls -la /usr/lib/modules/ 2>/dev/null || echo "  /usr/lib/modules/ does not exist"
+
 # Detect installed madOS kernel version dynamically
 MADOS_KVER=""
 if [[ -d /lib/modules/*mados-zen* ]]; then
     MADOS_KVER=$(basename /lib/modules/*mados-zen* | head -1)
+elif [[ -d /usr/lib/modules/*mados-zen* ]]; then
+    MADOS_KVER=$(basename /usr/lib/modules/*mados-zen* | head -1)
 fi
 
 if [[ -z "$MADOS_KVER" ]]; then
