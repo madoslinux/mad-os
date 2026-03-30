@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# 02-themes.sh - Install GTK themes, icons, and fonts
+# Atomic module for theme installation
+set -euo pipefail
+
+install_nordic_theme() {
+    local nordic_dir="/usr/share/themes/Nordic"
+    local nordic_build_dir=$(mktemp -d)
+    
+    if [[ -d "$nordic_dir" ]]; then
+        echo "Nordic theme already installed"
+        rm -rf "$nordic_build_dir"
+        return 0
+    fi
+    
+    echo "Installing Nordic GTK theme..."
+    if git clone --depth=1 https://github.com/EliverLara/Nordic.git "$nordic_build_dir/Nordic" 2>&1; then
+        mkdir -p /usr/share/themes
+        cp -a "$nordic_build_dir/Nordic" "$nordic_dir"
+        rm -rf "$nordic_dir/.git" "$nordic_dir/.gitignore"
+        rm -rf "$nordic_dir/Art" "$nordic_dir/LICENSE" "$nordic_dir/README.md"
+        rm -rf "$nordic_dir/KDE" "$nordic_dir/Wallpaper"
+        echo "✓ Nordic theme installed"
+    else
+        echo "WARNING: Failed to install Nordic theme"
+    fi
+    rm -rf "$nordic_build_dir"
+    return 0
+}
+
+install_nordzy_icons() {
+    local nordzy_dir="/usr/share/icons/Nordzy-dark"
+    local nordzy_build_dir=$(mktemp -d)
+    
+    if [[ -d "$nordzy_dir" ]]; then
+        echo "Nordzy-dark icons already installed"
+        rm -rf "$nordzy_build_dir"
+        return 0
+    fi
+    
+    echo "Installing Nordzy-dark icon theme..."
+    if git clone --depth=1 https://github.com/MolassesLover/Nordzy-icon.git "$nordzy_build_dir/Nordzy-icon" 2>&1; then
+        cd "$nordzy_build_dir/Nordzy-icon"
+        bash install.sh -d /usr/share/icons -c dark -t default
+        echo "✓ Nordzy-dark icons installed"
+    else
+        echo "WARNING: Failed to install Nordzy icons"
+    fi
+    rm -rf "$nordzy_build_dir"
+    return 0
+}
+
+install_michroma_font() {
+    local michroma_dir="/usr/share/fonts/truetype/michroma"
+    local michroma_url="https://github.com/google/fonts/raw/main/ofl/michroma/Michroma-Regular.ttf"
+    
+    if [[ -d "$michroma_dir" && -f "$michroma_dir/Michroma-Regular.ttf" ]]; then
+        echo "Michroma font already installed"
+        return 0
+    fi
+    
+    echo "Installing Michroma font..."
+    mkdir -p "$michroma_dir"
+    if curl -fsSL "$michroma_url" -o "$michroma_dir/Michroma-Regular.ttf" 2>&1; then
+        echo "✓ Michroma font installed"
+    else
+        echo "WARNING: Failed to install Michroma font"
+    fi
+    return 0
+}
+
+install_themes() {
+    install_nordic_theme
+    install_nordzy_icons
+    install_michroma_font
+    fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true
+    echo "✓ Themes installation complete"
+    return 0
+}
+
+# Main execution
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "=== madOS Theme Installation ==="
+    install_themes
+    echo "=== Theme installation complete ==="
+fi
