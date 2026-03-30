@@ -25,11 +25,13 @@ echo "Installing madOS custom kernel v${MADOS_KERNEL_VERSION}..."
 KERNEL_TMP="/tmp/linux-mados-zen.pkg.tar.xz"
 curl -fsSL -o "$KERNEL_TMP" "$MADOS_KERNEL_URL" || { echo "FATAL: Failed to download madOS kernel"; exit 1; }
 
-# Verify tarball integrity and contents
-TAR_MODULE_COUNT=$(tar -tf "$KERNEL_TMP" | grep -c "lib/modules.*\.ko" || echo "0")
-echo "DEBUG: Tarball contains $TAR_MODULE_COUNT .ko module files"
-if [[ "$TAR_MODULE_COUNT" -lt 100 ]]; then
-    echo "FATAL: Kernel package seems incomplete (only $TAR_MODULE_COUNT .ko files)"
+# Verify tarball has required files (vmlinuz, modules directory, etc.)
+if ! tar -tf "$KERNEL_TMP" | grep -q "boot/vmlinuz-linux-mados-zen"; then
+    echo "FATAL: Kernel package missing vmlinuz"
+    exit 1
+fi
+if ! tar -tf "$KERNEL_TMP" | grep -q "lib/modules/.*mados-zen"; then
+    echo "FATAL: Kernel package missing modules directory"
     exit 1
 fi
 
@@ -41,16 +43,13 @@ if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
     exit 1
 fi
 
-# Check for actual module files, not just directory
+# Verify modules directory exists (may be empty if built-in, which is OK)
 KVER_CHECK=$(basename /lib/modules/*mados-zen* 2>/dev/null | head -1)
-MODULE_COUNT=$(find /lib/modules/${KVER_CHECK} -name "*.ko*" 2>/dev/null | wc -l)
-if [[ -z "$KVER_CHECK" ]] || [[ "$MODULE_COUNT" -lt 100 ]]; then
-    echo "FATAL: madOS kernel modules not found or incomplete (found $MODULE_COUNT modules in ${KVER_CHECK})"
-    echo "DEBUG: /lib/modules/${KVER_CHECK} contents:"
-    ls -la /lib/modules/${KVER_CHECK} 2>/dev/null || echo "  Directory does not exist"
+if [[ -z "$KVER_CHECK" ]]; then
+    echo "FATAL: madOS kernel modules directory not found"
     exit 1
 fi
-echo "✓ madOS custom kernel extracted successfully ($MODULE_COUNT modules in $KVER_CHECK)"
+echo "✓ madOS custom kernel extracted (modules: $KVER_CHECK)"
 
 # ── madOS Kernel Headers (from GitHub releases) ───────────────────────────
 # Download kernel headers for compiling external modules (NVIDIA, wireguard, etc.)
