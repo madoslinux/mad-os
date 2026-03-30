@@ -1,9 +1,7 @@
 # Sistema base
 base
-linux-zen
-linux-zen-headers
-linux-lts
-linux-lts-headers
+# Note: linux-zen and linux-lts removed - madOS uses custom kernel (linux-mados-zen)
+# installed by customize_airootfs.sh from GitHub releases
 linux-firmware
 nvme-cli
 mkinitcpio-archiso
