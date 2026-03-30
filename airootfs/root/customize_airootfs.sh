@@ -70,6 +70,21 @@ if ! run_module "03-apps.sh" "install_mados_apps"; then
     echo "WARNING: Apps installation had issues"
 fi
 
+# Install mados-installer
+if ! run_module "03-apps.sh" "install_installer"; then
+    echo "WARNING: Installer installation had issues"
+fi
+
+# Install mados-updater
+if ! run_module "03-apps.sh" "install_updater"; then
+    echo "WARNING: Updater installation had issues"
+fi
+
+# Install Oh My Zsh
+if ! run_module "03-apps.sh" "install_oh_my_zsh"; then
+    echo "WARNING: Oh My Zsh installation had issues"
+fi
+
 # 04-cleanup.sh - Cleanup
 if ! run_module "04-cleanup.sh" "cleanup_all"; then
     echo "WARNING: Cleanup had issues"
