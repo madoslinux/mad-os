@@ -307,25 +307,24 @@ INSTALLER_DIR="/usr/local/lib/${INSTALLER_APP}"
 INSTALLER_PYTHON_DIR="/usr/local/lib/mados_installer"
 INSTALLER_LAUNCHER="/usr/local/bin/${INSTALLER_APP}"
 
+# Always install installer fresh during ISO build
+# Remove existing directory to ensure we get latest code
 if [[ -d "$INSTALLER_PYTHON_DIR/.git" ]]; then
-    echo "Updating $INSTALLER_APP..."
-    cd "$INSTALLER_PYTHON_DIR"
-        git pull --ff-only origin main 2>/dev/null || true
-    cd /
-else
-    echo "Installing $INSTALLER_APP from GitHub..."
+    echo "Removing existing $INSTALLER_APP for fresh install..."
     rm -rf "$INSTALLER_DIR" "$INSTALLER_PYTHON_DIR"
-    INSTALLER_BUILD_DIR=$(mktemp -d)
-    if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${INSTALLER_APP}.git" "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" 2>&1; then
-        mkdir -p /usr/local/lib
-        mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
-        ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
-        
-    else
-        echo "⚠ Failed to install $INSTALLER_APP"
-    fi
-    rm -rf "$INSTALLER_BUILD_DIR"
 fi
+
+echo "Installing $INSTALLER_APP from GitHub..."
+INSTALLER_BUILD_DIR=$(mktemp -d)
+if git clone --depth=1 "https://github.com/${GITHUB_REPO}/${INSTALLER_APP}.git" "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" 2>&1; then
+    mkdir -p /usr/local/lib
+    mv "$INSTALLER_BUILD_DIR/${INSTALLER_APP}" "$INSTALLER_PYTHON_DIR"
+    ln -sf "$INSTALLER_PYTHON_DIR" "$INSTALLER_DIR"
+    echo "  → Installed $INSTALLER_APP version: $(cd "$INSTALLER_PYTHON_DIR" && git describe --tags 2>/dev/null || git rev-parse --short HEAD)"
+else
+    echo "⚠ Failed to install $INSTALLER_APP"
+fi
+rm -rf "$INSTALLER_BUILD_DIR"
 
 # Create launcher script (always, whether new or update)
 if [[ -d "$INSTALLER_PYTHON_DIR" ]]; then
