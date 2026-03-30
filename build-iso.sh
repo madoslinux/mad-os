@@ -2,13 +2,6 @@
 #===============================================================================
 # madOS ISO Build Script
 #===============================================================================
-#
-# Usage:
-#   sudo ./build-iso.sh
-#
-# Output:
-#   out/madOS-*.iso
-#===============================================================================
 
 set -euo pipefail
 
@@ -27,10 +20,20 @@ TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 CLEAN_WORK_DIR="${WORK_DIR}-${TIMESTAMP}"
 
 #-------------------------------------------------------------------------------
-# Progress indicator
+# Progress bar
 #-------------------------------------------------------------------------------
-show_progress() {
-    printf "\r  Building... %s " "$1"
+spin() {
+    local pid=$1
+    local delay=0.1
+    local chars=('▸▸' '▸▸' '▸ ▸' ' ▸▸')
+    local i=0
+    while kill -0 $pid 2>/dev/null; do
+        printf "\r  Building... %s" "${chars[i]}"
+        i=$(( (i+1) % 4 ))
+        sleep $delay
+    done
+    wait $pid
+    return $?
 }
 
 #-------------------------------------------------------------------------------
@@ -45,25 +48,37 @@ echo ""
 mkdir -p "${OUT_DIR}" "${CLEAN_WORK_DIR}"
 
 # Clean old ISOs
-show_progress "Cleaning..."
+printf "  Cleaning..."
 sudo rm -f "${OUT_DIR}"/*.iso "${OUT_DIR}"/*.iso.* 2>/dev/null || true
 sudo rm -rf "${WORK_DIR}-"* 2>/dev/null || true
 rm -rf "${WORK_DIR}/x86_64/airootfs/home/mados/.oh-my-zsh" 2>/dev/null || true
 rm -rf "${WORK_DIR}/x86_64/airootfs/root/.oh-my-zsh" 2>/dev/null || true
 echo -e "\r  ✓ Cleaned"
 
-# Build
-show_progress "Building ISO..."
-echo -e "\r  "
+# Build with progress
+printf "  Building ISO..."
+echo ""
 
-# Run mkarchiso and filter output - only show warnings/errors
-if ! sudo mkarchiso -o "${OUT_DIR}" -w "${CLEAN_WORK_DIR}" . 2>&1 | grep -E "^\[mkarchiso\] (WARNING|ERROR|FAIL)"; then
-    # Check if build actually failed
-    if ! ls "${OUT_DIR}"/mados-*.iso &>/dev/null; then
-        echo ""
-        echo "  ✗ Build failed"
-        exit 1
-    fi
+# Run mkarchiso in background and capture output
+mkarchiso_output=$(sudo mkarchiso -o "${OUT_DIR}" -w "${CLEAN_WORK_DIR}" . 2>&1) &
+pid=$!
+spin $pid
+wait $pid
+exit_code=$?
+
+# Check for warnings/errors
+warnings=$(echo "$mkarchiso_output" | grep -c "WARNING" || true)
+errors=$(echo "$mkarchiso_output" | grep -cE "ERROR|FAIL" || true)
+
+if [[ $exit_code -ne 0 ]] || [[ $errors -gt 0 ]]; then
+    echo ""
+    echo "$mkarchiso_output" | grep -E "^\[mkarchiso\] (ERROR|FAIL)" || echo "  ✗ Build failed"
+    exit 1
+fi
+
+# Show warnings if any
+if [[ $warnings -gt 0 ]]; then
+    echo "$mkarchiso_output" | grep "WARNING" | sed 's/^/  ⚠ /'
 fi
 
 # Find ISO
