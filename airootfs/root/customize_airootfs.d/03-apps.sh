@@ -112,8 +112,7 @@ install_installer() {
     # Create wrapper for installer (uses python3 -m like other apps)
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
-export PYTHONPATH="/opt/mados:${PYTHONPATH:-}"
-cd "/opt/mados/mados_installer"
+export PYTHONPATH="${install_path}:${PYTHONPATH:-}"
 exec python3 -m mados_installer "$@"
 INSTALLER_WRAPPER
     chmod +x "$bin_path"
