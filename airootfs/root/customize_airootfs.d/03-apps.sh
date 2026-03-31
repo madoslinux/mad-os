@@ -51,10 +51,11 @@ clone_and_install_app() {
         :
     else
         # Create wrapper script for all apps
-        # Use PYTHONPATH to add install_dir, don't cd (python3 -m needs module in path)
+        # cd to install_path so python3 -m can find the module
         cat > "$bin_path" << EOF
 #!/bin/bash
-export PYTHONPATH="${install_path}:\${PYTHONPATH:-}"
+export PYTHONPATH="${INSTALL_DIR}:\${PYTHONPATH:-}"
+cd "${install_path}"
 exec python3 -m "${module_name}" "\$@"
 EOF
         chmod +x "$bin_path"
@@ -112,7 +113,8 @@ install_installer() {
     # Create wrapper for installer (uses python3 -m like other apps)
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
-export PYTHONPATH="${install_path}:${PYTHONPATH:-}"
+export PYTHONPATH="${INSTALL_DIR}:${PYTHONPATH:-}"
+cd "${install_path}"
 export DEMO_MODE="${DEMO_MODE:-false}"
 exec python3 -m mados_installer "$@" 2>&1 | tee -a /var/log/mados-installer.log
 INSTALLER_WRAPPER
