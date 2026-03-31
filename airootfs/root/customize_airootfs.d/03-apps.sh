@@ -113,7 +113,8 @@ install_installer() {
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
 export PYTHONPATH="${install_path}:${PYTHONPATH:-}"
-exec python3 -m mados_installer "$@"
+export DEMO_MODE="${DEMO_MODE:-false}"
+exec python3 -m mados_installer "$@" 2>&1 | tee -a /var/log/mados-installer.log
 INSTALLER_WRAPPER
     chmod +x "$bin_path"
     
