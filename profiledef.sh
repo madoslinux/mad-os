@@ -10,8 +10,8 @@ _iso_tag="${_iso_tag:-dev}"
 iso_version="${_iso_tag}"
 install_dir="arch"
 buildmodes=('iso')
-bootmodes=('bios.syslinux'
-            'uefi.systemd-boot')
+bootmodes=('bios.limine'
+            'uefi.limine')
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
 airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '17')
@@ -100,22 +100,13 @@ file_permissions=(
   ["/usr/local/bin/snapper-pre-update"]="0:0:755"
 
   ["/etc/mados/"]="0:0:755"
-  ["/usr/share/grub/themes/mados/theme.txt"]="0:0:644"
-  ["/usr/share/grub/themes/mados/logo.png"]="0:0:644"
   ["/usr/share/icons/hicolor/48x48/apps/mados-wallpaper.png"]="0:0:644"
-
-  # UFW Firewall
-  ["/etc/ufw/ufw.conf"]="0:0:644"
-  ["/etc/ufw/user.rules"]="0:0:600"
-  ["/etc/ufw/user6.rules"]="0:0:600"
-  ["/etc/systemd/system/ufw.service"]="0:0:644"
-  ["/etc/systemd/system/multi-user.target.wants/ufw.service"]="0:0:644"
 
   # Sudoers configuration
   ["/etc/sudoers"]="0:0:440"
   ["/etc/sudoers.d/gufw"]="0:0:440"
 
-  # GUFW Firewall GUI
+  # UFW Firewall
   ["/usr/local/bin/gufw"]="0:0:755"
   ["/usr/local/bin/gufw-pkexec"]="0:0:755"
   ["/etc/polkit-1/rules.d/49-nopasswd_gufw.rules"]="0:0:644"

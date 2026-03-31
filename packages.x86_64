@@ -7,11 +7,8 @@ nvme-cli
 mkinitcpio-archiso
 intel-ucode
 amd-ucode
-grub
+limine
 efibootmgr
-os-prober
-sbctl
-syslinux
 sudo
 zsh
 
