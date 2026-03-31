@@ -68,8 +68,8 @@ file_permissions=(
   ["/usr/local/bin/mados-persistence"]="0:0:755"
   ["/usr/local/bin/mados-installer-autostart"]="0:0:755"
 
-  # XDG autostart for desktop environments
-  ["/etc/xdg/autostart/nm-applet.desktop"]="0:0:644"
+  # XDG autostart - nm-applet.desktop is provided by networkmanager if needed
+  # ["/etc/xdg/autostart/nm-applet.desktop"]="0:0:644"
 
   ["/usr/local/bin/mados-vbox-guest"]="0:0:755"
   ["/usr/local/bin/mados-persist-sync.sh"]="0:0:755"
@@ -167,5 +167,5 @@ file_permissions=(
 
   # Network wait service
   ["/usr/local/bin/mados-network-wait.sh"]="0:0:755"
-  ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
+  # ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
 )
