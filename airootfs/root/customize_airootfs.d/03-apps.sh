@@ -111,12 +111,12 @@ install_installer() {
     rm -rf "$build_dir"
     
     # Create wrapper for installer (uses python3 -m like other apps)
-    cat > "$bin_path" << 'INSTALLER_WRAPPER'
+    cat > "$bin_path" << INSTALLER_WRAPPER
 #!/bin/bash
 export PYTHONPATH="${INSTALL_DIR}:${PYTHONPATH:-}"
 cd "${install_path}"
 export DEMO_MODE="${DEMO_MODE:-false}"
-exec python3 -m mados_installer "$@" 2>&1 | tee -a /var/log/mados-installer.log
+exec python3 -m mados_installer "\$@" 2>&1 | tee -a /var/log/mados-installer.log
 INSTALLER_WRAPPER
     chmod +x "$bin_path"
     
