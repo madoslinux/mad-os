@@ -110,7 +110,8 @@ install_installer() {
     mv "${build_dir}/${installer_module}" "$install_path"
     rm -rf "$build_dir"
     
-    # Create wrapper for installer (uses python3 -m like other apps)
+    # Create wrapper for installer (uses python3 __main__.py instead of -m)
+    # python3 -m doesn't work when cd'd into the module directory
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
 INSTALL_DIR="/opt/mados"
@@ -133,8 +134,8 @@ cd "$INSTALL_PATH" || { log_msg "cd failed to $INSTALL_PATH"; exit 1; }
 log_msg "[mados-installer] CWD=$(pwd)"
 log_msg "[mados-installer] DEMO_MODE=$DEMO_MODE"
 log_msg "[mados-installer] DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
-log_msg "[mados-installer] Running python3 -m mados_installer..."
-python3 -m mados_installer "$@" 2>&1 | tee -a "$LOG_FILE"
+log_msg "[mados-installer] Running python3 __main__.py..."
+python3 __main__.py "$@" 2>&1 | tee -a "$LOG_FILE"
 EXIT_CODE=$?
 log_msg "[mados-installer] Exited with code: $EXIT_CODE"
 exit $EXIT_CODE
