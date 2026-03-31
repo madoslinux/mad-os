@@ -111,16 +111,17 @@ install_installer() {
     rm -rf "$build_dir"
     
     # Create wrapper for installer (uses python3 -m like other apps)
-    cat > "$bin_path" << INSTALLER_WRAPPER
+    cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
-echo "[mados-installer] Starting at \$(date)" >> /var/log/mados-installer.log
-echo "[mados-installer] PYTHONPATH=${INSTALL_DIR}" >> /var/log/mados-installer.log
-echo "[mados-installer] CWD=\$(pwd)" >> /var/log/mados-installer.log
-export PYTHONPATH="${INSTALL_DIR}:${PYTHONPATH:-}"
-cd "${install_path}" || { echo "cd failed" >> /var/log/mados-installer.log; exit 1; }
-export DEMO_MODE="${DEMO_MODE:-false}"
-echo "[mados-installer] Running python3 -m mados_installer" >> /var/log/mados-installer.log
-python3 -m mados_installer "\$@" 2>&1 | tee -a /var/log/mados-installer.log
+INSTALL_DIR="/opt/mados"
+INSTALL_PATH="/opt/mados/mados_installer"
+echo "[mados-installer] Starting at $(date)" >> /var/log/mados-installer.log
+echo "[mados-installer] PYTHONPATH=$INSTALL_DIR" >> /var/log/mados-installer.log
+export PYTHONPATH="$INSTALL_DIR:${PYTHONPATH:-}"
+cd "$INSTALL_PATH" || { echo "cd failed to $INSTALL_PATH" >> /var/log/mados-installer.log; exit 1; }
+echo "[mados-installer] CWD=$(pwd)" >> /var/log/mados-installer.log
+echo "[mados-installer] DEMO_MODE=$DEMO_MODE" >> /var/log/mados-installer.log
+python3 -m mados_installer "$@" 2>&1 | tee -a /var/log/mados-installer.log
 INSTALLER_WRAPPER
     chmod +x "$bin_path"
     
