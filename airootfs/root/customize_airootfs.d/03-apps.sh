@@ -45,17 +45,16 @@ clone_and_install_app() {
     mv "${build_dir}/${module_name}" "$install_path"
     rm -rf "$build_dir"
     
-    # Use original bash wrapper if it exists (for complex apps like installer)
-    if [[ -f "${install_path}/${app_name}" ]]; then
-        cp "${install_path}/${app_name}" "$bin_path"
-        chmod +x "$bin_path"
-        echo "  → Using original bash wrapper"
+    # Use original bash wrapper if it exists and is actually a bash script (for complex apps like installer)
+    if [[ -f "${install_path}/${app_name}" && "$app_name" == "mados-installer" ]]; then
+        # Skip - installer has special handling below
+        :
     else
-        # Create wrapper script for simple apps
+        # Create wrapper script for all apps
+        # Use PYTHONPATH to add install_dir, don't cd (python3 -m needs module in path)
         cat > "$bin_path" << EOF
 #!/bin/bash
-export PYTHONPATH="${INSTALL_DIR}:\${PYTHONPATH:-}"
-cd "${install_path}"
+export PYTHONPATH="${install_path}:\${PYTHONPATH:-}"
 exec python3 -m "${module_name}" "\$@"
 EOF
         chmod +x "$bin_path"
