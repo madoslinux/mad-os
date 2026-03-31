@@ -115,13 +115,29 @@ install_installer() {
 #!/bin/bash
 INSTALL_DIR="/opt/mados"
 INSTALL_PATH="/opt/mados/mados_installer"
-echo "[mados-installer] Starting at $(date)" >> /var/log/mados-installer.log
-echo "[mados-installer] PYTHONPATH=$INSTALL_DIR" >> /var/log/mados-installer.log
+LOG_FILE="/var/log/mados-installer.log"
+
+# Ensure log file exists and is writable
+mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
+touch "$LOG_FILE" 2>/dev/null || true
+chmod 666 "$LOG_FILE" 2>/dev/null || true
+
+log_msg() {
+    echo "$1" | tee -a "$LOG_FILE"
+}
+
+log_msg "[mados-installer] Starting at $(date)"
+log_msg "[mados-installer] PYTHONPATH=$INSTALL_DIR"
 export PYTHONPATH="$INSTALL_DIR:${PYTHONPATH:-}"
-cd "$INSTALL_PATH" || { echo "cd failed to $INSTALL_PATH" >> /var/log/mados-installer.log; exit 1; }
-echo "[mados-installer] CWD=$(pwd)" >> /var/log/mados-installer.log
-echo "[mados-installer] DEMO_MODE=$DEMO_MODE" >> /var/log/mados-installer.log
-python3 -m mados_installer "$@" 2>&1 | tee -a /var/log/mados-installer.log
+cd "$INSTALL_PATH" || { log_msg "cd failed to $INSTALL_PATH"; exit 1; }
+log_msg "[mados-installer] CWD=$(pwd)"
+log_msg "[mados-installer] DEMO_MODE=$DEMO_MODE"
+log_msg "[mados-installer] DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+log_msg "[mados-installer] Running python3 -m mados_installer..."
+python3 -m mados_installer "$@" 2>&1 | tee -a "$LOG_FILE"
+EXIT_CODE=$?
+log_msg "[mados-installer] Exited with code: $EXIT_CODE"
+exit $EXIT_CODE
 INSTALLER_WRAPPER
     chmod +x "$bin_path"
     
