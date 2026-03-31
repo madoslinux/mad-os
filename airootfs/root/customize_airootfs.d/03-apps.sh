@@ -19,72 +19,204 @@ INSTALLER_GITHUB_REPO="madoslinux"
 UPDATER_APP="mados-updater"
 UPDATER_GITHUB_REPO="madkoding"
 
-clone_repo() {
-    local repo="$1"
-    local dest="$2"
-    local url="https://github.com/${repo}.git"
-    
-    git clone --depth=1 "$url" "$dest"
-}
+INSTALL_DIR="/opt/mados"
+BIN_DIR="/usr/local/bin"
 
-install_single_app() {
-    local app="$1"
-    local python_app_name="${app//-/_}"
-    local python_app_dir="/usr/local/lib/${python_app_name}"
-    local launcher="/usr/local/bin/${app}"
+clone_and_install_app() {
+    local repo="$1"
+    local app_name="$2"
+    local module_name="${app_name//-/_}"
+    local install_path="${INSTALL_DIR}/${module_name}"
+    local bin_path="${BIN_DIR}/${app_name}"
     
-    if [[ -d "$python_app_dir/.git" ]]; then
-        echo "Updating $app..."
-        (cd "$python_app_dir" && git pull --ff-only origin main) 2>/dev/null || true
-        return 0
-    fi
-    
-    echo "Installing $app from GitHub..."
+    echo "Installing ${app_name}..."
     
     local build_dir
     build_dir=$(mktemp -d)
     
-    if ! clone_repo "${GITHUB_REPO}/${app}" "$build_dir/${app}"; then
+    if ! GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${repo}.git" "${build_dir}/${module_name}"; then
+        echo "ERROR: Failed to clone ${repo}"
         rm -rf "$build_dir"
         return 1
     fi
     
-    mkdir -p /usr/local/lib
-    mv "$build_dir/${app}" "$python_app_dir"
+    mkdir -p "$INSTALL_DIR"
+    rm -rf "$install_path"
+    mv "${build_dir}/${module_name}" "$install_path"
     rm -rf "$build_dir"
     
-    cat > "$launcher" << 'EOF'
+    # Use original bash wrapper if it exists (for complex apps like installer)
+    if [[ -f "${install_path}/${app_name}" ]]; then
+        cp "${install_path}/${app_name}" "$bin_path"
+        chmod +x "$bin_path"
+        echo "  → Using original bash wrapper"
+    else
+        # Create wrapper script for simple apps
+        cat > "$bin_path" << EOF
 #!/bin/bash
-cd "/usr/local/lib/${python_app_name}"
-export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
-exec python3 -m "${python_app_name}" "$@"
+export PYTHONPATH="${INSTALL_DIR}:\${PYTHONPATH:-}"
+cd "${install_path}"
+exec python3 -m "${module_name}" "\$@"
 EOF
-    chmod +x "$launcher"
-    
-    if [[ "$app" == "mados-wallpaper" && -f "$python_app_dir/daemon/mados-wallpaperd" ]]; then
-        cp "$python_app_dir/daemon/mados-wallpaperd" /usr/local/bin/mados-wallpaperd
-        chmod +x /usr/local/bin/mados-wallpaperd
+        chmod +x "$bin_path"
     fi
     
-    echo "✓ $app installed"
+    # Copy desktop file if exists
+    if [[ -f "${install_path}/${app_name}.desktop" ]]; then
+        cp "${install_path}/${app_name}.desktop" /usr/share/applications/
+        echo "  → Installed desktop file"
+    fi
+    
+    # Handle wallpaper daemon (runs as python3 -m daemon)
+    if [[ "$app_name" == "mados-wallpaper" && -d "${install_path}/daemon" ]]; then
+        cat > "${BIN_DIR}/mados-wallpaperd" << WALLPAPERD
+#!/bin/bash
+export PYTHONPATH="${install_path}:\${PYTHONPATH:-}"
+cd "${install_path}"
+exec python3 -m daemon "\$@"
+WALLPAPERD
+        chmod +x "${BIN_DIR}/mados-wallpaperd"
+    fi
+    
+    echo "✓ ${app_name} installed to ${install_path}"
     return 0
 }
 
 install_mados_apps() {
     for app in "${MADOS_APPS[@]}"; do
-        install_single_app "$app" || true
+        clone_and_install_app "${GITHUB_REPO}/${app}" "$app" || true
     done
 }
 
-setup_wallpaper_desktop_entry() {
-    local wallpaper_dir="/usr/local/lib/mados_wallpaper"
+install_installer() {
+    local installer_name="mados-installer"
+    local installer_module="mados_installer"
+    local install_path="${INSTALL_DIR}/${installer_module}"
+    local bin_path="${BIN_DIR}/${installer_name}"
     
-    if [[ ! -d "$wallpaper_dir" ]]; then
+    echo "Installing ${installer_name}..."
+    
+    local build_dir
+    build_dir=$(mktemp -d)
+    
+    if ! GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" "${build_dir}/${installer_module}"; then
+        echo "ERROR: Failed to clone ${INSTALLER_GITHUB_REPO}/${installer_name}"
+        rm -rf "$build_dir"
+        return 1
+    fi
+    
+    mkdir -p "$INSTALL_DIR"
+    rm -rf "$install_path"
+    mv "${build_dir}/${installer_module}" "$install_path"
+    rm -rf "$build_dir"
+    
+    # Create custom wrapper for installer (bash script uses dirname $0 which fails when symlinked)
+    cat > "$bin_path" << 'INSTALLER_WRAPPER'
+#!/bin/bash
+export PYTHONPATH="/opt/mados:${PYTHONPATH:-}"
+cd "/opt/mados/mados_installer"
+exec python3 -c "
+import sys
+import os
+import types
+import importlib.util
+
+pkg_dir = '/opt/mados/mados_installer'
+
+spec = importlib.util.spec_from_file_location('mados_installer', f'{pkg_dir}/__init__.py')
+pkg = importlib.util.module_from_spec(spec)
+sys.modules['mados_installer'] = pkg
+spec.loader.exec_module(pkg)
+
+submodules = ['mados_installer', 'config', 'theme', 'translations', 'utils']
+for name in submodules:
+    filepath = f'{pkg_dir}/{name}.py'
+    if os.path.exists(filepath):
+        spec = importlib.util.spec_from_file_location(f'mados_installer.{name}', filepath)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[f'mados_installer.{name}'] = mod
+        spec.loader.exec_module(mod)
+
+for subdir in ['installer', 'pages', 'translations']:
+    subdir_path = f'{pkg_dir}/{subdir}'
+    if os.path.isdir(subdir_path):
+        sys.modules[f'mados_installer.{subdir}'] = types.ModuleType(f'mados_installer.{subdir}')
+        for pyfile in os.listdir(subdir_path):
+            if pyfile.endswith('.py') and pyfile != '__init__.py':
+                modname = pyfile[:-3]
+                filepath = f'{subdir_path}/{pyfile}'
+                spec = importlib.util.spec_from_file_location(f'mados_installer.{subdir}.{modname}', filepath)
+                mod = importlib.util.module_from_spec(spec)
+                sys.modules[f'mados_installer.{subdir}.{modname}'] = mod
+                spec.loader.exec_module(mod)
+
+from mados_installer.mados_installer import MadOSInstaller
+import gi
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+
+app = MadOSInstaller()
+app.connect('destroy', Gtk.main_quit)
+Gtk.main()
+" "\$@"
+INSTALLER_WRAPPER
+    chmod +x "$bin_path"
+    
+    if [[ -f "${install_path}/${installer_name}.desktop" ]]; then
+        cp "${install_path}/${installer_name}.desktop" /usr/share/applications/
+    fi
+    
+    echo "✓ ${installer_name} installed to ${install_path}"
+    return 0
+}
+
+install_updater() {
+    clone_and_install_app "${UPDATER_GITHUB_REPO}/${UPDATER_APP}" "$UPDATER_APP"
+}
+
+install_oh_my_zsh() {
+    local omz_dir="/usr/share/oh-my-zsh"
+    
+    if [[ -d "$omz_dir" ]]; then
         return 0
     fi
     
-    if [[ -f "$wallpaper_dir/mados-wallpaper.desktop" ]]; then
-        cp "$wallpaper_dir/mados-wallpaper.desktop" /usr/share/applications/
+    echo "Installing Oh My Zsh..."
+    
+    local build_dir
+    build_dir=$(mktemp -d)
+    
+    if ! GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/ohmyzsh/ohmyzsh.git" "${build_dir}/ohmyzsh"; then
+        echo "ERROR: Failed to clone oh-my-zsh"
+        rm -rf "$build_dir"
+        return 1
+    fi
+    
+    mv "${build_dir}/ohmyzsh" "$omz_dir"
+    rm -rf "$build_dir"
+    
+    if [[ -d /home/mados ]]; then
+        rm -rf /home/mados/.oh-my-zsh
+        ln -sf "$omz_dir" /home/mados/.oh-my-zsh
+        chown -h 1000:1000 /home/mados/.oh-my-zsh
+    fi
+    
+    rm -rf /root/.oh-my-zsh
+    ln -sf "$omz_dir" /root/.oh-my-zsh
+    
+    if [[ ! -d /etc/skel/.oh-my-zsh ]]; then
+        ln -sf "$omz_dir" /etc/skel/.oh-my-zsh
+    fi
+    
+    echo "✓ Oh My Zsh installed"
+    return 0
+}
+
+setup_wallpaper_assets() {
+    local wallpaper_dir="${INSTALL_DIR}/mados_wallpaper"
+    
+    if [[ ! -d "$wallpaper_dir" ]]; then
+        return 0
     fi
     
     if [[ -f "$wallpaper_dir/mados-wallpaper.svg" ]]; then
@@ -105,105 +237,10 @@ setup_wallpaper_desktop_entry() {
     fi
 }
 
-install_installer() {
-    local installer_python_dir="/usr/local/lib/mados_installer"
-    local installer_launcher="/usr/local/bin/${INSTALLER_APP}"
-    
-    if [[ -d "$installer_python_dir/.git" ]]; then
-        rm -rf "$installer_python_dir"
-    fi
-    
-    echo "Installing $INSTALLER_APP from GitHub..."
-    
-    local build_dir
-    build_dir=$(mktemp -d)
-    
-    if ! clone_repo "${INSTALLER_GITHUB_REPO}/${INSTALLER_APP}" "$build_dir/${INSTALLER_APP}"; then
-        rm -rf "$build_dir"
-        return 1
-    fi
-    
-    mkdir -p /usr/local/lib
-    mv "$build_dir/${INSTALLER_APP}" "$installer_python_dir"
-    rm -rf "$build_dir"
-    
-    cat > "$installer_launcher" << 'EOF'
-#!/bin/bash
-export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
-cd "/usr/local/lib/mados_installer"
-exec python3 -m mados_installer "$@"
-EOF
-    chmod +x "$installer_launcher"
-    echo "✓ $INSTALLER_APP installed"
-    return 0
-}
-
-install_updater() {
-    local updater_python_dir="/usr/local/lib/mados_updater"
-    local updater_launcher="/usr/local/bin/${UPDATER_APP}"
-    
-    if [[ -d "$updater_python_dir/.git" ]]; then
-        rm -rf "$updater_python_dir"
-    fi
-    
-    echo "Installing $UPDATER_APP from GitHub..."
-    
-    local build_dir
-    build_dir=$(mktemp -d)
-    
-    if ! clone_repo "${UPDATER_GITHUB_REPO}/${UPDATER_APP}" "$build_dir/${UPDATER_APP}"; then
-        rm -rf "$build_dir"
-        return 1
-    fi
-    
-    mkdir -p /usr/local/lib
-    mv "$build_dir/${UPDATER_APP}" "$updater_python_dir"
-    rm -rf "$build_dir"
-    
-    cat > "$updater_launcher" << 'EOF'
-#!/bin/bash
-export PYTHONPATH="/usr/local/lib:${PYTHONPATH:-}"
-cd "/usr/local/lib/mados_updater"
-exec python3 -m mados_updater "$@"
-EOF
-    chmod +x "$updater_launcher"
-    echo "✓ $UPDATER_APP installed"
-    return 0
-}
-
-install_oh_my_zsh() {
-    local omz_dir="/usr/share/oh-my-zsh"
-    
-    if [[ -d "$omz_dir" ]]; then
-        return 0
-    fi
-    
-    echo "Installing Oh My Zsh..."
-    
-    if ! clone_repo "ohmyzsh/ohmyzsh" "$omz_dir"; then
-        return 1
-    fi
-    
-    if [[ -d /home/mados ]]; then
-        rm -rf /home/mados/.oh-my-zsh
-        ln -sf /usr/share/oh-my-zsh /home/mados/.oh-my-zsh
-        chown -h 1000:1000 /home/mados/.oh-my-zsh
-    fi
-    
-    rm -rf /root/.oh-my-zsh
-    ln -sf /usr/share/oh-my-zsh /root/.oh-my-zsh
-    
-    if [[ ! -d /etc/skel/.oh-my-zsh ]]; then
-        ln -sf /usr/share/oh-my-zsh /etc/skel/.oh-my-zsh
-    fi
-    
-    return 0
-}
-
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     install_mados_apps
-    setup_wallpaper_desktop_entry
+    setup_wallpaper_assets
     install_installer
     install_updater
     install_oh_my_zsh
