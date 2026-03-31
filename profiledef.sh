@@ -10,8 +10,8 @@ _iso_tag="${_iso_tag:-dev}"
 iso_version="${_iso_tag}"
 install_dir="arch"
 buildmodes=('iso')
-bootmodes=('bios.limine'
-            'uefi.limine')
+bootmodes=('bios.syslinux'
+            'uefi.systemd-boot')
 pacman_conf="pacman.conf"
 airootfs_image_type="squashfs"
 airootfs_image_tool_options=('-comp' 'zstd' '-Xcompression-level' '17')
