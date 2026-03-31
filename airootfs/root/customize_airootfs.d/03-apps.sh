@@ -110,55 +110,12 @@ install_installer() {
     mv "${build_dir}/${installer_module}" "$install_path"
     rm -rf "$build_dir"
     
-    # Create custom wrapper for installer (bash script uses dirname $0 which fails when symlinked)
+    # Create wrapper for installer (uses python3 -m like other apps)
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
 export PYTHONPATH="/opt/mados:${PYTHONPATH:-}"
 cd "/opt/mados/mados_installer"
-exec python3 -c "
-import sys
-import os
-import types
-import importlib.util
-
-pkg_dir = '/opt/mados/mados_installer'
-
-spec = importlib.util.spec_from_file_location('mados_installer', f'{pkg_dir}/__init__.py')
-pkg = importlib.util.module_from_spec(spec)
-sys.modules['mados_installer'] = pkg
-spec.loader.exec_module(pkg)
-
-submodules = ['mados_installer', 'config', 'theme', 'translations', 'utils']
-for name in submodules:
-    filepath = f'{pkg_dir}/{name}.py'
-    if os.path.exists(filepath):
-        spec = importlib.util.spec_from_file_location(f'mados_installer.{name}', filepath)
-        mod = importlib.util.module_from_spec(spec)
-        sys.modules[f'mados_installer.{name}'] = mod
-        spec.loader.exec_module(mod)
-
-for subdir in ['installer', 'pages', 'translations']:
-    subdir_path = f'{pkg_dir}/{subdir}'
-    if os.path.isdir(subdir_path):
-        sys.modules[f'mados_installer.{subdir}'] = types.ModuleType(f'mados_installer.{subdir}')
-        for pyfile in os.listdir(subdir_path):
-            if pyfile.endswith('.py') and pyfile != '__init__.py':
-                modname = pyfile[:-3]
-                filepath = f'{subdir_path}/{pyfile}'
-                spec = importlib.util.spec_from_file_location(f'mados_installer.{subdir}.{modname}', filepath)
-                mod = importlib.util.module_from_spec(spec)
-                sys.modules[f'mados_installer.{subdir}.{modname}'] = mod
-                spec.loader.exec_module(mod)
-
-from mados_installer.mados_installer import MadOSInstaller
-import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
-
-app = MadOSInstaller()
-app.connect('destroy', Gtk.main_quit)
-Gtk.main()
-" "\$@"
+exec python3 -m mados_installer "$@"
 INSTALLER_WRAPPER
     chmod +x "$bin_path"
     
