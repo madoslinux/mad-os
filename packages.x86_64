@@ -8,6 +8,7 @@ mkinitcpio-archiso
 intel-ucode
 amd-ucode
 limine
+syslinux
 efibootmgr
 sudo
 zsh

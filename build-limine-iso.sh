@@ -40,7 +40,10 @@ echo ""
 
 # Step 1: Build base ISO with archiso
 echo "  [1/5] Building base ISO with archiso..."
-sudo mkarchiso -v -o "${OUT_DIR}" -w "${CLEAN_WORK}" . 2>&1 | grep -E "mkarchiso.*(INFO|ERROR|WARNING)" || true
+if ! sudo mkarchiso -v -o "${OUT_DIR}" -w "${CLEAN_WORK}" .; then
+    echo "  ✗ mkarchiso failed"
+    exit 1
+fi
 
 # Find generated ISO
 BASE_ISO=$(ls "${OUT_DIR}"/mados-${ISO_VERSION}-*.iso 2>/dev/null | head -1)
@@ -152,19 +155,11 @@ FINAL_ISO="${OUT_DIR}/mados-${ISO_VERSION}-limine.iso"
 
 xorriso -as mkisofs \
     -iso-level 3 \
-    -full-elf-loader \
-    -append_partition 2 0x00 /usr/share/limine/limine-bios-cd.bin \
-    -appended_part_as_gpt \
-    -efi-boot-part --efi-boot-image \
-    -efi-boot-image \
     -boot-load-size 4 \
     -boot-info-table \
     -no-emul-boot \
-    -eltorito-alt-boot \
-    -e EFI/archiso/efiboot.img \
-    -no-emul \
     -output "$FINAL_ISO" \
-    "$ISO_EXTRACT" 2>&1 | grep -v "^xorriso: warning" || true
+    "$ISO_EXTRACT"
 
 # Cleanup
 rm -rf "$ISO_EXTRACT"

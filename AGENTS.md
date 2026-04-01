@@ -9,15 +9,34 @@ madOS is an AI-orchestrated Arch Linux distribution built using `archiso`. It ta
 ## Build Commands
 
 ```bash
-# Build the ISO (requires Arch Linux with archiso installed)
-sudo pacman -S archiso
+# Build standard ISO (syslinux BIOS + systemd-boot UEFI)
+sudo ./build-limine-iso.sh
+
+# Build only base ISO (without limine patching)
 sudo mkarchiso -v -w work/ -o out/ .
+
+# Patch existing ISO with limine bootloader
+sudo ./patch-limine-iso.sh
+
+# Serve ISO via HTTP (default port 8000)
+./serve-iso.sh
+./serve-iso.sh 8080        # custom port
+./serve-iso.sh 9000 out/   # custom port and directory
+
+# Boot ISO in QEMU
+./run-qemu.sh
 ```
 
-- Build requires ~10GB free disk space
-- Build artifacts go in `work/` (safe to delete after build)
-- Final ISO appears in `out/`
-- Build time: ~10-20 minutes
+### Build Requirements
+- ~10GB free disk space
+- archiso, limine, xorriso, qemu-system-x86_64 installed
+- sudo privileges
+
+### Build Artifacts
+- `work-*/` — Working directory (safe to delete after build)
+- `out/` — Final ISO output
+- `out/madOS-dev-x86_64.iso` — Base ISO with syslinux/systemd-boot
+- `out/mados-*-limine.iso` — ISO with limine bootloader (when patch succeeds)
 
 ---
 
@@ -174,7 +193,7 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 
 ### Boot Configuration
 
-- `grub/` — GRUB bootloader config (UEFI)
+- `grub/` — GRUB bootloader config (UEFI) - deprecated, using systemd-boot
 - `syslinux/` — Syslinux config (BIOS)
 - `efiboot/` — EFI boot loader configuration
 
@@ -183,9 +202,18 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 - `airootfs/etc/` — System configuration (sysctl, systemd, skel configs)
 - `airootfs/usr/local/bin/` — Custom scripts and executables
 - `airootfs/usr/local/lib/` — Python library modules for tools
+- `airootfs/root/customize_airootfs.d/` — Post-install customization modules
+
+### Build Scripts
+
+- `build-limine-iso.sh` — Full build: archiso + limine patching (5 steps)
+- `patch-limine-iso.sh` — Patch existing ISO with limine (simplified)
+- `serve-iso.sh` — HTTP server for ISO distribution
+- `run-qemu.sh` — QEMU launcher with GTK display, UEFI, serial log
 
 ### Key Scripts
 
+- `airootfs/root/customize_airootfs.d/03-apps.sh` — App installer (clones from GitHub)
 - `airootfs/usr/local/bin/mados-installer-autostart` — Launcher for external installer
 - `airootfs/usr/local/bin/setup-opencode.sh` — OpenCode setup script
 - `airootfs/usr/local/bin/setup-persistence.sh` — Persistent storage setup
@@ -205,6 +233,83 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 
 ---
 
+## Apps Installation (03-apps.sh)
+
+The `03-apps.sh` script installs madOS native applications during ISO build:
+
+```bash
+# Key variables
+BUILD_DIR="/root/build_tmp"  # Working directory for git clones
+INSTALL_DIR="/opt/mados"      # Where apps are installed
+BIN_DIR="/usr/local/bin"      # Wrapper scripts location
+```
+
+### App Installation Flow
+1. Clone repo to `/root/build_tmp/{module_name}_$$/`
+2. Move to `/opt/mados/{module_name}/`
+3. Create wrapper script in `/usr/local/bin/{app-name}`
+4. Copy `.desktop` file to `/usr/share/applications/`
+
+### App Wrapper Patterns
+
+Most apps use `python3 -m {module_name}`:
+```bash
+#!/bin/bash
+export PYTHONPATH="/opt/mados:${PYTHONPATH:-}"
+cd "/opt/mados/{module_name}"
+exec python3 -m "{module_name}" "$@"
+```
+
+**Exception**: mados-installer uses `python3 __main__.py`:
+```bash
+#!/bin/bash
+cd "/opt/mados/mados_installer"
+exec python3 __main__.py "$@"
+```
+
+### App Repos and Structure
+
+All apps follow a standardized structure with `app.py` as entry point:
+
+| App | Repo | Module Name | Special Handling |
+|-----|------|-------------|------------------|
+| mados-audio-player | madoslinux | mados_audio_player | Standard `python3 -m` |
+| mados-equalizer | madoslinux | mados_equalizer | Standard `python3 -m` |
+| mados-launcher | madoslinux | mados_launcher | Standard `python3 -m` |
+| mados-pdf-viewer | madoslinux | mados_pdf_viewer | Standard `python3 -m` |
+| mados-photo-viewer | madoslinux | mados_photo_viewer | Standard `python3 -m` |
+| mados-video-player | madoslinux | mados_video_player | Standard `python3 -m` |
+| mados-wallpaper | madoslinux | mados_wallpaper | Has `daemon/` subpackage, uses `python3 -m daemon` |
+| mados-installer | madoslinux | mados_installer | Uses `python3 __main__.py` |
+| mados-updater | madkoding | mados_updater | Standard `python3 -m` |
+
+### App Structure (Standard)
+```
+{app_name}/
+├── app.py           # Main application code
+├── __main__.py      # Entry point for python3 -m
+├── {app_name}.desktop  # Desktop entry file
+└── ...other files
+```
+
+### mados-wallpaper Special Structure
+```
+mados_wallpaper/
+├── app.py
+├── __main__.py
+├── daemon/
+│   ├── __init__.py
+│   └── __main__.py      # daemon entry point
+└── ...
+```
+
+### 03-apps.sh Error Handling
+- Script stops on first failure (no `|| true`)
+- 3 retry attempts with 2 second delays for git clone
+- Builds in `/root/build_tmp` instead of `/tmp` (more stable in chroot)
+
+---
+
 ## Important Guidelines
 
 - Keep `python`, `python-gobject`, and `gtk3` in `packages.x86_64` (required for the installer)
@@ -219,6 +324,38 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 
 ---
 
+## Limine Bootloader
+
+Archiso does NOT natively support limine. Valid archiso bootmodes are:
+- `bios.syslinux` — BIOS boot with SYSLINUX
+- `uefi.systemd-boot` — UEFI boot with systemd-boot
+
+### Using Limine
+Limine must be added AFTER archiso builds the ISO:
+
+1. **Full build** (`build-limine-iso.sh`):
+   - Step 1: Build base ISO with archiso
+   - Step 2: Extract ISO contents
+   - Step 3: Install limine-bios.sys to isolinux/
+   - Step 4: Install limine EFI to EFI/BOOT/
+   - Step 5: Create new ISO with xorriso
+
+2. **Patch existing** (`patch-limine-iso.sh`):
+   - Extract existing ISO
+   - Add limine files
+   - Create new ISO
+
+### xorriso Compatibility
+Different xorriso versions have different option support. Common issues:
+- `-full-elf-loader` — Not supported in some versions
+- `-efi-boot-image` — Not supported in some versions
+- `-no-emul` — Not supported in some versions
+- `-padding` — Not supported in some versions
+
+If limine patching fails, use the base ISO (syslinux/systemd-boot) which boots fine in QEMU.
+
+---
+
 ## CI/CD Pipeline
 
 The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs in stages:
@@ -230,3 +367,22 @@ The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs in stages:
 5. **Stage 5** — GitHub Release and website update (stable releases only)
 
 GitHub Pages deployment is in `.github/workflows/pages.yml`.
+
+---
+
+## Troubleshooting
+
+### QEMU Display Issues
+- If SDL fails, use `-display gtk` instead
+- If `-soundpcspk` fails, remove it (not supported in newer QEMU versions)
+- Ensure `/dev/kvm` is accessible for KVM acceleration
+
+### Git Clone Failures in 03-apps.sh
+- Check network connectivity in chroot environment
+- Use `ping github.com` to verify
+- 03-apps.sh now has retry logic (3 attempts)
+
+### ISO Boot Issues
+- Check `out/mados-serial.log` for boot errors
+- Use `run-qemu.sh` with serial logging enabled
+- Base ISO (syslinux) is more reliable than limine-patched ISO in QEMU

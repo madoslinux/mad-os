@@ -1,32 +1,129 @@
 #!/usr/bin/env bash
-# run-qemu.sh - Boot madOS ISO in QEMU
-
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="${SCRIPT_DIR}/out"
+ISO_FILE=$(ls -t "${OUT_DIR}"/*.iso 2>/dev/null | head -1)
 
-# Find ISO
-ISO=$(ls "${OUT_DIR}"/*.iso 2>/dev/null | grep -i limine | head -1)
-ISO="${ISO:-$(ls "${OUT_DIR}"/*.iso 2>/dev/null | head -1)}"
-
-if [[ -z "$ISO" ]]; then
+if [ -z "$ISO_FILE" ]; then
     echo "No ISO found in ${OUT_DIR}"
     exit 1
 fi
 
-echo "Booting: $(basename "$ISO")"
+echo "=== madOS QEMU Launcher ==="
+echo ""
 
-# QEMU command
-exec qemu-system-x86_64 \
-    -m 4G \
-    -smp 2 \
-    -cdrom "$ISO" \
-    -boot order=dc \
-    -enable-kvm \
-    -cpu host \
-    -vga virtio \
-    -display sdl \
-    -soundpcspk \
-    -net nic \
+# Ask for sudo password if not already authenticated
+if ! sudo -v 2>/dev/null; then
+    echo "This script requires sudo privileges."
+    echo "Please enter your password when prompted."
+    if ! sudo -v; then
+        echo "sudo authentication failed"
+        exit 1
+    fi
+fi
+
+MEMORY="${MEMORY:-4G}"
+CPU="${CPU:-4}"
+RESOLUTION="${RESOLUTION:-1920x1080}"
+DISK_SIZE="${DISK_SIZE:-30G}"
+DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
+
+# Serial console output file for debugging (in OUT_DIR to avoid permissions)
+SERIAL_LOG="${OUT_DIR}/mados-serial.log"
+SERIAL_OPTS="-serial file:${SERIAL_LOG}"
+
+# Create serial log file with sudo (out dir is owned by root)
+sudo rm -f "$SERIAL_LOG"
+sudo bash -c "echo -n '' > '$SERIAL_LOG' && chmod 666 '$SERIAL_LOG'"
+
+echo "Configuration:"
+echo "  ISO: ${ISO_FILE}"
+echo "  Memory: ${MEMORY}"
+echo "  CPU: ${CPU}"
+echo "  Disk: ${DISK_FILE}"
+echo "  Serial log: ${SERIAL_LOG}"
+echo ""
+
+# Create virtual disk if it doesn't exist (default 30GB)
+if [ ! -f "$DISK_FILE" ]; then
+    echo "Creating ${DISK_SIZE} virtual disk..."
+    sudo qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
+fi
+
+if [ -w /dev/kvm ]; then
+    echo "Using KVM acceleration (✓)"
+    KVM_ACCEL="-enable-kvm -cpu host"
+else
+    echo "KVM not available, using TCG (software emulation)"
+    KVM_ACCEL=""
+fi
+
+# UEFI firmware
+UEFI_FW="/usr/share/edk2/x64/OVMF.4m.fd"
+if [ ! -f "$UEFI_FW" ]; then
+    UEFI_FW="/usr/share/edk2/ovmf/OVMF.4m.fd"
+fi
+if [ ! -f "$UEFI_FW" ]; then
+    echo "WARNING: UEFI firmware not found, BIOS boot only"
+    UEFI_FW=""
+fi
+
+echo ""
+echo "Starting QEMU..."
+echo "Serial output will be logged to: ${SERIAL_LOG}"
+echo ""
+
+# Build QEMU command
+QEMU_CMD=(
+    qemu-system-x86_64
+    -m "$MEMORY"
+    -smp "$CPU"
+    $KVM_ACCEL
+    -cdrom "$ISO_FILE"
+    -boot d
+    -drive file="$DISK_FILE",format=qcow2,if=virtio
+    -net nic
     -net user,hostfwd=tcp::2222-:22
+    -vga virtio
+    -global virtio-vga.max_outputs=1
+    -display gtk
+    -device qemu-xhci
+    -device usb-tablet
+    $SERIAL_OPTS
+)
+
+if [ -n "$UEFI_FW" ]; then
+    QEMU_CMD+=(-bios "$UEFI_FW")
+fi
+
+echo ""
+echo "Starting QEMU..."
+echo "Serial output will be logged to: ${SERIAL_LOG}"
+echo ""
+
+# Start QEMU in background
+sudo "${QEMU_CMD[@]}" "$@" &
+QEMU_PID=$!
+
+# Monitor serial log in real-time
+tail -n 50 -f "$SERIAL_LOG" 2>/dev/null &
+TAIL_PID=$!
+
+# Cleanup function
+cleanup() {
+    kill $TAIL_PID 2>/dev/null || true
+    kill $QEMU_PID 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+# Wait for QEMU to finish
+wait $QEMU_PID
+RESULT=$?
+
+# Show final serial log
+echo ""
+echo "=== Serial Log Contents ==="
+cat "$SERIAL_LOG"
+
+exit ${RESULT:-0}

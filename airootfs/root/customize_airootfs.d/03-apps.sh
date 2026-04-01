@@ -21,6 +21,10 @@ UPDATER_GITHUB_REPO="madkoding"
 
 INSTALL_DIR="/opt/mados"
 BIN_DIR="/usr/local/bin"
+BUILD_DIR="/root/build_tmp"
+
+mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
 
 clone_and_install_app() {
     local repo="$1"
@@ -31,11 +35,24 @@ clone_and_install_app() {
     
     echo "Installing ${app_name}..."
     
-    local build_dir
-    build_dir=$(mktemp -d)
+    local build_dir="${BUILD_DIR}/${module_name}_$$"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cd "$BUILD_DIR"
     
-    if ! GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${repo}.git" "${build_dir}/${module_name}"; then
-        echo "ERROR: Failed to clone ${repo}"
+    local retries=3
+    local count=0
+    while [ $count -lt $retries ]; do
+        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${repo}.git" "${build_dir}/${module_name}"; then
+            break
+        fi
+        count=$((count + 1))
+        echo "  Retry $count/$retries..."
+        sleep 2
+    done
+    
+    if [ $count -eq $retries ]; then
+        echo "ERROR: Failed to clone ${repo} after $retries attempts"
         rm -rf "$build_dir"
         return 1
     fi
@@ -84,7 +101,7 @@ WALLPAPERD
 
 install_mados_apps() {
     for app in "${MADOS_APPS[@]}"; do
-        clone_and_install_app "${GITHUB_REPO}/${app}" "$app" || true
+        clone_and_install_app "${GITHUB_REPO}/${app}" "$app"
     done
 }
 
@@ -96,11 +113,23 @@ install_installer() {
     
     echo "Installing ${installer_name}..."
     
-    local build_dir
-    build_dir=$(mktemp -d)
+    local build_dir="${BUILD_DIR}/${installer_module}_$$"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
     
-    if ! GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" "${build_dir}/${installer_module}"; then
-        echo "ERROR: Failed to clone ${INSTALLER_GITHUB_REPO}/${installer_name}"
+    local retries=3
+    local count=0
+    while [ $count -lt $retries ]; do
+        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" "${build_dir}/${installer_module}"; then
+            break
+        fi
+        count=$((count + 1))
+        echo "  Retry $count/$retries..."
+        sleep 2
+    done
+    
+    if [ $count -eq $retries ]; then
+        echo "ERROR: Failed to clone ${INSTALLER_GITHUB_REPO}/${installer_name} after $retries attempts"
         rm -rf "$build_dir"
         return 1
     fi
@@ -163,11 +192,23 @@ install_oh_my_zsh() {
     
     echo "Installing Oh My Zsh..."
     
-    local build_dir
-    build_dir=$(mktemp -d)
+    local build_dir="${BUILD_DIR}/ohmyzsh_$$"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
     
-    if ! GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/ohmyzsh/ohmyzsh.git" "${build_dir}/ohmyzsh"; then
-        echo "ERROR: Failed to clone oh-my-zsh"
+    local retries=3
+    local count=0
+    while [ $count -lt $retries ]; do
+        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/ohmyzsh/ohmyzsh.git" "${build_dir}/ohmyzsh"; then
+            break
+        fi
+        count=$((count + 1))
+        echo "  Retry $count/$retries..."
+        sleep 2
+    done
+    
+    if [ $count -eq $retries ]; then
+        echo "ERROR: Failed to clone oh-my-zsh after $retries attempts"
         rm -rf "$build_dir"
         return 1
     fi
