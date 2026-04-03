@@ -26,6 +26,14 @@ BUILD_DIR="/root/build_tmp"
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
+clone_latest_main() {
+    local repo_url="$1"
+    local dest_dir="$2"
+
+    # Force fresh network clone from main on every build.
+    GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch main --no-tags "$repo_url" "$dest_dir"
+}
+
 clone_and_install_app() {
     local repo="$1"
     local app_name="$2"
@@ -43,7 +51,7 @@ clone_and_install_app() {
     local retries=3
     local count=0
     while [ $count -lt $retries ]; do
-        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${repo}.git" "${build_dir}/${module_name}"; then
+        if clone_latest_main "https://github.com/${repo}.git" "${build_dir}/${module_name}"; then
             break
         fi
         count=$((count + 1))
@@ -133,7 +141,7 @@ install_installer() {
     local retries=3
     local count=0
     while [ $count -lt $retries ]; do
-        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" "${build_dir}/${installer_module}"; then
+        if clone_latest_main "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" "${build_dir}/${installer_module}"; then
             break
         fi
         count=$((count + 1))
@@ -225,7 +233,7 @@ install_oh_my_zsh() {
     local retries=3
     local count=0
     while [ $count -lt $retries ]; do
-        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 "https://github.com/ohmyzsh/ohmyzsh.git" "${build_dir}/ohmyzsh"; then
+        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --no-tags "https://github.com/ohmyzsh/ohmyzsh.git" "${build_dir}/ohmyzsh"; then
             break
         fi
         count=$((count + 1))
