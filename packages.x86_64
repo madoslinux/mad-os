@@ -7,7 +7,6 @@ nvme-cli
 mkinitcpio-archiso
 intel-ucode
 amd-ucode
-limine
 syslinux
 efibootmgr
 sudo

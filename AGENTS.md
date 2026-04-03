@@ -10,13 +10,10 @@ madOS is an AI-orchestrated Arch Linux distribution built using `archiso`. It ta
 
 ```bash
 # Build standard ISO (syslinux BIOS + systemd-boot UEFI)
-sudo ./build-limine-iso.sh
-
-# Build only base ISO (without limine patching)
 sudo mkarchiso -v -w work/ -o out/ .
 
-# Patch existing ISO with limine bootloader
-sudo ./patch-limine-iso.sh
+# Build with timestamped workdir
+sudo mkarchiso -v -w work-$(date +%Y%m%d-%H%M%S)/ -o out/ .
 
 # Serve ISO via HTTP (default port 8000)
 ./serve-iso.sh
@@ -29,14 +26,13 @@ sudo ./patch-limine-iso.sh
 
 ### Build Requirements
 - ~10GB free disk space
-- archiso, limine, xorriso, qemu-system-x86_64 installed
+- archiso, xorriso, qemu-system-x86_64 installed
 - sudo privileges
 
 ### Build Artifacts
 - `work-*/` — Working directory (safe to delete after build)
 - `out/` — Final ISO output
 - `out/madOS-dev-x86_64.iso` — Base ISO with syslinux/systemd-boot
-- `out/mados-*-limine.iso` — ISO with limine bootloader (when patch succeeds)
 
 ---
 
@@ -206,8 +202,6 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 
 ### Build Scripts
 
-- `build-limine-iso.sh` — Full build: archiso + limine patching (5 steps)
-- `patch-limine-iso.sh` — Patch existing ISO with limine (simplified)
 - `serve-iso.sh` — HTTP server for ISO distribution
 - `run-qemu.sh` — QEMU launcher with GTK display, UEFI, serial log
 
@@ -324,38 +318,6 @@ mados_wallpaper/
 
 ---
 
-## Limine Bootloader
-
-Archiso does NOT natively support limine. Valid archiso bootmodes are:
-- `bios.syslinux` — BIOS boot with SYSLINUX
-- `uefi.systemd-boot` — UEFI boot with systemd-boot
-
-### Using Limine
-Limine must be added AFTER archiso builds the ISO:
-
-1. **Full build** (`build-limine-iso.sh`):
-   - Step 1: Build base ISO with archiso
-   - Step 2: Extract ISO contents
-   - Step 3: Install limine-bios.sys to isolinux/
-   - Step 4: Install limine EFI to EFI/BOOT/
-   - Step 5: Create new ISO with xorriso
-
-2. **Patch existing** (`patch-limine-iso.sh`):
-   - Extract existing ISO
-   - Add limine files
-   - Create new ISO
-
-### xorriso Compatibility
-Different xorriso versions have different option support. Common issues:
-- `-full-elf-loader` — Not supported in some versions
-- `-efi-boot-image` — Not supported in some versions
-- `-no-emul` — Not supported in some versions
-- `-padding` — Not supported in some versions
-
-If limine patching fails, use the base ISO (syslinux/systemd-boot) which boots fine in QEMU.
-
----
-
 ## CI/CD Pipeline
 
 The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs in stages:
@@ -385,4 +347,3 @@ GitHub Pages deployment is in `.github/workflows/pages.yml`.
 ### ISO Boot Issues
 - Check `out/mados-serial.log` for boot errors
 - Use `run-qemu.sh` with serial logging enabled
-- Base ISO (syslinux) is more reliable than limine-patched ISO in QEMU
