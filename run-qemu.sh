@@ -3,7 +3,17 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="${SCRIPT_DIR}/out"
-ISO_FILE=$(ls -t "${OUT_DIR}"/*.iso 2>/dev/null | head -1)
+LIMINE_ISO=$(ls -t "${OUT_DIR}"/*limine*.iso 2>/dev/null | head -1 || true)
+BASE_ISO=$(ls -t "${OUT_DIR}"/*.iso 2>/dev/null | head -1 || true)
+ISO_FILE="${ISO_FILE:-}"
+
+if [ -z "$ISO_FILE" ]; then
+    if [ -n "$LIMINE_ISO" ]; then
+        ISO_FILE="$LIMINE_ISO"
+    else
+        ISO_FILE="$BASE_ISO"
+    fi
+fi
 
 if [ -z "$ISO_FILE" ]; then
     echo "No ISO found in ${OUT_DIR}"
@@ -13,9 +23,12 @@ fi
 echo "=== madOS QEMU Launcher ==="
 echo ""
 
-# Ask for sudo password if not already authenticated
+CURRENT_UID="$(id -u)"
+CURRENT_GID="$(id -g)"
+
+# Ask for sudo only for file preparation fallback (QEMU runs as normal user)
 if ! sudo -v 2>/dev/null; then
-    echo "This script requires sudo privileges."
+    echo "Sudo may be needed to prepare disk/log files."
     echo "Please enter your password when prompted."
     if ! sudo -v; then
         echo "sudo authentication failed"
@@ -28,36 +41,86 @@ CPU="${CPU:-4}"
 RESOLUTION="${RESOLUTION:-1920x1080}"
 DISK_SIZE="${DISK_SIZE:-30G}"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
+QEMU_RENDERER="${QEMU_RENDERER:-stable}"
+BOOT_ORDER="${BOOT_ORDER:-c}"
 
 # Serial console output file for debugging (in OUT_DIR to avoid permissions)
 SERIAL_LOG="${OUT_DIR}/mados-serial.log"
 SERIAL_OPTS="-serial file:${SERIAL_LOG}"
 
-# Create serial log file with sudo (out dir is owned by root)
-sudo rm -f "$SERIAL_LOG"
-sudo bash -c "echo -n '' > '$SERIAL_LOG' && chmod 666 '$SERIAL_LOG'"
+# Create serial log file (fallback to sudo if OUT_DIR is root-owned)
+if ! rm -f "$SERIAL_LOG" 2>/dev/null || ! touch "$SERIAL_LOG" 2>/dev/null; then
+    sudo rm -f "$SERIAL_LOG"
+    sudo touch "$SERIAL_LOG"
+    sudo chown "$CURRENT_UID:$CURRENT_GID" "$SERIAL_LOG"
+fi
+chmod 664 "$SERIAL_LOG" 2>/dev/null || true
 
 echo "Configuration:"
 echo "  ISO: ${ISO_FILE}"
 echo "  Memory: ${MEMORY}"
 echo "  CPU: ${CPU}"
 echo "  Disk: ${DISK_FILE}"
+echo "  Boot order: ${BOOT_ORDER}"
 echo "  Serial log: ${SERIAL_LOG}"
 echo ""
+
+if command -v xorriso >/dev/null 2>&1; then
+    BOOT_REPORT=$(xorriso -indev "$ISO_FILE" -report_el_torito as_mkisofs 2>/dev/null || true)
+    if grep -q "limine-bios-cd.bin" <<< "$BOOT_REPORT"; then
+        echo "  Bootloader detected: Limine"
+    elif grep -q "isolinux.bin" <<< "$BOOT_REPORT"; then
+        echo "  Bootloader detected: Syslinux/systemd-boot (NOT Limine)"
+    else
+        echo "  Bootloader detected: Unknown"
+    fi
+    echo ""
+fi
 
 # Create virtual disk if it doesn't exist (default 30GB)
 if [ ! -f "$DISK_FILE" ]; then
     echo "Creating ${DISK_SIZE} virtual disk..."
-    sudo qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
+    if ! qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE" 2>/dev/null; then
+        sudo qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
+        sudo chown "$CURRENT_UID:$CURRENT_GID" "$DISK_FILE"
+    fi
+fi
+
+# Ensure current user can write virtual disk
+if [ ! -w "$DISK_FILE" ]; then
+    sudo chown "$CURRENT_UID:$CURRENT_GID" "$DISK_FILE"
 fi
 
 if [ -w /dev/kvm ]; then
     echo "Using KVM acceleration (✓)"
-    KVM_ACCEL="-enable-kvm -cpu host"
+    KVM_OPTS=(-enable-kvm -cpu host)
 else
     echo "KVM not available, using TCG (software emulation)"
-    KVM_ACCEL=""
+    KVM_OPTS=()
 fi
+
+case "$QEMU_RENDERER" in
+    stable)
+        echo "Renderer profile: stable (SDL + virtio-vga)"
+        VIDEO_OPTS=(-vga virtio -global virtio-vga.max_outputs=1)
+        DISPLAY_OPTS=(-display sdl)
+        ;;
+    gl)
+        echo "Renderer profile: gl (GTK GL + virtio-vga-gl)"
+        VIDEO_OPTS=(-device virtio-vga-gl,max_outputs=1)
+        DISPLAY_OPTS=(-display gtk,gl=on)
+        ;;
+    compat)
+        echo "Renderer profile: compat (GTK + std VGA)"
+        VIDEO_OPTS=(-vga std)
+        DISPLAY_OPTS=(-display gtk)
+        ;;
+    *)
+        echo "Invalid QEMU_RENDERER='$QEMU_RENDERER'"
+        echo "Valid values: stable, gl, compat"
+        exit 1
+        ;;
+esac
 
 # UEFI firmware
 UEFI_FW="/usr/share/edk2/x64/OVMF.4m.fd"
@@ -79,15 +142,14 @@ QEMU_CMD=(
     qemu-system-x86_64
     -m "$MEMORY"
     -smp "$CPU"
-    $KVM_ACCEL
+    "${KVM_OPTS[@]}"
     -cdrom "$ISO_FILE"
-    -boot d
+    -boot "$BOOT_ORDER"
     -drive file="$DISK_FILE",format=qcow2,if=virtio
     -net nic
     -net user,hostfwd=tcp::2222-:22
-    -vga virtio
-    -global virtio-vga.max_outputs=1
-    -display gtk
+    "${VIDEO_OPTS[@]}"
+    "${DISPLAY_OPTS[@]}"
     -device qemu-xhci
     -device usb-tablet
     $SERIAL_OPTS
@@ -102,8 +164,8 @@ echo "Starting QEMU..."
 echo "Serial output will be logged to: ${SERIAL_LOG}"
 echo ""
 
-# Start QEMU in background
-sudo "${QEMU_CMD[@]}" "$@" &
+# Start QEMU in background as current user
+"${QEMU_CMD[@]}" "$@" &
 QEMU_PID=$!
 
 # Monitor serial log in real-time

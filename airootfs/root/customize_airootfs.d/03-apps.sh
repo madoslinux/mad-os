@@ -68,13 +68,26 @@ clone_and_install_app() {
         :
     else
         # Create wrapper script for all apps
-        # cd to install_path so python3 -m can find the module
-        cat > "$bin_path" << EOF
+        # mados-updater needs root privileges to manage /etc and system updates
+        if [[ "$app_name" == "mados-updater" ]]; then
+            cat > "$bin_path" << EOF
+#!/bin/bash
+if [[ "\$EUID" -ne 0 ]]; then
+    exec sudo -E "\$0" "\$@"
+fi
+export PYTHONPATH="${INSTALL_DIR}:\${PYTHONPATH:-}"
+cd "${install_path}"
+exec python3 -m "${module_name}" "\$@"
+EOF
+        else
+            # cd to install_path so python3 -m can find the module
+            cat > "$bin_path" << EOF
 #!/bin/bash
 export PYTHONPATH="${INSTALL_DIR}:\${PYTHONPATH:-}"
 cd "${install_path}"
 exec python3 -m "${module_name}" "\$@"
 EOF
+        fi
         chmod +x "$bin_path"
     fi
     
@@ -138,14 +151,24 @@ install_installer() {
     rm -rf "$install_path"
     mv "${build_dir}/${installer_module}" "$install_path"
     rm -rf "$build_dir"
-    
-    # Create wrapper for installer (uses python3 __main__.py instead of -m)
-    # python3 -m doesn't work when cd'd into the module directory
+
+    # Fix import in locale.py (bug in upstream: uses 'from summary' instead of 'from .summary')
+    if [[ -f "${install_path}/pages/locale.py" ]]; then
+        sed -i 's/from summary import/from .summary import/g' "${install_path}/pages/locale.py"
+        echo "  → Fixed import in locale.py"
+    fi
+
+    # Create wrapper for installer (uses python3 __main__.py from package dir)
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
 INSTALL_DIR="/opt/mados"
 INSTALL_PATH="/opt/mados/mados_installer"
 LOG_FILE="/var/log/mados-installer.log"
+
+# Installer must run as root in live environment
+if [[ "$EUID" -ne 0 ]]; then
+    exec sudo -E "$0" "$@"
+fi
 
 # Ensure log file exists and is writable
 mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || true
@@ -173,6 +196,9 @@ INSTALLER_WRAPPER
     
     if [[ -f "${install_path}/${installer_name}.desktop" ]]; then
         cp "${install_path}/${installer_name}.desktop" /usr/share/applications/
+        # Force sudo launch from desktop entry in live environment
+        sed -i 's|^Exec=.*|Exec=sudo /usr/local/bin/mados-installer|' "/usr/share/applications/${installer_name}.desktop"
+        echo "  → Updated desktop Exec to run with sudo"
     fi
     
     echo "✓ ${installer_name} installed to ${install_path}"

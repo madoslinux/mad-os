@@ -13,7 +13,8 @@ clean_docs_man_locales() {
     echo "Removing docs, man pages, and locales..."
     rm -rf /usr/share/doc/*
     rm -rf /usr/share/man/*
-    rm -rf /usr/share/locale/*
+    # Keep locale.alias required by localedef during installation.
+    find /usr/share/locale -mindepth 1 ! -name locale.alias -exec rm -rf {} + 2>/dev/null || true
     rm -rf /usr/share/gtk-doc/*
     find /usr/share/gnome/help -type f -delete 2>/dev/null || true
     find /usr/share/gnome/parsers -type f -delete 2>/dev/null || true
@@ -101,6 +102,7 @@ hide_unwanted_desktop_entries() {
         /usr/share/applications/qv4l2.desktop
         /usr/share/applications/qvidcap.desktop
         /usr/share/applications/mpv.desktop
+        /usr/share/applications/uuctl.desktop
     )
     
     for desktop_file in "${unwanted[@]}"; do

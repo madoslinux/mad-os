@@ -146,6 +146,7 @@ fastfetch
 arch-install-scripts
 gptfdisk
 parted
+grub
 
 # Utilidades de red
 dhcpcd
