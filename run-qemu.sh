@@ -4,11 +4,12 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="${SCRIPT_DIR}/out"
 LIMINE_ISO=$(ls -t "${OUT_DIR}"/*limine*.iso 2>/dev/null | head -1 || true)
-BASE_ISO=$(ls -t "${OUT_DIR}"/*.iso 2>/dev/null | head -1 || true)
+BASE_ISO=$(ls -t "${OUT_DIR}"/*.iso 2>/dev/null | grep -v "limine" | head -1 || true)
 ISO_FILE="${ISO_FILE:-}"
+USE_LIMINE_ISO="${USE_LIMINE_ISO:-0}"
 
 if [ -z "$ISO_FILE" ]; then
-    if [ -n "$LIMINE_ISO" ]; then
+    if [ "$USE_LIMINE_ISO" = "1" ] && [ -n "$LIMINE_ISO" ]; then
         ISO_FILE="$LIMINE_ISO"
     else
         ISO_FILE="$BASE_ISO"
@@ -65,6 +66,7 @@ echo "  Memory: ${MEMORY}"
 echo "  CPU: ${CPU}"
 echo "  Disk: ${DISK_FILE}"
 echo "  Boot order: ${BOOT_ORDER}"
+echo "  Use Limine ISO: ${USE_LIMINE_ISO}"
 echo "  Serial enabled: ${ENABLE_SERIAL}"
 if [ "$ENABLE_SERIAL" = "1" ]; then
     echo "  Serial log: ${SERIAL_LOG}"
