@@ -1,14 +1,19 @@
 # Sistema base
 base
-# Note: linux-zen and linux-lts removed - madOS uses custom kernel (linux-mados)
-# installed by customize_airootfs.sh from GitHub releases
+linux-zen
+linux-zen-headers
+linux-lts
+linux-lts-headers
 linux-firmware
 nvme-cli
 mkinitcpio-archiso
 intel-ucode
 amd-ucode
-syslinux
+grub
 efibootmgr
+os-prober
+sbctl
+syslinux
 sudo
 zsh
 
@@ -145,7 +150,6 @@ fastfetch
 arch-install-scripts
 gptfdisk
 parted
-grub
 
 # Utilidades de red
 dhcpcd

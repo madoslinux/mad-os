@@ -69,7 +69,7 @@ file_permissions=(
   ["/usr/local/bin/mados-installer-autostart"]="0:0:755"
 
   # XDG autostart - nm-applet.desktop is provided by networkmanager if needed
-  # ["/etc/xdg/autostart/nm-applet.desktop"]="0:0:644"
+  ["/etc/xdg/autostart/nm-applet.desktop"]="0:0:644"
 
   ["/usr/local/bin/mados-vbox-guest"]="0:0:755"
   ["/usr/local/bin/mados-persist-sync.sh"]="0:0:755"

@@ -3,12 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUT_DIR="${SCRIPT_DIR}/out"
-BASE_ISO=$(ls -t "${OUT_DIR}"/*.iso 2>/dev/null | head -1 || true)
-ISO_FILE="${ISO_FILE:-}"
-
-if [ -z "$ISO_FILE" ]; then
-    ISO_FILE="$BASE_ISO"
-fi
+ISO_FILE=$(ls -t "${OUT_DIR}"/*.iso 2>/dev/null | head -1)
 
 if [ -z "$ISO_FILE" ]; then
     echo "No ISO found in ${OUT_DIR}"
@@ -18,12 +13,9 @@ fi
 echo "=== madOS QEMU Launcher ==="
 echo ""
 
-CURRENT_UID="$(id -u)"
-CURRENT_GID="$(id -g)"
-
-# Ask for sudo only for file preparation fallback (QEMU runs as normal user)
+# Ask for sudo password if not already authenticated
 if ! sudo -v 2>/dev/null; then
-    echo "Sudo may be needed to prepare disk/log files."
+    echo "This script requires sudo privileges."
     echo "Please enter your password when prompted."
     if ! sudo -v; then
         echo "sudo authentication failed"
@@ -36,90 +28,36 @@ CPU="${CPU:-4}"
 RESOLUTION="${RESOLUTION:-1920x1080}"
 DISK_SIZE="${DISK_SIZE:-30G}"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
-QEMU_RENDERER="${QEMU_RENDERER:-stable}"
-BOOT_ORDER="${BOOT_ORDER:-c}"
-ENABLE_SERIAL="${ENABLE_SERIAL:-0}"
 
+# Serial console output file for debugging (in OUT_DIR to avoid permissions)
 SERIAL_LOG="${OUT_DIR}/mados-serial.log"
-SERIAL_ARGS=()
+SERIAL_OPTS="-serial file:${SERIAL_LOG}"
 
-if [ "$ENABLE_SERIAL" = "1" ]; then
-    # Serial console output file for debugging (in OUT_DIR to avoid permissions)
-    if ! rm -f "$SERIAL_LOG" 2>/dev/null || ! touch "$SERIAL_LOG" 2>/dev/null; then
-        sudo rm -f "$SERIAL_LOG"
-        sudo touch "$SERIAL_LOG"
-        sudo chown "$CURRENT_UID:$CURRENT_GID" "$SERIAL_LOG"
-    fi
-    chmod 664 "$SERIAL_LOG" 2>/dev/null || true
-    SERIAL_ARGS=(-serial "file:${SERIAL_LOG}")
-fi
+# Create serial log file with sudo (out dir is owned by root)
+sudo rm -f "$SERIAL_LOG"
+sudo bash -c "echo -n '' > '$SERIAL_LOG' && chmod 666 '$SERIAL_LOG'"
 
 echo "Configuration:"
 echo "  ISO: ${ISO_FILE}"
 echo "  Memory: ${MEMORY}"
 echo "  CPU: ${CPU}"
 echo "  Disk: ${DISK_FILE}"
-echo "  Boot order: ${BOOT_ORDER}"
-echo "  Serial enabled: ${ENABLE_SERIAL}"
-if [ "$ENABLE_SERIAL" = "1" ]; then
-    echo "  Serial log: ${SERIAL_LOG}"
-fi
+echo "  Serial log: ${SERIAL_LOG}"
 echo ""
-
-if command -v xorriso >/dev/null 2>&1; then
-    BOOT_REPORT=$(xorriso -indev "$ISO_FILE" -report_el_torito as_mkisofs 2>/dev/null || true)
-    if grep -q "isolinux.bin" <<< "$BOOT_REPORT"; then
-        echo "  Bootloader detected: Syslinux/systemd-boot"
-    else
-        echo "  Bootloader detected: Unknown"
-    fi
-    echo ""
-fi
 
 # Create virtual disk if it doesn't exist (default 30GB)
 if [ ! -f "$DISK_FILE" ]; then
     echo "Creating ${DISK_SIZE} virtual disk..."
-    if ! qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE" 2>/dev/null; then
-        sudo qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
-        sudo chown "$CURRENT_UID:$CURRENT_GID" "$DISK_FILE"
-    fi
-fi
-
-# Ensure current user can write virtual disk
-if [ ! -w "$DISK_FILE" ]; then
-    sudo chown "$CURRENT_UID:$CURRENT_GID" "$DISK_FILE"
+    sudo qemu-img create -f qcow2 "$DISK_FILE" "$DISK_SIZE"
 fi
 
 if [ -w /dev/kvm ]; then
     echo "Using KVM acceleration (✓)"
-    KVM_OPTS=(-enable-kvm -cpu host)
+    KVM_ACCEL="-enable-kvm -cpu host"
 else
     echo "KVM not available, using TCG (software emulation)"
-    KVM_OPTS=()
+    KVM_ACCEL=""
 fi
-
-case "$QEMU_RENDERER" in
-    stable)
-        echo "Renderer profile: stable (SDL + virtio-vga)"
-        VIDEO_OPTS=(-vga virtio -global virtio-vga.max_outputs=1)
-        DISPLAY_OPTS=(-display sdl)
-        ;;
-    gl)
-        echo "Renderer profile: gl (GTK GL + virtio-vga-gl)"
-        VIDEO_OPTS=(-device virtio-vga-gl,max_outputs=1)
-        DISPLAY_OPTS=(-display gtk,gl=on)
-        ;;
-    compat)
-        echo "Renderer profile: compat (GTK + std VGA)"
-        VIDEO_OPTS=(-vga std)
-        DISPLAY_OPTS=(-display gtk)
-        ;;
-    *)
-        echo "Invalid QEMU_RENDERER='$QEMU_RENDERER'"
-        echo "Valid values: stable, gl, compat"
-        exit 1
-        ;;
-esac
 
 # UEFI firmware
 UEFI_FW="/usr/share/edk2/x64/OVMF.4m.fd"
@@ -133,11 +71,7 @@ fi
 
 echo ""
 echo "Starting QEMU..."
-if [ "$ENABLE_SERIAL" = "1" ]; then
-    echo "Serial output will be logged to: ${SERIAL_LOG}"
-else
-    echo "Serial disabled (better Plymouth visibility)"
-fi
+echo "Serial output will be logged to: ${SERIAL_LOG}"
 echo ""
 
 # Build QEMU command
@@ -145,17 +79,18 @@ QEMU_CMD=(
     qemu-system-x86_64
     -m "$MEMORY"
     -smp "$CPU"
-    "${KVM_OPTS[@]}"
+    $KVM_ACCEL
     -cdrom "$ISO_FILE"
-    -boot "$BOOT_ORDER"
+    -boot d
     -drive file="$DISK_FILE",format=qcow2,if=virtio
     -net nic
     -net user,hostfwd=tcp::2222-:22
-    "${VIDEO_OPTS[@]}"
-    "${DISPLAY_OPTS[@]}"
+    -vga virtio
+    -global virtio-vga.max_outputs=1
+    -display gtk
     -device qemu-xhci
     -device usb-tablet
-    "${SERIAL_ARGS[@]}"
+    $SERIAL_OPTS
 )
 
 if [ -n "$UEFI_FW" ]; then
@@ -164,29 +99,20 @@ fi
 
 echo ""
 echo "Starting QEMU..."
-if [ "$ENABLE_SERIAL" = "1" ]; then
-    echo "Serial output will be logged to: ${SERIAL_LOG}"
-else
-    echo "Serial disabled (better Plymouth visibility)"
-fi
+echo "Serial output will be logged to: ${SERIAL_LOG}"
 echo ""
 
-# Start QEMU in background as current user
-"${QEMU_CMD[@]}" "$@" &
+# Start QEMU in background
+sudo "${QEMU_CMD[@]}" "$@" &
 QEMU_PID=$!
 
-TAIL_PID=""
-if [ "$ENABLE_SERIAL" = "1" ]; then
-    # Monitor serial log in real-time
-    tail -n 50 -f "$SERIAL_LOG" 2>/dev/null &
-    TAIL_PID=$!
-fi
+# Monitor serial log in real-time
+tail -n 50 -f "$SERIAL_LOG" 2>/dev/null &
+TAIL_PID=$!
 
 # Cleanup function
 cleanup() {
-    if [ -n "$TAIL_PID" ]; then
-        kill "$TAIL_PID" 2>/dev/null || true
-    fi
+    kill $TAIL_PID 2>/dev/null || true
     kill $QEMU_PID 2>/dev/null || true
 }
 trap cleanup EXIT INT TERM
@@ -195,11 +121,9 @@ trap cleanup EXIT INT TERM
 wait $QEMU_PID
 RESULT=$?
 
-if [ "$ENABLE_SERIAL" = "1" ]; then
-    # Show final serial log
-    echo ""
-    echo "=== Serial Log Contents ==="
-    cat "$SERIAL_LOG"
-fi
+# Show final serial log
+echo ""
+echo "=== Serial Log Contents ==="
+cat "$SERIAL_LOG"
 
 exit ${RESULT:-0}

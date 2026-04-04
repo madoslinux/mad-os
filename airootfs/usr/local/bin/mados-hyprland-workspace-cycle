@@ -15,8 +15,11 @@ direction="${1:-next}"
 
 # Get current focused workspace number
 current="$(hyprctl activeworkspace -j 2>/dev/null \
-    | jq -r '.id // empty' 2>/dev/null)" || true
+    | jq -r '.name // .id // empty' 2>/dev/null)" || true
 [[ -z "$current" || "$current" == "null" ]] && current=1
+if ! [[ "$current" =~ ^[0-9]+$ ]]; then
+    current=1
+fi
 
 # Calculate target workspace with wrap-around
 if [[ "$direction" == "prev" ]]; then
