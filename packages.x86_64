@@ -1,6 +1,6 @@
 # Sistema base
 base
-# Note: linux-zen and linux-lts removed - madOS uses custom kernel (linux-mados-zen)
+# Note: linux-zen and linux-lts removed - madOS uses custom kernel (linux-mados)
 # installed by customize_airootfs.sh from GitHub releases
 linux-firmware
 nvme-cli

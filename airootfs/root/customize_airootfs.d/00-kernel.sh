@@ -4,16 +4,16 @@
 set -euo pipefail
 
 MADOS_KERNEL_VERSION=""
-MADOS_KERNEL_PKGVER=""
 MADOS_KERNEL_URL=""
+MADOS_HEADERS_URL=""
 MADOS_KERNEL_VERSION_FILE="/etc/mados/kernel-version"
 
 verify_mados_kernel() {
     local kver="$1"
     local status=0
     
-    if [[ ! -f "/boot/vmlinuz-linux-mados-zen" ]]; then
-        echo "ERROR: /boot/vmlinuz-linux-mados-zen not found"
+    if [[ ! -f "/boot/vmlinuz-linux-mados" ]]; then
+        echo "ERROR: /boot/vmlinuz-linux-mados not found"
         status=1
     fi
     
@@ -26,20 +26,29 @@ verify_mados_kernel() {
 }
 
 fetch_latest_kernel_version() {
-    MADOS_KERNEL_VERSION=$(curl -fsSL "https://api.github.com/repos/madoslinux/mados-kernel/releases/latest" | jq -r '.tag_name // empty' | sed 's/^v//')
+    local release_json
+    release_json=$(curl -fsSL "https://api.github.com/repos/madoslinux/mados-kernel/releases/latest")
+
+    MADOS_KERNEL_VERSION=$(echo "$release_json" | jq -r '.tag_name // empty' | sed 's/^v//')
     if [[ -z "$MADOS_KERNEL_VERSION" ]]; then
         echo "ERROR: Failed to fetch latest kernel version from GitHub"
         return 1
     fi
-    MADOS_KERNEL_PKGVER=$(echo "$MADOS_KERNEL_VERSION" | awk '{gsub(/\.zen1-[0-9]+$/, "-zen1"); print}')
-    MADOS_KERNEL_URL="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
+
+    MADOS_KERNEL_URL=$(echo "$release_json" | jq -r '.assets[]? | select(.name | test("^linux-mados-[0-9].*\\.pkg\\.tar\\.(zst|xz)$")) | .browser_download_url' | head -1)
+    MADOS_HEADERS_URL=$(echo "$release_json" | jq -r '.assets[]? | select(.name | test("^linux-mados-headers-[0-9].*\\.pkg\\.tar\\.(zst|xz)$")) | .browser_download_url' | head -1)
+
+    if [[ -z "$MADOS_KERNEL_URL" || -z "$MADOS_HEADERS_URL" ]]; then
+        echo "ERROR: Could not find linux-mados and linux-mados-headers assets in latest release"
+        return 1
+    fi
+
     echo "Latest madOS kernel: ${MADOS_KERNEL_VERSION}"
     return 0
 }
 
 install_mados_kernel() {
-    local kernel_tmp="/tmp/linux-mados-zen.pkg.tar.xz"
-    local headers_tmp="/tmp/linux-mados-zen-headers.pkg.tar.xz"
+    local kernel_tmp="/tmp/linux-mados.pkg.tar"
     
     # Fetch version
     if ! fetch_latest_kernel_version; then
@@ -62,7 +71,7 @@ install_mados_kernel() {
     echo "Downloaded kernel: ${size} bytes"
     
     # Extract kernel
-    if ! tar -xJf "$kernel_tmp" -C /; then
+    if ! tar -xf "$kernel_tmp" -C /; then
         echo "ERROR: Failed to extract kernel package"
         rm -f "$kernel_tmp"
         return 1
@@ -71,7 +80,7 @@ install_mados_kernel() {
     
     # Remove conflicting symlinks in modules directory
     local kver_full
-    kver_full=$(ls /lib/modules/ 2>/dev/null | grep -E "^6\.[0-9]+\.[0-9]+-zen1-mados-zen$" | head -1 || true)
+    kver_full=$(ls /lib/modules/ 2>/dev/null | grep -E "mados$" | head -1 || true)
     if [[ -n "$kver_full" && -L "/lib/modules/${kver_full}/build" ]]; then
         rm -f "/lib/modules/${kver_full}/build"
     fi
@@ -82,7 +91,7 @@ install_mados_kernel() {
     fi
     
     echo "✓ Kernel v${MADOS_KERNEL_VERSION} installed successfully"
-    echo "  vmlinuz: /boot/vmlinuz-linux-mados-zen"
+    echo "  vmlinuz: /boot/vmlinuz-linux-mados"
     echo "  modules: /lib/modules/${kver_full}"
     
     # Download and install headers
@@ -92,19 +101,18 @@ install_mados_kernel() {
 }
 
 install_kernel_headers() {
-    local kver_full="${1:-$(ls /lib/modules/ 2>/dev/null | grep -E "^6\.[0-9]+\.[0-9]+-zen1-mados-zen$" | head -1 || true)}"
-    local headers_url="https://github.com/madoslinux/mados-kernel/releases/download/v${MADOS_KERNEL_VERSION}/linux-mados-zen-headers-${MADOS_KERNEL_PKGVER}-x86_64.pkg.tar.xz"
-    local headers_tmp="/tmp/linux-mados-zen-headers.pkg.tar.xz"
-    local headers_path="/usr/src/linux-${MADOS_KERNEL_PKGVER}-mados-zen"
+    local kver_full="${1:-$(ls /lib/modules/ 2>/dev/null | grep -E "mados$" | head -1 || true)}"
+    local headers_tmp="/tmp/linux-mados-headers.pkg.tar"
+    local headers_path="/usr/src/linux-${kver_full}"
     
     echo "Downloading madOS kernel headers..."
-    if ! curl -fsSL -o "$headers_tmp" "$headers_url"; then
+    if ! curl -fsSL -o "$headers_tmp" "$MADOS_HEADERS_URL"; then
         echo "WARNING: Failed to download kernel headers"
         rm -f "$headers_tmp"
         return 1
     fi
     
-    if ! tar -xJf "$headers_tmp" -C /; then
+    if ! tar -xf "$headers_tmp" -C /; then
         echo "WARNING: Failed to extract kernel headers"
         rm -f "$headers_tmp"
         return 1
@@ -138,7 +146,7 @@ remove_arch_kernel() {
     if [[ -d /lib/modules ]]; then
         for mod_dir in /lib/modules/*; do
             local basename=$(basename "$mod_dir")
-            if [[ "$basename" != *"-mados-zen" && "$basename" != *"-cachyos"* ]]; then
+            if [[ "$basename" != *"-mados" && "$basename" != *"-cachyos"* ]]; then
                 rm -rf "$mod_dir"
                 echo "  Removed: $mod_dir"
                 removed=1

@@ -5,9 +5,9 @@ set -euo pipefail
 
 detect_mados_kernel_version() {
     local kver
-    kver=$(ls /lib/modules/ 2>/dev/null | grep -E "^6\.[0-9]+\.[0-9]+-zen1-mados-zen$" | head -1 || true)
+    kver=$(ls /lib/modules/ 2>/dev/null | grep -E "mados$" | head -1 || true)
     if [[ -z "$kver" ]]; then
-        echo "ERROR: No mados-zen kernel found in /lib/modules"
+        echo "ERROR: No linux-mados kernel found in /lib/modules"
         return 1
     fi
     echo "$kver"
@@ -16,23 +16,23 @@ detect_mados_kernel_version() {
 
 setup_mkinitcpio_presets() {
     local kver="$1"
-    local preset_file="/etc/mkinitcpio.d/linux-mados-zen.preset"
+    local preset_file="/etc/mkinitcpio.d/linux-mados.preset"
     
     # Remove any existing presets
     rm -f /etc/mkinitcpio.d/linux.preset
     rm -f /etc/mkinitcpio.d/linux-zen.preset
     rm -f /etc/mkinitcpio.d/linux-lts.preset
-    rm -f /etc/mkinitcpio.d/linux-mados-zen.preset
+    rm -f /etc/mkinitcpio.d/linux-mados.preset
     
     # Create preset for madOS kernel
     cat > "$preset_file" << EOF
 # mkinitcpio preset file for madOS kernel
 ALL_config="/etc/mkinitcpio.conf"
-ALL_kver="/boot/vmlinuz-linux-mados-zen"
+ALL_kver="/boot/vmlinuz-linux-mados"
 PRESETS=('default' 'fallback')
-default_image="/boot/initramfs-linux-mados-zen.img"
+default_image="/boot/initramfs-linux-mados.img"
 default_options=""
-fallback_image="/boot/initramfs-linux-mados-zen-fallback.img"
+fallback_image="/boot/initramfs-linux-mados-fallback.img"
 fallback_options="-S autodetect"
 EOF
     
@@ -51,8 +51,8 @@ generate_initramfs() {
     echo "Generating initramfs for kernel: $kver"
     
     # Ensure vmlinuz exists
-    if [[ ! -f /boot/vmlinuz-linux-mados-zen ]]; then
-        echo "ERROR: /boot/vmlinuz-linux-mados-zen not found"
+    if [[ ! -f /boot/vmlinuz-linux-mados ]]; then
+        echo "ERROR: /boot/vmlinuz-linux-mados not found"
         return 1
     fi
     
@@ -60,19 +60,19 @@ generate_initramfs() {
     setup_mkinitcpio_presets "$kver"
     
     # Generate initramfs
-    if ! mkinitcpio -k "$kver" -g /boot/initramfs-linux-mados-zen.img 2>&1; then
+    if ! mkinitcpio -k "$kver" -g /boot/initramfs-linux-mados.img 2>&1; then
         echo "ERROR: mkinitcpio failed"
         return 1
     fi
     
     # Verify
-    if [[ ! -f /boot/initramfs-linux-mados-zen.img ]]; then
+    if [[ ! -f /boot/initramfs-linux-mados.img ]]; then
         echo "ERROR: initramfs not created"
         return 1
     fi
     
-    local size=$(du -h /boot/initramfs-linux-mados-zen.img | cut -f1)
-    echo "✓ Initramfs created: /boot/initramfs-linux-mados-zen.img (${size})"
+    local size=$(du -h /boot/initramfs-linux-mados.img | cut -f1)
+    echo "✓ Initramfs created: /boot/initramfs-linux-mados.img (${size})"
     return 0
 }
 
