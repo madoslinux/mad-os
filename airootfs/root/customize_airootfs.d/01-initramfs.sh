@@ -79,8 +79,8 @@ generate_initramfs() {
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "=== madOS Initramfs Generation ==="
-    
-    local kver
+
+    kver=""
     kver=$(detect_mados_kernel_version) || {
         echo "FATAL: Could not detect kernel version"
         exit 1

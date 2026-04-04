@@ -3,14 +3,14 @@
 # Launched by Sway/Hyprland config - checks conditions and starts the GTK installer
 # Only runs in live environment (archiso) and NOT when booted via Ventoy
 
-LOG_DIR="/run/user/0"
+LOG_DIR="/run/user/$(id -u)"
 LOG="$LOG_DIR/mados-installer-autostart.log"
 mkdir -p "$LOG_DIR"
 
 log() {
     local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $*"
-    echo "$msg" | sudo tee -a "$LOG" >/dev/null 2>&1
-    echo "$msg" | sudo tee -a /dev/ttyS0 >/dev/null 2>&1 || true
+    echo "$msg" >> "$LOG"
+    echo "$msg" >> /dev/ttyS0 2>/dev/null || true
 }
 
 log "Starting autostart as user: $(whoami) uid: $(id -u)"
@@ -40,21 +40,9 @@ fi
 
 log "Live environment detected, launching installer..."
 
-# Fix pacman DB (running as root)
-log "Fixing pacman DB..."
-pacman-key --init 2>&1 | tee -a "$LOG" || true
-pacman-key --populate 2>&1 | tee -a "$LOG" || true
-if command -v pacman-db-upgrade &>/dev/null; then
-    pacman-db-upgrade 2>&1 | tee -a "$LOG" || true
-fi
-log "Pacman DB fixed"
-
-# Ensure GTK uses the Wayland backend
-export GDK_BACKEND=wayland
-
 # Get the current user's display and runtime dir
 CURRENT_USER=$(whoami)
-WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}"
 
 log "Current user: $CURRENT_USER"

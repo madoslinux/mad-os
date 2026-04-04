@@ -2,8 +2,7 @@
 Description=madOS Framebuffer Resolution Configuration
 Documentation=man:fbset(1)
 After=systemd-modules-load.service
-After=systemd-udev-settle.service
-Wants=systemd-udev-settle.service
+After=systemd-udev-trigger.service
 After=plymouth-read-write.service
 Before=display-manager.service
 ConditionKernelCommandLine=!plymouth.enable=0

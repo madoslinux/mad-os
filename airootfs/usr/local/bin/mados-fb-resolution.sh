@@ -75,10 +75,11 @@ parse_edid_resolution() {
     local height=0
     
     if command -v edid-decode &>/dev/null; then
-        local modeline=$(edid-decode "$edid" 2>/dev/null | grep "Preferred mode" | head -1)
+        local modeline
+        modeline=$(edid-decode "$edid" 2>/dev/null | grep "Preferred mode" | head -1 || true)
         if [ -n "$modeline" ]; then
-            width=$(echo "$modeline" | grep -oP '\d+(?=x)' | head -1)
-            height=$(echo "$modeline" | grep -oP '(?<=x)\d+' | head -1)
+            width=$(echo "$modeline" | grep -oP '\d+(?=x)' | head -1 || true)
+            height=$(echo "$modeline" | grep -oP '(?<=x)\d+' | head -1 || true)
         fi
     fi
     
@@ -118,8 +119,8 @@ configure_framebuffer() {
     if fbset -fb "$fb_device" "$resolution" -depth 32 &>/dev/null; then
         LOG "Framebuffer configured successfully"
     else
-        ERROR "fbset failed - resolution may not be supported"
-        return 1
+        LOG "fbset failed - keeping current framebuffer mode"
+        return 0
     fi
 }
 

@@ -23,7 +23,6 @@ file_permissions=(
   ["/etc/sudoers.d/99-opencode-nopasswd"]="0:0:440"
   ["/root"]="0:0:750"
   ["/root/customize_airootfs.sh"]="0:0:755"
-  ["/root/customize_airootfs.sh.bak"]="0:0:644"
   ["/root/customize_airootfs.d/"]="0:0:755"
   ["/root/customize_airootfs.d/00-kernel.sh"]="0:0:755"
   ["/root/customize_airootfs.d/01-initramfs.sh"]="0:0:755"
@@ -78,7 +77,6 @@ file_permissions=(
   ["/usr/local/bin/mados-timezone-detect.sh"]="0:0:755"
   ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
-  ["/usr/local/bin/mados-firstboot-recover"]="0:0:755"
   ["/usr/local/bin/mados-health-check"]="0:0:755"
   ["/usr/local/bin/mados-hide-steam"]="0:0:755"
   ["/usr/local/bin/mados-help"]="0:0:755"
@@ -112,9 +110,6 @@ file_permissions=(
   ["/etc/polkit-1/rules.d/49-nopasswd_gufw.rules"]="0:0:644"
   ["/usr/share/applications/gufw-sudo.desktop"]="0:0:644"
   ["/usr/share/polkit-1/actions/org.archlinux.pkexec.gufw.policy"]="0:0:644"
-
-  # UFW enable at login
-  ["/etc/profile.d/mados-ufw-enable.sh"]="0:0:755"
 
   # Security hardening
   ["/etc/sysctl.d/99-security.conf"]="0:0:644"

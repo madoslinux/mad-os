@@ -216,10 +216,10 @@ bindsym $mod+Shift+s exec grim -g "$(slurp)" - | wl-copy
 exec_always --no-startup-id "pkill waybar || true; sleep 0.3; waybar"
 
 # WiFi tray applet (NetworkManager)
-exec --no-startup-id env GDK_BACKEND=wayland nm-applet --indicator
+exec --no-startup-id nm-applet --indicator
 
 # Bluetooth tray applet (Blueman)
-exec --no-startup-id env GDK_BACKEND=wayland blueman-applet
+exec --no-startup-id blueman-applet
 
 # madOS Application Launcher dock
 exec --no-startup-id mados-launcher

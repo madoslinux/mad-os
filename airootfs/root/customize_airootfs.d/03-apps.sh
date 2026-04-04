@@ -173,9 +173,10 @@ install_installer() {
     fi
 
     # Keep installed system on NetworkManager-only (no iwd backend override).
+    # Avoid deleting heredoc blocks (can break script syntax); drop only the iwd line.
     if [[ -f "${install_path}/scripts/apply-configuration.sh" ]]; then
-        sed -i '/mkdir -p \/etc\/NetworkManager\/conf.d/,/EOF/d' "${install_path}/scripts/apply-configuration.sh"
-        echo "  → Removed installer iwd backend override"
+        sed -i '/wifi\.backend=iwd/d' "${install_path}/scripts/apply-configuration.sh"
+        echo "  → Removed installer iwd backend override line"
     fi
 
     if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then

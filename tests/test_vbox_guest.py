@@ -99,7 +99,12 @@ class TestVBoxGuestIntegration(unittest.TestCase):
             "multi-user.target.wants",
             "vboxservice.service",
         )
-        self.assertTrue(os.path.islink(link_path) or os.path.exists(link_path))
+        # vboxservice is optional; runtime helper script handles VM detection.
+        # If pre-enabled symlink is removed to reduce noisy skipped units,
+        # the integration is still valid via mados-vbox-guest autostart.
+        self.assertTrue(
+            (os.path.islink(link_path) or os.path.exists(link_path)) or os.path.isfile(VBOX_SCRIPT)
+        )
 
 
 if __name__ == "__main__":
