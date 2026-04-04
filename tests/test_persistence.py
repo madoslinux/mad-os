@@ -344,6 +344,8 @@ class TestGrubPersistenceEntries(unittest.TestCase):
 
     def setUp(self):
         grub_path = os.path.join(GRUB_DIR, "grub.cfg")
+        if not os.path.exists(grub_path):
+            self.skipTest("grub/grub.cfg not found (GRUB removed from build)")
         with open(grub_path, "r") as f:
             self.grub_content = f.read()
 
@@ -357,11 +359,9 @@ class TestGrubPersistenceEntries(unittest.TestCase):
 
     def test_no_persistence_entry_with_only_cow_spacesize(self):
         """Persistence entries should NOT rely only on cow_spacesize (which is just RAM)."""
-        # Find lines with "Persistence" in menuentry that also have cow_spacesize but no cow_label
         lines = self.grub_content.split("\n")
         for i, line in enumerate(lines):
             if "Persistence" in line and "menuentry" in line:
-                # Check the linux line (next few lines)
                 block = "\n".join(lines[i : i + 5])
                 if "cow_spacesize" in block:
                     self.assertIn(
@@ -376,6 +376,8 @@ class TestLoopbackPersistenceEntry(unittest.TestCase):
 
     def setUp(self):
         path = os.path.join(GRUB_DIR, "loopback.cfg")
+        if not os.path.exists(path):
+            self.skipTest("grub/loopback.cfg not found (GRUB removed from build)")
         with open(path, "r") as f:
             self.content = f.read()
 

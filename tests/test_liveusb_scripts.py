@@ -27,6 +27,7 @@ AIROOTFS = os.path.join(REPO_DIR, "airootfs")
 BIN_DIR = os.path.join(AIROOTFS, "usr", "local", "bin")
 SYSTEMD_DIR = os.path.join(AIROOTFS, "etc", "systemd", "system")
 PROFILEDEF = os.path.join(REPO_DIR, "profiledef.sh")
+PACKAGES_FILE = os.path.join(REPO_DIR, "packages.x86_64")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -109,6 +110,12 @@ def _read_profiledef():
     """Read profiledef.sh content."""
     with open(PROFILEDEF) as f:
         return f.read()
+
+
+def _read_packages():
+    """Read package names from packages.x86_64."""
+    with open(PACKAGES_FILE) as f:
+        return [line.strip() for line in f if line.strip() and not line.lstrip().startswith("#")]
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -311,6 +318,21 @@ class TestServiceScriptsHavePermissions(unittest.TestCase):
                         f"{svc_name}: ExecStart script {exe} must have "
                         f"0:0:755 permissions in profiledef.sh",
                     )
+
+
+class TestLiveBootloaderPackages(unittest.TestCase):
+    """Validate live ISO bootloader package selection."""
+
+    def setUp(self):
+        self.packages = _read_packages()
+
+    def test_grub_present_for_live_iso(self):
+        """GRUB must be present in packages.x86_64."""
+        self.assertIn("grub", self.packages)
+
+    def test_limine_absent_after_migration(self):
+        """Limine should be removed after GRUB migration."""
+        self.assertNotIn("limine", self.packages)
 
 
 if __name__ == "__main__":
