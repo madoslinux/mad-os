@@ -166,6 +166,12 @@ install_installer() {
         echo "  → Fixed import in locale.py"
     fi
 
+    # Keep installed-system Plymouth logo size identical to live ISO theme.
+    if [[ -f "${install_path}/scripts/setup-plymouth.sh" ]]; then
+        sed -i 's/logo.image = Image("logo.png");/logo.image = Image("logo.png");\nlogo.image = logo.image.Scale(250, 250);/' "${install_path}/scripts/setup-plymouth.sh"
+        echo "  → Synced installer Plymouth logo scale with live ISO"
+    fi
+
     # Create wrapper for installer (uses python3 __main__.py from package dir)
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
