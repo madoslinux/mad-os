@@ -1,182 +1,174 @@
-# AGENTS.md - Agentic Coding Guidelines for madOS
+# AGENTS.md - Agentic Coding Guide for madOS
 
-## Project Overview
+## Scope
 
-madOS is an AI-orchestrated Arch Linux distribution built using `archiso`. It targets low-RAM systems (1.9GB) with Intel Atom processors and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
+This file is for coding agents working in `mad-os/`.
+Follow repository conventions first; do not introduce unrelated tooling or style changes.
 
----
+madOS is an Arch Linux distribution built with `archiso`, optimized for low-RAM systems (1.9 GB target), with Sway/Hyprland and GTK-based tools.
+
+## Visual Style Source of Truth
+
+Use `/home/madkoding/proyectos/assets` as the primary style reference for branding assets.
+Official logos, wallpapers, and related art must be taken from that directory.
+When implementing UI or docs visuals, keep consistency with these official assets.
 
 ## Build Commands
 
 ```bash
-# Build the ISO (requires Arch Linux with archiso installed)
+# Install build dependency (Arch)
 sudo pacman -S archiso
+
+# Build ISO from repository root
 sudo mkarchiso -v -w work/ -o out/ .
 ```
 
-- Build requires ~10GB free disk space
-- Build artifacts go in `work/` (safe to delete after build)
-- Final ISO appears in `out/`
-- Build time: ~10-20 minutes
+Notes:
+- Keep at least ~10 GB free disk space.
+- `work/` contains temporary build artifacts; safe to remove after builds.
+- Final ISO is written to `out/`.
 
----
-
-## Linting Commands
+## Lint / Format Commands
 
 ```bash
-# Install ruff and shellcheck
-pip install ruff
-pacman -S shellcheck  # Arch Linux
-
-# Run ruff linter (auto-fix issues where possible)
+# Python lint
 ruff check .
 
-# Run ruff with fixes
+# Python lint with automatic fixes
 ruff check --fix .
 
-# Run ruff formatter
+# Python formatting
 ruff format .
+
+# Shell lint (example target)
+shellcheck airootfs/usr/local/bin/*.sh
 ```
 
-### Pre-commit Hooks
+Ruff settings are defined in `pyproject.toml`:
+- line length `100`
+- target version `py313`
+- quote style `double`
+- key lint families include `E,F,W,I,N,UP,B,C4`
+
+## Pre-commit
 
 ```bash
-# Install pre-commit
-pip install pre-commit
-
-# Install hooks
+# Install and enable hooks
+python3 -m pip install pre-commit
 pre-commit install
 
-# Run manually
+# Run all hooks manually
 pre-commit run --all-files
 ```
 
-### Ruff Configuration (pyproject.toml)
-- Line length: 100
-- Target Python: 3.13
-- Quote style: double
-- Indent style: space
-- Disabled rules: E501 (line too long), E402 (module level import not at top of file), F401 (unused import)
+Current hooks include:
+- `shellcheck`
+- `ruff`
+- `ruff-format`
+- `pytest` (selected test files)
 
----
+## Test Commands
 
-## Testing Commands
+Unit tests use `pytest` with Python tests in `tests/test_*.py`.
 
 ```bash
-# Run all unit tests
+# Run full unit suite
 python3 -m pytest tests/ -v
 
-# Run a single test file
+# Run one test file
 python3 -m pytest tests/test_boot_scripts.py -v
 
-# Run a single test function
+# Run one test case/function
 python3 -m pytest tests/test_boot_scripts.py::TestBootScriptSyntax::test_all_boot_scripts_valid_syntax -v
 
-# Run tests matching a pattern
-python3 -m pytest -k "boot_scripts" -v
+# Run tests by pattern
+python3 -m pytest tests/ -k "boot or liveusb" -v
 
-# Run with verbose output
-python3 -m pytest tests/ -vv
+# Stop on first failure
+python3 -m pytest tests/ -x -v
 ```
 
-### Integration Tests (require Docker with Arch Linux container)
+Integration-style validation scripts are run via Docker:
 
 ```bash
-# USB Persistence tests
 docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests/test-liveusb-persistence.sh
-
-# First-boot simulation
 docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests/test-first-boot-simulation.sh
-
-# Installer Python validation
 docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests/test-installer-python-validation.sh
 ```
 
----
-
 ## Code Style Guidelines
 
-### Python
+### Imports
 
-- **Shebang**: `#!/usr/bin/env python3`
-- **Formatter**: ruff with double quotes, 100 char line length
-- **Target version**: Python 3.13
-- **Imports**: Standard library preferred; group: stdlib, third-party, local
-- **Types**: Use type hints where beneficial; prefer explicit over implicit
-- **Error handling**: Use specific exceptions; avoid bare `except:`
-- **Naming**: snake_case for functions/variables, PascalCase for classes, UPPER_SNAKE for constants
+- Group imports in this order: standard library, third-party, local project imports.
+- Separate groups with one blank line.
+- Prefer explicit imports over wildcard imports.
 
-### Shell Scripts
+### Formatting
 
-- **Shebang**: `#!/usr/bin/env bash`
-- **Linter**: shellcheck (follow shellcheck guidelines)
-- **Strict mode**: Use `set -euo pipefail` for all scripts
-- **Exception**: Setup scripts that run as systemd services may skip strict mode if they have their own graceful error handling
+- Python formatting is enforced with `ruff format`.
+- Maximum line length is 100.
+- Use double quotes in Python unless escaping would be worse.
+- Use 4 spaces (no tabs).
 
-### GTK/Python Installer
+### Types
 
-- Uses GTK3 with Nord color scheme (polar night background, frost accents)
-- Some standalone tools (`mados-help`, `mados-power`) use GTK4 for better theming
-- Check existing scripts to determine which GTK version to use:
-  - GTK3: `gi.require_version("Gtk", "3.0")` — Installer and older tools
-  - GTK4: `gi.require_version("Gtk", "4.0")` — Standalone UI tools (help, power menu)
-- Both versions require `python-gobject` and `gtk3`/`gtk4` packages respectively
-- For headless testing, use mocks from `tests/test_helpers.py`:
-  ```python
-  from tests.test_helpers import install_gtk_mocks
-  install_gtk_mocks()
-  ```
+- Add type hints for new/modified public APIs and non-trivial internal helpers.
+- Prefer concrete types when helpful (`list[str]`, `dict[str, str]`).
+- Keep annotations readable; avoid over-engineered generic types.
 
----
+### Naming
 
-## Repository Structure
+- `snake_case` for functions/variables/modules.
+- `PascalCase` for classes.
+- `UPPER_SNAKE_CASE` for constants.
+- Keep filenames and script names aligned with existing `mados-*` naming patterns.
 
-### Core archiso Files
+### Error Handling
 
-- `profiledef.sh` — ISO metadata (name, publisher, version) and file permissions
-- `packages.x86_64` — Package list for the ISO (one package per line)
-- `pacman.conf` — Pacman configuration for the build
+- Raise/handle specific exceptions (`ValueError`, `OSError`, etc.).
+- Avoid bare `except:`.
+- Fail early on invalid inputs; include actionable error messages.
+- In long-running setup scripts, log context before exiting.
 
-### Root Filesystem (`airootfs/`)
+### Python and Shell Conventions
 
-- `airootfs/etc/` — System configuration (sysctl, systemd, skel configs)
-- `airootfs/usr/local/bin/` — Custom scripts and executables
-- `airootfs/usr/local/lib/` — Python library modules for tools
+- Python shebang: `#!/usr/bin/env python3`.
+- Shell shebang: `#!/usr/bin/env bash`.
+- Shell scripts should default to `set -euo pipefail` unless a script has a documented reason not to.
+- Follow `shellcheck` guidance for shell changes.
 
-### Key Scripts
+## GTK / UI Conventions
 
-- `airootfs/usr/local/bin/mados-installer-autostart` — Launcher for external installer
-- `airootfs/usr/local/lib/mados_installer/` — Installer Python modules
+- Installer and legacy tools use GTK3 (`gi.require_version("Gtk", "3.0")`).
+- Some standalone tools use GTK4; match the existing file's GTK version.
+- For headless testing of GTK-dependent code, use mocks from `tests/test_helpers.py`.
 
-### Test Structure
+## Repository Guardrails
 
-- Unit tests: `tests/test_*.py` (Python, use unittest/pytest)
-- Integration tests: `tests/test-*.sh` (Shell scripts)
-- Test helpers: `tests/test_helpers.py` (GTK mocks for headless testing)
+- Keep `python`, `python-gobject`, and `gtk3` in `packages.x86_64` (installer-critical).
+- When adding executables under `airootfs/usr/local/bin/`, update `profiledef.sh` file permissions.
+- Add packages one per line in `packages.x86_64`.
+- Avoid heavy package additions without clear justification (low-RAM target).
+- System name convention is `madOS` (lowercase in filenames, branded casing in UI/docs).
 
----
+## Rules from Copilot / Cursor
 
-## Important Guidelines
+Included source:
+- `.github/copilot-instructions.md` (present and incorporated here).
 
-- Keep `python`, `python-gobject`, and `gtk3` in `packages.x86_64` (required for the installer)
-- RAM optimizations target 1.9GB systems — avoid adding heavy packages without justification
-- When adding new scripts to `airootfs/usr/local/bin/`, update `profiledef.sh` with proper permissions (0:0:755)
-- When modifying the installer, update tests in `tests/test_installer_config.py`
-- Desktop configs live in `airootfs/etc/skel/.config/` (Sway, Waybar, Foot, Wofi)
-- System name: "madOS" (all lowercase in filenames, styled in display text)
-- File permissions: New executable scripts must be added to `profiledef.sh` `file_permissions` array
-- Package additions: Add one package per line to `packages.x86_64`
+Not found in this repository:
+- `.cursorrules`
+- `.cursor/rules/`
 
----
+If these files are added later, update this AGENTS.md to mirror their constraints.
 
-## CI/CD Pipeline
+## CI Context
 
-The CI/CD pipeline (`.github/workflows/ci-cd.yml`) runs in stages:
+Primary pipeline: `.github/workflows/ci-cd.yml`
+- Stage 1: unit + integration tests
+- Stage 2: installer validation in Arch container
+- Stage 3: ISO build (`mkarchiso`)
+- Stage 4/5: release publication flow
 
-1. **Stage 1** — Unit tests (pytest, parallel matrix) and integration tests run in parallel
-2. **Stage 2** — Installer validation in Arch container (requires Stage 1)
-3. **Stage 3** — ISO build with mkarchiso (only on tags or manual trigger)
-4. **Stage 4** — Upload to Internet Archive
-5. **Stage 5** — GitHub Release and website update (stable releases only)
-
-GitHub Pages deployment is in `.github/workflows/pages.yml`.
+When changing build/test behavior, keep CI parity with local commands.
