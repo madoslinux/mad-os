@@ -1,0 +1,14 @@
+[Unit]
+Description=Live CD NetworkManager enable
+After=network-online.target
+Wants=network-online.target
+Before=lightdm.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl --no-block enable NetworkManager.service
+ExecStart=/usr/bin/systemctl --no-block start NetworkManager.service
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
