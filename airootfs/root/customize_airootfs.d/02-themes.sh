@@ -69,10 +69,43 @@ install_michroma_font() {
     return 0
 }
 
+install_logos_and_splashes() {
+    local assets_dir="/usr/share/mados/assets"
+    
+    if [[ ! -d "$assets_dir" ]]; then
+        echo "WARNING: Assets directory not found at $assets_dir"
+        return 0
+    fi
+    
+    echo "Installing logos and splashes..."
+    
+    if [[ -f "$assets_dir/mados-logo-cyberpunk-plymouth.png" ]]; then
+        mkdir -p /usr/share/plymouth/themes/mados
+        cp "$assets_dir/mados-logo-cyberpunk-plymouth.png" /usr/share/plymouth/themes/mados/logo.png
+        echo "  ✓ Plymouth logo installed"
+    fi
+    
+    if [[ -f "$assets_dir/mados-logo-cyberpunk-grub.png" ]]; then
+        mkdir -p /boot/grub
+        cp "$assets_dir/mados-logo-cyberpunk-grub.png" /boot/grub/logo.png
+        echo "  ✓ GRUB logo installed"
+    fi
+    
+    if [[ -f "$assets_dir/mados-logo-cyberpunk-installer.png" ]]; then
+        mkdir -p /usr/share/plymouth/themes/mados
+        cp "$assets_dir/mados-logo-cyberpunk-installer.png" /usr/share/plymouth/themes/mados/installer.png 2>/dev/null || true
+        echo "  ✓ Installer logo installed"
+    fi
+    
+    echo "✓ Logos and splashes installed"
+    return 0
+}
+
 install_themes() {
     install_nordic_theme
     install_nordzy_icons
     install_michroma_font
+    install_logos_and_splashes
     fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true
     echo "✓ Themes installation complete"
     return 0
