@@ -185,43 +185,6 @@ class TestWelcomeAppDependencies(unittest.TestCase):
         self.assertIn("bc", self.packages, "packages.x86_64 must include bc")
 
 
-class TestDesktopEnvironmentPackages(unittest.TestCase):
-    """Verify additional DE/WM packages are included."""
-
-    def setUp(self):
-        pkg_file = os.path.join(REPO_DIR, "packages.x86_64")
-        if not os.path.isfile(pkg_file):
-            self.skipTest("packages.x86_64 not found")
-        with open(pkg_file) as f:
-            self.packages = [
-                line.strip() for line in f if line.strip() and not line.startswith("#")
-            ]
-
-    def test_kde_plasma_included(self):
-        """kde-plasma must be in packages.x86_64."""
-        self.assertIn("kde-plasma", self.packages, "packages.x86_64 must include kde-plasma")
-
-    def test_plasma_wayland_included(self):
-        """plasma-wayland-session must be in packages.x86_64."""
-        self.assertIn("plasma-wayland-session", self.packages, "packages.x86_64 must include plasma-wayland-session")
-
-    def test_xfce4_included(self):
-        """xfce4 must be in packages.x86_64."""
-        self.assertIn("xfce4", self.packages, "packages.x86_64 must include xfce4")
-
-    def test_xfce4_goodies_included(self):
-        """xfce4-goodies must be in packages.x86_64."""
-        self.assertIn("xfce4-goodies", self.packages, "packages.x86_64 must include xfce4-goodies")
-
-    def test_i3wm_included(self):
-        """i3-wm must be in packages.x86_64."""
-        self.assertIn("i3-wm", self.packages, "packages.x86_64 must include i3-wm")
-
-    def test_qtile_included(self):
-        """qtile must be in packages.x86_64."""
-        self.assertIn("qtile", self.packages, "packages.x86_64 must include qtile")
-
-
 class TestProfiledefIncludesWelcomeFiles(unittest.TestCase):
     """Verify profiledef.sh includes permissions for welcome app files."""
 

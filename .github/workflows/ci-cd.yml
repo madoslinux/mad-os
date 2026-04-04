@@ -48,9 +48,11 @@ jobs:
               shellcheck -s bash --severity=error "$script"
             fi
           done
-          find airootfs/usr/local/lib/mados_installer/scripts -type f -name "*.sh" | while read -r script; do
-            shellcheck -s bash --severity=error "$script"
-          done
+          if [ -d airootfs/usr/local/lib/mados_installer/scripts ]; then
+            find airootfs/usr/local/lib/mados_installer/scripts -type f -name "*.sh" | while read -r script; do
+              shellcheck -s bash --severity=error "$script"
+            done
+          fi
 
       - name: Validate Python syntax
         run: |

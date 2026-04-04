@@ -3,6 +3,7 @@ Description=madOS Timezone Auto-Detection
 Documentation=https://github.com/madkoding/mad-os
 After=systemd-remount-fs.service
 Before=time-set.target
+Before=systemd-timesyncd.service
 
 [Service]
 Type=oneshot
