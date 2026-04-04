@@ -80,7 +80,6 @@ curl
 jq
 socat
 networkmanager
-iwd
 wireless_tools
 rsync
 

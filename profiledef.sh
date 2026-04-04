@@ -160,6 +160,4 @@ file_permissions=(
   ["/usr/local/bin/mados-network-wait.sh"]="0:0:755"
   # ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
 
-  # Live CD NetworkManager enable
-  ["/etc/systemd/system/livecd-nm.service"]="0:0:644"
 )
