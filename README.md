@@ -49,6 +49,23 @@ Build requirements:
 
 ## Development
 
+### Common Scripts
+
+```bash
+# Main workflow
+./build-iso.sh
+./run-qemu.sh
+
+# Optional: share built ISO
+./serve-iso.sh
+
+# Optional: advanced debugging helpers
+./scripts/debug/run-serial.sh
+./scripts/debug/run-debug.sh
+./scripts/debug/run-no-kvm.sh
+./scripts/debug/run-monitor.sh
+```
+
 ### Testing
 
 ```bash

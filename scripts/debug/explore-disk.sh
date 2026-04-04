@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Recovery script to explore installed disk
 
-DISK_FILE="out/madOS-test.qcow2"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+DISK_FILE="${REPO_ROOT}/out/madOS-test.qcow2"
 
 if [ ! -f "$DISK_FILE" ]; then
     echo "Disk not found: $DISK_FILE"

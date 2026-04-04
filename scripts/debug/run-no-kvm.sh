@@ -2,7 +2,8 @@
 # Run QEMU without KVM for debugging
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-OUT_DIR="${SCRIPT_DIR}/out"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+OUT_DIR="${REPO_ROOT}/out"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 
 if [ ! -f "$DISK_FILE" ]; then
