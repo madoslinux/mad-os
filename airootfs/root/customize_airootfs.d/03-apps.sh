@@ -172,6 +172,17 @@ install_installer() {
         echo "  → Synced installer Plymouth logo scale with live ISO"
     fi
 
+    # Keep installed system on NetworkManager-only (no iwd backend override).
+    if [[ -f "${install_path}/scripts/apply-configuration.sh" ]]; then
+        sed -i '/mkdir -p \/etc\/NetworkManager\/conf.d/,/EOF/d' "${install_path}/scripts/apply-configuration.sh"
+        echo "  → Removed installer iwd backend override"
+    fi
+
+    if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then
+        sed -i '/enable_service iwd/d' "${install_path}/scripts/enable-services.sh"
+        echo "  → Removed installer iwd service enable"
+    fi
+
     # Create wrapper for installer (uses python3 __main__.py from package dir)
     cat > "$bin_path" << 'INSTALLER_WRAPPER'
 #!/bin/bash
