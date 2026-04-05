@@ -190,6 +190,12 @@ main() {
         echo "QEMU software-render profile detected"
         return 0
     fi
+
+    # QEMU hardware-render profile marker via SMBIOS product name
+    if grep -q "madOS-QEMU-HWRENDER" /sys/class/dmi/id/product_name 2>/dev/null; then
+        echo "QEMU hardware-render profile detected"
+        return 1
+    fi
     
     # Detectar nomodeset (safe graphics mode) - siempre es legacy
     if grep -q 'nomodeset' /proc/cmdline 2>/dev/null; then

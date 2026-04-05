@@ -11,6 +11,8 @@ grub
 efibootmgr
 os-prober
 sbctl
+shim
+mokutil
 syslinux
 sudo
 zsh
@@ -231,4 +233,17 @@ fail2ban
 zenity
 
 # Office and Graphics
+libreoffice-fresh
+libreoffice-fresh-es
+libreoffice-fresh-en-gb
+libreoffice-fresh-pt-br
+libreoffice-fresh-pt
+libreoffice-fresh-fr
+libreoffice-fresh-de
+libreoffice-fresh-it
+libreoffice-fresh-ru
+libreoffice-fresh-zh-cn
+hunspell-es_ar
+mythes-es
+hyphen-es
 gimp

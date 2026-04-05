@@ -10,15 +10,13 @@ clean_pacman_cache() {
 }
 
 clean_docs_man_locales() {
-    echo "Removing docs, man pages, and locales..."
+    echo "Removing docs and man pages..."
     rm -rf /usr/share/doc/*
     rm -rf /usr/share/man/*
-    # Keep locale.alias required by localedef during installation.
-    find /usr/share/locale -mindepth 1 ! -name locale.alias -exec rm -rf {} + 2>/dev/null || true
     rm -rf /usr/share/gtk-doc/*
     find /usr/share/gnome/help -type f -delete 2>/dev/null || true
     find /usr/share/gnome/parsers -type f -delete 2>/dev/null || true
-    echo "✓ Docs/man/locales cleaned"
+    echo "✓ Docs/man cleaned"
 }
 
 clean_npm_cache() {
@@ -60,15 +58,42 @@ clean_unused_fonts_icons() {
     echo "✓ Fonts/icons cleaned"
 }
 
-keep_only_en_es_locales() {
-    echo "Keeping only en_US and es_ES locales..."
+keep_only_supported_locales() {
+    echo "Keeping locale support for 9 languages..."
+    local supported_prefixes=(
+        en
+        es
+        fr
+        de
+        it
+        pt
+        ru
+        ja
+        zh
+    )
+
     for lang in /usr/share/locale/*; do
-        local lang_name=$(basename "$lang")
-        if [[ "$lang_name" != "en_US" && "$lang_name" != "es_ES" && "$lang_name" != "locale.alias" ]]; then
+        local lang_name
+        lang_name=$(basename "$lang")
+
+        if [[ "$lang_name" == "locale.alias" ]]; then
+            continue
+        fi
+
+        local keep=false
+        local prefix
+        for prefix in "${supported_prefixes[@]}"; do
+            if [[ "$lang_name" == "$prefix" || "$lang_name" == "${prefix}_"* ]]; then
+                keep=true
+                break
+            fi
+        done
+
+        if [[ "$keep" == false ]]; then
             rm -rf "$lang"
         fi
     done
-    echo "✓ Locales cleaned"
+    echo "✓ 9-language locale set applied"
 }
 
 clean_pacman_db() {
@@ -175,7 +200,7 @@ cleanup_all() {
     clean_python_tests
     clean_debug_symbols
     clean_unused_fonts_icons
-    keep_only_en_es_locales
+    keep_only_supported_locales
     clean_pacman_db
     set_executable_permissions
     hide_unwanted_desktop_entries

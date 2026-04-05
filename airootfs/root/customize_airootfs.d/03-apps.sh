@@ -207,6 +207,79 @@ PY
         echo "  → Hardened installer GRUB cmdline subvol/rootflags handling"
     fi
 
+    # Make rsync stage resilient when /boot is VFAT (no ACL/xattr support).
+    # Retry rsync without ACL/xattr preservation only if the first pass fails.
+    if [[ -f "${install_path}/installer/steps.py" ]]; then
+        python3 - "${install_path}/installer/steps.py" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+old = '''    proc.wait()
+    if proc.returncode not in (0, 24):
+        raise subprocess.CalledProcessError(proc.returncode, "rsync")
+    if proc.returncode == 24:
+        log_message(
+            app,
+            "  WARNING: rsync reported vanished source files (normal on live system)",
+        )
+'''
+
+new = '''    proc.wait()
+    if proc.returncode not in (0, 24):
+        if proc.returncode == 23:
+            log_message(
+                app,
+                "  WARNING: rsync metadata copy failed on some filesystems; retrying without ACL/xattr...",
+            )
+            retry_cmd = [
+                "rsync",
+                "-aHWS",
+                "--info=progress2",
+                "--no-inc-recursive",
+                "--numeric-ids",
+            ]
+            for exc in RSYNC_EXCLUDES:
+                retry_cmd.extend(["--exclude", exc])
+            retry_cmd.extend(["/", "/mnt/"])
+
+            retry = subprocess.run(
+                retry_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+
+            for line in retry.stdout.splitlines():
+                line = line.rstrip()
+                if line.startswith("rsync:") or line.startswith("sent "):
+                    log_message(app, f"  {line}")
+
+            if retry.returncode not in (0, 24):
+                raise subprocess.CalledProcessError(retry.returncode, "rsync")
+            if retry.returncode == 24:
+                log_message(
+                    app,
+                    "  WARNING: rsync reported vanished source files (normal on live system)",
+                )
+        else:
+            raise subprocess.CalledProcessError(proc.returncode, "rsync")
+    elif proc.returncode == 24:
+        log_message(
+            app,
+            "  WARNING: rsync reported vanished source files (normal on live system)",
+        )
+'''
+
+if old in t and "retrying without ACL/xattr" not in t:
+    t = t.replace(old, new, 1)
+    p.write_text(t, encoding="utf-8")
+PY
+        echo "  → Hardened installer rsync for VFAT /boot metadata limitations"
+    fi
+
     if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then
         sed -i '/enable_service iwd/d' "${install_path}/scripts/enable-services.sh"
         echo "  → Removed installer iwd service enable"

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Toggle DEMO_MODE in mados_installer config
 
-CONFIG="/usr/local/lib/mados_installer/config.py"
+CONFIG="/opt/mados/mados_installer/config.py"
 
 if [[ ! -f "$CONFIG" ]]; then
     echo "Error: $CONFIG not found" >&2

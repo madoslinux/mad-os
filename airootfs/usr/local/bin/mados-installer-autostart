@@ -5,6 +5,7 @@
 
 LOG_DIR="/run/user/$(id -u)"
 LOG="$LOG_DIR/mados-installer-autostart.log"
+LOCK_DIR="$LOG_DIR/mados-installer-autostart.lock"
 mkdir -p "$LOG_DIR"
 
 log() {
@@ -14,6 +15,13 @@ log() {
 }
 
 log "Starting autostart as user: $(whoami) uid: $(id -u)"
+
+# Avoid duplicate launches from multiple autostart entry points
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    log "Autostart lock exists, installer already running/launched; exiting"
+    exit 0
+fi
+trap 'rm -rf "$LOCK_DIR"' EXIT
 
 is_ventoy_boot() {
     if [ -f /proc/cmdline ]; then

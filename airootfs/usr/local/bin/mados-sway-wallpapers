@@ -17,6 +17,11 @@ MAX_WORKSPACES=6
 LOG_TAG="mados-sway-wallpapers"
 DB_DIR="${HOME}/.local/share/mados"
 DB_PATH="${DB_DIR}/wallpapers.db"
+LIVE_MODE=0
+
+if [[ -d /run/archiso ]]; then
+    LIVE_MODE=1
+fi
 
 log() {
     logger -p user.info -t "$LOG_TAG" "$*" 2>/dev/null || true
@@ -123,6 +128,12 @@ shuffle_wallpapers() {
 assign_wallpapers() {
     local count=${#WALLPAPERS[@]}
     local existing
+
+    if [[ "$LIVE_MODE" -eq 1 ]]; then
+        sqlite3 "$DB_PATH" "DELETE FROM assignments;"
+        log "live mode detected: regenerated random wallpaper assignments"
+    fi
+
     existing="$(sqlite3 "$DB_PATH" "SELECT COUNT(*) FROM assignments;")"
 
     if [[ "$existing" -gt 0 ]]; then
