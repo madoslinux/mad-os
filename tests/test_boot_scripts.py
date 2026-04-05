@@ -2,10 +2,8 @@
 """
 Tests for madOS boot-time scripts and services.
 
-Validates that boot scripts (setup-ohmyzsh.sh, setup-opencode.sh, setup-ollama.sh)
-and the Oh My Zsh systemd service unit are properly configured for the live USB
-environment.  OpenCode and Ollama are programs (not services) and only have
-setup scripts for manual installation.
+Validates that boot scripts and related systemd/service configuration are
+properly configured for the live USB environment.
 
 These tests catch configuration errors like the 'chown: invalid group'
 issue where setup-ohmyzsh.sh used the username as the group name instead
@@ -313,10 +311,7 @@ class TestPasswdConfig(unittest.TestCase):
 class TestProfiledefPermissions(unittest.TestCase):
     """Verify profiledef.sh grants correct permissions to boot scripts."""
 
-    BOOT_SCRIPTS = [
-        "setup-opencode.sh",
-        "setup-ollama.sh",
-    ]
+    BOOT_SCRIPTS = []
 
     def setUp(self):
         profiledef = os.path.join(REPO_DIR, "profiledef.sh")

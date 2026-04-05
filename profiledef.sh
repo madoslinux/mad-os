@@ -41,9 +41,6 @@ file_permissions=(
   ["/usr/local/bin/mados-fb-resolution.sh"]="0:0:755"
   ["/usr/local/bin/mados-audio-init.sh"]="0:0:755"
   ["/usr/local/bin/mados-audio-quality.sh"]="0:0:755"
-  ["/usr/local/bin/setup-opencode.sh"]="0:0:755"
-  ["/usr/local/bin/setup-nvm.sh"]="0:0:755"
-  ["/usr/local/bin/setup-ollama.sh"]="0:0:755"
   ["/usr/local/bin/toggle-demo-mode.sh"]="0:0:755"
 
   ["/usr/local/bin/mados-debug"]="0:0:755"

@@ -75,7 +75,6 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 ### Key Scripts
 
 - `airootfs/usr/local/bin/mados-installer-autostart` — Launcher for external installer
-- `airootfs/usr/local/bin/setup-opencode.sh` — OpenCode setup script
 - `airootfs/usr/local/bin/setup-persistence.sh` — Persistent storage setup
 
 ### Documentation

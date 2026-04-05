@@ -209,7 +209,6 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 
 - `airootfs/root/customize_airootfs.d/03-apps.sh` — App installer (clones from GitHub)
 - `airootfs/usr/local/bin/mados-installer-autostart` — Launcher for external installer
-- `airootfs/usr/local/bin/setup-opencode.sh` — OpenCode setup script
 - `airootfs/usr/local/bin/setup-persistence.sh` — Persistent storage setup
 - `airootfs/usr/local/lib/mados_installer/` — Installer Python modules
 

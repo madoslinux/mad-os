@@ -55,7 +55,6 @@ sequenceDiagram
     alt In archiso live environment
         I->>I: Check /run/archiso exists
         I->>I: Check NOT Ventoy boot
-        I->>I: Fix pacman-db
         I->>I: Launch installer at /usr/local/bin/mados-installer
     else Ventoy or installed system
         I->>I: Exit silently
@@ -79,48 +78,11 @@ sequenceDiagram
         note right of A: Pre-flight checks
         A->>A: Check /run/archiso (live env?)
         A->>A: Check /proc/cmdline (Ventoy?)
-        A->>A: Fix pacman-db (pacman-key)
     end
-    
-    A->>A: Set GDK_BACKEND=wayland
+
     A->>I: Execute installer
     I->>G: Launch GTK window
     G-->>U: Show installer UI
-```
-
-## First Boot Setup (OpenCode/Ollama)
-
-```mermaid
-sequenceDiagram
-    participant S as Systemd
-    participant B as bash
-    participant O as OpenCode
-    participant L as Ollama
-    
-    S->>B: Execute setup-opencode.sh (Type=oneshot)
-    
-    B->>B: Check network connectivity
-    alt No network
-        B->>B: Check /run/archiso (live USB)
-        B->>B: Copy from live USB if available
-    else Has network
-        B->>O: Download/install OpenCode
-        O->>B: Return success/failure
-    end
-    
-    S->>B: Execute setup-ollama.sh (Type=oneshot)
-    
-    B->>B: Check network connectivity
-    alt No network
-        B->>B: Check /run/archiso
-        B->>B: Copy from live USB if available
-    else Has network
-        B->>L: Download Ollama binary
-        L->>B: Return success/failure
-    end
-    
-    B->>B: Configure zshrc with aliases
-    B-->>S: Exit 0 (always succeed)
 ```
 
 ## USB Persistence Detection
