@@ -179,6 +179,42 @@ install_installer() {
         echo "  → Removed installer iwd backend override line"
     fi
 
+    # Harden GRUB cmdline handling: never pass bare subvol= to kernel.
+    # If root is Btrfs with subvol option in fstab, translate it to rootflags=subvol=... .
+    if [[ -f "${install_path}/scripts/configure-grub.sh" ]]; then
+        python3 - "${install_path}/scripts/configure-grub.sh" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+inject_after = '    set_grub_key "GRUB_CMDLINE_LINUX" "\\"$current\\""\n'
+block = """
+    # Drop malformed bare subvol= tokens (invalid as kernel args).
+    current=$(printf '%s' "$current" | sed -E 's/(^|[[:space:]])subvol=[^[:space:]]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')
+    set_grub_key "GRUB_CMDLINE_LINUX" "\"$current\""
+}
+
+ensure_btrfs_rootflags() {
+    local root_subvol=""
+    if [[ -f /etc/fstab ]]; then
+        root_subvol=$(awk '$2 == "/" && $3 == "btrfs" { n=split($4, opts, ","); for (i=1; i<=n; i++) if (opts[i] ~ /^subvol=/) { print opts[i]; exit } }' /etc/fstab)
+    fi
+
+    if [[ -n "$root_subvol" ]]; then
+        ensure_cmdline_token "rootflags=${root_subvol}"
+    fi
+"""
+
+if inject_after in t and "ensure_btrfs_rootflags()" not in t:
+    t = t.replace(inject_after, block, 1)
+    t = t.replace('ensure_cmdline_token "plymouth.use-simpledrm=0"\n', 'ensure_cmdline_token "plymouth.use-simpledrm=0"\nensure_btrfs_rootflags\n', 1)
+    p.write_text(t, encoding="utf-8")
+PY
+        echo "  → Hardened installer GRUB cmdline subvol/rootflags handling"
+    fi
+
     if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then
         sed -i '/enable_service iwd/d' "${install_path}/scripts/enable-services.sh"
         echo "  → Removed installer iwd service enable"
