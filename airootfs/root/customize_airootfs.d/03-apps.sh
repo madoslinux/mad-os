@@ -16,6 +16,8 @@ MADOS_APPS=(
 GITHUB_REPO="madoslinux"
 INSTALLER_APP="mados-installer"
 INSTALLER_GITHUB_REPO="madoslinux"
+INSTALLER_REF_TAG="v1.0.3"
+INSTALLER_REF_COMMIT="7a3061ee69a10f597016775c440bbcbb7fef739c"
 UPDATER_APP="mados-updater"
 UPDATER_GITHUB_REPO="madkoding"
 
@@ -32,6 +34,67 @@ clone_latest_main() {
 
     # Force fresh network clone from main on every build.
     GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch main --no-tags "$repo_url" "$dest_dir"
+}
+
+clone_ref_verified() {
+    local repo_url="$1"
+    local dest_dir="$2"
+    local ref="$3"
+    local expected_commit="$4"
+
+    GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch "$ref" --no-tags "$repo_url" "$dest_dir"
+
+    local actual_commit
+    actual_commit=$(git -C "$dest_dir" rev-parse HEAD)
+    if [[ "$actual_commit" != "$expected_commit" ]]; then
+        echo "ERROR: ${repo_url} ref ${ref} resolved to ${actual_commit}, expected ${expected_commit}"
+        return 1
+    fi
+
+    return 0
+}
+
+assert_installer_contract() {
+    local install_path="$1"
+
+    local required_files=(
+        "${install_path}/__main__.py"
+        "${install_path}/installer/steps.py"
+        "${install_path}/scripts/configure-grub.sh"
+        "${install_path}/scripts/setup-bootloader.sh"
+        "${install_path}/scripts/apply-configuration.sh"
+        "${install_path}/scripts/enable-services.sh"
+    )
+
+    local f
+    for f in "${required_files[@]}"; do
+        if [[ ! -f "$f" ]]; then
+            echo "ERROR: Installer contract missing required file: $f"
+            return 1
+        fi
+    done
+
+    if ! grep -q 'ensure_btrfs_rootflags' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing ensure_btrfs_rootflags"
+        return 1
+    fi
+
+    if ! grep -q 'retrying without ACL/xattr' "${install_path}/installer/steps.py"; then
+        echo "ERROR: Installer contract check failed: steps.py missing rsync metadata fallback"
+        return 1
+    fi
+
+    if grep -q 'wifi.backend=iwd' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh still forces iwd backend"
+        return 1
+    fi
+
+    if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
+        echo "ERROR: Installer contract check failed: enable-services.sh still enables iwd"
+        return 1
+    fi
+
+    return 0
 }
 
 clone_and_install_app() {
@@ -133,7 +196,11 @@ install_installer() {
     local retries=3
     local count=0
     while [ $count -lt $retries ]; do
-        if clone_latest_main "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" "${build_dir}/${installer_module}"; then
+        if clone_ref_verified \
+            "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" \
+            "${build_dir}/${installer_module}" \
+            "$INSTALLER_REF_TAG" \
+            "$INSTALLER_REF_COMMIT"; then
             break
         fi
         count=$((count + 1))
@@ -155,12 +222,20 @@ install_installer() {
     # Fix import in locale.py (bug in upstream: uses 'from summary' instead of 'from .summary')
     if [[ -f "${install_path}/pages/locale.py" ]]; then
         sed -i 's/from summary import/from .summary import/g' "${install_path}/pages/locale.py"
+        if ! grep -q 'from .summary import' "${install_path}/pages/locale.py"; then
+            echo "ERROR: Failed to fix locale.py import path"
+            return 1
+        fi
         echo "  → Fixed import in locale.py"
     fi
 
     # Keep installed-system Plymouth logo size identical to live ISO theme.
     if [[ -f "${install_path}/scripts/setup-plymouth.sh" ]]; then
         sed -i 's/logo.image = Image("logo.png");/logo.image = Image("logo.png");\nlogo.image = logo.image.Scale(250, 250);/' "${install_path}/scripts/setup-plymouth.sh"
+        if ! grep -q 'logo.image = logo.image.Scale(250, 250);' "${install_path}/scripts/setup-plymouth.sh"; then
+            echo "ERROR: Failed to enforce Plymouth logo scale"
+            return 1
+        fi
         echo "  → Synced installer Plymouth logo scale with live ISO"
     fi
 
@@ -168,6 +243,10 @@ install_installer() {
     # Avoid deleting heredoc blocks (can break script syntax); drop only the iwd line.
     if [[ -f "${install_path}/scripts/apply-configuration.sh" ]]; then
         sed -i '/wifi\.backend=iwd/d' "${install_path}/scripts/apply-configuration.sh"
+        if grep -q 'wifi.backend=iwd' "${install_path}/scripts/apply-configuration.sh"; then
+            echo "ERROR: Failed to remove installer iwd backend override"
+            return 1
+        fi
         echo "  → Removed installer iwd backend override line"
     fi
 
@@ -204,6 +283,10 @@ if inject_after in t and "ensure_btrfs_rootflags()" not in t:
     t = t.replace('ensure_cmdline_token "plymouth.use-simpledrm=0"\n', 'ensure_cmdline_token "plymouth.use-simpledrm=0"\nensure_btrfs_rootflags\n', 1)
     p.write_text(t, encoding="utf-8")
 PY
+        if ! grep -q 'ensure_btrfs_rootflags' "${install_path}/scripts/configure-grub.sh"; then
+            echo "ERROR: Failed to harden installer GRUB cmdline handling"
+            return 1
+        fi
         echo "  → Hardened installer GRUB cmdline subvol/rootflags handling"
     fi
 
@@ -277,12 +360,24 @@ if old in t and "retrying without ACL/xattr" not in t:
     t = t.replace(old, new, 1)
     p.write_text(t, encoding="utf-8")
 PY
+        if ! grep -q 'retrying without ACL/xattr' "${install_path}/installer/steps.py"; then
+            echo "ERROR: Failed to harden installer rsync metadata fallback"
+            return 1
+        fi
         echo "  → Hardened installer rsync for VFAT /boot metadata limitations"
     fi
 
     if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then
         sed -i '/enable_service iwd/d' "${install_path}/scripts/enable-services.sh"
+        if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
+            echo "ERROR: Failed to remove iwd enable from installer services"
+            return 1
+        fi
         echo "  → Removed installer iwd service enable"
+    fi
+
+    if ! assert_installer_contract "$install_path"; then
+        return 1
     fi
 
     # Create wrapper for installer (uses python3 __main__.py from package dir)

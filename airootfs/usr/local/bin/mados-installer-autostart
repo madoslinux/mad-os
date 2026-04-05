@@ -70,6 +70,6 @@ if [ -x "$INSTALLER_PATH" ]; then
 else
     log "ERROR: $INSTALLER_PATH not found"
     ls -la /usr/local/bin/mados-installer 2>&1 || true
-    ls -la /usr/local/lib/mados_installer/ 2>&1 || true
+    ls -la /opt/mados/mados_installer/ 2>&1 || true
     exit 1
 fi
