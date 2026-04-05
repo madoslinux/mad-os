@@ -9,3 +9,83 @@
 @define-color headerbar_fg_color {{colors.on_surface.default.hex}};
 @define-color popover_bg_color {{colors.surface_container_high.default.hex}};
 @define-color popover_fg_color {{colors.on_surface.default.hex}};
+
+* {
+    color: @window_fg_color;
+    caret-color: @accent_color;
+}
+
+window,
+.background {
+    background-color: @window_bg_color;
+    color: @window_fg_color;
+}
+
+headerbar,
+.titlebar,
+windowhandle {
+    background-color: @headerbar_bg_color;
+    color: @headerbar_fg_color;
+    border-color: {{colors.outline_variant.default.hex}};
+}
+
+button,
+.button {
+    background-image: none;
+    background-color: {{colors.surface_container.default.hex}};
+    color: @window_fg_color;
+    border: 1px solid {{colors.outline.default.hex}};
+    box-shadow: none;
+}
+
+button:hover,
+.button:hover {
+    background-color: {{colors.surface_container_high.default.hex}};
+}
+
+button:active,
+button:checked,
+button.suggested-action,
+.suggested-action {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+    border-color: @accent_bg_color;
+}
+
+entry,
+spinbutton,
+combobox,
+textview,
+listview,
+columnview,
+treeview,
+row,
+list row {
+    background-color: @view_bg_color;
+    color: @view_fg_color;
+    border-color: {{colors.outline_variant.default.hex}};
+}
+
+entry selection,
+textview text selection,
+label selection {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+
+popover,
+menu,
+tooltip {
+    background-color: @popover_bg_color;
+    color: @popover_fg_color;
+    border-color: {{colors.outline_variant.default.hex}};
+}
+
+progressbar progress,
+scale highlight,
+switch:checked slider,
+check:checked,
+radio:checked {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}

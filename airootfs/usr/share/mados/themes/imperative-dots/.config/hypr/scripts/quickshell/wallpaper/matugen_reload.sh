@@ -103,6 +103,11 @@ if command -v gsettings >/dev/null 2>&1; then
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1 || true
 fi
 
+# GTK apps often need restart to apply regenerated css
+for gtk_proc in pcmanfm lxappearance gnome-text-editor gedit nautilus; do
+    pkill -x "$gtk_proc" >/dev/null 2>&1 || true
+done
+
 # Putting swayosd reload into the background to not clutter the reloading process
 if systemctl --user is-active --quiet swayosd.service; then
     systemctl --user restart swayosd.service &
