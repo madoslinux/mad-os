@@ -8,6 +8,7 @@ import Quickshell.Services.SystemTray
 
 PanelWindow {
     id: barWindow
+    property real uiScale: 0.75
     
     anchors {
         top: true
@@ -15,12 +16,17 @@ PanelWindow {
         right: true
     }
     
-    // THICKER BAR, MINIMAL MARGINS
-    height: 48
-    margins { top: 8; bottom: 0; left: 4; right: 4 }
+    // Scaled bar dimensions
+    height: Math.max(32, Math.round(48 * uiScale))
+    margins {
+        top: Math.max(4, Math.round(8 * uiScale))
+        bottom: 0
+        left: Math.max(2, Math.round(4 * uiScale))
+        right: Math.max(2, Math.round(4 * uiScale))
+    }
     
-    // exclusiveZone = height (48) + top margin (4)
-    exclusiveZone: 52
+    // exclusiveZone = bar height + top margin
+    exclusiveZone: height + margins.top
     color: "transparent"
 
     // Dynamic Matugen Palette
@@ -299,7 +305,11 @@ PanelWindow {
     // UI LAYOUT
     // ==========================================
     Item {
-        anchors.fill: parent
+        anchors.centerIn: parent
+        width: Math.max(1, Math.round(parent.width / barWindow.uiScale))
+        height: Math.max(1, Math.round(parent.height / barWindow.uiScale))
+        scale: barWindow.uiScale
+        transformOrigin: Item.Center
 
         // ---------------- LEFT ----------------
         RowLayout {

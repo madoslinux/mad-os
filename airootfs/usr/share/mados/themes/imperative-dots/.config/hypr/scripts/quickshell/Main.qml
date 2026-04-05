@@ -43,10 +43,11 @@ FloatingWindow {
 
     property real animW: 1
     property real animH: 1
+    property real uiScale: 0.75
 
     function getLayout(name) {
         // Outsourced to WindowRegistry.js for cleaner configuration management
-        return Registry.getLayout(name, masterWindow.activeMx, masterWindow.activeMy, masterWindow.activeMw, masterWindow.activeMh);
+        return Registry.getLayout(name, masterWindow.activeMx, masterWindow.activeMy, masterWindow.activeMw, masterWindow.activeMh, masterWindow.uiScale);
     }
     
     width: 1
@@ -72,9 +73,12 @@ FloatingWindow {
 
         // INNER FIXED CONTAINER
         Item {
+            property var activeLayout: masterWindow.currentActive !== "hidden" ? getLayout(masterWindow.currentActive) : null
             anchors.centerIn: parent
-            width: masterWindow.currentActive !== "hidden" && getLayout(masterWindow.currentActive) ? getLayout(masterWindow.currentActive).w : 1
-            height: masterWindow.currentActive !== "hidden" && getLayout(masterWindow.currentActive) ? getLayout(masterWindow.currentActive).h : 1
+            width: activeLayout ? Math.max(1, Math.round(activeLayout.w / masterWindow.uiScale)) : 1
+            height: activeLayout ? Math.max(1, Math.round(activeLayout.h / masterWindow.uiScale)) : 1
+            scale: masterWindow.uiScale
+            transformOrigin: Item.Center
 
             StackView {
                 id: widgetStack
