@@ -44,6 +44,7 @@ FloatingWindow {
     property real animW: 1
     property real animH: 1
     property real uiScale: 0.75
+    property real widgetOpacity: 0.90
 
     function getLayout(name) {
         // Outsourced to WindowRegistry.js for cleaner configuration management
@@ -63,12 +64,11 @@ FloatingWindow {
         anchors.centerIn: parent
         width: masterWindow.animW
         height: masterWindow.animH
-        clip: true 
+        clip: true
+        opacity: masterWindow.isVisible ? 1.0 : 0.0
 
         Behavior on width { enabled: !masterWindow.disableMorph; NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.InOutCubic } }
         Behavior on height { enabled: !masterWindow.disableMorph; NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.InOutCubic } }
-
-        opacity: masterWindow.isVisible ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: masterWindow.isWallpaperTransition ? 150 : (masterWindow.morphDuration === 500 ? 300 : 200); easing.type: Easing.InOutSine } }
 
         // INNER FIXED CONTAINER
@@ -79,6 +79,7 @@ FloatingWindow {
             height: activeLayout ? Math.max(1, Math.round(activeLayout.h / masterWindow.uiScale)) : 1
             scale: masterWindow.uiScale
             transformOrigin: Item.Center
+            opacity: masterWindow.widgetOpacity
 
             StackView {
                 id: widgetStack

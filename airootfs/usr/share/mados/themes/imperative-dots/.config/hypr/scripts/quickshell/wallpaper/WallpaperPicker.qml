@@ -206,6 +206,7 @@ Item {
                 window.isSearchPaused = true;
             }
         } else {
+            Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh refresh-wallpapers >/dev/null 2>&1"])
             if (window.srcDir !== window.preferredSrcDir) {
                 window.srcDir = window.preferredSrcDir
             }

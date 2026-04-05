@@ -227,6 +227,10 @@ launch_quickshell() {
         pgrep -x awww-daemon >/dev/null 2>&1 || awww-daemon >/dev/null 2>&1 &
     fi
 
+    if command -v swww-daemon >/dev/null 2>&1; then
+        pgrep -x swww-daemon >/dev/null 2>&1 || swww-daemon >/dev/null 2>&1 &
+    fi
+
     if command -v swaync >/dev/null 2>&1; then
         pgrep -x swaync >/dev/null 2>&1 || swaync -c "${TARGET_SWAYNC}/config.json" >/dev/null 2>&1 &
     fi

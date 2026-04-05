@@ -123,6 +123,11 @@ handle_network_prep() {
     (nmcli device wifi rescan) &
 }
 
+if [[ "$ACTION" == "refresh-wallpapers" ]]; then
+    handle_wallpaper_prep
+    exit 0
+fi
+
 # -----------------------------------------------------------------------------
 # ENSURE MASTER WINDOW & TOP BAR ARE ALIVE (ZOMBIE WATCHDOG)
 # -----------------------------------------------------------------------------
