@@ -97,7 +97,7 @@ fi
 
 # Apply GTK dark preference for both GTK3/GTK4 apps
 if command -v gsettings >/dev/null 2>&1; then
-    gsettings set org.gnome.desktop.interface gtk-theme "Adwaita-dark" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface icon-theme "Nordzy-dark" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface cursor-theme "Adwaita" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1 || true
@@ -106,10 +106,10 @@ fi
 # Keep GTK settings files aligned with runtime theme so apps start correctly
 mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
 if [[ -f "$HOME/.config/gtk-3.0/settings.ini" ]]; then
-    sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita-dark/' "$HOME/.config/gtk-3.0/settings.ini"
+    sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita/' "$HOME/.config/gtk-3.0/settings.ini"
 fi
 if [[ -f "$HOME/.config/gtk-4.0/settings.ini" ]]; then
-    sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita-dark/' "$HOME/.config/gtk-4.0/settings.ini"
+    sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita/' "$HOME/.config/gtk-4.0/settings.ini"
 fi
 
 # GTK apps often need restart to apply regenerated css

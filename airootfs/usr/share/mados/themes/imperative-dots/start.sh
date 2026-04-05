@@ -219,16 +219,12 @@ launch_quickshell() {
         python3 "${TARGET_HYPR_SCRIPTS}/quickshell/focustime/focus_daemon.py" >/dev/null 2>&1 &
     fi
 
-    if [[ -x "${TARGET_HYPR_SCRIPTS}/init.sh" ]]; then
-        "${TARGET_HYPR_SCRIPTS}/init.sh" >/dev/null 2>&1 &
-    fi
-
     if command -v awww-daemon >/dev/null 2>&1; then
         pgrep -x awww-daemon >/dev/null 2>&1 || awww-daemon >/dev/null 2>&1 &
     fi
 
-    if command -v swww-daemon >/dev/null 2>&1; then
-        pgrep -x swww-daemon >/dev/null 2>&1 || swww-daemon >/dev/null 2>&1 &
+    if [[ -x "${TARGET_HYPR_SCRIPTS}/init.sh" ]]; then
+        "${TARGET_HYPR_SCRIPTS}/init.sh" >/dev/null 2>&1 &
     fi
 
     if command -v swaync >/dev/null 2>&1; then

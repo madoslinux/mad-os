@@ -20,7 +20,6 @@ sway
 swaybg
 swayidle
 swaylock
-swww
 awww
 quickshell
 swaync
@@ -67,6 +66,7 @@ uwsm
 glib2
 dconf
 gsettings-desktop-schemas
+adwaita-icon-theme
 gtk3
 gtk4
 libadwaita
