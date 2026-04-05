@@ -1,4 +1,4 @@
 general {
-    col.active_border = {{colors.primary.default.hex}}ee {{colors.secondary.default.hex}}ee 45deg
-    col.inactive_border = {{colors.outline_variant.default.hex}}aa
+    col.active_border = rgba({{colors.primary.default.hex | replace(from="#", to="")}}ee) rgba({{colors.secondary.default.hex | replace(from="#", to="")}}ee) 45deg
+    col.inactive_border = rgba({{colors.outline_variant.default.hex | replace(from="#", to="")}}aa)
 }

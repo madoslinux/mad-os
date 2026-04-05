@@ -1297,18 +1297,18 @@ class TestSwayConfigFeatureParity(unittest.TestCase):
                 "Hyprland config must use brightnessctl for brightness",
             )
 
-    def test_both_use_foot_terminal(self):
-        """Both compositors must use foot as the terminal emulator."""
+    def test_both_use_kitty_terminal(self):
+        """Both compositors must use kitty as the terminal emulator."""
         self.assertIn(
-            "foot",
+            "kitty",
             self.sway,
-            "Sway config must define foot as terminal",
+            "Sway config must define kitty as terminal",
         )
         if self.hyprland:
             self.assertIn(
-                "foot",
+                "kitty",
                 self.hyprland,
-                "Hyprland config must define foot as terminal",
+                "Hyprland config must define kitty as terminal",
             )
 
     def test_both_use_wofi_launcher(self):

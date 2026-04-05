@@ -30,7 +30,7 @@ set $up k
 set $right l
 
 # Applications
-set $term foot
+set $term kitty
 set $menu wofi --show drun
 
 # Color Scheme - Nord-inspired Professional

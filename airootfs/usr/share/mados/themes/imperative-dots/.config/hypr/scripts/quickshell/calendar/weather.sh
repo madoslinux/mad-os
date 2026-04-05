@@ -8,9 +8,13 @@ daily_cache_file="${cache_dir}/daily_weather_cache.json"
 next_day_cache_file="${cache_dir}/next_day_precache.json"
 
 # API Settings
-# Load environment variables silently
-if [ -f "$(dirname "$0")/.env" ]; then
-    export $(grep -v '^#' "$(dirname "$0")/.env" | xargs)
+# Load environment variables from .env safely
+ENV_FILE="$(dirname "$0")/.env"
+if [ -f "$ENV_FILE" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    . "$ENV_FILE"
+    set +a
 fi
 
 # API Settings from .env
@@ -223,6 +227,10 @@ elif [[ "$1" == "--json" ]]; then
         cat "$json_file"
     fi
 
+elif [[ "$1" == "--refresh" ]]; then
+    get_data
+    cat "$json_file"
+
 elif [[ "$1" == "--view-listener" ]]; then
     if [ ! -f "$view_file" ]; then echo "0" > "$view_file"; fi
     tail -F "$view_file"
@@ -267,4 +275,53 @@ elif [[ "$1" == "--current-temp" ]]; then
 elif [[ "$1" == "--current-hex" ]]; then
     curr_time=$(date +%H:%M)
     cat "$json_file" | jq -r --arg ct "$curr_time" '(.forecast[0].hourly | map(select(.time <= $ct)) | last) // .forecast[0].hourly[0] | .hex'
+
+elif [[ "$1" == "--get-config" ]]; then
+    esc_key=$(printf '%s' "$KEY" | sed 's/"/\\"/g')
+    esc_id=$(printf '%s' "$ID" | sed 's/"/\\"/g')
+    esc_unit=$(printf '%s' "$UNIT" | sed 's/"/\\"/g')
+    printf '{"key":"%s","city_id":"%s","unit":"%s"}\n' "$esc_key" "$esc_id" "$esc_unit"
+
+elif [[ "$1" == "--set-config" ]]; then
+    new_key="${2:-}"
+    new_id="${3:-}"
+    new_unit="${4:-metric}"
+
+    new_key=$(printf '%s' "$new_key" | tr -d '\r\n')
+    new_id=$(printf '%s' "$new_id" | tr -d '\r\n')
+    new_unit=$(printf '%s' "$new_unit" | tr -d '\r\n')
+
+    if [[ "$new_unit" != "metric" && "$new_unit" != "imperial" ]]; then
+        new_unit="metric"
+    fi
+
+    if [[ -z "$new_key" || -z "$new_id" ]]; then
+        echo '{"ok":false,"message":"Missing API key or city id"}'
+        exit 1
+    fi
+
+    test_url="https://api.openweathermap.org/data/2.5/weather?APPID=${new_key}&id=${new_id}&units=${new_unit}"
+    test_json=$(curl -fsS "$test_url" 2>/dev/null || true)
+
+    if [[ -z "$test_json" ]]; then
+        echo '{"ok":false,"message":"OpenWeather request failed"}'
+        exit 1
+    fi
+
+    api_code=$(printf '%s' "$test_json" | jq -r '.cod // ""' 2>/dev/null || true)
+    if [[ "$api_code" != "200" ]]; then
+        api_msg=$(printf '%s' "$test_json" | jq -r '.message // "Invalid API key or city id"' 2>/dev/null || true)
+        esc_msg=$(printf '%s' "$api_msg" | sed 's/"/\\"/g')
+        printf '{"ok":false,"message":"%s"}\n' "$esc_msg"
+        exit 1
+    fi
+
+    env_file="$(dirname "$0")/.env"
+    {
+        printf 'OPENWEATHER_KEY="%s"\n' "$new_key"
+        printf 'OPENWEATHER_CITY_ID="%s"\n' "$new_id"
+        printf 'OPENWEATHER_UNIT="%s"\n' "$new_unit"
+    } > "$env_file"
+
+    echo '{"ok":true,"message":"Saved"}'
 fi

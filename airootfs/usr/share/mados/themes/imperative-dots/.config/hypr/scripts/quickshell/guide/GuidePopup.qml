@@ -64,7 +64,7 @@ Item {
     // STATE MANAGEMENT & FAST ANIMATIONS
     // -------------------------------------------------------------------------
     property int currentTab: 0
-    property var tabNames: ["System", "Modules", "Keybinds", "Matugen"]
+    property var tabNames: ["About", "Modules", "Keybinds", "Matugen"]
     property var tabIcons: ["", "󰣆", "󰌌", "󰏘"]
 
     property real introBase: 0.0

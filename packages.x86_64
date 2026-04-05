@@ -42,7 +42,7 @@ xdg-desktop-portal-hyprland
 # steam
 
 # Aplicaciones principales
-foot
+kitty
 firefox
 vim
 nano
@@ -62,6 +62,9 @@ python-gobject
 python-cairo
 python-qrcode
 uwsm
+glib2
+dconf
+gsettings-desktop-schemas
 gtk3
 gtk4
 libadwaita

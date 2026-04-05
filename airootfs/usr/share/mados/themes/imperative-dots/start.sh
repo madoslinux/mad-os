@@ -11,6 +11,8 @@ THEME_MATUGEN="${THEME_ROOT}/.config/matugen"
 TARGET_MATUGEN="${XDG_CONF_HOME}/matugen"
 THEME_ROFI="${THEME_ROOT}/.config/rofi"
 TARGET_ROFI="${XDG_CONF_HOME}/rofi"
+THEME_SWAYNC="${THEME_ROOT}/.config/swaync"
+TARGET_SWAYNC="${XDG_CONF_HOME}/swaync"
 
 OWNERSHIP_MARKER="${XDG_CONF_HOME}/imperative-dots/managed-hypr-scripts"
 
@@ -62,6 +64,20 @@ prepare_user_runtime() {
 
     rm -rf "${TARGET_ROFI}"
     cp -a "${THEME_ROFI}" "${TARGET_ROFI}"
+
+    rm -rf "${TARGET_SWAYNC}"
+    cp -a "${THEME_SWAYNC}" "${TARGET_SWAYNC}"
+
+    mkdir -p "${XDG_CONF_HOME}/gtk-3.0" "${XDG_CONF_HOME}/gtk-4.0"
+
+    if [[ ! -f "${XDG_CONF_HOME}/hypr/matugen-colors.conf" ]]; then
+        cat > "${XDG_CONF_HOME}/hypr/matugen-colors.conf" <<'EOF'
+general {
+    col.active_border = rgba(00ffffee) rgba(ff00ffee) 45deg
+    col.inactive_border = rgba(595959aa)
+}
+EOF
+    fi
 
     if [[ ! -f "${TARGET_ROFI}/theme.rasi" ]]; then
         cat > "${TARGET_ROFI}/theme.rasi" <<'EOF'
@@ -164,7 +180,7 @@ launch_quickshell() {
     fi
 
     if command -v swaync >/dev/null 2>&1; then
-        pgrep -x swaync >/dev/null 2>&1 || swaync >/dev/null 2>&1 &
+        pgrep -x swaync >/dev/null 2>&1 || swaync -c "${TARGET_SWAYNC}/config.json" >/dev/null 2>&1 &
     fi
 
     return 0

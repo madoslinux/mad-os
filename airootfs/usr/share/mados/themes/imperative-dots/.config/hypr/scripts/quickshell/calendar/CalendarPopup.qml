@@ -178,6 +178,12 @@ Item {
     property var weatherData: null
     property int weatherView: 0
     property color activeWeatherHex: weatherData && weatherData.forecast && weatherData.forecast[weatherView] ? weatherData.forecast[weatherView].hex : window.mauve
+    property bool showWeatherSettings: false
+    property string weatherApiKey: ""
+    property string weatherCityId: ""
+    property string weatherUnit: "metric"
+    property string weatherSettingsStatus: ""
+    property color weatherSettingsStatusColor: window.subtext0
 
     // Transition Properties
     property int targetWeatherView: 0
@@ -289,6 +295,79 @@ Item {
                 let txt = this.text.trim();
                 if (txt !== "") {
                     try { window.weatherData = JSON.parse(txt); } catch(e) {}
+                }
+            }
+        }
+    }
+
+    Process {
+        id: weatherConfigPoller
+        command: ["bash", window.scriptsDir + "/weather.sh", "--get-config"]
+        stdout: SplitParser {
+            onRead: data => {
+                try {
+                    let cfg = JSON.parse(data)
+                    window.weatherApiKey = cfg.key || ""
+                    window.weatherCityId = cfg.city_id || ""
+                    window.weatherUnit = cfg.unit || "metric"
+                } catch (e) {}
+            }
+        }
+    }
+
+    Process {
+        id: weatherConfigSaver
+        command: [
+            "bash",
+            window.scriptsDir + "/weather.sh",
+            "--set-config",
+            window.weatherApiKey,
+            window.weatherCityId,
+            window.weatherUnit
+        ]
+        stdout: SplitParser {
+            onRead: data => {
+                let txt = data.trim()
+                if (txt.length === 0) {
+                    return
+                }
+                try {
+                    let res = JSON.parse(txt)
+                    if (res.ok) {
+                        window.weatherSettingsStatus = "Saved. Refreshing weather..."
+                        window.weatherSettingsStatusColor = window.green
+                        weatherForcePoller.running = true
+                        saveCloseTimer.start()
+                    } else {
+                        window.weatherSettingsStatus = res.message || "Invalid API key or city id"
+                        window.weatherSettingsStatusColor = window.red
+                    }
+                } catch (e) {
+                    window.weatherSettingsStatus = "Validation failed"
+                    window.weatherSettingsStatusColor = window.red
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: saveCloseTimer
+        interval: 900
+        repeat: false
+        onTriggered: {
+            window.showWeatherSettings = false
+            window.weatherSettingsStatus = ""
+        }
+    }
+
+    Process {
+        id: weatherForcePoller
+        command: ["bash", window.scriptsDir + "/weather.sh", "--refresh"]
+        stdout: SplitParser {
+            onRead: data => {
+                let txt = data.trim()
+                if (txt.length > 10) {
+                    try { window.weatherData = JSON.parse(txt) } catch (e) {}
                 }
             }
         }
@@ -897,6 +976,17 @@ Item {
                             opacity: window.weatherContentOpacity
                             transform: Translate { x: window.weatherContentOffset }
                         }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            enabled: window.weatherData && window.weatherData.forecast && window.weatherData.forecast[window.weatherView] && window.weatherData.forecast[window.weatherView].desc === "No API Key"
+                            onClicked: {
+                                weatherConfigPoller.running = true
+                                window.weatherSettingsStatus = ""
+                                window.showWeatherSettings = true
+                            }
+                        }
                     }
 
                     Item { Layout.fillHeight: true } 
@@ -1023,6 +1113,133 @@ Item {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            radius: 26
+            color: Qt.rgba(window.crust.r, window.crust.g, window.crust.b, 0.88)
+            border.width: 1
+            border.color: Qt.rgba(window.surface2.r, window.surface2.g, window.surface2.b, 0.9)
+            visible: window.showWeatherSettings
+            opacity: window.showWeatherSettings ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 180 } }
+
+            ColumnLayout {
+                anchors.centerIn: parent
+                width: 520
+                spacing: 12
+
+                Text {
+                    text: "Weather API Setup"
+                    font.family: "Michroma"
+                    font.pixelSize: 20
+                    font.weight: Font.Black
+                    color: window.text
+                }
+
+                Text {
+                    text: "OpenWeatherMap API Key"
+                    font.family: "Michroma"
+                    font.pixelSize: 11
+                    color: window.subtext0
+                }
+                TextField {
+                    id: apiKeyField
+                    Layout.fillWidth: true
+                    text: window.weatherApiKey
+                    placeholderText: "Paste your API key"
+                    onTextChanged: window.weatherApiKey = text
+                }
+
+                Text {
+                    text: "City ID"
+                    font.family: "Michroma"
+                    font.pixelSize: 11
+                    color: window.subtext0
+                }
+                TextField {
+                    id: cityIdField
+                    Layout.fillWidth: true
+                    text: window.weatherCityId
+                    placeholderText: "Example: 2643743"
+                    onTextChanged: window.weatherCityId = text
+                }
+
+                RowLayout {
+                    spacing: 10
+                    Text {
+                        text: "Units"
+                        font.family: "Michroma"
+                        font.pixelSize: 11
+                        color: window.subtext0
+                    }
+                    ComboBox {
+                        id: unitBox
+                        model: ["metric", "imperial"]
+                        currentIndex: window.weatherUnit === "imperial" ? 1 : 0
+                        onCurrentTextChanged: window.weatherUnit = currentText
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 42
+                        radius: 10
+                        color: Qt.rgba(window.surface0.r, window.surface0.g, window.surface0.b, 0.9)
+                        border.width: 1
+                        border.color: window.surface2
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Cancel"
+                            font.family: "Michroma"
+                            font.pixelSize: 12
+                            color: window.text
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: window.showWeatherSettings = false
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        height: 42
+                        radius: 10
+                        color: Qt.rgba(window.blue.r, window.blue.g, window.blue.b, 0.85)
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Save"
+                            font.family: "Michroma"
+                            font.pixelSize: 12
+                            font.weight: Font.Black
+                            color: window.crust
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: {
+                                window.weatherSettingsStatus = "Validating..."
+                                window.weatherSettingsStatusColor = window.yellow
+                                weatherConfigSaver.running = true
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: window.weatherSettingsStatus
+                    visible: text.length > 0
+                    wrapMode: Text.Wrap
+                    font.family: "Michroma"
+                    font.pixelSize: 11
+                    color: window.weatherSettingsStatusColor
                 }
             }
         }
