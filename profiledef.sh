@@ -83,6 +83,7 @@ file_permissions=(
   ["/usr/local/bin/mados-hide-steam"]="0:0:755"
   ["/usr/local/bin/mados-help"]="0:0:755"
   ["/usr/local/bin/mados-power"]="0:0:755"
+  ["/etc/skel/.config/waybar/scripts/network.sh"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
 
   # mados-chwd (hardware detection)

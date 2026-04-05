@@ -12,6 +12,7 @@
 # per event — comparable to the Hyprland socat approach.
 
 WALLPAPER_DIR="${WALLPAPER_DIR:-/usr/share/backgrounds}"
+DEFAULT_WALLPAPER="${DEFAULT_WALLPAPER:-/usr/share/backgrounds/mad-os-wallpaper.png}"
 MAX_WORKSPACES=6
 LOG_TAG="mados-sway-wallpapers"
 DB_DIR="${HOME}/.local/share/mados"
@@ -165,6 +166,20 @@ get_wallpaper_for_ws() {
         "SELECT w.path FROM assignments a JOIN wallpapers w ON a.wallpaper_id=w.id WHERE a.workspace=$ws LIMIT 1;"
 }
 
+get_default_wallpaper() {
+    if [[ -f "$DEFAULT_WALLPAPER" ]]; then
+        printf '%s\n' "$DEFAULT_WALLPAPER"
+        return 0
+    fi
+    local first
+    first="$(sqlite3 "$DB_PATH" "SELECT path FROM wallpapers ORDER BY id LIMIT 1;")"
+    if [[ -n "$first" && -f "$first" ]]; then
+        printf '%s\n' "$first"
+        return 0
+    fi
+    return 1
+}
+
 # Preload all wallpapers into swww cache for fast switching
 preload_wallpapers() {
     log "Preloading wallpapers into memory..."
@@ -258,6 +273,9 @@ last_ws="$(swaymsg -t get_workspaces 2>/dev/null \
 
 # Set initial wallpaper without transition (fast startup)
 wp="$(get_wallpaper_for_ws "$last_ws")"
+if [[ -z "$wp" || ! -f "$wp" ]]; then
+    wp="$(get_default_wallpaper)" || exit 1
+fi
 if ! set_wallpaper "$wp" "false"; then
     sleep 0.5
     set_wallpaper "$wp" "false" || true

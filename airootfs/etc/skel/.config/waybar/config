@@ -99,7 +99,7 @@
         "format-ethernet": "<span size='x-large'>󰈀</span>  {ipaddr}",
         "format-disconnected": "<span size='x-large'>󰤭</span>  Disconnected",
         "tooltip-format": "{ifname}: {ipaddr}/{cidr}",
-        "on-click": "nm-connection-editor"
+        "on-click": "bash -c 'export WAYLAND_DISPLAY=$WAYLAND_DISPLAY && export DISPLAY=$DISPLAY && $HOME/.config/waybar/scripts/network.sh'"
     },
     "pulseaudio": {
         "format": "<span size='x-large'>{icon}</span>  {volume}%",
