@@ -21,6 +21,17 @@ window,
     color: @window_fg_color;
 }
 
+label,
+.label {
+    color: @window_fg_color;
+}
+
+selection,
+:selected {
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
+}
+
 headerbar,
 .titlebar,
 windowhandle {
@@ -64,6 +75,18 @@ list row {
     background-color: @view_bg_color;
     color: @view_fg_color;
     border-color: {{colors.outline_variant.default.hex}};
+}
+
+textview text,
+entry,
+entry text,
+combobox,
+combobox box,
+listview row,
+columnview row,
+treeview.view,
+flowbox {
+    color: @view_fg_color;
 }
 
 entry selection,

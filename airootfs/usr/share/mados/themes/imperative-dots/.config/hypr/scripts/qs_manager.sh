@@ -6,7 +6,14 @@
 QS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BT_PID_FILE="$HOME/.cache/bt_scan_pid"
 BT_SCAN_LOG="$HOME/.cache/bt_scan.log"
-SRC_DIR="$HOME/Images/Wallpapers"
+SRC_DIR="${WALLPAPER_DIR:-}"
+if [[ -z "$SRC_DIR" ]]; then
+    if [[ -d "$HOME/.local/share/mados/wallpapers" ]]; then
+        SRC_DIR="$HOME/.local/share/mados/wallpapers"
+    else
+        SRC_DIR="$HOME/Images/Wallpapers"
+    fi
+fi
 THUMB_DIR="$HOME/.cache/wallpaper_picker/thumbs"
 
 IPC_FILE="/tmp/qs_widget_state"

@@ -206,6 +206,9 @@ Item {
                 window.isSearchPaused = true;
             }
         } else {
+            if (window.srcDir !== window.preferredSrcDir) {
+                window.srcDir = window.preferredSrcDir
+            }
             // Re-apply focus rules when re-opening
             if (window.currentFilter !== "Search") {
                 window.applyFilters(true);
@@ -432,7 +435,15 @@ Item {
     readonly property string homeDir: "file://" + Quickshell.env("HOME")
     readonly property string thumbDir: homeDir + "/.cache/wallpaper_picker/thumbs"
     readonly property string searchDir: homeDir + "/.cache/wallpaper_picker/search_thumbs"
-    readonly property string srcDir: Quickshell.env("HOME") + "/Images/Wallpapers"
+    readonly property string preferredSrcDir: {
+        let envDir = Quickshell.env("WALLPAPER_DIR")
+        if (envDir && envDir.length > 0) {
+            return envDir
+        }
+        return Quickshell.env("HOME") + "/.local/share/mados/wallpapers"
+    }
+    readonly property string fallbackSrcDir: Quickshell.env("HOME") + "/Images/Wallpapers"
+    property string srcDir: preferredSrcDir
 
     readonly property var transitions: ["grow", "outer", "any", "wipe", "wave", "pixel", "center"]
 
@@ -529,6 +540,11 @@ Item {
         onCountChanged: {
             if (window.isDownloadingWallpaper && window.isDownloaded(window.currentDownloadName)) {
                 window.isDownloadingWallpaper = false;
+            }
+        }
+        onStatusChanged: {
+            if (status === FolderListModel.Ready && count === 0 && window.srcDir !== window.fallbackSrcDir) {
+                window.srcDir = window.fallbackSrcDir
             }
         }
     }

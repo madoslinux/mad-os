@@ -2,3 +2,23 @@ general {
     col.active_border = rgba({{colors.primary.default.hex | replace(from="#", to="")}}ee) rgba({{colors.secondary.default.hex | replace(from="#", to="")}}ee) 45deg
     col.inactive_border = rgba({{colors.outline_variant.default.hex | replace(from="#", to="")}}aa)
 }
+
+decoration {
+    shadow {
+        color = rgba({{colors.scrim.default.hex | replace(from="#", to="")}}88)
+        color_inactive = rgba({{colors.scrim.default.hex | replace(from="#", to="")}}55)
+    }
+}
+
+group {
+    col.border_active = rgba({{colors.primary.default.hex | replace(from="#", to="")}}ee) rgba({{colors.secondary.default.hex | replace(from="#", to="")}}ee) 45deg
+    col.border_inactive = rgba({{colors.outline_variant.default.hex | replace(from="#", to="")}}aa)
+    col.border_locked_active = rgba({{colors.tertiary.default.hex | replace(from="#", to="")}}dd) rgba({{colors.primary.default.hex | replace(from="#", to="")}}dd) 45deg
+    col.border_locked_inactive = rgba({{colors.outline.default.hex | replace(from="#", to="")}}88)
+
+    groupbar {
+        col.active = rgba({{colors.primary.default.hex | replace(from="#", to="")}}cc)
+        col.inactive = rgba({{colors.surface_container_high.default.hex | replace(from="#", to="")}}cc)
+        text_color = rgba({{colors.on_surface.default.hex | replace(from="#", to="")}}ff)
+    }
+}
