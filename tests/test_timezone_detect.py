@@ -162,6 +162,13 @@ class TestTimezoneService(unittest.TestCase):
             content = f.read()
         self.assertIn("TimeoutSec=", content)
 
+    def test_service_has_install_section(self):
+        """Service must be installable via WantedBy target."""
+        with open(self.SERVICE) as f:
+            content = f.read()
+        self.assertIn("[Install]", content)
+        self.assertIn("WantedBy=multi-user.target", content)
+
 
 if __name__ == "__main__":
     unittest.main()

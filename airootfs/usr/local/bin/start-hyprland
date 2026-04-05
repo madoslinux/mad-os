@@ -25,6 +25,12 @@ export MOZ_ENABLE_WAYLAND="${MOZ_ENABLE_WAYLAND:-1}"
 # Use systemd-logind as the seat management backend (madOS uses systemd)
 export LIBSEAT_BACKEND="${LIBSEAT_BACKEND:-logind}"
 
+# If user explicitly requested software GL in VM/testing, keep Hyprland and rely
+# on wlroots software path instead of forcing compositor switch.
+if [ "${LIBGL_ALWAYS_SOFTWARE:-0}" = "1" ] || [ "${WLR_RENDERER_ALLOW_SOFTWARE:-0}" = "1" ]; then
+    logger -p user.warning -t "$LOG_TAG" "Software rendering requested - keeping Hyprland"
+fi
+
 # Verify Hyprland binary exists
 if ! command -v Hyprland >/dev/null 2>&1; then
     logger -p user.err -t "$LOG_TAG" "Hyprland binary not found"
@@ -32,15 +38,11 @@ if ! command -v Hyprland >/dev/null 2>&1; then
     exit 1
 fi
 
-# Pre-flight: verify 3D acceleration is available
-# If detect-legacy-hardware says this is legacy hardware, don't even try Hyprland
+# Pre-flight: detect legacy hardware for logging only (do not block Hyprland)
 if [ -x /usr/local/bin/detect-legacy-hardware ]; then
     detect_output=$(/usr/local/bin/detect-legacy-hardware 2>&1)
     if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        logger -p user.warning -t "$LOG_TAG" "Legacy hardware detected ($detect_output) - refusing to start Hyprland"
-        echo "Legacy hardware detected: $detect_output" >&2
-        echo "Hyprland requires 3D acceleration. Falling back..." >&2
-        exit 1
+        logger -p user.warning -t "$LOG_TAG" "Legacy hardware detected ($detect_output) - attempting Hyprland software path"
     fi
 fi
 

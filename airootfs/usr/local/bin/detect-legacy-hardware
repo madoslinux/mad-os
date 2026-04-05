@@ -10,6 +10,12 @@ detect_3d_acceleration() {
         # Verificar si EGL puede inicializarse (prueba real de aceleración 3D)
         if command -v eglinfo >/dev/null 2>&1; then
             if eglinfo 2>/dev/null | grep -qi "OpenGL"; then
+                local egl_output
+                egl_output=$(eglinfo 2>/dev/null || true)
+                # llvmpipe/softpipe/swrast are software renderers, not real 3D acceleration
+                if printf '%s' "$egl_output" | grep -qiE "llvmpipe|softpipe|swrast|software rasterizer"; then
+                    return 1
+                fi
                 return 0
             fi
         fi

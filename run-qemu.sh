@@ -28,6 +28,23 @@ CPU="${CPU:-4}"
 RESOLUTION="${RESOLUTION:-1920x1080}"
 DISK_SIZE="${DISK_SIZE:-30G}"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
+RENDER_MODE="${RENDER_MODE:-auto}"
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --software-render)
+            RENDER_MODE="software"
+            shift
+            ;;
+        --virtio-render)
+            RENDER_MODE="auto"
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+done
 
 # Serial console output file for debugging (in OUT_DIR to avoid permissions)
 SERIAL_LOG="${OUT_DIR}/mados-serial.log"
@@ -42,6 +59,7 @@ echo "  ISO: ${ISO_FILE}"
 echo "  Memory: ${MEMORY}"
 echo "  CPU: ${CPU}"
 echo "  Disk: ${DISK_FILE}"
+echo "  Render mode: ${RENDER_MODE}"
 echo "  Serial log: ${SERIAL_LOG}"
 echo ""
 
@@ -57,6 +75,15 @@ if [ -w /dev/kvm ]; then
 else
     echo "KVM not available, using TCG (software emulation)"
     KVM_ACCEL=""
+fi
+
+if [[ "$RENDER_MODE" == "software" ]]; then
+    echo "Using software rendering mode (virtio DRM + GL off)"
+    echo "Hint: this mode keeps DRM (for wlroots) but forces software rendering in guest"
+    VIDEO_OPTS=(-vga virtio -global virtio-vga.max_outputs=1 -display gtk,gl=off)
+else
+    echo "Using virtio rendering mode"
+    VIDEO_OPTS=(-vga virtio -global virtio-vga.max_outputs=1 -display gtk)
 fi
 
 # UEFI firmware
@@ -85,9 +112,7 @@ QEMU_CMD=(
     -drive file="$DISK_FILE",format=qcow2,if=virtio
     -net nic
     -net user,hostfwd=tcp::2222-:22
-    -vga virtio
-    -global virtio-vga.max_outputs=1
-    -display gtk
+    "${VIDEO_OPTS[@]}"
     -device qemu-xhci
     -device usb-tablet
     $SERIAL_OPTS

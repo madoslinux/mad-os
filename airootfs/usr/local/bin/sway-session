@@ -32,6 +32,17 @@ else
     fi
 fi
 
+# Force software rendering from kernel cmdline (used by run-qemu --software-render)
+if grep -qw "mados.force_software=1" /proc/cmdline 2>/dev/null; then
+    export WLR_RENDERER=pixman
+    export WLR_NO_HARDWARE_CURSORS=1
+    export LIBGL_ALWAYS_SOFTWARE=1
+    export MESA_GL_VERSION_OVERRIDE=3.3
+    export GSK_RENDERER=cairo
+    export CHROMIUM_FLAGS="${CHROMIUM_FLAGS:-} --disable-gpu"
+    logger -p user.info -t mados-sway "Forced software rendering via kernel cmdline"
+fi
+
 # VM DRM workarounds: disable atomic modesetting and modifiers for VM GPU drivers
 if systemd-detect-virt --vm --quiet 2>/dev/null; then
     export WLR_DRM_NO_ATOMIC=1

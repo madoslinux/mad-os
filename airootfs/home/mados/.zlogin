@@ -8,6 +8,12 @@ fi
 # Auto-start compositor on TTY1 for live environment
 # Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
 if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
+    SESSION_LOG="$HOME/.cache/mados-session.log"
+    mkdir -p "$HOME/.cache"
+    {
+        printf '\n[%s] tty1 autostart begin\n' "$(date -Iseconds)"
+    } >> "$SESSION_LOG"
+
     # Copy skel configs to home on first boot (if not already present)
     if [ ! -d ~/.config/sway ]; then
         cp -r /etc/skel/.config ~/ 2>/dev/null
@@ -19,10 +25,12 @@ if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
     export XDG_SESSION_TYPE=wayland
     export MOZ_ENABLE_WAYLAND=1
 
-    # Select compositor based on hardware capabilities
+    # Prefer Hyprland by default; keep hardware detection for diagnostics/logging.
+    # Fallback to sway is still handled by start-hyprland on runtime failure.
     COMPOSITOR="hyprland"
     if [ -x /usr/local/bin/select-compositor ]; then
-        COMPOSITOR=$(/usr/local/bin/select-compositor)
+        DETECTED_COMPOSITOR=$(/usr/local/bin/select-compositor)
+        logger -p user.info -t mados-session "Detected compositor hint: ${DETECTED_COMPOSITOR}; forcing hyprland first"
     fi
 
     if [ "$COMPOSITOR" = "sway" ]; then
@@ -57,7 +65,14 @@ VMCONF
             fi
         fi
 
-        exec sway
+        echo "[$(date -Iseconds)] launching sway-session (software path)" >> "$SESSION_LOG"
+        if /usr/local/bin/sway-session; then
+            exit 0
+        fi
+        logger -p user.err -t mados-session "sway-session failed on software path; keeping tty shell"
+        echo "[$(date -Iseconds)] sway-session failed on software path" >> "$SESSION_LOG"
+        echo "Failed to launch Sway session; staying in TTY shell for debugging"
+        return 0
     else
         # Hardware rendering: use Hyprland
         export XDG_CURRENT_DESKTOP=Hyprland
@@ -91,7 +106,8 @@ render {
 }
 VMCONF
         fi
-        # Try Hyprland via start-hyprland wrapper, fall back to Sway if it fails
+        # Try Hyprland via start-hyprland wrapper, fall back to Sway only on runtime failure
+        echo "[$(date -Iseconds)] launching start-hyprland" >> "$SESSION_LOG"
         start-hyprland || {
             logger -p user.warning -t mados-session "Hyprland failed, falling back to Sway"
             echo "Hyprland failed - falling back to Sway with software rendering"
@@ -118,7 +134,14 @@ gaps outer 0
 VMCONF
                 fi
             fi
-            exec sway
+            echo "[$(date -Iseconds)] launching sway-session fallback" >> "$SESSION_LOG"
+            if /usr/local/bin/sway-session; then
+                exit 0
+            fi
+            logger -p user.err -t mados-session "sway-session fallback failed; keeping tty shell"
+            echo "[$(date -Iseconds)] sway-session fallback failed" >> "$SESSION_LOG"
+            echo "Failed to launch fallback Sway session; staying in TTY shell for debugging"
+            return 0
         }
     fi
 fi
