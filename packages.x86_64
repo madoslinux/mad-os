@@ -27,6 +27,8 @@ swaync
 wofi
 rofi-wayland
 mako
+qt5ct
+qt6ct
 xorg-xwayland
 xdg-desktop-portal-hyprland
 

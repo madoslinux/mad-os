@@ -47,6 +47,10 @@ TEXT_FILES=(
     "$HOME/.config/swayosd/style.css"
     "$HOME/.config/swaync/style.css"
     "$HOME/.config/rofi/theme.rasi"
+    "$HOME/.config/wofi/style.css"
+    "$HOME/.config/mako/config"
+    "$HOME/.config/qt5ct/colors/matugen.conf"
+    "$HOME/.config/qt6ct/colors/matugen.conf"
     "$HOME/.config/gtk-3.0/gtk.css"
     "$HOME/.config/gtk-4.0/gtk.css"
     "/usr/share/sddm/themes/matugen-minimal/Colors.qml"
@@ -80,6 +84,10 @@ fi
 # Reload SwayNC CSS styling dynamically without killing the daemon
 if command -v swaync-client &> /dev/null; then
     swaync-client -rs
+fi
+
+if command -v makoctl >/dev/null 2>&1; then
+    makoctl reload >/dev/null 2>&1 || true
 fi
 
 # Reload Hyprland to apply matugen-colors.conf

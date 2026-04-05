@@ -13,6 +13,8 @@ THEME_ROFI="${THEME_ROOT}/.config/rofi"
 TARGET_ROFI="${XDG_CONF_HOME}/rofi"
 THEME_SWAYNC="${THEME_ROOT}/.config/swaync"
 TARGET_SWAYNC="${XDG_CONF_HOME}/swaync"
+THEME_WOFI="${THEME_ROOT}/.config/wofi"
+TARGET_WOFI="${XDG_CONF_HOME}/wofi"
 
 OWNERSHIP_MARKER="${XDG_CONF_HOME}/imperative-dots/managed-hypr-scripts"
 
@@ -65,10 +67,36 @@ prepare_user_runtime() {
     rm -rf "${TARGET_ROFI}"
     cp -a "${THEME_ROFI}" "${TARGET_ROFI}"
 
+    rm -rf "${TARGET_WOFI}"
+    mkdir -p "${TARGET_WOFI}"
+    if [[ -f "${THEME_WOFI}/config" ]]; then
+        cp -a "${THEME_WOFI}/config" "${TARGET_WOFI}/config"
+    fi
+
     rm -rf "${TARGET_SWAYNC}"
     cp -a "${THEME_SWAYNC}" "${TARGET_SWAYNC}"
 
-    mkdir -p "${XDG_CONF_HOME}/gtk-3.0" "${XDG_CONF_HOME}/gtk-4.0"
+    mkdir -p "${XDG_CONF_HOME}/gtk-3.0" "${XDG_CONF_HOME}/gtk-4.0" "${XDG_CONF_HOME}/qt5ct/colors" "${XDG_CONF_HOME}/qt6ct/colors" "${XDG_CONF_HOME}/mako"
+
+    if [[ ! -f "${XDG_CONF_HOME}/qt5ct/qt5ct.conf" ]]; then
+        cat > "${XDG_CONF_HOME}/qt5ct/qt5ct.conf" <<EOF
+[Appearance]
+color_scheme_path=${XDG_CONF_HOME}/qt5ct/colors/matugen.conf
+custom_palette=true
+standard_dialogs=default
+style=Fusion
+EOF
+    fi
+
+    if [[ ! -f "${XDG_CONF_HOME}/qt6ct/qt6ct.conf" ]]; then
+        cat > "${XDG_CONF_HOME}/qt6ct/qt6ct.conf" <<EOF
+[Appearance]
+color_scheme_path=${XDG_CONF_HOME}/qt6ct/colors/matugen.conf
+custom_palette=true
+standard_dialogs=default
+style=Fusion
+EOF
+    fi
 
     if [[ ! -f "${XDG_CONF_HOME}/hypr/matugen-colors.conf" ]]; then
         cat > "${XDG_CONF_HOME}/hypr/matugen-colors.conf" <<'EOF'

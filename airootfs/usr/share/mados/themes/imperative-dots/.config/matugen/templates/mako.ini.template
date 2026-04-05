@@ -1,0 +1,24 @@
+[global]
+font=Michroma 11
+background-color={{colors.surface.default.hex}}EE
+text-color={{colors.on_surface.default.hex}}FF
+border-size=2
+border-color={{colors.primary.default.hex}}FF
+border-radius=10
+padding=10
+default-timeout=4000
+
+[urgency=low]
+background-color={{colors.surface_container.default.hex}}EE
+text-color={{colors.on_surface.default.hex}}FF
+border-color={{colors.tertiary.default.hex}}FF
+
+[urgency=normal]
+background-color={{colors.surface.default.hex}}EE
+text-color={{colors.on_surface.default.hex}}FF
+border-color={{colors.primary.default.hex}}FF
+
+[urgency=high]
+background-color={{colors.error_container.default.hex}}EE
+text-color={{colors.on_error_container.default.hex}}FF
+border-color={{colors.error.default.hex}}FF
