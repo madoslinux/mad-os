@@ -63,6 +63,58 @@ prepare_user_runtime() {
     rm -rf "${TARGET_ROFI}"
     cp -a "${THEME_ROFI}" "${TARGET_ROFI}"
 
+    if [[ ! -f "${TARGET_ROFI}/theme.rasi" ]]; then
+        cat > "${TARGET_ROFI}/theme.rasi" <<'EOF'
+* {
+    bg: #1e1e2ecc;
+    bg-alt: #313244cc;
+    fg: #cdd6f4;
+    selected: #89b4fa;
+    active: #a6e3a1;
+    urgent: #f38ba8;
+}
+
+window {
+    transparency: "real";
+    background-color: @bg;
+    border: 2px;
+    border-color: @selected;
+    border-radius: 14px;
+    padding: 18px;
+}
+
+mainbox {
+    spacing: 10px;
+}
+
+inputbar {
+    background-color: @bg-alt;
+    text-color: @fg;
+    border-radius: 10px;
+    padding: 10px;
+}
+
+listview {
+    lines: 10;
+    columns: 1;
+    spacing: 6px;
+    background-color: transparent;
+}
+
+element {
+    background-color: transparent;
+    text-color: @fg;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+element selected {
+    background-color: @selected;
+    text-color: #11111b;
+}
+EOF
+    fi
+
     touch "${OWNERSHIP_MARKER}"
     return 0
 }

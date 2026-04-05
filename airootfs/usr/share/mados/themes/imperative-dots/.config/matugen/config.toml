@@ -29,6 +29,18 @@ output_path = "~/.config/swaync/style.css"
 input_path = "~/.config/matugen/templates/rofi.rasi.template"
 output_path = "~/.config/rofi/theme.rasi"
 
+[templates.hyprland]
+input_path = "~/.config/matugen/templates/hyprland-colors.conf.template"
+output_path = "~/.config/hypr/matugen-colors.conf"
+
+[templates.gtk3]
+input_path = "~/.config/matugen/templates/gtk3.css.template"
+output_path = "~/.config/gtk-3.0/gtk.css"
+
+[templates.gtk4]
+input_path = "~/.config/matugen/templates/gtk4.css.template"
+output_path = "~/.config/gtk-4.0/gtk.css"
+
 [templates.sddm]
 input_path = "~/.config/matugen/templates/sddm-colors.qml.template"
 output_path = "/usr/share/sddm/themes/matugen-minimal/Colors.qml"

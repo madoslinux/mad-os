@@ -1,0 +1,4 @@
+general {
+    col.active_border = {{colors.primary.default.hex}}ee {{colors.secondary.default.hex}}ee 45deg
+    col.inactive_border = {{colors.outline_variant.default.hex}}aa
+}

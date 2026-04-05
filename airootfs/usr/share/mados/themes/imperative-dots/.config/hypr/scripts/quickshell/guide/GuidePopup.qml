@@ -83,7 +83,7 @@ Item {
             { k1: "SUPER", k2: "C", action: "Clipboard History", cmd: "bash ~/.config/hypr/scripts/rofi_clipboard.sh" },
             { k1: "SUPER", k2: "F", action: "Open Firefox", cmd: "firefox" },
             { k1: "SUPER", k2: "E", action: "Open Nautilus", cmd: "nautilus" },
-            { k1: "ALT", k2: "F4", action: "Close Active Window/Widget", cmd: "bash -c 'if hyprctl activewindow | grep -q \"title: qs-master\"; then ~/.config/hypr/scripts/qs_manager.sh close; else hyprctl dispatch killactive; fi'" },
+            { k1: "SUPER", k2: "Q", action: "Close Active Window/Widget", cmd: "bash -c 'if hyprctl activewindow | grep -q \"title: qs-master\"; then ~/.config/hypr/scripts/qs_manager.sh close; else hyprctl dispatch killactive; fi'" },
             { k1: "SUPER+SHIFT", k2: "F", action: "Toggle Floating", cmd: "hyprctl dispatch togglefloating" },
             { k1: "SUPER", k2: "L", action: "Lock Screen", cmd: "bash ~/.config/hypr/scripts/lock.sh" },
             { k1: "PRINT", k2: "", action: "Screenshot", cmd: "bash ~/.config/hypr/scripts/screenshot.sh" },
@@ -91,7 +91,7 @@ Item {
             { k1: "ALT+SHIFT", k2: "", action: "Switch Keyboard Layout", cmd: "hyprctl switchxkblayout main next" },
             
             { k1: "SUPER", k2: "W", action: "Toggle Wallpaper Picker", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle wallpaper" },
-            { k1: "SUPER", k2: "Q", action: "Toggle Music Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle music" },
+            { k1: "SUPER", k2: "R", action: "Toggle Music Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle music" },
             { k1: "SUPER", k2: "B", action: "Toggle Battery Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle battery" },
             { k1: "SUPER", k2: "S", action: "Toggle Calendar Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle calendar" },
             { k1: "SUPER", k2: "N", action: "Toggle Network Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle network" },
@@ -333,90 +333,128 @@ Item {
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 20; spacing: 20
 
-                    // AUTHOR BLOCK
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 80
+                        Layout.preferredHeight: 182
                         radius: 12
-                        color: authorMa.containsMouse ? Qt.alpha(root.surface1, 0.6) : Qt.alpha(root.surface0, 0.4)
-                        border.color: authorMa.containsMouse ? root.mauve : root.surface1
+                        color: Qt.alpha(root.surface0, 0.35)
+                        border.color: root.surface1
                         border.width: 1
-                        scale: authorMa.pressed ? 0.98 : (authorMa.containsMouse ? 1.01 : 1.0)
-                        
-                        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-                        Behavior on color { ColorAnimation { duration: 200 } }
-                        Behavior on border.color { ColorAnimation { duration: 200 } }
 
-                        RowLayout {
+                        ColumnLayout {
                             anchors.fill: parent
-                            anchors.margins: 15
-                            spacing: 15
+                            anchors.margins: 12
+                            spacing: 10
 
-                            // GitHub Icon
-                            Rectangle {
-                                Layout.alignment: Qt.AlignVCenter
-                                width: 48; height: 48; radius: 10
-                                color: root.surface0
-                                border.color: root.surface2; border.width: 1
-                                Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 28; color: root.text }
+                            Text {
+                                text: "About"
+                                font.family: "Michroma"
+                                font.weight: Font.Black
+                                font.pixelSize: 16
+                                color: root.text
                             }
 
-                            ColumnLayout {
-                                Layout.alignment: Qt.AlignVCenter
-                                spacing: 2
-                                
-                                Text { text: "System Configuration Author"; font.family: "Michroma"; font.pixelSize: 11; color: root.subtext0; font.weight: Font.Medium }
-                                
-                                // Interactive Multi-color Text
-                                Row {
-                                    spacing: 1
-                                    Repeater {
-                                        model: [
-                                            { l: "i", c: root.red },
-                                            { l: "l", c: root.peach },
-                                            { l: "y", c: root.yellow },
-                                            { l: "a", c: root.green },
-                                            { l: "m", c: root.sapphire },
-                                            { l: "i", c: root.blue },
-                                            { l: "r", c: root.mauve },
-                                            { l: "o", c: root.pink }
-                                        ]
-                                        Text {
-                                            text: modelData.l
-                                            font.family: "Michroma"
-                                            font.weight: Font.Black
-                                            font.pixelSize: 22
-                                            color: modelData.c
-                                            
-                                            // Staggered wave bounce
-                                            property real hoverOffset: authorMa.containsMouse ? -4 : 0
-                                            transform: Translate { y: hoverOffset }
-                                            Behavior on hoverOffset { 
-                                                NumberAnimation { 
-                                                    duration: 300 + (index * 35) // Delay per letter creates the wave
-                                                    easing.type: Easing.OutBack 
-                                                } 
-                                            }
-                                        }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 64
+                                radius: 10
+                                color: authorMa.containsMouse ? Qt.alpha(root.surface1, 0.6) : Qt.alpha(root.surface0, 0.4)
+                                border.color: authorMa.containsMouse ? root.blue : root.surface1
+                                border.width: 1
+                                scale: authorMa.pressed ? 0.98 : (authorMa.containsMouse ? 1.01 : 1.0)
+
+                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                                Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 12
+
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        width: 38; height: 38; radius: 8
+                                        color: root.surface0
+                                        border.color: root.surface2; border.width: 1
+                                        Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 20; color: root.text }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        spacing: 1
+                                        Text { text: "madOS Distro Author"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: "madkoding"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.blue }
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        width: 28; height: 28; radius: 8
+                                        color: authorMa.containsMouse ? root.surface1 : "transparent"
+                                        Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 16; color: authorMa.containsMouse ? root.blue : root.subtext0; Behavior on color { ColorAnimation { duration: 150 } } }
                                     }
                                 }
-                            }
-                            Item { Layout.fillWidth: true } // Spacer pushes everything to the left
-                            
-                            Rectangle {
-                                Layout.alignment: Qt.AlignVCenter
-                                width: 32; height: 32; radius: 8
-                                color: authorMa.containsMouse ? root.surface1 : "transparent"
-                                Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: authorMa.containsMouse ? root.mauve : root.subtext0; Behavior on color { ColorAnimation { duration: 150 } } }
-                            }
-                        }
 
-                        MouseArea {
-                            id: authorMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/nixos-configuration"])
+                                MouseArea {
+                                    id: authorMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/madkoding"])
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 64
+                                radius: 10
+                                color: distroMa.containsMouse ? Qt.alpha(root.surface1, 0.6) : Qt.alpha(root.surface0, 0.4)
+                                border.color: distroMa.containsMouse ? root.mauve : root.surface1
+                                border.width: 1
+                                scale: distroMa.pressed ? 0.98 : (distroMa.containsMouse ? 1.01 : 1.0)
+
+                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                                Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 12
+
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        width: 38; height: 38; radius: 8
+                                        color: root.surface0
+                                        border.color: root.surface2; border.width: 1
+                                        Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 22; color: root.text }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        spacing: 1
+                                        Text { text: "System Configuration Author"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: "ilyamiro"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.mauve }
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        width: 28; height: 28; radius: 8
+                                        color: distroMa.containsMouse ? root.surface1 : "transparent"
+                                        Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 16; color: distroMa.containsMouse ? root.mauve : root.subtext0; Behavior on color { ColorAnimation { duration: 150 } } }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: distroMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/nixos-configuration"])
+                                }
+                            }
                         }
                     }
 

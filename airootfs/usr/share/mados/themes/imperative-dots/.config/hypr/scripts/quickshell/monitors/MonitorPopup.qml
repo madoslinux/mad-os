@@ -52,6 +52,7 @@ Item {
     // Replaced hardcoded accents with dynamic defaults
     property color selectedResAccent: window.mauve
     property color selectedRateAccent: window.blue
+    property color selectedRotationAccent: window.sapphire
 
     property real currentSimW: monitorsModel.count > 0 ? monitorsModel.get(0).resW : 1920
     property real currentSimH: monitorsModel.count > 0 ? monitorsModel.get(0).resH : 1080
@@ -198,6 +199,7 @@ Item {
                             resH: data[i].height,
                             sysScale: scl,
                             rate: Math.round(data[i].refreshRate).toString(),
+                            transform: data[i].transform !== undefined ? data[i].transform : 0,
                             uiX: normalizedX,
                             uiY: normalizedY
                         });
@@ -579,7 +581,7 @@ Item {
                                                     font.family: "Michroma"
                                                     font.pixelSize: 10
                                                     color: window.subtext0
-                                                    text: model.resW + "x" + model.resH + " @ " + model.rate + "Hz" 
+                                                    text: model.resW + "x" + model.resH + " @ " + model.rate + "Hz • " + ["0°", "90°", "180°", "270°"][Math.max(0, Math.min(3, model.transform || 0))]
                                                 }
                                             }
                                         }
@@ -659,7 +661,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter 
                 anchors.leftMargin: 10
                 anchors.rightMargin: 30
-                height: 310
+                height: 380
 
                 // UI block animates upwards fluidly safely without breaking the GridLayout
                 opacity: window.introProgress
@@ -906,6 +908,64 @@ Item {
                             onCanceled: () => sliderContainer.visualPct = sliderContainer.currentIndex / (sliderContainer.rates.length - 1)
                         }
                     }
+
+                    Item { Layout.preferredHeight: 10 }
+
+                    // --- ROTATION SECTION ---
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 4
+                        columnSpacing: 8
+                        rowSpacing: 8
+                        Layout.leftMargin: 10
+                        Layout.rightMargin: 10
+
+                        Repeater {
+                            model: [
+                                { val: 0, label: "0°", accent: window.sapphire },
+                                { val: 1, label: "90°", accent: window.blue },
+                                { val: 2, label: "180°", accent: window.mauve },
+                                { val: 3, label: "270°", accent: window.pink }
+                            ]
+
+                            delegate: Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 42
+                                radius: 10
+
+                                property bool isSel: monitorsModel.count > 0 && (monitorsModel.get(window.activeEditIndex).transform || 0) === modelData.val
+                                property color accentColor: modelData.accent
+
+                                color: isSel ? Qt.alpha(accentColor, 0.18) : (rotMa.containsMouse ? window.surface0 : window.mantle)
+                                border.color: isSel ? accentColor : (rotMa.containsMouse ? window.surface1 : "transparent")
+                                border.width: isSel ? 2 : 1
+
+                                Behavior on color { ColorAnimation { duration: 180 } }
+                                Behavior on border.color { ColorAnimation { duration: 180 } }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    font.family: "Michroma"
+                                    font.pixelSize: 13
+                                    font.weight: isSel ? Font.Black : Font.Bold
+                                    color: isSel ? accentColor : window.text
+                                }
+
+                                MouseArea {
+                                    id: rotMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (monitorsModel.count === 0) return;
+                                        monitorsModel.setProperty(window.activeEditIndex, "transform", modelData.val);
+                                        window.selectedRotationAccent = accentColor;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     
                     Item { Layout.fillHeight: true } 
                 }
@@ -1018,7 +1078,7 @@ Item {
 
                         if (monitorsModel.count === 1) {
                             let mon = monitorsModel.get(0);
-                            let monitorStr = mon.name + "," + mon.resW + "x" + mon.resH + "@" + mon.rate + ",auto," + mon.sysScale;
+                            let monitorStr = mon.name + "," + mon.resW + "x" + mon.resH + "@" + mon.rate + ",auto," + mon.sysScale + ",transform," + (mon.transform !== undefined ? mon.transform : 0);
                             Quickshell.execDetached(["notify-send", "Display Update", "Applied: " + mon.resW + "x" + mon.resH + " @ " + mon.rate + "Hz"]);
                             Quickshell.execDetached(["sh", "-c", "hyprctl keyword monitor " + monitorStr]);
                         } else {
@@ -1032,7 +1092,7 @@ Item {
                                 rects.push({
                                     x: rawX, y: rawY, w: layoutW, h: layoutH, 
                                     resW: m.resW, resH: m.resH, name: m.name, 
-                                    rate: m.rate, sysScale: m.sysScale
+                                    rate: m.rate, sysScale: m.sysScale, transform: m.transform !== undefined ? m.transform : 0
                                 });
                             }
                             
@@ -1065,7 +1125,7 @@ Item {
                                 r.x = Math.round((r.x - finalMinX) + window.originalLayoutOriginX);
                                 r.y = Math.round((r.y - finalMinY) + window.originalLayoutOriginY);
                                 
-                                let monitorStr = r.name + "," + r.resW + "x" + r.resH + "@" + r.rate + "," + r.x + "x" + r.y + "," + r.sysScale;
+                                let monitorStr = r.name + "," + r.resW + "x" + r.resH + "@" + r.rate + "," + r.x + "x" + r.y + "," + r.sysScale + ",transform," + r.transform;
                                 batchCmds.push("keyword monitor " + monitorStr);
                                 summaryString += r.name + " ";
                             }

@@ -40,12 +40,15 @@ except Exception as e:
 # ------------------------------------------------------------------------------
 # If Tera dumped {"color": "#hex"} into your text files, this strips it to #hex.
 TEXT_FILES=(
+    "$HOME/.config/hypr/matugen-colors.conf"
     "/tmp/kitty-matugen-colors.conf"
     "$HOME/.config/nvim/matugen_colors.lua"
     "$HOME/.config/cava/colors"
     "$HOME/.config/swayosd/style.css"
     "$HOME/.config/swaync/style.css"
     "$HOME/.config/rofi/theme.rasi"
+    "$HOME/.config/gtk-3.0/gtk.css"
+    "$HOME/.config/gtk-4.0/gtk.css"
     "/usr/share/sddm/themes/matugen-minimal/Colors.qml"
 )
 
@@ -77,6 +80,16 @@ fi
 # Reload SwayNC CSS styling dynamically without killing the daemon
 if command -v swaync-client &> /dev/null; then
     swaync-client -rs
+fi
+
+# Reload Hyprland to apply matugen-colors.conf
+if command -v hyprctl >/dev/null 2>&1; then
+    hyprctl reload >/dev/null 2>&1 || true
+fi
+
+# Apply GTK dark preference for both GTK3/GTK4 apps
+if command -v gsettings >/dev/null 2>&1; then
+    gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1 || true
 fi
 
 # Putting swayosd reload into the background to not clutter the reloading process

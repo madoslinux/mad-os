@@ -994,7 +994,21 @@ PanelWindow {
                                 color: barWindow.isSoundActive ? mocha.base : mocha.text; 
                             }
                         }
-                        MouseArea { id: volMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle volume"]) }
+                        MouseArea {
+                            id: volMouse
+                            hoverEnabled: true
+                            anchors.fill: parent
+                            onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle volume"])
+                            onWheel: function(wheel) {
+                                if (wheel.angleDelta.y > 0) {
+                                    Quickshell.execDetached(["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "0"])
+                                    Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%+"])
+                                } else if (wheel.angleDelta.y < 0) {
+                                    Quickshell.execDetached(["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"])
+                                }
+                                wheel.accepted = true
+                            }
+                        }
                     }
 
                     // Battery
