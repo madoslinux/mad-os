@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+# Ensure the cava config directory exists
+mkdir -p "$HOME/.config/cava"
+
+# Combine the static base config and the dynamic Matugen colors
+cat "$HOME/.config/cava/config_base" "$HOME/.config/cava/colors" > "$HOME/.config/cava/config" 2>/dev/null
+
+# Launch the actual CAVA binary using the absolute system path to prevent infinite loops
+exec /usr/bin/cava "$@"

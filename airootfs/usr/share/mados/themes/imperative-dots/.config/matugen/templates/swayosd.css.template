@@ -1,0 +1,43 @@
+/* SwayOSD Matugen Theme 
+   Dynamic Colors
+*/
+
+window#osd-container {
+    background-color: {{colors.surface.default.hex}}; 
+    border: 2px solid {{colors.primary.default.hex}}; 
+    border-radius: 32px; 
+    padding: 24px;
+    margin: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6); 
+}
+
+/* The background "track" of the progress bar */
+trough {
+    background-color: {{colors.surface_container_low.default.hex}}; 
+    border-radius: 99px;
+    border: none;
+    min-height: 12px;
+}
+
+/* The filled part of the progress bar */
+progress {
+    /* Primary to Secondary Gradient */
+    background-image: linear-gradient(to right, {{colors.primary.default.hex}}, {{colors.secondary.default.hex}}); 
+    border-radius: 99px;
+    border: none;
+    min-height: 12px;
+}
+
+/* Text Label styling */
+label {
+    color: {{colors.on_surface.default.hex}}; 
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+/* Icon styling */
+image {
+    color: {{colors.primary.default.hex}}; 
+    -gtk-icon-style: symbolic;
+}

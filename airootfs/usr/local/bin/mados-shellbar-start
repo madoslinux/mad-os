@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+LOG_TAG="mados-shellbar"
+XDG_CONF_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+THEME_DIR_USER="${XDG_CONF_HOME}/imperative-dots"
+THEME_DIR_SYSTEM="/usr/share/mados/themes/imperative-dots"
+
+log_info() {
+    logger -p user.info -t "${LOG_TAG}" "$1"
+}
+
+log_warn() {
+    logger -p user.warning -t "${LOG_TAG}" "$1"
+}
+
+cleanup_existing_bars() {
+    pkill -x waybar >/dev/null 2>&1 || true
+}
+
+launch_theme() {
+    local theme_dir=""
+    local theme_launcher=""
+    local theme_healthcheck=""
+
+    if [[ -x "${THEME_DIR_USER}/start.sh" ]]; then
+        theme_dir="${THEME_DIR_USER}"
+    elif [[ -x "${THEME_DIR_SYSTEM}/start.sh" ]]; then
+        theme_dir="${THEME_DIR_SYSTEM}"
+    else
+        log_warn "No imperative-dots launcher found in user or system paths"
+        return 1
+    fi
+
+    theme_launcher="${theme_dir}/start.sh"
+    theme_healthcheck="${theme_dir}/healthcheck.sh"
+
+    log_info "Launching imperative-dots theme from ${theme_dir}"
+    if ! "${theme_launcher}"; then
+        log_warn "Theme launcher exited with failure"
+        return 1
+    fi
+
+    if [[ -x "${theme_healthcheck}" ]]; then
+        local max_attempts=8
+        local attempt=1
+        while [[ "$attempt" -le "$max_attempts" ]]; do
+            if "${theme_healthcheck}"; then
+                log_info "Theme healthcheck passed (attempt ${attempt}/${max_attempts})"
+                log_info "Theme launched successfully"
+                return 0
+            fi
+            sleep 0.25
+            attempt=$((attempt + 1))
+        done
+        log_warn "Theme healthcheck failed after ${max_attempts} attempts"
+        return 1
+    fi
+
+    log_info "Theme launched successfully"
+    return 0
+}
+
+cleanup_existing_bars
+
+if launch_theme; then
+    exit 0
+fi
+
+log_warn "Theme failed and waybar fallback is disabled"
+exit 1

@@ -44,12 +44,10 @@ set $border-color        #4C566A
 set $indicator-color     #81A1C1
 
 ### Output Configuration
-# Brief placeholder background (overridden by mados-wallpaperd on startup)
+# Brief placeholder background (overridden by imperative-dots wallpaper startup)
 output * bg #2E3440 solid_color
 
-# Initialize wallpaper daemons
-exec swww-daemon
-exec mados-wallpaperd -d
+# Wallpaper is managed by imperative-dots under Hyprland
 
 # Display scaling - adjust scale value to your preference
 # scale 1.0 = 100% (default), 0.8 = 80% (smaller), 0.75 = 75% (even smaller)
@@ -132,13 +130,13 @@ bindsym $mod+Shift+Down move down
 bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
-# Workspaces (each binding also triggers wallpaper change)
-bindsym $mod+1 workspace number 1; exec mados-wallpaperd set 1
-bindsym $mod+2 workspace number 2; exec mados-wallpaperd set 2
-bindsym $mod+3 workspace number 3; exec mados-wallpaperd set 3
-bindsym $mod+4 workspace number 4; exec mados-wallpaperd set 4
-bindsym $mod+5 workspace number 5; exec mados-wallpaperd set 5
-bindsym $mod+6 workspace number 6; exec mados-wallpaperd set 6
+# Workspaces
+bindsym $mod+1 workspace number 1
+bindsym $mod+2 workspace number 2
+bindsym $mod+3 workspace number 3
+bindsym $mod+4 workspace number 4
+bindsym $mod+5 workspace number 5
+bindsym $mod+6 workspace number 6
 
 # Switch workspaces with Super+Alt+arrows (cycles 1-5 with wrap-around)
 bindsym $mod+Mod1+Left exec mados-sway-workspace-cycle prev
@@ -212,14 +210,8 @@ bindsym $mod+Shift+s exec grim -g "$(slurp)" - | wl-copy
 
 ### Startup Applications
 
-# Waybar
-exec_always --no-startup-id "pkill waybar || true; sleep 0.3; waybar"
-
-# WiFi tray applet (NetworkManager)
-exec --no-startup-id nm-applet --indicator
-
-# Bluetooth tray applet (Blueman)
-exec --no-startup-id blueman-applet
+# Shell bar with Waybar fallback
+exec_always --no-startup-id "mados-shellbar-start"
 
 # madOS Application Launcher dock
 exec --no-startup-id mados-launcher

@@ -88,6 +88,12 @@ if ! run_module "03-apps.sh" "install_oh_my_zsh"; then
     exit 1
 fi
 
+# 05-shell-theme.sh - Prepare imperative-dots shell theme
+if ! run_module "05-shell-theme.sh" "install_shell_theme_module"; then
+    echo "FATAL: Shell theme preparation failed"
+    exit 1
+fi
+
 # 04-cleanup.sh - Cleanup
 if ! run_module "04-cleanup.sh" "cleanup_all"; then
     echo "FATAL: Cleanup failed"

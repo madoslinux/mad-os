@@ -70,15 +70,17 @@ clone_and_install_app() {
     mv "${build_dir}/${module_name}" "$install_path"
     rm -rf "$build_dir"
     
-    # Use original bash wrapper if it exists and is actually a bash script (for complex apps like installer)
-    if [[ -f "${install_path}/${app_name}" && "$app_name" == "mados-installer" ]]; then
-        # Skip - installer has special handling below
-        :
-    else
-        # Create wrapper script for all apps
-        # mados-updater needs root privileges to manage /etc and system updates
-        if [[ "$app_name" == "mados-updater" ]]; then
-            cat > "$bin_path" << EOF
+    # Keep mados-wallpaper as assets-only package (no executable wrappers)
+    if [[ "$app_name" != "mados-wallpaper" ]]; then
+        # Use original bash wrapper if it exists and is actually a bash script (for complex apps like installer)
+        if [[ -f "${install_path}/${app_name}" && "$app_name" == "mados-installer" ]]; then
+            # Skip - installer has special handling below
+            :
+        else
+            # Create wrapper script for all apps
+            # mados-updater needs root privileges to manage /etc and system updates
+            if [[ "$app_name" == "mados-updater" ]]; then
+                cat > "$bin_path" << EOF
 #!/bin/bash
 if [[ "\$EUID" -ne 0 ]]; then
     exec sudo -E "\$0" "\$@"
@@ -87,33 +89,23 @@ export PYTHONPATH="${INSTALL_DIR}:\${PYTHONPATH:-}"
 cd "${install_path}"
 exec python3 -m "${module_name}" "\$@"
 EOF
-        else
-            # cd to install_path so python3 -m can find the module
-            cat > "$bin_path" << EOF
+            else
+                # cd to install_path so python3 -m can find the module
+                cat > "$bin_path" << EOF
 #!/bin/bash
 export PYTHONPATH="${INSTALL_DIR}:\${PYTHONPATH:-}"
 cd "${install_path}"
 exec python3 -m "${module_name}" "\$@"
 EOF
+            fi
+            chmod +x "$bin_path"
         fi
-        chmod +x "$bin_path"
     fi
     
-    # Copy desktop file if exists
-    if [[ -f "${install_path}/${app_name}.desktop" ]]; then
+    # Copy desktop file if exists (except assets-only wallpaper package)
+    if [[ "$app_name" != "mados-wallpaper" && -f "${install_path}/${app_name}.desktop" ]]; then
         cp "${install_path}/${app_name}.desktop" /usr/share/applications/
         echo "  → Installed desktop file"
-    fi
-    
-    # Handle wallpaper daemon (runs as python3 -m daemon)
-    if [[ "$app_name" == "mados-wallpaper" && -d "${install_path}/daemon" ]]; then
-        cat > "${BIN_DIR}/mados-wallpaperd" << WALLPAPERD
-#!/bin/bash
-export PYTHONPATH="${install_path}:\${PYTHONPATH:-}"
-cd "${install_path}"
-exec python3 -m daemon "\$@"
-WALLPAPERD
-        chmod +x "${BIN_DIR}/mados-wallpaperd"
     fi
     
     echo "✓ ${app_name} installed to ${install_path}"

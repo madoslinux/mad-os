@@ -1,0 +1,34 @@
+[config]
+reload_apps = false
+
+[templates.quickshell]
+input_path = "~/.config/hypr/scripts/quickshell/colors.json.template"
+output_path = "/tmp/qs_colors.json"
+
+[templates.kitty]
+input_path = "~/.config/matugen/templates/kitty-colors.conf.template"
+output_path = "/tmp/kitty-matugen-colors.conf"
+
+[templates.neovim]
+input_path = "~/.config/matugen/templates/nvim-colors.lua.template"
+output_path = "~/.config/nvim/matugen_colors.lua"
+
+[templates.cava]
+input_path = "~/.config/matugen/templates/cava-colors.ini.template"
+output_path = "~/.config/cava/colors"
+
+[templates.swayosd]
+input_path = "~/.config/matugen/templates/swayosd.css.template"
+output_path = "~/.config/swayosd/style.css"
+
+[templates.swaync]
+input_path = "~/.config/matugen/templates/swaync.css.template"
+output_path = "~/.config/swaync/style.css"
+
+[templates.rofi]
+input_path = "~/.config/matugen/templates/rofi.rasi.template"
+output_path = "~/.config/rofi/theme.rasi"
+
+[templates.sddm]
+input_path = "~/.config/matugen/templates/sddm-colors.qml.template"
+output_path = "/usr/share/sddm/themes/matugen-minimal/Colors.qml"
