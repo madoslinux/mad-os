@@ -94,6 +94,12 @@ if ! run_module "05-shell-theme.sh" "install_shell_theme_module"; then
     exit 1
 fi
 
+# 06-network.sh - Ensure NetworkManager defaults for live ISO
+if ! run_module "06-network.sh" "configure_network_services"; then
+    echo "FATAL: Network defaults configuration failed"
+    exit 1
+fi
+
 # 04-cleanup.sh - Cleanup
 if ! run_module "04-cleanup.sh" "cleanup_all"; then
     echo "FATAL: Cleanup failed"

@@ -28,6 +28,7 @@ file_permissions=(
   ["/root/customize_airootfs.d/01-initramfs.sh"]="0:0:755"
   ["/root/customize_airootfs.d/02-themes.sh"]="0:0:755"
   ["/root/customize_airootfs.d/03-apps.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/06-network.sh"]="0:0:755"
   ["/root/customize_airootfs.d/05-shell-theme.sh"]="0:0:755"
   ["/root/customize_airootfs.d/04-cleanup.sh"]="0:0:755"
   ["/root/.automated_script.sh"]="0:0:755"
@@ -75,6 +76,7 @@ file_permissions=(
   ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
   ["/usr/local/bin/mados-health-check"]="0:0:755"
+  ["/usr/local/bin/mados-network-bootstrap.sh"]="0:0:755"
   ["/usr/local/bin/mados-shellbar-start"]="0:0:755"
   ["/usr/local/bin/mados-hide-steam"]="0:0:755"
   ["/usr/local/bin/mados-help"]="0:0:755"
@@ -139,6 +141,7 @@ file_permissions=(
 
   # Framebuffer and GPU early services
   ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
+  ["/etc/systemd/system/mados-network-bootstrap.service"]="0:0:644"
   ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
 
