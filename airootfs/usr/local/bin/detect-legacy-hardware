@@ -178,6 +178,18 @@ detect_low_ram() {
 # Detección principal
 main() {
     local legacy_reason=""
+
+    # Explicit software render mode (set by run-qemu --software-render)
+    if grep -qw "mados.force_software=1" /proc/cmdline 2>/dev/null; then
+        echo "Forced software rendering kernel flag detected"
+        return 0
+    fi
+
+    # QEMU software-render profile marker via SMBIOS product name
+    if grep -q "madOS-QEMU-SWRENDER" /sys/class/dmi/id/product_name 2>/dev/null; then
+        echo "QEMU software-render profile detected"
+        return 0
+    fi
     
     # Detectar nomodeset (safe graphics mode) - siempre es legacy
     if grep -q 'nomodeset' /proc/cmdline 2>/dev/null; then

@@ -485,7 +485,9 @@ class TestLoginShellIntegration(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "exec sway", content, ".bash_profile must exec sway for no-3D/legacy hardware"
+            "sway-session",
+            content,
+            ".bash_profile must launch sway-session for no-3D/legacy hardware",
         )
         # Must set software rendering vars before launching sway
         self.assertIn(
@@ -525,7 +527,9 @@ class TestLoginShellIntegration(unittest.TestCase):
         path = os.path.join(AIROOTFS, "home", "mados", ".zlogin")
         with open(path) as f:
             content = f.read()
-        self.assertIn("exec sway", content, ".zlogin must exec sway for no-3D/legacy hardware")
+        self.assertIn(
+            "sway-session", content, ".zlogin must launch sway-session for no-3D/legacy hardware"
+        )
         self.assertIn("WLR_RENDERER=pixman", content, ".zlogin must set pixman renderer for sway")
         self.assertIn("GSK_RENDERER=cairo", content, ".zlogin must disable GTK Vulkan renderer")
 
@@ -551,11 +555,11 @@ class TestLoginShellIntegration(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         compositor_pos = content.find("select-compositor")
-        sway_pos = content.find("exec sway")
-        # Hyprland is launched via start-hyprland without exec (fallback pattern: start-hyprland || { exec sway })
+        sway_pos = content.find("sway-session")
+        # Hyprland is launched via start-hyprland without exec (fallback pattern: start-hyprland || { ...sway-session })
         hyprland_pos = content.find("start-hyprland ||")
         self.assertLess(
-            compositor_pos, sway_pos, "Compositor selection must happen before exec sway"
+            compositor_pos, sway_pos, "Compositor selection must happen before sway-session launch"
         )
         self.assertLess(
             compositor_pos,
@@ -873,16 +877,16 @@ class TestHyprlandFallback(unittest.TestCase):
         path = os.path.join(SKEL_DIR, ".bash_profile")
         with open(path) as f:
             content = f.read()
-        # Must use start-hyprland || { ... exec sway } pattern
+        # Must use start-hyprland || { ...sway-session } pattern
         self.assertIn(
             "start-hyprland ||",
             content,
             ".bash_profile must try start-hyprland with fallback operator",
         )
-        # Fallback block must set software rendering and exec sway
+        # Fallback block must set software rendering and launch sway-session
         fallback_pos = content.find("start-hyprland ||")
         after_fallback = content[fallback_pos:]
-        self.assertIn("exec sway", after_fallback, "Fallback block must exec sway")
+        self.assertIn("sway-session", after_fallback, "Fallback block must launch sway-session")
         self.assertIn(
             "WLR_RENDERER=pixman", after_fallback, "Fallback block must set pixman renderer"
         )
@@ -897,7 +901,7 @@ class TestHyprlandFallback(unittest.TestCase):
         )
         fallback_pos = content.find("start-hyprland ||")
         after_fallback = content[fallback_pos:]
-        self.assertIn("exec sway", after_fallback, "Fallback block must exec sway")
+        self.assertIn("sway-session", after_fallback, "Fallback block must launch sway-session")
         self.assertIn(
             "WLR_RENDERER=pixman", after_fallback, "Fallback block must set pixman renderer"
         )
@@ -1116,11 +1120,13 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
             self.assertGreater(
                 fallback_start, -1, ".bash_profile must have Hyprland fallback block"
             )
-            # Find "exec sway" after the fallback start - the fallback ends after that
-            exec_sway_pos = content.find("exec sway", fallback_start)
-            self.assertGreater(exec_sway_pos, -1, ".bash_profile fallback must exec sway")
-            # +20 to include "exec sway" and ensure we capture the full line
-            fallback_block = content[fallback_start : exec_sway_pos + 20]
+            # Find "sway-session" after the fallback start - the fallback ends after that
+            sway_session_pos = content.find("sway-session", fallback_start)
+            self.assertGreater(
+                sway_session_pos, -1, ".bash_profile fallback must launch sway-session"
+            )
+            # +20 to include the match and ensure we capture the full line
+            fallback_block = content[fallback_start : sway_session_pos + 20]
             self.assertIn(
                 "99-vm-performance.conf",
                 fallback_block,
@@ -1170,11 +1176,11 @@ class TestVMPerformanceOptimizations(unittest.TestCase):
         with self.subTest(location="hyprland_fallback"):
             fallback_start = content.find("start-hyprland || {")
             self.assertGreater(fallback_start, -1, ".zlogin must have Hyprland fallback block")
-            # Find "exec sway" after the fallback start - the fallback ends after that
-            exec_sway_pos = content.find("exec sway", fallback_start)
-            self.assertGreater(exec_sway_pos, -1, ".zlogin fallback must exec sway")
-            # +20 to include "exec sway" and ensure we capture the full line
-            fallback_block = content[fallback_start : exec_sway_pos + 20]
+            # Find "sway-session" after the fallback start - the fallback ends after that
+            sway_session_pos = content.find("sway-session", fallback_start)
+            self.assertGreater(sway_session_pos, -1, ".zlogin fallback must launch sway-session")
+            # +20 to include the match and ensure we capture the full line
+            fallback_block = content[fallback_start : sway_session_pos + 20]
             self.assertIn(
                 "99-vm-performance.conf",
                 fallback_block,
@@ -1468,6 +1474,8 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             re.DOTALL,
         )
         self.assertIsNotNone(match, "detect-legacy-hardware must contain vmwgfx case")
+        if match is None:
+            self.fail("detect-legacy-hardware must contain vmwgfx case")
         vmwgfx_body = match.group(1)
         self.assertNotIn(
             "return 0",
@@ -1526,14 +1534,16 @@ class TestVMwareRenderingFallback(unittest.TestCase):
         )
 
     def test_hyprland_session_falls_back_to_sway_session(self):
-        """hyprland-session must fall back to sway-session on legacy hardware."""
+        """hyprland-session fallback is delegated to login shell/start wrapper."""
         path = os.path.join(BIN_DIR, "hyprland-session")
         if not os.path.isfile(path):
             self.skipTest("hyprland-session not found")
         with open(path) as f:
             content = f.read()
         self.assertIn(
-            "sway-session", content, "hyprland-session must reference sway-session as fallback"
+            "start-hyprland",
+            content,
+            "hyprland-session must delegate launch/fallback handling to start-hyprland",
         )
 
     def test_hyprland_session_still_execs_start_hyprland(self):

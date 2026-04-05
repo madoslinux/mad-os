@@ -19,6 +19,34 @@ cleanup_existing_bars() {
     pkill -x waybar >/dev/null 2>&1 || true
 }
 
+is_hyprland_session() {
+    [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || [[ "${XDG_CURRENT_DESKTOP:-}" = "Hyprland" ]]
+}
+
+is_sway_session() {
+    [[ -n "${SWAYSOCK:-}" ]] || [[ "${XDG_CURRENT_DESKTOP:-}" = "sway" ]]
+}
+
+launch_waybar() {
+    local waybar_config="${XDG_CONF_HOME}/waybar/config"
+    local waybar_style="${XDG_CONF_HOME}/waybar/style.css"
+
+    if ! command -v waybar >/dev/null 2>&1; then
+        log_warn "waybar binary not found"
+        return 1
+    fi
+
+    if [[ -f "${waybar_config}" && -f "${waybar_style}" ]]; then
+        log_info "Launching waybar with user config"
+        waybar -c "${waybar_config}" -s "${waybar_style}" >/dev/null 2>&1 &
+        return 0
+    fi
+
+    log_warn "Waybar config missing, launching with defaults"
+    waybar >/dev/null 2>&1 &
+    return 0
+}
+
 launch_theme() {
     local theme_dir=""
     local theme_launcher=""
@@ -64,9 +92,20 @@ launch_theme() {
 
 cleanup_existing_bars
 
+if is_sway_session; then
+    log_info "Sway session detected, launching waybar"
+    launch_waybar
+    exit $?
+fi
+
 if launch_theme; then
     exit 0
 fi
 
-log_warn "Theme failed and waybar fallback is disabled"
+log_warn "Theme launch failed, falling back to waybar"
+if launch_waybar; then
+    exit 0
+fi
+
+log_warn "No shell bar could be started"
 exit 1

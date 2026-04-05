@@ -81,9 +81,11 @@ if [[ "$RENDER_MODE" == "software" ]]; then
     echo "Using software rendering mode (virtio DRM + GL off)"
     echo "Hint: this mode keeps DRM (for wlroots) but forces software rendering in guest"
     VIDEO_OPTS=(-vga virtio -global virtio-vga.max_outputs=1 -display gtk,gl=off)
+    DMI_OPTS=(-smbios type=1,product=madOS-QEMU-SWRENDER)
 else
     echo "Using virtio rendering mode"
     VIDEO_OPTS=(-vga virtio -global virtio-vga.max_outputs=1 -display gtk)
+    DMI_OPTS=()
 fi
 
 # UEFI firmware
@@ -113,6 +115,7 @@ QEMU_CMD=(
     -net nic
     -net user,hostfwd=tcp::2222-:22
     "${VIDEO_OPTS[@]}"
+    "${DMI_OPTS[@]}"
     -device qemu-xhci
     -device usb-tablet
     $SERIAL_OPTS
