@@ -287,9 +287,9 @@ elif [[ "$1" == "--set-config" ]]; then
     new_id="${3:-}"
     new_unit="${4:-metric}"
 
-    new_key=$(printf '%s' "$new_key" | tr -d '\r\n')
-    new_id=$(printf '%s' "$new_id" | tr -d '\r\n')
-    new_unit=$(printf '%s' "$new_unit" | tr -d '\r\n')
+    new_key=$(printf '%s' "$new_key" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    new_id=$(printf '%s' "$new_id" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    new_unit=$(printf '%s' "$new_unit" | tr -d '\r\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
     if [[ "$new_unit" != "metric" && "$new_unit" != "imperial" ]]; then
         new_unit="metric"
@@ -301,16 +301,26 @@ elif [[ "$1" == "--set-config" ]]; then
     fi
 
     test_url="https://api.openweathermap.org/data/2.5/weather?APPID=${new_key}&id=${new_id}&units=${new_unit}"
-    test_json=$(curl -fsS "$test_url" 2>/dev/null || true)
+    test_resp=$(curl -sS --connect-timeout 10 --max-time 20 -w '\n%{http_code}' "$test_url" 2>/dev/null || true)
+    http_code=$(printf '%s\n' "$test_resp" | tail -n 1)
+    test_json=$(printf '%s\n' "$test_resp" | sed '$d')
 
-    if [[ -z "$test_json" ]]; then
+    if [[ -z "$http_code" || -z "$test_json" ]]; then
         echo '{"ok":false,"message":"OpenWeather request failed"}'
         exit 1
     fi
 
-    api_code=$(printf '%s' "$test_json" | jq -r '.cod // ""' 2>/dev/null || true)
-    if [[ "$api_code" != "200" ]]; then
-        api_msg=$(printf '%s' "$test_json" | jq -r '.message // "Invalid API key or city id"' 2>/dev/null || true)
+    api_code=""
+    api_msg=""
+    if command -v jq >/dev/null 2>&1; then
+        api_code=$(printf '%s' "$test_json" | jq -r '.cod // ""' 2>/dev/null || true)
+        api_msg=$(printf '%s' "$test_json" | jq -r '.message // ""' 2>/dev/null || true)
+    fi
+
+    if [[ "$http_code" != "200" && "$api_code" != "200" ]]; then
+        if [[ -z "$api_msg" ]]; then
+            api_msg="OpenWeather validation failed (HTTP ${http_code})"
+        fi
         esc_msg=$(printf '%s' "$api_msg" | sed 's/"/\\"/g')
         printf '{"ok":false,"message":"%s"}\n' "$esc_msg"
         exit 1
