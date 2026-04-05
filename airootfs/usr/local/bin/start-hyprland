@@ -15,14 +15,6 @@
 LOG_TAG="start-hyprland"
 MIN_RUNTIME=5  # seconds - if Hyprland exits faster than this, it failed
 
-apply_hyprland_software_env() {
-    export WLR_RENDERER_ALLOW_SOFTWARE=1
-    export LIBGL_ALWAYS_SOFTWARE=1
-    export WLR_NO_HARDWARE_CURSORS=1
-    export MESA_GL_VERSION_OVERRIDE=3.3
-    export GSK_RENDERER=cairo
-}
-
 logger -p user.info -t "$LOG_TAG" "Preparing to launch Hyprland"
 
 # Ensure required environment variables are set
@@ -33,20 +25,6 @@ export MOZ_ENABLE_WAYLAND="${MOZ_ENABLE_WAYLAND:-1}"
 # Use systemd-logind as the seat management backend (madOS uses systemd)
 export LIBSEAT_BACKEND="${LIBSEAT_BACKEND:-logind}"
 
-# If user explicitly requested software GL in VM/testing, keep Hyprland and rely
-# on wlroots software path instead of forcing compositor switch.
-if [ "${LIBGL_ALWAYS_SOFTWARE:-0}" = "1" ] || [ "${WLR_RENDERER_ALLOW_SOFTWARE:-0}" = "1" ]; then
-    apply_hyprland_software_env
-    logger -p user.warning -t "$LOG_TAG" "Software rendering requested - keeping Hyprland"
-fi
-
-# Explicit software mode from kernel cmdline or QEMU software profile.
-if grep -qw "mados.force_software=1" /proc/cmdline 2>/dev/null ||
-    grep -q "madOS-QEMU-SWRENDER" /sys/class/dmi/id/product_name 2>/dev/null; then
-    apply_hyprland_software_env
-    logger -p user.warning -t "$LOG_TAG" "Forced software profile detected - trying Hyprland software rendering first"
-fi
-
 # Verify Hyprland binary exists
 if ! command -v Hyprland >/dev/null 2>&1; then
     logger -p user.err -t "$LOG_TAG" "Hyprland binary not found"
@@ -54,12 +32,13 @@ if ! command -v Hyprland >/dev/null 2>&1; then
     exit 1
 fi
 
-# Pre-flight: detect legacy hardware for logging only (do not block Hyprland)
+# Pre-flight: legacy/no-3D hardware must not launch Hyprland
 if [ -x /usr/local/bin/detect-legacy-hardware ]; then
     detect_output=$(/usr/local/bin/detect-legacy-hardware 2>&1)
     if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        apply_hyprland_software_env
-        logger -p user.warning -t "$LOG_TAG" "Legacy hardware detected ($detect_output) - attempting Hyprland software path"
+        logger -p user.warning -t "$LOG_TAG" "Legacy/no-3D hardware detected ($detect_output) - refusing Hyprland"
+        echo "Legacy/no-3D hardware detected - use Sway software fallback" >&2
+        exit 1
     fi
 fi
 

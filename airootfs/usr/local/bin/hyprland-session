@@ -6,25 +6,10 @@ export MOZ_ENABLE_WAYLAND=1
 # Use systemd-logind as the seat management backend (madOS uses systemd)
 export LIBSEAT_BACKEND=logind
 
-# Force software rendering from kernel cmdline (used by run-qemu --software-render)
-if grep -qw "mados.force_software=1" /proc/cmdline 2>/dev/null; then
-    export WLR_RENDERER_ALLOW_SOFTWARE=1
-    export LIBGL_ALWAYS_SOFTWARE=1
-    export WLR_NO_HARDWARE_CURSORS=1
-    export MESA_GL_VERSION_OVERRIDE=3.3
-    export GSK_RENDERER=cairo
-    logger -p user.warning -t mados-hyprland "Forced software rendering requested, keeping Hyprland"
-fi
-
-# Legacy / no-3D hardware: keep Hyprland but switch to software rendering env.
 if [ -x /usr/local/bin/detect-legacy-hardware ]; then
     if /usr/local/bin/detect-legacy-hardware >/dev/null 2>&1; then
-        export WLR_RENDERER_ALLOW_SOFTWARE=1
-        export LIBGL_ALWAYS_SOFTWARE=1
-        export WLR_NO_HARDWARE_CURSORS=1
-        export MESA_GL_VERSION_OVERRIDE=3.3
-        export GSK_RENDERER=cairo
-        logger -p user.warning -t mados-hyprland "Legacy hardware detected, starting Hyprland with software rendering"
+        logger -p user.warning -t mados-hyprland "Legacy/no-3D hardware detected, refusing Hyprland session"
+        exit 1
     fi
 fi
 

@@ -1304,12 +1304,12 @@ class TestWallpaperGlitchScript(unittest.TestCase):
         )
 
     def test_hyprland_conf_references_script(self):
-        """hyprland.conf must exec-once the wallpaper daemon."""
+        """hyprland.conf must not launch mados-wallpaperd (Hyprland uses imperative-dots)."""
         content = _read_config()
-        self.assertIn(
+        self.assertNotIn(
             "mados-wallpaperd",
             content,
-            "hyprland.conf must launch mados-wallpaperd via exec-once",
+            "hyprland.conf must not launch mados-wallpaperd; Hyprland wallpaper is managed externally",
         )
 
     def test_profiledef_has_permissions(self):

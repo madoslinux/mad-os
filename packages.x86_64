@@ -1,5 +1,7 @@
 # Sistema base
 base
+linux-zen
+linux-lts
 linux-firmware
 nvme-cli
 mkinitcpio-archiso
@@ -20,7 +22,7 @@ sway
 swaybg
 swayidle
 swaylock
-awww
+swww
 quickshell
 swaync
 waybar

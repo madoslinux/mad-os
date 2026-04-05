@@ -139,8 +139,8 @@ bindsym $mod+5 workspace number 5
 bindsym $mod+6 workspace number 6
 
 # Switch workspaces with Super+Alt+arrows (cycles 1-5 with wrap-around)
-bindsym $mod+Mod1+Left exec mados-sway-workspace-cycle prev
-bindsym $mod+Mod1+Right exec mados-sway-workspace-cycle next
+bindsym $mod+Mod1+Left exec sh -c 'mados-sway-workspace-cycle prev; mados-wallpaperd set'
+bindsym $mod+Mod1+Right exec sh -c 'mados-sway-workspace-cycle next; mados-wallpaperd set'
 
 # Move to workspaces
 bindsym $mod+Shift+1 move container to workspace number 1
@@ -215,6 +215,7 @@ exec_always --no-startup-id "mados-shellbar-start"
 
 # madOS Application Launcher dock
 exec --no-startup-id mados-launcher
+exec --no-startup-id mados-wallpaperd start
 
 # Steam Deck / Gamepad → WM bridge (translates gamepad buttons to sway commands)
 # Only activates when a gamepad is detected; exits cleanly if none found

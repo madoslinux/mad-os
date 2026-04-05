@@ -25,12 +25,13 @@ if [ -z "${WAYLAND_DISPLAY}" ] && [ "$(tty)" = "/dev/tty1" ]; then
     export XDG_SESSION_TYPE=wayland
     export MOZ_ENABLE_WAYLAND=1
 
-    # Prefer Hyprland by default; keep hardware detection for diagnostics/logging.
-    # Fallback to sway is still handled by start-hyprland on runtime failure.
+    # Hardware policy:
+    # - Hyprland only on hardware-accelerated systems
+    # - Sway on legacy / software-rendering systems
     COMPOSITOR="hyprland"
     if [ -x /usr/local/bin/select-compositor ]; then
-        DETECTED_COMPOSITOR=$(/usr/local/bin/select-compositor)
-        logger -p user.info -t mados-session "Detected compositor hint: ${DETECTED_COMPOSITOR}; forcing hyprland first"
+        COMPOSITOR=$(/usr/local/bin/select-compositor)
+        logger -p user.info -t mados-session "Detected compositor: ${COMPOSITOR}"
     fi
 
     if [ "$COMPOSITOR" = "sway" ]; then
