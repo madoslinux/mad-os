@@ -70,6 +70,10 @@ NOISE_CATEGORIES = {
     "ConsoleOnly",
 }
 
+HIDDEN_LAUNCHER_EXECS = {
+    "mados-launcher",
+}
+
 PRIMARY_CATEGORY_ORDER = [
     "Game",
     "Network",
@@ -382,6 +386,10 @@ def parse_desktop_file(path: Path) -> dict | None:
     name = data.get("Name", "").strip()
     exec_cmd = clean_exec(data.get("Exec", "").strip())
     if not name or not exec_cmd:
+        return None
+
+    exec_head = exec_cmd.split(maxsplit=1)[0]
+    if exec_head in HIDDEN_LAUNCHER_EXECS:
         return None
 
     icon_name = data.get("Icon", "").strip()
