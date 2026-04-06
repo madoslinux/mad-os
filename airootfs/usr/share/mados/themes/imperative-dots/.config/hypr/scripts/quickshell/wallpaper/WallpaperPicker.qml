@@ -814,28 +814,31 @@ Item {
         showDirs: false
         sortField: FolderListModel.Name 
         
-        onCountChanged: window.syncLocalModel()
+        onCountChanged: {
+            if (status === FolderListModel.Ready) {
+                window.syncLocalModel()
+            }
+        }
         onStatusChanged: { if (status === FolderListModel.Ready) window.syncLocalModel() }
     }
 
     function syncLocalModel() {
-        let startIdx = localProxyModel.count;
-        let endIdx = localFolderModel.count;
-        
-        if (endIdx < startIdx) {
-            window.isModelChanging = true;
-            localProxyModel.clear();
-            startIdx = 0;
-            window.isModelChanging = false;
+        if (localFolderModel.status !== FolderListModel.Ready) {
+            return;
         }
 
-        for (let i = startIdx; i < endIdx; i++) {
+        window.isModelChanging = true;
+        localProxyModel.clear();
+
+        for (let i = 0; i < localFolderModel.count; i++) {
             let fn = localFolderModel.get(i, "fileName");
             let fu = localFolderModel.get(i, "fileUrl");
-            if (fn !== undefined) {
-                localProxyModel.append({ "fileName": fn, "fileUrl": String(fu) });
+            if (fn !== undefined && fu !== undefined) {
+                localProxyModel.append({ "fileName": String(fn), "fileUrl": String(fu) });
             }
         }
+
+        window.isModelChanging = false;
 
         if (window.currentFilter !== "Search") window.updateVisibleCount();
         
@@ -858,28 +861,31 @@ Item {
             window.isModelChanging = false;
         }
         
-        onCountChanged: window.syncSearchModel()
+        onCountChanged: {
+            if (status === FolderListModel.Ready) {
+                window.syncSearchModel()
+            }
+        }
         onStatusChanged: { if (status === FolderListModel.Ready) window.syncSearchModel() }
     }
 
     function syncSearchModel() {
-        let startIdx = searchProxyModel.count;
-        let endIdx = searchFolderModel.count;
-        
-        if (endIdx < startIdx) {
-            window.isModelChanging = true;
-            searchProxyModel.clear();
-            startIdx = 0;
-            window.isModelChanging = false;
+        if (searchFolderModel.status !== FolderListModel.Ready) {
+            return;
         }
 
-        for (let i = startIdx; i < endIdx; i++) {
+        window.isModelChanging = true;
+        searchProxyModel.clear();
+
+        for (let i = 0; i < searchFolderModel.count; i++) {
             let fn = searchFolderModel.get(i, "fileName");
             let fu = searchFolderModel.get(i, "fileUrl");
-            if (fn !== undefined) {
-                searchProxyModel.append({ "fileName": fn, "fileUrl": String(fu) });
+            if (fn !== undefined && fu !== undefined) {
+                searchProxyModel.append({ "fileName": String(fn), "fileUrl": String(fu) });
             }
         }
+
+        window.isModelChanging = false;
 
         if (window.currentFilter === "Search") window.updateVisibleCount();
 
@@ -888,7 +894,7 @@ Item {
                 window.trySearchFocus();
             }
             
-            if (window.isScrollingBlocked && startIdx === 0 && searchProxyModel.count > 0 && window.lastSearchName === "") {
+            if (window.isScrollingBlocked && searchProxyModel.count > 0 && window.lastSearchName === "") {
                 view.forceLayout();
                 view.currentIndex = 0;
                 view.positionViewAtIndex(0, ListView.Center);

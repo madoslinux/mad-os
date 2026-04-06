@@ -53,6 +53,8 @@ fi
 handle_wallpaper_prep() {
     mkdir -p "$THUMB_DIR"
     (
+        shopt -s nullglob
+
         for thumb in "$THUMB_DIR"/*; do
             [ -e "$thumb" ] || continue
             filename=$(basename "$thumb")
@@ -78,17 +80,33 @@ handle_wallpaper_prep() {
 
             if [[ "${extension,,}" =~ ^(mp4|mkv|mov|webm)$ ]]; then
                 thumb="$THUMB_DIR/000_$filename"
+                tmp_thumb="$THUMB_DIR/.000_${filename}.tmp.jpg"
                 [ -f "$THUMB_DIR/$filename" ] && rm -f "$THUMB_DIR/$filename"
                 if [ ! -f "$thumb" ]; then
-                     ffmpeg -y -ss 00:00:05 -i "$img" -vframes 1 -f image2 -q:v 2 "$thumb" > /dev/null 2>&1
+                    rm -f "$tmp_thumb"
+                    if ffmpeg -y -ss 00:00:05 -i "$img" -vframes 1 -f image2 -q:v 2 "$tmp_thumb" > /dev/null 2>&1; then
+                        mv -f "$tmp_thumb" "$thumb"
+                    else
+                        rm -f "$tmp_thumb"
+                    fi
                 fi
             else
                 thumb="$THUMB_DIR/$filename"
                 if [ ! -f "$thumb" ]; then
-                    magick "$img" -resize x420 -quality 70 "$thumb"
+                    thumb_ext="${thumb##*.}"
+                    thumb_base="${thumb%.*}"
+                    tmp_thumb="${thumb_base}.tmp.$RANDOM.${thumb_ext}"
+                    rm -f "$tmp_thumb"
+                    if magick "$img" -resize x420 -quality 70 "$tmp_thumb" > /dev/null 2>&1; then
+                        mv -f "$tmp_thumb" "$thumb"
+                    else
+                        rm -f "$tmp_thumb"
+                    fi
                 fi
             fi
         done
+
+        shopt -u nullglob
     ) &
 
     TARGET_THUMB=""
