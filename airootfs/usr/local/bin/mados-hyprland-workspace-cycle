@@ -34,4 +34,4 @@ fi
 hyprctl dispatch workspace "$target" 2>/dev/null || true
 
 # Set the wallpaper for the new workspace
-mados-wallpaperd set "$target"
+mados-hyprland-wallpaper-set "$target"

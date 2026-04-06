@@ -104,13 +104,29 @@ if command -v gsettings >/dev/null 2>&1; then
 fi
 
 # Keep GTK settings files aligned with runtime theme so apps start correctly
+ensure_gtk_theme_name() {
+    local settings_file="$1"
+
+    if [[ ! -f "$settings_file" ]]; then
+        cat > "$settings_file" <<'EOF'
+[Settings]
+gtk-theme-name=Adwaita
+EOF
+        return
+    fi
+
+    if grep -q '^gtk-theme-name=' "$settings_file"; then
+        sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita/' "$settings_file"
+    elif grep -q '^\[Settings\]' "$settings_file"; then
+        printf 'gtk-theme-name=Adwaita\n' >> "$settings_file"
+    else
+        printf '\n[Settings]\ngtk-theme-name=Adwaita\n' >> "$settings_file"
+    fi
+}
+
 mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
-if [[ -f "$HOME/.config/gtk-3.0/settings.ini" ]]; then
-    sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita/' "$HOME/.config/gtk-3.0/settings.ini"
-fi
-if [[ -f "$HOME/.config/gtk-4.0/settings.ini" ]]; then
-    sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita/' "$HOME/.config/gtk-4.0/settings.ini"
-fi
+ensure_gtk_theme_name "$HOME/.config/gtk-3.0/settings.ini"
+ensure_gtk_theme_name "$HOME/.config/gtk-4.0/settings.ini"
 
 # GTK apps often need restart to apply regenerated css
 for gtk_proc in pcmanfm lxappearance gnome-text-editor gedit nautilus; do

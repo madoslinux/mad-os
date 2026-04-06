@@ -14,6 +14,8 @@
 # focused workspace.
 
 DB_PATH="${HOME}/.local/share/mados/wallpapers.db"
+MATUGEN_RELOAD_SCRIPT="${HOME}/.config/hypr/scripts/quickshell/wallpaper/matugen_reload.sh"
+MATUGEN_STATE_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/mados-last-matugen-wallpaper"
 
 ws="${1:-}"
 
@@ -40,6 +42,20 @@ if [[ -f "$DB_PATH" ]] && command -v sqlite3 >/dev/null 2>&1; then
                 --transition-duration 0.4 \
                 --transition-fps 60 \
                 --transition-step 90 2>/dev/null || true
+        fi
+
+        if command -v matugen >/dev/null 2>&1 && [[ -f "$MATUGEN_RELOAD_SCRIPT" ]]; then
+            last_applied=""
+            if [[ -f "$MATUGEN_STATE_FILE" ]]; then
+                last_applied="$(<"$MATUGEN_STATE_FILE")"
+            fi
+
+            if [[ "$last_applied" != "$wallpaper" ]]; then
+                matugen image "$wallpaper" --source-color-index 0 >/dev/null 2>&1 || true
+                bash "$MATUGEN_RELOAD_SCRIPT" >/dev/null 2>&1 || true
+                mkdir -p "$(dirname "$MATUGEN_STATE_FILE")"
+                printf '%s\n' "$wallpaper" > "$MATUGEN_STATE_FILE" 2>/dev/null || true
+            fi
         fi
     fi
 fi

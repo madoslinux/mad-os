@@ -1368,6 +1368,11 @@ class TestWallpaperGlitchScript(unittest.TestCase):
             content,
             "Script must check if socat is available",
         )
+        self.assertIn(
+            "matugen",
+            content,
+            "Script must check if matugen is available",
+        )
 
     def test_script_uses_sqlite(self):
         """mados-wallpaper-hyprland must use SQLite for wallpaper storage."""
@@ -1394,6 +1399,27 @@ class TestWallpaperGlitchScript(unittest.TestCase):
             "Script must create workspace assignments table",
         )
 
+    def test_script_applies_matugen_on_wallpaper_change(self):
+        """mados-wallpaper-hyprland must regenerate matugen colors per wallpaper."""
+        with open(self.SCRIPT_PATH) as f:
+            content = f.read()
+
+        self.assertIn(
+            "apply_matugen",
+            content,
+            "Script must define apply_matugen helper",
+        )
+        self.assertIn(
+            "matugen image",
+            content,
+            "Script must run matugen image when wallpaper changes",
+        )
+        self.assertIn(
+            "matugen_reload.sh",
+            content,
+            "Script must call matugen reload script after generating colors",
+        )
+
     def test_hyprland_wallpaper_no_placeholder_line(self):
         """hyprland.conf must NOT have a swww img placeholder line.
 
@@ -1411,6 +1437,246 @@ class TestWallpaperGlitchScript(unittest.TestCase):
                     "hyprland.conf must NOT have a swww img placeholder line; "
                     "mados-wallpaper-hyprland handles initial wallpaper setup"
                 )
+
+
+class TestHyprlandMatugenStartup(unittest.TestCase):
+    """Verify matugen startup/reload integration for Hyprland sessions."""
+
+    INIT_SCRIPT = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        ".config",
+        "hypr",
+        "scripts",
+        "init.sh",
+    )
+
+    RELOAD_SCRIPT = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        ".config",
+        "hypr",
+        "scripts",
+        "quickshell",
+        "wallpaper",
+        "matugen_reload.sh",
+    )
+
+    GTK_ENV_CONF = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "etc",
+        "skel",
+        ".config",
+        "environment.d",
+        "gtk-theme.conf",
+    )
+
+    MATUGEN_CONFIG = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        ".config",
+        "matugen",
+        "config.toml",
+    )
+
+    HYPRLAND_TEMPLATE = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        ".config",
+        "matugen",
+        "templates",
+        "hyprland-colors.conf.template",
+    )
+
+    KITTY_TEMPLATE = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        ".config",
+        "kitty",
+        "kitty.conf",
+    )
+
+    THEME_START = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        "start.sh",
+    )
+
+    def test_init_uses_runtime_session_flag(self):
+        """init.sh must guard with a runtime /tmp session flag (not persistent cache)."""
+        with open(self.INIT_SCRIPT) as f:
+            content = f.read()
+
+        self.assertIn(
+            'SESSION_FLAG="/tmp/mados-wallpaper-initialized-',
+            content,
+            "init.sh must use a runtime /tmp session guard so matugen runs each login",
+        )
+        self.assertIn(
+            '[[ -f "$SESSION_FLAG" ]] && exit 0',
+            content,
+            "init.sh must exit only when current session is already initialized",
+        )
+
+    def test_init_keeps_guide_flag_separate(self):
+        """Guide popup one-time flag must not block matugen startup logic."""
+        with open(self.INIT_SCRIPT) as f:
+            content = f.read()
+
+        self.assertIn(
+            'GUIDE_FLAG="$HOME/.cache/wallpaper_initialized"',
+            content,
+            "init.sh must keep wallpaper_initialized only for guide widget state",
+        )
+        self.assertNotIn(
+            '[ -f "$HOME/.cache/wallpaper_initialized" ] && exit 0',
+            content,
+            "init.sh must not block startup from persistent wallpaper_initialized flag",
+        )
+
+    def test_init_runs_matugen_and_reload(self):
+        """init.sh must regenerate matugen palette and reload consumers at startup."""
+        with open(self.INIT_SCRIPT) as f:
+            content = f.read()
+
+        self.assertIn("matugen image", content, "init.sh must run matugen image on startup")
+        self.assertIn(
+            "matugen_reload.sh",
+            content,
+            "init.sh must run matugen reload script after palette generation",
+        )
+        self.assertIn(
+            "/tmp/lock_bg.png",
+            content,
+            "init.sh should use lock background as preferred startup palette source",
+        )
+
+    def test_reload_script_ensures_gtk_theme_name(self):
+        """matugen reload script must enforce gtk-theme-name in both settings files."""
+        with open(self.RELOAD_SCRIPT) as f:
+            content = f.read()
+
+        self.assertIn(
+            "ensure_gtk_theme_name()",
+            content,
+            "matugen_reload.sh must provide helper to ensure gtk-theme-name exists",
+        )
+        self.assertIn(
+            'ensure_gtk_theme_name "$HOME/.config/gtk-3.0/settings.ini"',
+            content,
+            "matugen_reload.sh must enforce GTK3 settings.ini theme key",
+        )
+        self.assertIn(
+            'ensure_gtk_theme_name "$HOME/.config/gtk-4.0/settings.ini"',
+            content,
+            "matugen_reload.sh must enforce GTK4 settings.ini theme key",
+        )
+
+    def test_gtk_env_theme_matches_hyprland_defaults(self):
+        """Systemd user GTK_THEME must match Hyprland runtime default theme."""
+        with open(self.GTK_ENV_CONF) as f:
+            content = f.read()
+
+        self.assertIn(
+            "GTK_THEME=Adwaita:dark",
+            content,
+            "gtk-theme.conf must align with Hyprland Adwaita dark runtime theme",
+        )
+
+    def test_matugen_hyprland_template_uses_valid_replace_syntax(self):
+        """Hyprland template must use matugen v4-compatible replace filter syntax."""
+        with open(self.HYPRLAND_TEMPLATE) as f:
+            content = f.read()
+
+        self.assertNotIn(
+            "replace(from=",
+            content,
+            "Hyprland matugen template must not use old replace(from=..., to=...) syntax",
+        )
+        self.assertIn(
+            'replace: "#", ""',
+            content,
+            'Hyprland matugen template must use replace: "#", "" syntax',
+        )
+
+    def test_matugen_config_avoids_privileged_sddm_output(self):
+        """User-session matugen config must not write to privileged /usr/share paths."""
+        with open(self.MATUGEN_CONFIG) as f:
+            content = f.read()
+
+        self.assertNotIn(
+            "[templates.sddm]",
+            content,
+            "Session matugen config must not include privileged SDDM template output",
+        )
+        self.assertNotIn(
+            "/usr/share/sddm",
+            content,
+            "Session matugen config must avoid writing to /usr/share/sddm",
+        )
+
+    def test_theme_start_syncs_kitty_config(self):
+        """imperative-dots start script must deploy kitty config for matugen colors."""
+        with open(self.THEME_START) as f:
+            content = f.read()
+
+        self.assertIn(
+            "THEME_KITTY",
+            content,
+            "start.sh must define THEME_KITTY source path",
+        )
+        self.assertIn(
+            "TARGET_KITTY",
+            content,
+            "start.sh must define TARGET_KITTY destination path",
+        )
+        self.assertIn(
+            'cp -a "${THEME_KITTY}" "${TARGET_KITTY}"',
+            content,
+            "start.sh must copy kitty config into user config",
+        )
+
+    def test_kitty_config_includes_matugen_palette(self):
+        """Kitty config must include generated matugen color file."""
+        with open(self.KITTY_TEMPLATE) as f:
+            content = f.read()
+
+        self.assertIn(
+            "include /tmp/kitty-matugen-colors.conf",
+            content,
+            "kitty config must include /tmp/kitty-matugen-colors.conf",
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1927,9 +2193,9 @@ class TestHyprlandWorkspaceCycleScript(unittest.TestCase):
         with open(self.CYCLE_SCRIPT) as f:
             content = f.read()
         self.assertIn(
-            "mados-wallpaperd",
+            "mados-hyprland-wallpaper-set",
             content,
-            "Script must call mados-wallpaperd after switching workspace",
+            "Script must call mados-hyprland-wallpaper-set after switching workspace",
         )
 
     def test_profiledef_has_cycle_script_permissions(self):
