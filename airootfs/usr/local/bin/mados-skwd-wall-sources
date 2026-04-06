@@ -10,6 +10,10 @@ from pathlib import Path
 DEFAULT_SOURCES = [
     "~/.local/share/mados/wallpapers",
     "~/Pictures/Wallpapers",
+    "/usr/share/backgrounds",
+    "/usr/share/wallpapers",
+    "/usr/share/mados/wallpapers",
+    "/opt/mados/mados_wallpaper",
 ]
 
 IMAGE_EXTENSIONS = {

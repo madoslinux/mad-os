@@ -617,6 +617,10 @@ from pathlib import Path
 DEFAULT_SOURCES = [
     "~/.local/share/mados/wallpapers",
     "~/Pictures/Wallpapers",
+    "/usr/share/backgrounds",
+    "/usr/share/wallpapers",
+    "/usr/share/mados/wallpapers",
+    "/opt/mados/mados_wallpaper",
 ]
 
 IMAGE_EXTENSIONS = {
@@ -1006,12 +1010,16 @@ setup_wallpaper_assets() {
     
     mkdir -p /etc/skel/.local/share/mados/wallpapers
     mkdir -p /etc/skel/Pictures/Wallpapers
+    mkdir -p /usr/share/mados/wallpapers
     cp "$wallpaper_dir"/*.png /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
     cp "$wallpaper_dir"/*.jpg /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
     cp "$wallpaper_dir"/*.jpeg /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
     cp "$wallpaper_dir"/*.png /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
     cp "$wallpaper_dir"/*.jpg /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
     cp "$wallpaper_dir"/*.jpeg /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.png /usr/share/mados/wallpapers/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.jpg /usr/share/mados/wallpapers/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.jpeg /usr/share/mados/wallpapers/ 2>/dev/null || true
     
     if [[ -d /home/mados ]]; then
         mkdir -p /home/mados/.local/share/mados/wallpapers

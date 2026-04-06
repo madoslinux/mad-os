@@ -180,6 +180,8 @@ class TestSkwdWallIntegration(unittest.TestCase):
     def test_hypr_bindings_use_wallpaper_picker_helper(self):
         self.assertIn("mados-wallpaper-picker toggle", _read(HYPR_CONF))
         self.assertIn("mados-wallpaper-picker toggle", _read(THEME_HYPR_CONF))
+        self.assertIn("mados-wallpaper-picker web", _read(HYPR_CONF))
+        self.assertIn("mados-wallpaper-picker web", _read(THEME_HYPR_CONF))
 
     def test_hypr_autostart_starts_skwd_wall_daemon(self):
         self.assertIn("systemctl --user start skwd-wall.service", _read(HYPR_CONF))
@@ -188,6 +190,7 @@ class TestSkwdWallIntegration(unittest.TestCase):
     def test_guide_uses_wallpaper_picker_helper(self):
         guide = _read(GUIDE_QML)
         self.assertIn("mados-wallpaper-picker toggle", guide)
+        self.assertIn("mados-wallpaper-picker web", guide)
         self.assertNotIn("qs_manager.sh toggle wallpaper", guide)
 
     def test_wallpaper_picker_helper_exists_with_fallback_path(self):
@@ -205,6 +208,8 @@ class TestSkwdWallIntegration(unittest.TestCase):
         sources_helper = _read(SKWD_SOURCES_HELPER)
         self.assertIn("wallpaperSources", sources_helper)
         self.assertIn("wallpaper-union", sources_helper)
+        self.assertIn('"/usr/share/backgrounds"', sources_helper)
+        self.assertIn('"/usr/share/mados/wallpapers"', sources_helper)
 
         doctor_helper = _read(SKWD_DOCTOR_HELPER)
         self.assertIn("/usr/local/share/skwd-wall/daemon.qml", doctor_helper)

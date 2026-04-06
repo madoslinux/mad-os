@@ -2,6 +2,10 @@
 set -euo pipefail
 
 ACTION="${1:-toggle}"
+if [[ $# -gt 0 ]]; then
+    shift
+fi
+QUERY_ARGS=("$@")
 DAEMON_QML="/usr/local/share/skwd-wall/daemon.qml"
 SERVICE_NAME="skwd-wall.service"
 LOG_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/mados/skwd-wall.log"
@@ -20,13 +24,12 @@ ensure_log_dir() {
 close_qs_overlay() {
     local qs_manager="$HOME/.config/hypr/scripts/qs_manager.sh"
     if [[ -x "$qs_manager" ]]; then
-        "$qs_manager" close "" keepfocus >>"$LOG_FILE" 2>&1 || true
-        sleep 0.08
+        "$qs_manager" close "" keepfocus >>"$LOG_FILE" 2>&1 &
     fi
 }
 
 daemon_ready() {
-    quickshell ipc -p "$DAEMON_QML" show >/dev/null 2>&1
+    timeout 0.6 quickshell ipc -p "$DAEMON_QML" show >/dev/null 2>&1
 }
 
 start_daemon_service() {
@@ -57,7 +60,26 @@ start_daemon_service() {
 
 ipc_call() {
     local method="$1"
-    quickshell ipc -p "$DAEMON_QML" call wallpaper "$method" >>"$LOG_FILE" 2>&1
+    quickshell ipc -p "$DAEMON_QML" call wallpaper "$method" >>"$LOG_FILE" 2>&1 &
+}
+
+open_wallhaven_web() {
+    local query="${QUERY_ARGS[*]:-}"
+    local target_url="https://wallhaven.cc/toplist"
+
+    if [[ -n "${query// }" ]]; then
+        local encoded_query
+        encoded_query=$(python3 -c 'import sys,urllib.parse;print(urllib.parse.quote(" ".join(sys.argv[1:])))' "${QUERY_ARGS[@]}")
+        target_url="https://wallhaven.cc/search?q=${encoded_query}"
+    fi
+
+    if command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$target_url" >>"$LOG_FILE" 2>&1 &
+        return 0
+    fi
+
+    notify_error "xdg-open no disponible para abrir busqueda web"
+    return 1
 }
 
 main() {
@@ -76,6 +98,10 @@ main() {
     case "$ACTION" in
         daemon)
             exec /usr/local/bin/mados-skwd-wall-daemon
+            ;;
+        web)
+            open_wallhaven_web
+            exit $?
             ;;
         toggle|open)
             close_qs_overlay
@@ -99,10 +125,7 @@ main() {
             ;;
     esac
 
-    if ! ipc_call "$ACTION"; then
-        notify_error "no se pudo controlar skwd-wall"
-        exit 1
-    fi
+    ipc_call "$ACTION"
 }
 
 main "$@"

@@ -91,6 +91,7 @@ Item {
             { k1: "ALT+SHIFT", k2: "", action: "Switch Keyboard Layout", cmd: "hyprctl switchxkblayout main next" },
             
             { k1: "SUPER", k2: "W", action: "Toggle Wallpaper Picker", cmd: "mados-wallpaper-picker toggle" },
+            { k1: "SUPER+CTRL", k2: "W", action: "Search Wallpapers on Web", cmd: "mados-wallpaper-picker web" },
             { k1: "SUPER", k2: "R", action: "Toggle Music Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle music" },
             { k1: "SUPER", k2: "B", action: "Toggle Battery Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle battery" },
             { k1: "SUPER", k2: "S", action: "Toggle Calendar Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle calendar" },
