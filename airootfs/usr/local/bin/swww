@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -x "/usr/bin/swww" ]]; then
+    exec /usr/bin/swww "$@"
+fi
+
+if [[ -x "/usr/bin/awww" ]]; then
+    exec /usr/bin/awww "$@"
+fi
+
+echo "swww: command not found (neither /usr/bin/swww nor /usr/bin/awww exists)" >&2
+exit 127

@@ -100,6 +100,12 @@ if ! run_module "06-network.sh" "configure_network_services"; then
     exit 1
 fi
 
+# 07-pacman-runtime.sh - Set runtime pacman compatibility defaults
+if ! run_module "07-pacman-runtime.sh" "configure_runtime_pacman"; then
+    echo "FATAL: Runtime pacman configuration failed"
+    exit 1
+fi
+
 # 04-cleanup.sh - Cleanup
 if ! run_module "04-cleanup.sh" "cleanup_all"; then
     echo "FATAL: Cleanup failed"

@@ -25,24 +25,36 @@ ensure_download_user() {
 }
 
 enable_disable_sandbox() {
-    if grep -q '^#DisableSandbox' "$PACMAN_CONF"; then
-        sed -i 's/^#DisableSandbox/DisableSandbox/' "$PACMAN_CONF"
-    elif ! grep -q '^DisableSandbox' "$PACMAN_CONF"; then
-        printf 'DisableSandbox\n' >>"$PACMAN_CONF"
+    if grep -q '^#DisableSandboxFilesystem' "$PACMAN_CONF"; then
+        sed -i 's/^#DisableSandboxFilesystem/DisableSandboxFilesystem/' "$PACMAN_CONF"
+    elif ! grep -q '^DisableSandboxFilesystem' "$PACMAN_CONF"; then
+        printf 'DisableSandboxFilesystem\n' >>"$PACMAN_CONF"
+    fi
+
+    if grep -q '^#DisableSandboxSyscalls' "$PACMAN_CONF"; then
+        sed -i 's/^#DisableSandboxSyscalls/DisableSandboxSyscalls/' "$PACMAN_CONF"
+    elif ! grep -q '^DisableSandboxSyscalls' "$PACMAN_CONF"; then
+        printf 'DisableSandboxSyscalls\n' >>"$PACMAN_CONF"
+    fi
+
+    if grep -q '^#DisableSandbox$' "$PACMAN_CONF"; then
+        sed -i 's/^#DisableSandbox$/DisableSandbox/' "$PACMAN_CONF"
     fi
 }
 
 disable_disable_sandbox() {
-    sed -i 's/^DisableSandbox/#DisableSandbox/' "$PACMAN_CONF"
+    sed -i 's/^DisableSandboxFilesystem/#DisableSandboxFilesystem/' "$PACMAN_CONF"
+    sed -i 's/^DisableSandboxSyscalls/#DisableSandboxSyscalls/' "$PACMAN_CONF"
+    sed -i 's/^DisableSandbox$/#DisableSandbox/' "$PACMAN_CONF"
 }
 
 main() {
     [[ -f "$PACMAN_CONF" ]] || exit 0
 
     ensure_alpm_user
-    ensure_download_user
 
     if has_landlock; then
+        ensure_download_user
         disable_disable_sandbox
     else
         enable_disable_sandbox

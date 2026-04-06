@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -x "/usr/bin/swww-daemon" ]]; then
+    exec /usr/bin/swww-daemon "$@"
+fi
+
+if [[ -x "/usr/bin/awww-daemon" ]]; then
+    exec /usr/bin/awww-daemon "$@"
+fi
+
+echo "swww-daemon: command not found (neither /usr/bin/swww-daemon nor /usr/bin/awww-daemon exists)" >&2
+exit 127

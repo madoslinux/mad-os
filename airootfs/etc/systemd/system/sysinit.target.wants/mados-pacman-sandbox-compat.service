@@ -1,12 +1,1 @@
-[Unit]
-Description=Adjust pacman sandbox for kernel capabilities
-DefaultDependencies=no
-After=local-fs.target
-Before=sysinit.target network-online.target pacman-init.service
-
-[Service]
-Type=oneshot
-ExecStart=/usr/local/bin/mados-pacman-sandbox-compat
-
-[Install]
-WantedBy=sysinit.target
+../mados-pacman-sandbox-compat.service
