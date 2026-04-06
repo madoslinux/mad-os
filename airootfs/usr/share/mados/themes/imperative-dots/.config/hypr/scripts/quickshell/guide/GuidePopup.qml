@@ -335,7 +335,7 @@ Item {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 182
+                        Layout.preferredHeight: 258
                         radius: 12
                         color: Qt.alpha(root.surface0, 0.35)
                         border.color: root.surface1
@@ -453,6 +453,57 @@ Item {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/nixos-configuration"])
+                                }
+                            }
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 64
+                                radius: 10
+                                color: skwdMa.containsMouse ? Qt.alpha(root.surface1, 0.6) : Qt.alpha(root.surface0, 0.4)
+                                border.color: skwdMa.containsMouse ? root.teal : root.surface1
+                                border.width: 1
+                                scale: skwdMa.pressed ? 0.98 : (skwdMa.containsMouse ? 1.01 : 1.0)
+
+                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                                Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 12
+
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        width: 38; height: 38; radius: 8
+                                        color: root.surface0
+                                        border.color: root.surface2; border.width: 1
+                                        Text { anchors.centerIn: parent; text: "󰙯"; font.family: "Iosevka Nerd Font"; font.pixelSize: 20; color: root.text }
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        spacing: 1
+                                        Text { text: "SKWD Shell"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: "Author: liixini"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.teal }
+                                    }
+
+                                    Item { Layout.fillWidth: true }
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignVCenter
+                                        width: 28; height: 28; radius: 8
+                                        color: skwdMa.containsMouse ? root.surface1 : "transparent"
+                                        Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 16; color: skwdMa.containsMouse ? root.teal : root.subtext0; Behavior on color { ColorAnimation { duration: 150 } } }
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: skwdMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/liixini"])
                                 }
                             }
                         }
