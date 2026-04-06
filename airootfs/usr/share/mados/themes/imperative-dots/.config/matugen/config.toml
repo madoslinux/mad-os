@@ -25,10 +25,6 @@ output_path = "~/.config/swayosd/style.css"
 input_path = "~/.config/matugen/templates/swaync.css.template"
 output_path = "~/.config/swaync/style.css"
 
-[templates.rofi]
-input_path = "~/.config/matugen/templates/rofi.rasi.template"
-output_path = "~/.config/rofi/theme.rasi"
-
 [templates.wofi]
 input_path = "~/.config/matugen/templates/wofi.css.template"
 output_path = "~/.config/wofi/style.css"

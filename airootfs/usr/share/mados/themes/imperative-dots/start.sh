@@ -9,8 +9,6 @@ THEME_HYPR_SCRIPTS="${THEME_ROOT}/.config/hypr/scripts"
 TARGET_HYPR_SCRIPTS="${XDG_CONF_HOME}/hypr/scripts"
 THEME_MATUGEN="${THEME_ROOT}/.config/matugen"
 TARGET_MATUGEN="${XDG_CONF_HOME}/matugen"
-THEME_ROFI="${THEME_ROOT}/.config/rofi"
-TARGET_ROFI="${XDG_CONF_HOME}/rofi"
 THEME_SWAYNC="${THEME_ROOT}/.config/swaync"
 TARGET_SWAYNC="${XDG_CONF_HOME}/swaync"
 THEME_WOFI="${THEME_ROOT}/.config/wofi"
@@ -65,9 +63,6 @@ prepare_user_runtime() {
     mkdir -p "${XDG_CONF_HOME}"
     rm -rf "${TARGET_MATUGEN}"
     cp -a "${THEME_MATUGEN}" "${TARGET_MATUGEN}"
-
-    rm -rf "${TARGET_ROFI}"
-    cp -a "${THEME_ROFI}" "${TARGET_ROFI}"
 
     rm -rf "${TARGET_WOFI}"
     mkdir -p "${TARGET_WOFI}"
@@ -132,58 +127,6 @@ group {
 EOF
     fi
 
-    if [[ ! -f "${TARGET_ROFI}/theme.rasi" ]]; then
-        cat > "${TARGET_ROFI}/theme.rasi" <<'EOF'
-* {
-    bg: #1e1e2ecc;
-    bg-alt: #313244cc;
-    fg: #cdd6f4;
-    selected: #89b4fa;
-    active: #a6e3a1;
-    urgent: #f38ba8;
-}
-
-window {
-    transparency: "real";
-    background-color: @bg;
-    border: 2px;
-    border-color: @selected;
-    border-radius: 14px;
-    padding: 18px;
-}
-
-mainbox {
-    spacing: 10px;
-}
-
-inputbar {
-    background-color: @bg-alt;
-    text-color: @fg;
-    border-radius: 10px;
-    padding: 10px;
-}
-
-listview {
-    lines: 10;
-    columns: 1;
-    spacing: 6px;
-    background-color: transparent;
-}
-
-element {
-    background-color: transparent;
-    text-color: @fg;
-    border-radius: 8px;
-    padding: 8px 10px;
-}
-
-element selected {
-    background-color: @selected;
-    text-color: #11111b;
-}
-EOF
-    fi
-
     touch "${OWNERSHIP_MARKER}"
     return 0
 }
@@ -232,10 +175,6 @@ launch_quickshell() {
         "${TARGET_HYPR_SCRIPTS}/init.sh" >/dev/null 2>&1 &
     fi
 
-    if command -v swaync >/dev/null 2>&1; then
-        pgrep -x swaync >/dev/null 2>&1 || swaync -c "${TARGET_SWAYNC}/config.json" >/dev/null 2>&1 &
-    fi
-
     return 0
 }
 
@@ -244,8 +183,6 @@ main() {
     require_cmd hyprctl
     require_cmd jq
     require_cmd nmcli
-    require_cmd swaync-client
-
     ensure_hyprland_session
     prepare_user_runtime
     seed_runtime_state

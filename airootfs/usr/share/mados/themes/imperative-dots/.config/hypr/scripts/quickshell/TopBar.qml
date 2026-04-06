@@ -407,7 +407,7 @@ PanelWindow {
                     id: searchMouse
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/rofi_show.sh drun"])
+                    onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle launcher"])
                 }
             }
 
@@ -440,8 +440,8 @@ PanelWindow {
                     acceptedButtons: Qt.LeftButton | Qt.RightButton
                     hoverEnabled: true
                     onClicked: (mouse) => {
-                        if (mouse.button === Qt.LeftButton) Quickshell.execDetached(["swaync-client", "-t", "-sw"])
-                        if (mouse.button === Qt.RightButton) Quickshell.execDetached(["swaync-client", "-d"])
+                        if (mouse.button === Qt.LeftButton) Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle notifications"])
+                        if (mouse.button === Qt.RightButton) Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh open notifications dismiss"])
                     }
                 }
             }

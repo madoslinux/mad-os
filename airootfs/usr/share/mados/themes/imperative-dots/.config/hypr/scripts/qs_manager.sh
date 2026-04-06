@@ -19,6 +19,7 @@ THUMB_DIR="$HOME/.cache/wallpaper_picker/thumbs"
 IPC_FILE="/tmp/qs_widget_state"
 NETWORK_MODE_FILE="/tmp/qs_network_mode"
 PREV_FOCUS_FILE="/tmp/qs_prev_focus"
+SWITCHER_ACTIVE_FILE="/tmp/qs_switcher_active"
 
 ACTION="$1"
 TARGET="$2"
@@ -215,7 +216,9 @@ restore_focus() {
 # -----------------------------------------------------------------------------
 if [[ "$ACTION" == "close" ]]; then
     echo "close" > "$IPC_FILE"
-    restore_focus
+    if [[ "$SUBTARGET" != "keepfocus" ]]; then
+        restore_focus
+    fi
     if [[ "$TARGET" == "network" || "$TARGET" == "all" || -z "$TARGET" ]]; then
         if [ -f "$BT_PID_FILE" ]; then
             kill $(cat "$BT_PID_FILE") 2>/dev/null
@@ -261,6 +264,67 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
             echo "$TARGET::$MON_DATA" > "$IPC_FILE"
             save_and_focus_widget
         fi
+        exit 0
+    fi
+
+    if [[ "$TARGET" == "notifications" ]]; then
+        if [[ "$ACTION" == "toggle" ]]; then
+            echo "notifications" > "$IPC_FILE"
+            exit 0
+        fi
+
+        if [[ "$SUBTARGET" == "dismiss" || "$SUBTARGET" == "clear" ]]; then
+            echo "notifications:${SUBTARGET}" > "$IPC_FILE"
+            exit 0
+        fi
+
+        echo "notifications" > "$IPC_FILE"
+        exit 0
+    fi
+
+    if [[ "$TARGET" == "switcher" ]]; then
+        local_switcher_action="open"
+        if [[ -n "$SUBTARGET" ]]; then
+            local_switcher_action="$SUBTARGET"
+        fi
+
+        case "$local_switcher_action" in
+            open|next|prev)
+                if [[ "$ACTIVE_WIDGET" != "switcher" ]]; then
+                    save_and_focus_widget
+                    echo "1" > "$SWITCHER_ACTIVE_FILE"
+                    echo "switcher:${local_switcher_action}:$MON_DATA" > "$IPC_FILE"
+                else
+                    echo "switcher:${local_switcher_action}:$MON_DATA" > "$IPC_FILE"
+                fi
+                ;;
+
+            confirm)
+                echo "switcher:confirm:$MON_DATA" > "$IPC_FILE"
+                rm -f "$SWITCHER_ACTIVE_FILE"
+                ;;
+
+            cancel)
+                echo "close" > "$IPC_FILE"
+                rm -f "$SWITCHER_ACTIVE_FILE"
+                restore_focus
+                ;;
+
+            close)
+                echo "switcher:close:$MON_DATA" > "$IPC_FILE"
+                ;;
+
+            *)
+                if [[ "$ACTIVE_WIDGET" != "switcher" ]]; then
+                    save_and_focus_widget
+                    echo "1" > "$SWITCHER_ACTIVE_FILE"
+                    echo "switcher:open:$MON_DATA" > "$IPC_FILE"
+                else
+                    echo "switcher:open:$MON_DATA" > "$IPC_FILE"
+                fi
+                ;;
+        esac
+
         exit 0
     fi
 

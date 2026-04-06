@@ -187,7 +187,11 @@ class TestMadosChwdProfiles(unittest.TestCase):
         with open(CHWD_PATH) as f:
             content = f.read()
         self.assertIn('"open-vm-tools"', content, "virtualmachine must include open-vm-tools")
-        self.assertIn('"virtualbox-guest-utils"', content, "virtualmachine must include virtualbox-guest-utils")
+        self.assertIn(
+            '"virtualbox-guest-utils"',
+            content,
+            "virtualmachine must include virtualbox-guest-utils",
+        )
 
 
 class TestMadosKernelSelect(unittest.TestCase):
@@ -304,9 +308,7 @@ class TestSchedulerConfig(unittest.TestCase):
     """Verify scheduler sysctl configuration."""
 
     def setUp(self):
-        self.scheduler_conf = os.path.join(
-            AIROOTFS, "etc", "sysctl.d", "99-scheduler.conf"
-        )
+        self.scheduler_conf = os.path.join(AIROOTFS, "etc", "sysctl.d", "99-scheduler.conf")
         if not os.path.isfile(self.scheduler_conf):
             self.skipTest("99-scheduler.conf not found")
         with open(self.scheduler_conf) as f:
@@ -339,9 +341,7 @@ class TestProfiledefIncludesNewScripts(unittest.TestCase):
 
     def test_includes_mados_chwd(self):
         """profiledef.sh must set permissions for mados-chwd."""
-        self.assertIn(
-            "mados-chwd", self.content, "profiledef.sh must include mados-chwd"
-        )
+        self.assertIn("mados-chwd", self.content, "profiledef.sh must include mados-chwd")
 
     def test_includes_mados_kernel_select(self):
         """profiledef.sh must set permissions for mados-kernel-select."""

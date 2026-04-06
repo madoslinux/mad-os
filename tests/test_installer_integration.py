@@ -24,6 +24,37 @@ HYPR_CONF = os.path.join(REPO_DIR, "airootfs", "etc", "skel", ".config", "hypr",
 SWAY_CONF = os.path.join(
     REPO_DIR, "airootfs", "etc", "sway", "config.d", "50-installer-autostart.conf"
 )
+CUSTOMIZE_SCRIPT = os.path.join(REPO_DIR, "airootfs", "root", "customize_airootfs.sh")
+THEME_HYPR_CONF = os.path.join(
+    REPO_DIR,
+    "airootfs",
+    "usr",
+    "share",
+    "mados",
+    "themes",
+    "imperative-dots",
+    ".config",
+    "hypr",
+    "hyprland.conf",
+)
+GUIDE_QML = os.path.join(
+    REPO_DIR,
+    "airootfs",
+    "usr",
+    "share",
+    "mados",
+    "themes",
+    "imperative-dots",
+    ".config",
+    "hypr",
+    "scripts",
+    "quickshell",
+    "guide",
+    "GuidePopup.qml",
+)
+WALLPAPER_PICKER_HELPER = os.path.join(
+    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-wallpaper-picker"
+)
 
 
 def _read(path):
@@ -99,6 +130,30 @@ class TestAutostartStrategy(unittest.TestCase):
         content = _read(XDG_AUTOSTART)
         self.assertIn("X-GNOME-Autostart-enabled=false", content)
         self.assertIn("Hidden=true", content)
+
+
+class TestSkwdWallIntegration(unittest.TestCase):
+    """Validate skwd-wall wiring across build and runtime configs."""
+
+    def test_customize_script_calls_skwd_wall_install(self):
+        content = _read(CUSTOMIZE_SCRIPT)
+        self.assertIn('run_module "03-apps.sh" "setup_wallpaper_assets"', content)
+        self.assertIn('run_module "03-apps.sh" "install_skwd_wall"', content)
+
+    def test_hypr_bindings_use_wallpaper_picker_helper(self):
+        self.assertIn("mados-wallpaper-picker toggle", _read(HYPR_CONF))
+        self.assertIn("mados-wallpaper-picker toggle", _read(THEME_HYPR_CONF))
+
+    def test_guide_uses_wallpaper_picker_helper(self):
+        guide = _read(GUIDE_QML)
+        self.assertIn("mados-wallpaper-picker toggle", guide)
+        self.assertNotIn("qs_manager.sh toggle wallpaper", guide)
+
+    def test_wallpaper_picker_helper_exists_with_fallback_path(self):
+        content = _read(WALLPAPER_PICKER_HELPER)
+        self.assertIn("#!/usr/bin/env bash", content)
+        self.assertIn('SKWD_DAEMON="/opt/mados/skwd-wall/daemon.qml"', content)
+        self.assertIn('quickshell ipc -p "$SKWD_DAEMON"', content)
 
 
 if __name__ == "__main__":

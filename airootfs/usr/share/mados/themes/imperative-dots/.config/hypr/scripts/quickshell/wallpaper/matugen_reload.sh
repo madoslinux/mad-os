@@ -46,7 +46,6 @@ TEXT_FILES=(
     "$HOME/.config/cava/colors"
     "$HOME/.config/swayosd/style.css"
     "$HOME/.config/swaync/style.css"
-    "$HOME/.config/rofi/theme.rasi"
     "$HOME/.config/wofi/style.css"
     "$HOME/.config/mako/config"
     "$HOME/.config/qt5ct/colors/matugen.conf"
@@ -107,7 +106,9 @@ fi
 # Apply GTK preference for both GTK3/GTK4 apps
 if command -v gsettings >/dev/null 2>&1; then
     gsettings set org.gnome.desktop.interface gtk-theme "$DESIRED_GTK_THEME" >/dev/null 2>&1 || true
-    gsettings set org.gnome.desktop.interface icon-theme "Nordzy-dark" >/dev/null 2>&1 || true
+    ICON_THEME="$(grep -m1 '^gtk-icon-theme-name=' "$GTK3_SETTINGS" 2>/dev/null | cut -d= -f2- || true)"
+    [[ -z "$ICON_THEME" ]] && ICON_THEME="Papirus"
+    gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface cursor-theme "Adwaita" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1 || true
 fi

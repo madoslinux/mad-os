@@ -21,6 +21,8 @@ function getLayout(name, mx, my, mw, mh, scale) {
     const guideH = s(750, ui);
     const wallpaperW = Math.max(1, Math.round(mw * ui));
     const wallpaperH = s(650, ui);
+    const launcherW = Math.max(1, Math.round(mw * 0.9));
+    const launcherH = s(690, ui);
 
     let base = {
         // Right-aligned: pinned 20px from the right edge dynamically
@@ -46,6 +48,12 @@ function getLayout(name, mx, my, mw, mh, scale) {
 
         // Full width, centered vertically
         "wallpaper": { w: wallpaperW, h: wallpaperH, rx: Math.floor((mw - wallpaperW) / 2), ry: Math.floor((mh / 2) - (wallpaperH / 2)), comp: "wallpaper/WallpaperPicker.qml" },
+
+        // SKWD-inspired app launcher (90% monitor width)
+        "launcher":  { w: launcherW, h: launcherH, rx: Math.floor((mw - launcherW) / 2), ry: Math.floor((mh / 2) - (launcherH / 2)), comp: "launcher/LauncherPopup.qml" },
+
+        // Alt-Tab switcher style card
+        "switcher":  { w: s(1700, ui), h: s(620, ui), rx: Math.floor((mw - s(1700, ui)) / 2), ry: Math.floor((mh / 2) - (s(620, ui) / 2)), comp: "switcher/WindowSwitcher.qml" },
         
         "hidden":    { w: 1, h: 1, rx: -5000 - mx, ry: -5000 - my, comp: "" } 
     };

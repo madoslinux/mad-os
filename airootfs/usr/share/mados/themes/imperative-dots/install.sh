@@ -50,7 +50,7 @@ HAS_NVIDIA_PROPRIETARY=false
 # Package Arrays
 # ==============================================================================
 ARCH_PKGS=(
-    "hyprland" "weston" "kitty" "cava" "rofi-wayland" "swaync" 
+    "hyprland" "weston" "kitty" "cava" "swaync" 
     "pavucontrol" "alsa-utils" "awww" "networkmanager-dmenu-git"
     "wl-clipboard" "fd" "qt6-multimedia" "qt6-5compat" "ripgrep"
     "cliphist" "jq" "socat" "inotify-tools" "pamixer" "brightnessctl" "acpi" "iw"
@@ -337,10 +337,10 @@ show_overview() {
 
     echo -e "${BOLD}${C_BLUE}--- Applications ---${RESET}"
     print_kb "SUPER + RETURN" "Open Terminal (kitty)"
-    print_kb "SUPER + D" "Open App Launcher (rofi)"
+    print_kb "SUPER + D" "Open App Launcher"
     print_kb "SUPER + F" "Open Browser (Firefox)"
     print_kb "SUPER + E" "Open File Manager (nautilus)"
-    print_kb "SUPER + C" "Clipboard History (rofi)"
+    print_kb "SUPER + C" "Clipboard History"
     echo ""
 
     echo -e "${BOLD}${C_BLUE}--- Quickshell Widgets ---${RESET}"
@@ -735,7 +735,7 @@ echo -e "\n${C_CYAN}[ INFO ]${RESET} Applying Configurations & Backing Up Old On
 TARGET_CONFIG_DIR="$HOME/.config"
 BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d_%H%M%S)"
 
-CONFIG_FOLDERS=("cava" "hypr" "kitty" "rofi" "swaync" "matugen" "zsh" "swayosd")
+CONFIG_FOLDERS=("cava" "hypr" "kitty" "swaync" "matugen" "zsh" "swayosd")
 if [ "$INSTALL_NVIM" = true ]; then CONFIG_FOLDERS+=("nvim"); fi
 
 mkdir -p "$TARGET_CONFIG_DIR" "$BACKUP_DIR"

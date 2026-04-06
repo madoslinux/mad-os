@@ -3,6 +3,8 @@ import QtQuick.Window
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
+import Quickshell.Services.Notifications
+import "notifications"
 import "WindowRegistry.js" as Registry
 
 FloatingWindow {
@@ -49,6 +51,35 @@ FloatingWindow {
     function getLayout(name) {
         // Outsourced to WindowRegistry.js for cleaner configuration management
         return Registry.getLayout(name, masterWindow.activeMx, masterWindow.activeMy, masterWindow.activeMw, masterWindow.activeMh, masterWindow.uiScale);
+    }
+
+    NotificationServer {
+        id: notificationServer
+        bodySupported: true
+        bodyMarkupSupported: true
+        imageSupported: true
+        actionsSupported: true
+        keepOnReload: true
+
+        onNotification: notification => {
+            let app = (notification.appName || "").toLowerCase();
+            let summary = (notification.summary || "").toLowerCase();
+            if ((app === "niri" || app === "hyprland" || app === "sway" || app === "kwin") && summary.indexOf("screenshot") !== -1) {
+                notification.dismiss();
+                return;
+            }
+
+            notification.tracked = true;
+        }
+    }
+
+    property var trackedNotifications: notificationServer.trackedNotifications
+
+    NotificationPopup {
+        id: notificationPopup
+        notifications: masterWindow.trackedNotifications
+        barVisible: true
+        barHeight: Math.max(32, Math.round(48 * masterWindow.uiScale))
     }
     
     width: 1
@@ -195,7 +226,7 @@ FloatingWindow {
 
             Quickshell.execDetached(["bash", "-c", `hyprctl dispatch resizewindowpixel "exact ${t.w} ${t.h},title:^(qs-master)$" && hyprctl dispatch movewindowpixel "exact ${t.x} ${t.y},title:^(qs-master)$"`]);
 
-            let props = newWidget === "wallpaper" ? { "widgetArg": newArg } : {};
+            let props = (newWidget === "wallpaper" || newWidget === "switcher") ? { "widgetArg": newArg } : {};
             widgetStack.replace(t.comp, props, StackView.Immediate);
 
             teleportFadeInTimer.newWidget = newWidget;
@@ -237,7 +268,7 @@ FloatingWindow {
         
         masterWindow.isVisible = true;
         
-        let props = newWidget === "wallpaper" ? { "widgetArg": arg } : {};
+        let props = (newWidget === "wallpaper" || newWidget === "switcher") ? { "widgetArg": arg } : {};
 
         if (immediate) {
             widgetStack.replace(t.comp, props, StackView.Immediate);
@@ -273,9 +304,19 @@ FloatingWindow {
 
                 if (cmd === "close") {
                     switchWidget("hidden", "");
+                } else if (cmd === "notifications") {
+                    if (arg === "dismiss" || arg === "clear") {
+                        notificationPopup.dismissAll();
+                    } else {
+                        notificationPopup.toggleCenter();
+                    }
                 } else if (getLayout(cmd)) {
                     delayedClear.stop();
-                    if (masterWindow.isVisible && masterWindow.currentActive === cmd) {
+                    if (cmd === "switcher" && masterWindow.isVisible && masterWindow.currentActive === "switcher") {
+                        if (widgetStack.currentItem && typeof widgetStack.currentItem.runAction === "function") {
+                            widgetStack.currentItem.runAction(arg);
+                        }
+                    } else if (masterWindow.isVisible && masterWindow.currentActive === cmd) {
                         switchWidget("hidden", "");
                     } else {
                         switchWidget(cmd, arg);

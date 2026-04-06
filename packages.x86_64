@@ -29,7 +29,6 @@ quickshell
 swaync
 waybar
 wofi
-rofi-wayland
 mako
 qt5ct
 qt6ct
@@ -45,7 +44,7 @@ xdg-desktop-portal-hyprland
 # i3lock
 # qtile
 # niri
-# steam
+steam
 
 # Aplicaciones principales
 kitty
@@ -106,6 +105,13 @@ xdg-desktop-portal-wlr
 brightnessctl
 matugen
 
+# skwd-wall dependencies
+imagemagick
+qt6-multimedia
+ttf-nerd-fonts-symbols
+ttf-roboto
+ttf-roboto-mono
+
 # Optimizaciones RAM
 earlyoom
 zram-generator
@@ -158,9 +164,8 @@ adw-gtk-theme
 materia-gtk-theme
 orchis-theme
 
-# Icon themes (in addition to Adwaita + Nordzy-dark)
+# Icon themes (Papirus as default + alternatives)
 papirus-icon-theme
-breeze-icons
 
 # Fuentes
 ttf-jetbrains-mono-nerd

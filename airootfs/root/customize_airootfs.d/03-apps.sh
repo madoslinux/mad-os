@@ -514,6 +514,82 @@ install_oh_my_zsh() {
     return 0
 }
 
+SKWD_WALL_REPO="liixini/skwd-wall"
+SKWD_WALL_INSTALL_DIR="/opt/mados/skwd-wall"
+SKWD_WALL_BIN="/usr/local/bin/skwd-wall"
+
+install_skwd_wall() {
+    echo "Installing skwd-wall..."
+
+    local build_dir="${BUILD_DIR}/skwd-wall_$$"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cd "$BUILD_DIR"
+
+    local retries=3
+    local count=0
+    while [ $count -lt $retries ]; do
+        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch main --no-tags "https://github.com/${SKWD_WALL_REPO}.git" "${build_dir}/skwd-wall"; then
+            break
+        fi
+        count=$((count + 1))
+        echo "  Retry $count/$retries..."
+        sleep 2
+    done
+
+    if [ $count -eq $retries ]; then
+        echo "ERROR: Failed to clone skwd-wall after $retries attempts"
+        rm -rf "$build_dir"
+        return 1
+    fi
+
+    mkdir -p "$INSTALL_DIR"
+    rm -rf "$SKWD_WALL_INSTALL_DIR"
+    mv "${build_dir}/skwd-wall" "$SKWD_WALL_INSTALL_DIR"
+    rm -rf "$build_dir"
+
+    cat > "$SKWD_WALL_BIN" << 'SKWD_WALL_WRAPPER'
+#!/bin/bash
+set -euo pipefail
+
+SKWD_DAEMON="/opt/mados/skwd-wall/daemon.qml"
+SKWD_PATTERN="quickshell.*${SKWD_DAEMON}"
+
+start_daemon() {
+    if pgrep -f "$SKWD_PATTERN" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    quickshell -p "$SKWD_DAEMON" >/dev/null 2>&1 &
+
+    local tries=0
+    while [ $tries -lt 25 ]; do
+        if pgrep -f "$SKWD_PATTERN" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.1
+        tries=$((tries + 1))
+    done
+
+    return 1
+}
+
+if [[ "$1" == "daemon" ]]; then
+    exec quickshell -p "$SKWD_DAEMON"
+elif [[ "$1" == "toggle" ]]; then
+    start_daemon || exit 1
+    exec quickshell ipc -p "$SKWD_DAEMON" call wallpaper toggle
+else
+    start_daemon || exit 1
+    exec quickshell ipc -p "$SKWD_DAEMON" call wallpaper toggle
+fi
+SKWD_WALL_WRAPPER
+    chmod +x "$SKWD_WALL_BIN"
+
+    echo "✓ skwd-wall installed to ${SKWD_WALL_INSTALL_DIR}"
+    return 0
+}
+
 setup_wallpaper_assets() {
     local wallpaper_dir="${INSTALL_DIR}/mados_wallpaper"
     
@@ -553,6 +629,7 @@ setup_wallpaper_assets() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     install_mados_apps
     setup_wallpaper_assets
+    install_skwd_wall
     install_installer
     install_updater
     install_oh_my_zsh

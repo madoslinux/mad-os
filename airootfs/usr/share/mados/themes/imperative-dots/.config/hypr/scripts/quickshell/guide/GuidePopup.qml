@@ -78,9 +78,9 @@ Item {
         
         let binds = [
             { k1: "SUPER", k2: "RETURN", action: "Open Terminal (Kitty)", cmd: "kitty" },
-            { k1: "SUPER", k2: "D", action: "App Launcher (Drun)", cmd: "bash ~/.config/hypr/scripts/rofi_show.sh drun" },
-            { k1: "ALT", k2: "TAB", action: "Window Switcher", cmd: "bash ~/.config/hypr/scripts/rofi_show.sh window" },
-            { k1: "SUPER", k2: "C", action: "Clipboard History", cmd: "bash ~/.config/hypr/scripts/rofi_clipboard.sh" },
+            { k1: "SUPER", k2: "D", action: "App Launcher", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle launcher" },
+            { k1: "ALT", k2: "TAB", action: "Window Switcher", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh open switcher next" },
+            { k1: "SUPER", k2: "C", action: "Clipboard History", cmd: "bash ~/.config/hypr/scripts/clipboard_menu.sh" },
             { k1: "SUPER", k2: "F", action: "Open Firefox", cmd: "firefox" },
             { k1: "SUPER", k2: "E", action: "Open Nautilus", cmd: "nautilus" },
             { k1: "SUPER", k2: "Q", action: "Close Active Window/Widget", cmd: "bash -c 'if hyprctl activewindow | grep -q \"title: qs-master\"; then ~/.config/hypr/scripts/qs_manager.sh close; else hyprctl dispatch killactive; fi'" },
@@ -90,7 +90,7 @@ Item {
             { k1: "SHIFT", k2: "PRINT", action: "Screenshot (Edit)", cmd: "bash ~/.config/hypr/scripts/screenshot.sh --edit" },
             { k1: "ALT+SHIFT", k2: "", action: "Switch Keyboard Layout", cmd: "hyprctl switchxkblayout main next" },
             
-            { k1: "SUPER", k2: "W", action: "Toggle Wallpaper Picker", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle wallpaper" },
+            { k1: "SUPER", k2: "W", action: "Toggle Wallpaper Picker", cmd: "mados-wallpaper-picker toggle" },
             { k1: "SUPER", k2: "R", action: "Toggle Music Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle music" },
             { k1: "SUPER", k2: "B", action: "Toggle Battery Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle battery" },
             { k1: "SUPER", k2: "S", action: "Toggle Calendar Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle calendar" },
@@ -99,7 +99,7 @@ Item {
             { k1: "SUPER", k2: "M", action: "Toggle Monitors Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle monitors" },
             { k1: "SUPER+SHIFT", k2: "T", action: "Toggle FocusTime", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle focustime" },
             { k1: "SUPER+SHIFT", k2: "S", action: "Toggle Stewart AI", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle stewart" },
-            { k1: "SUPER", k2: "A", action: "Toggle SwayNC Panel", cmd: "swaync-client -t -sw" },
+            { k1: "SUPER", k2: "A", action: "Toggle Notifications", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle notifications" },
 
             { k1: "SUPER", k2: "SPACE", action: "Play/Pause Media", cmd: "playerctl play-pause" },
             { k1: "Media", k2: "Play/Pause", action: "Play/Pause Media", cmd: "playerctl play-pause" },
@@ -325,7 +325,7 @@ Item {
                     ListElement { pkg: "Hyprland"; role: "Wayland Compositor"; icon: ""; clr: "blue"; link: "https://hyprland.org/" }
                     ListElement { pkg: "Quickshell"; role: "UI Framework"; icon: "󰣆"; clr: "mauve"; link: "https://git.outfoxxed.me/outfoxxed/quickshell" }
                     ListElement { pkg: "Matugen"; role: "Theme Engine"; icon: "󰏘"; clr: "peach"; link: "https://github.com/InioX/matugen" }
-                    ListElement { pkg: "Rofi Wayland"; role: "App Launcher"; icon: ""; clr: "green"; link: "https://github.com/lbonn/rofi" }
+                    ListElement { pkg: "SKWD Launcher"; role: "App Launcher"; icon: ""; clr: "green"; link: "https://github.com/liixini/skwd" }
                     ListElement { pkg: "Kitty"; role: "Terminal Emulator"; icon: "󰄛"; clr: "yellow"; link: "https://sw.kovidgoyal.net/kitty/" }
                     ListElement { pkg: "SwayOSD / NC"; role: "Overlays & Notifs"; icon: "󰂚"; clr: "pink"; link: "https://github.com/ErikReider/SwayOSD" }
                 }
@@ -583,7 +583,8 @@ Item {
                     ListElement { title: "Network Hub"; target: "network"; icon: "󰤨"; desc: "Wi-Fi and Bluetooth connection \nmanagement via nmcli/bluez." }
                     ListElement { title: "FocusTime"; target: "focustime"; icon: "󰄉"; desc: "Built-in Pomodoro timer daemon \nwith session tracking." }
                     ListElement { title: "Volume Mixer"; target: "volume"; icon: "󰕾"; desc: "Pipewire integration for I/O \nvolume and stream routing." }
-                    ListElement { title: "Wallpaper Picker"; target: "wallpaper"; icon: ""; desc: "Live awww backend rendering \nwith Matugen color generation." }
+                    ListElement { title: "Wallpaper Picker"; target: "wallpaper"; icon: ""; desc: "skwd-wall selector with awww,\nMatugen, and Wallhaven.cc." }
+                    ListElement { title: "SKWD Launcher"; target: "launcher"; icon: "󰣆"; desc: "Parallelogram app launcher \nwith frequency + recency ranking." }
                     ListElement { title: "Monitors"; target: "monitors"; icon: "󰍹"; desc: "Quick display management." }
                     ListElement { title: "Stewart AI"; target: "stewart"; icon: "󰚩"; desc: "Voice assistant integration.\n(Reserved for future, currently disabled)" }
                 }
@@ -638,7 +639,12 @@ Item {
                                     }
                                     MouseArea { 
                                         id: modMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor 
-                                        onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", model.target])
+                                        onClicked: {
+                                            if (model.target === "wallpaper")
+                                                Quickshell.execDetached(["bash", "-lc", "mados-wallpaper-picker toggle"]);
+                                            else
+                                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", model.target]);
+                                        }
                                     }
                                 }
                             }
@@ -872,7 +878,7 @@ Item {
                             model: [
                                 { f: "kitty-colors.conf", i: "󰄛", c: "yellow" },
                                 { f: "nvim-colors.lua", i: "", c: "green" },
-                                { f: "rofi.rasi", i: "", c: "blue" },
+                                { f: "wofi/style.css", i: "", c: "blue" },
                                 { f: "cava-colors.ini", i: "󰎆", c: "mauve" },
                                 { f: "sddm-colors.qml", i: "󰍃", c: "peach" },
                                 { f: "swaync/osd.css", i: "󰂚", c: "pink" }

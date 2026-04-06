@@ -4,6 +4,7 @@ import urllib.request, urllib.parse, http.cookiejar
 
 LOG_FILE = "/tmp/qs_python_scraper.log"
 
+
 def log(msg):
     try:
         with open(LOG_FILE, "a") as f:
@@ -11,15 +12,16 @@ def log(msg):
     except:
         pass
 
+
 def main():
     log("=== NEW SEARCH STARTING (Safe Search: OFF) ===")
-    if len(sys.argv) < 2: 
+    if len(sys.argv) < 2:
         log("ERROR: No query provided.")
         return
-        
+
     query = sys.argv[1].strip() + " wallpaper"
     log(f"Query: '{query}'")
-    
+
     cj = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
     urllib.request.install_opener(opener)
@@ -28,7 +30,7 @@ def main():
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.5",
-        "Referer": "https://duckduckgo.com/"
+        "Referer": "https://duckduckgo.com/",
     }
 
     # Added kp=-1 to the initial search URL to influence the session/vqd
@@ -40,19 +42,21 @@ def main():
         try:
             req = urllib.request.Request(search_url, headers=headers)
             html = urllib.request.urlopen(req, timeout=10).read().decode("utf-8")
-            match = re.search(r'vqd=([0-9a-zA-Z_-]+)', html) or re.search(r'vqd[\'"]?\s*:\s*[\'"]?([0-9a-zA-Z_-]+)', html)
-            
-            if match: 
+            match = re.search(r"vqd=([0-9a-zA-Z_-]+)", html) or re.search(
+                r'vqd[\'"]?\s*:\s*[\'"]?([0-9a-zA-Z_-]+)', html
+            )
+
+            if match:
                 vqd = match.group(1)
                 log(f"Success! Found VQD token: {vqd}")
                 break
             else:
-                log(f"Attempt {i+1}: No VQD found in HTML.")
-        except Exception as e: 
-            log(f"Attempt {i+1} Network Error: {str(e)}")
+                log(f"Attempt {i + 1}: No VQD found in HTML.")
+        except Exception as e:
+            log(f"Attempt {i + 1} Network Error: {str(e)}")
             time.sleep(1)
 
-    if not vqd: 
+    if not vqd:
         log("CRITICAL ERROR: Failed to get VQD token. Exiting.")
         return
 
@@ -61,8 +65,8 @@ def main():
 
     next_url = None
     links_found = 0
-    
-    for page in range(5): 
+
+    for page in range(5):
         log(f"Fetching JSON page {page + 1}...")
 
         # Constructing parameters: 'p': '-1' disables Safe Search
@@ -73,14 +77,16 @@ def main():
             "vqd": vqd,
             "f": ",,,",
             "p": "-1",  # -1 = Off, 1 = Moderate, 2 = Strict
-            "ex": "-1"
+            "ex": "-1",
         }
 
         if next_url:
             url = "https://duckduckgo.com" + next_url
             # Ensure safe search stays off on subsequent page loads
-            if "p=-1" not in url: url += "&p=-1"
-            if "vqd=" not in url: url += f"&vqd={vqd}"
+            if "p=-1" not in url:
+                url += "&p=-1"
+            if "vqd=" not in url:
+                url += f"&vqd={vqd}"
         else:
             url = "https://duckduckgo.com/i.js?" + urllib.parse.urlencode(params)
 
@@ -89,7 +95,7 @@ def main():
             data = json.loads(urllib.request.urlopen(req, timeout=10).read().decode("utf-8"))
             results = data.get("results", [])
             log(f"Successfully parsed JSON. Found {len(results)} raw image results.")
-            
+
             for res in results:
                 width = int(res.get("width", 0))
                 height = int(res.get("height", 0))
@@ -102,25 +108,28 @@ def main():
                             links_found += 1
                         except BrokenPipeError:
                             log("Broken pipe detected. Bash script stopped listening. Exiting.")
-                            os._exit(0) 
-            
+                            os._exit(0)
+
             next_url = data.get("next")
-            if not next_url: 
+            if not next_url:
                 log("No 'next' URL provided by DDG.")
                 break
-                
+
         except BrokenPipeError:
             os._exit(0)
-        except Exception as e: 
+        except Exception as e:
             log(f"Error: {str(e)}")
             break
-            
+
     log(f"=== SEARCH COMPLETE. Total FHD links: {links_found} ===")
 
-if __name__ == "__main__": 
-    try: os.remove(LOG_FILE)
-    except: pass
-    
+
+if __name__ == "__main__":
+    try:
+        os.remove(LOG_FILE)
+    except:
+        pass
+
     try:
         main()
         sys.stdout.flush()

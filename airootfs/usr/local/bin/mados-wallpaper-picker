@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ACTION="${1:-toggle}"
+SKWD_BIN="/usr/local/bin/skwd-wall"
+SKWD_DAEMON="/opt/mados/skwd-wall/daemon.qml"
+LOG_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/mados/skwd-wall.log"
+
+notify_error() {
+    local message="$1"
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "madOS wallpaper" "$message" 2>/dev/null || true
+    fi
+}
+
+ensure_log_dir() {
+    mkdir -p "$(dirname "$LOG_FILE")"
+}
+
+start_daemon_direct() {
+    local pattern="quickshell.*${SKWD_DAEMON}"
+
+    if pgrep -f "$pattern" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    quickshell -p "$SKWD_DAEMON" >>"$LOG_FILE" 2>&1 &
+
+    local tries=0
+    while [ $tries -lt 30 ]; do
+        if quickshell ipc -p "$SKWD_DAEMON" show >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.1
+        tries=$((tries + 1))
+    done
+
+    return 1
+}
+
+ipc_call() {
+    local method="$1"
+    quickshell ipc -p "$SKWD_DAEMON" call wallpaper "$method" >>"$LOG_FILE" 2>&1
+}
+
+run_with_skwd_wrapper() {
+    if [[ ! -x "$SKWD_BIN" ]]; then
+        return 1
+    fi
+
+    case "$ACTION" in
+        toggle)
+            "$SKWD_BIN" toggle >>"$LOG_FILE" 2>&1
+            ;;
+        daemon)
+            "$SKWD_BIN" daemon >>"$LOG_FILE" 2>&1
+            ;;
+        open|close)
+            "$SKWD_BIN" toggle >>"$LOG_FILE" 2>&1 || return 1
+            ipc_call "$ACTION"
+            ;;
+        *)
+            "$SKWD_BIN" toggle >>"$LOG_FILE" 2>&1
+            ;;
+    esac
+}
+
+main() {
+    ensure_log_dir
+
+    if run_with_skwd_wrapper; then
+        exit 0
+    fi
+
+    if ! command -v quickshell >/dev/null 2>&1; then
+        notify_error "quickshell no esta instalado"
+        exit 1
+    fi
+
+    if [[ ! -f "$SKWD_DAEMON" ]]; then
+        notify_error "skwd-wall no esta instalado (/opt/mados/skwd-wall/daemon.qml)"
+        exit 1
+    fi
+
+    if [[ "$ACTION" == "daemon" ]]; then
+        exec quickshell -p "$SKWD_DAEMON"
+    fi
+
+    start_daemon_direct || {
+        notify_error "no se pudo iniciar el daemon de skwd-wall"
+        exit 1
+    }
+
+    case "$ACTION" in
+        toggle|open|close)
+            if ! ipc_call "$ACTION"; then
+                notify_error "no se pudo abrir skwd-wall"
+                exit 1
+            fi
+            ;;
+        *)
+            if ! ipc_call "toggle"; then
+                notify_error "no se pudo abrir skwd-wall"
+                exit 1
+            fi
+            ;;
+    esac
+}
+
+main "$@"
