@@ -43,10 +43,10 @@ run_set() {
 }
 
 case "$command_name" in
-    start) run_start ;;
+    -d|--daemon|start) run_start ;;
     set) run_set ;;
     *)
-        echo "Usage: mados-wallpaperd [start|set [workspace]]" >&2
+        echo "Usage: mados-wallpaperd [-d|--daemon|start|set [workspace]]" >&2
         exit 2
         ;;
 esac

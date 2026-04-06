@@ -501,15 +501,25 @@ setup_wallpaper_assets() {
     fi
     
     mkdir -p /etc/skel/.local/share/mados/wallpapers
+    mkdir -p /etc/skel/Pictures/Wallpapers
     cp "$wallpaper_dir"/*.png /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
-    
-    mkdir -p /usr/share/backgrounds
-    cp "$wallpaper_dir"/*.png /usr/share/backgrounds/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.jpg /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.jpeg /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.png /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.jpg /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
+    cp "$wallpaper_dir"/*.jpeg /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
     
     if [[ -d /home/mados ]]; then
         mkdir -p /home/mados/.local/share/mados/wallpapers
+        mkdir -p /home/mados/Pictures/Wallpapers
         cp "$wallpaper_dir"/*.png /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
+        cp "$wallpaper_dir"/*.jpg /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
+        cp "$wallpaper_dir"/*.jpeg /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
+        cp "$wallpaper_dir"/*.png /home/mados/Pictures/Wallpapers/ 2>/dev/null || true
+        cp "$wallpaper_dir"/*.jpg /home/mados/Pictures/Wallpapers/ 2>/dev/null || true
+        cp "$wallpaper_dir"/*.jpeg /home/mados/Pictures/Wallpapers/ 2>/dev/null || true
         chown -R 1000:1000 /home/mados/.local/share/mados
+        chown -R 1000:1000 /home/mados/Pictures
     fi
 }
 

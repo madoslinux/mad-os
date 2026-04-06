@@ -215,7 +215,7 @@ exec_always --no-startup-id "mados-shellbar-start"
 
 # madOS Application Launcher dock
 exec --no-startup-id mados-launcher
-exec --no-startup-id mados-wallpaperd start
+exec --no-startup-id mados-wallpaperd -d
 
 # Steam Deck / Gamepad → WM bridge (translates gamepad buttons to sway commands)
 # Only activates when a gamepad is detected; exits cleanly if none found
