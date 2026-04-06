@@ -264,6 +264,13 @@ class TestSysusersConfig(unittest.TestCase):
             "mados user must use zsh as default shell",
         )
 
+    def test_creates_alpm_system_user(self):
+        """Config should create the alpm system user for pacman sandboxing."""
+        self.assertIsNotNone(
+            re.search(r"^u\s+alpm\s", self.content, re.MULTILINE),
+            "Must create alpm user with 'u alpm ...'",
+        )
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # /etc/passwd consistency

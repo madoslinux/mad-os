@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PACMAN_CONF="/etc/pacman.conf"
+
+has_landlock() {
+    [[ -r "/sys/kernel/security/lsm" ]] && /usr/bin/grep -qw "landlock" /sys/kernel/security/lsm
+}
+
+ensure_alpm_user() {
+    if ! getent passwd alpm >/dev/null 2>&1; then
+        useradd -r -U -M -d /var/lib/pacman -s /usr/bin/nologin alpm
+    fi
+}
+
+ensure_download_user() {
+    if grep -q '^#DownloadUser = alpm' "$PACMAN_CONF"; then
+        sed -i 's/^#DownloadUser = alpm/DownloadUser = alpm/' "$PACMAN_CONF"
+        return
+    fi
+
+    if ! grep -q '^DownloadUser = alpm' "$PACMAN_CONF"; then
+        printf '\nDownloadUser = alpm\n' >>"$PACMAN_CONF"
+    fi
+}
+
+enable_disable_sandbox() {
+    if grep -q '^#DisableSandbox' "$PACMAN_CONF"; then
+        sed -i 's/^#DisableSandbox/DisableSandbox/' "$PACMAN_CONF"
+    elif ! grep -q '^DisableSandbox' "$PACMAN_CONF"; then
+        printf 'DisableSandbox\n' >>"$PACMAN_CONF"
+    fi
+}
+
+disable_disable_sandbox() {
+    sed -i 's/^DisableSandbox/#DisableSandbox/' "$PACMAN_CONF"
+}
+
+main() {
+    [[ -f "$PACMAN_CONF" ]] || exit 0
+
+    ensure_alpm_user
+    ensure_download_user
+
+    if has_landlock; then
+        disable_disable_sandbox
+    else
+        enable_disable_sandbox
+    fi
+}
+
+main "$@"
