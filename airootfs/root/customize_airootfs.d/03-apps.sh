@@ -42,7 +42,24 @@ clone_ref_verified() {
     local ref="$3"
     local expected_commit="$4"
 
-    GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch "$ref" --no-tags "$repo_url" "$dest_dir"
+    local resolved_tag_commit=""
+    resolved_tag_commit=$(git ls-remote "$repo_url" "refs/tags/${ref}^{}" | awk 'NR==1 {print $1}')
+    if [[ -z "$resolved_tag_commit" ]]; then
+        resolved_tag_commit=$(git ls-remote "$repo_url" "refs/tags/${ref}" | awk 'NR==1 {print $1}')
+    fi
+    if [[ -z "$resolved_tag_commit" ]]; then
+        echo "ERROR: Could not resolve tag ${ref} from ${repo_url}"
+        return 1
+    fi
+    if [[ "$resolved_tag_commit" != "$expected_commit" ]]; then
+        echo "ERROR: ${repo_url} tag ${ref} resolves to ${resolved_tag_commit}, expected ${expected_commit}"
+        return 1
+    fi
+
+    GIT_TERMINAL_PROMPT=0 git init -q "$dest_dir"
+    git -C "$dest_dir" remote add origin "$repo_url"
+    GIT_TERMINAL_PROMPT=0 git -C "$dest_dir" fetch --depth=1 origin "$expected_commit"
+    git -C "$dest_dir" checkout --detach -q FETCH_HEAD
 
     local actual_commit
     actual_commit=$(git -C "$dest_dir" rev-parse HEAD)
@@ -218,16 +235,6 @@ install_installer() {
     rm -rf "$install_path"
     mv "${build_dir}/${installer_module}" "$install_path"
     rm -rf "$build_dir"
-
-    # Fix import in locale.py (bug in upstream: uses 'from summary' instead of 'from .summary')
-    if [[ -f "${install_path}/pages/locale.py" ]]; then
-        sed -i 's/from summary import/from .summary import/g' "${install_path}/pages/locale.py"
-        if ! grep -q 'from .summary import' "${install_path}/pages/locale.py"; then
-            echo "ERROR: Failed to fix locale.py import path"
-            return 1
-        fi
-        echo "  → Fixed import in locale.py"
-    fi
 
     # Keep installed-system Plymouth logo size identical to live ISO theme.
     if [[ -f "${install_path}/scripts/setup-plymouth.sh" ]]; then
