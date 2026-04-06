@@ -96,6 +96,11 @@ assert_installer_contract() {
         return 1
     fi
 
+    if grep -q 'rootflags=subvol=@' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still forces rootflags=subvol=@"
+        return 1
+    fi
+
     if ! grep -q 'retrying without ACL/xattr' "${install_path}/installer/steps.py"; then
         echo "ERROR: Installer contract check failed: steps.py missing rsync metadata fallback"
         return 1
@@ -266,6 +271,23 @@ import sys
 
 p = Path(sys.argv[1])
 t = p.read_text(encoding="utf-8")
+changed = False
+
+legacy_non_btrfs_fallback = '''    if [[ -n "$root_subvol" ]]; then
+        ensure_cmdline_token "rootflags=${root_subvol}"
+    else
+        ensure_cmdline_token "rootflags=subvol=@"
+    fi
+'''
+
+strict_btrfs_only = '''    if [[ -n "$root_subvol" ]]; then
+        ensure_cmdline_token "rootflags=${root_subvol}"
+    fi
+'''
+
+if legacy_non_btrfs_fallback in t:
+    t = t.replace(legacy_non_btrfs_fallback, strict_btrfs_only, 1)
+    changed = True
 
 inject_after = '    set_grub_key "GRUB_CMDLINE_LINUX" "\\"$current\\""\n'
 block = """
@@ -288,6 +310,10 @@ ensure_btrfs_rootflags() {
 if inject_after in t and "ensure_btrfs_rootflags()" not in t:
     t = t.replace(inject_after, block, 1)
     t = t.replace('ensure_cmdline_token "plymouth.use-simpledrm=0"\n', 'ensure_cmdline_token "plymouth.use-simpledrm=0"\nensure_btrfs_rootflags\n', 1)
+
+    changed = True
+
+if changed:
     p.write_text(t, encoding="utf-8")
 PY
         if ! grep -q 'ensure_btrfs_rootflags' "${install_path}/scripts/configure-grub.sh"; then

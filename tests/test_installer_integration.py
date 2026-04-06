@@ -61,6 +61,7 @@ class TestInstallerContractChecks(unittest.TestCase):
         self.assertIn("assert_installer_contract()", self.apps_script)
         self.assertIn("Installer contract missing required file", self.apps_script)
         self.assertIn("configure-grub.sh missing ensure_btrfs_rootflags", self.apps_script)
+        self.assertIn("configure-grub.sh still forces rootflags=subvol=@", self.apps_script)
         self.assertIn("steps.py missing rsync metadata fallback", self.apps_script)
 
 
