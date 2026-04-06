@@ -8,6 +8,7 @@ Before=archlinux-keyring-wkd-sync.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
+ExecStartPre=/usr/local/bin/mados-pacman-sandbox-compat
 ExecStart=/usr/bin/pacman-key --init
 ExecStart=/usr/bin/pacman-key --populate
 
