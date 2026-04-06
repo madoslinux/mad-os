@@ -485,7 +485,7 @@ Item {
                                     ColumnLayout {
                                         Layout.alignment: Qt.AlignVCenter
                                         spacing: 1
-                                        Text { text: "SKWD Shell"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: "SKWD Shell and Wallpaper manager"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
                                         Text { text: "Author: liixini"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.teal }
                                     }
 
