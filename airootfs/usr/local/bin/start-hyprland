@@ -49,9 +49,22 @@ fi
 exec {WATCHDOG_FD}>/dev/null
 
 # Launch Hyprland and measure runtime
-logger -p user.info -t "$LOG_TAG" "Launching Hyprland compositor (watchdog fd=$WATCHDOG_FD)"
+# In live ISO sessions, keep TTY clean by redirecting compositor logs to a file.
+HYPRLAND_START_LOG=""
+if [ -d /run/archiso ]; then
+    HYPRLAND_START_LOG="${XDG_CACHE_HOME:-$HOME/.cache}/hyprland-start.log"
+    mkdir -p "$(dirname "$HYPRLAND_START_LOG")"
+    logger -p user.info -t "$LOG_TAG" "Launching Hyprland compositor silently (log: $HYPRLAND_START_LOG, watchdog fd=$WATCHDOG_FD)"
+else
+    logger -p user.info -t "$LOG_TAG" "Launching Hyprland compositor (watchdog fd=$WATCHDOG_FD)"
+fi
+
 start_time=$(date +%s)
-Hyprland --watchdog-fd "$WATCHDOG_FD"
+if [ -n "$HYPRLAND_START_LOG" ]; then
+    Hyprland --watchdog-fd "$WATCHDOG_FD" >>"$HYPRLAND_START_LOG" 2>&1
+else
+    Hyprland --watchdog-fd "$WATCHDOG_FD"
+fi
 exit_code=$?
 end_time=$(date +%s)
 runtime=$((end_time - start_time))
