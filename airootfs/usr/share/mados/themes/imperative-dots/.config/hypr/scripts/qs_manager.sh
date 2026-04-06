@@ -147,6 +147,26 @@ if [[ "$ACTION" == "refresh-wallpapers" ]]; then
     exit 0
 fi
 
+# Route wallpaper control to skwd-wall launcher to avoid running
+# the legacy embedded wallpaper picker in parallel.
+if [[ "$TARGET" == "wallpaper" ]]; then
+    case "$ACTION" in
+        toggle)
+            mados-wallpaper-picker toggle >/dev/null 2>&1 || true
+            ;;
+        open)
+            mados-wallpaper-picker open >/dev/null 2>&1 || true
+            ;;
+        close)
+            mados-wallpaper-picker close >/dev/null 2>&1 || true
+            ;;
+        *)
+            mados-wallpaper-picker toggle >/dev/null 2>&1 || true
+            ;;
+    esac
+    exit 0
+fi
+
 # -----------------------------------------------------------------------------
 # ENSURE MASTER WINDOW & TOP BAR ARE ALIVE (ZOMBIE WATCHDOG)
 # -----------------------------------------------------------------------------
@@ -335,12 +355,7 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
         exit 0
     fi
 
-    if [[ "$TARGET" == "wallpaper" ]]; then
-        handle_wallpaper_prep
-        echo "$TARGET:$WALLPAPER_THUMB:$MON_DATA" > "$IPC_FILE"
-    else
-        echo "$TARGET::$MON_DATA" > "$IPC_FILE"
-    fi
+    echo "$TARGET::$MON_DATA" > "$IPC_FILE"
     
     save_and_focus_widget
     exit 0

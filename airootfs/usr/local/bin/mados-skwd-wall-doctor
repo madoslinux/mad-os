@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "== skwd-wall doctor =="
+
+check_cmd() {
+    local cmd="$1"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        echo "[ok] $cmd"
+    else
+        echo "[missing] $cmd"
+    fi
+}
+
+check_cmd quickshell
+check_cmd awww
+check_cmd matugen
+check_cmd ffmpeg
+check_cmd magick
+check_cmd sqlite3
+check_cmd inotifywait
+
+if [[ -f /usr/local/share/skwd-wall/daemon.qml ]]; then
+    echo "[ok] daemon.qml"
+else
+    echo "[missing] /usr/local/share/skwd-wall/daemon.qml"
+fi
+
+if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/skwd-wall/config.json" ]]; then
+    echo "[ok] config.json"
+else
+    echo "[missing] ~/.config/skwd-wall/config.json"
+fi
+
+echo "-- systemd user --"
+systemctl --user is-enabled skwd-wall.service 2>/dev/null || true
+systemctl --user is-active skwd-wall.service 2>/dev/null || true
+
+echo "-- ipc --"
+quickshell ipc -p /usr/local/share/skwd-wall/daemon.qml show 2>/dev/null || true
+
+echo "-- recent logs --"
+journalctl --user -u skwd-wall.service -n 40 --no-pager 2>/dev/null || true

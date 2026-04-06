@@ -96,6 +96,13 @@ pip install pre-commit
 pre-commit install
 ```
 
+### Launcher (Quickshell) Config
+
+- Main UI and behavior: `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/LauncherPopup.qml`
+- App discovery and metadata: `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/list_apps.py`
+- Launcher tuning (ranking/UI): `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/config.json`
+- Default hidden apps rules: `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/hidden-apps.json`
+
 ## CI/CD Pipeline
 
 1. **Stage 1**: Unit tests + integration tests (parallel)

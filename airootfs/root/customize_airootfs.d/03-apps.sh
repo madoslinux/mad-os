@@ -515,9 +515,400 @@ install_oh_my_zsh() {
 }
 
 SKWD_WALL_REPO="liixini/skwd-wall"
-SKWD_WALL_INSTALL_DIR="/opt/mados/skwd-wall"
+SKWD_WALL_INSTALL_DIR="/usr/local/share/skwd-wall"
+SKWD_WALL_COMPAT_DIR="/opt/mados/skwd-wall"
 SKWD_WALL_BIN="/usr/local/bin/skwd-wall"
 
+install_skwd_wall_legacy() {
+    echo "Installing skwd-wall..."
+
+    local build_dir="${BUILD_DIR}/skwd-wall_$$"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cd "$BUILD_DIR"
+
+    local retries=3
+    local count=0
+    while [ $count -lt $retries ]; do
+        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch main --no-tags "https://github.com/${SKWD_WALL_REPO}.git" "${build_dir}/skwd-wall"; then
+            break
+        fi
+        count=$((count + 1))
+        echo "  Retry $count/$retries..."
+        sleep 2
+    done
+
+    if [ $count -eq $retries ]; then
+        echo "ERROR: Failed to clone skwd-wall after $retries attempts"
+        rm -rf "$build_dir"
+        return 1
+    fi
+
+    mkdir -p "$INSTALL_DIR" "/usr/local/share" "/opt/mados"
+    rm -rf "$SKWD_WALL_INSTALL_DIR"
+    mv "${build_dir}/skwd-wall" "$SKWD_WALL_INSTALL_DIR"
+
+    rm -rf "$SKWD_WALL_COMPAT_DIR"
+    ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"
+
+    mkdir -p /etc/skel/.config/skwd-wall /etc/skel/.config/systemd/user
+
+    cat > /etc/skel/.config/systemd/user/skwd-wall.service << 'SKWD_WALL_SERVICE'
+[Unit]
+Description=skwd-wall wallpaper selector daemon
+Documentation=https://github.com/liixini/skwd-wall
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mados-skwd-wall-daemon
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
+SKWD_WALL_SERVICE
+
+    if [[ -f "$SKWD_WALL_INSTALL_DIR/data/config.json.example" ]]; then
+        cp "$SKWD_WALL_INSTALL_DIR/data/config.json.example" /etc/skel/.config/skwd-wall/config.json
+    fi
+
+    if [[ -f /etc/skel/.config/skwd-wall/config.json ]]; then
+        sed -i 's/"compositor":[[:space:]]*"[^"]*"/"compositor": "hyprland"/' /etc/skel/.config/skwd-wall/config.json
+    fi
+
+    if [[ -d /home/mados ]]; then
+        mkdir -p /home/mados/.config/skwd-wall /home/mados/.config/systemd/user
+        cp /etc/skel/.config/systemd/user/skwd-wall.service /home/mados/.config/systemd/user/skwd-wall.service
+
+        if [[ -f /etc/skel/.config/skwd-wall/config.json ]]; then
+            cp /etc/skel/.config/skwd-wall/config.json /home/mados/.config/skwd-wall/config.json
+        fi
+
+        chown -R 1000:1000 /home/mados/.config/skwd-wall /home/mados/.config/systemd
+    fi
+
+    rm -rf "$build_dir"
+
+    cat > "$SKWD_WALL_BIN" << 'SKWD_WALL_WRAPPER'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+    exec /usr/local/bin/mados-wallpaper-picker toggle
+fi
+
+exec /usr/local/bin/mados-wallpaper-picker "$@"
+SKWD_WALL_WRAPPER
+    chmod +x "$SKWD_WALL_BIN"
+
+    cat > /usr/local/bin/mados-skwd-wall-sources << 'MADOS_SKWD_WALL_SOURCES'
+#!/usr/bin/env python3
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import sys
+from pathlib import Path
+
+DEFAULT_SOURCES = [
+    "~/.local/share/mados/wallpapers",
+    "~/Pictures/Wallpapers",
+]
+
+IMAGE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".gif",
+    ".bmp",
+    ".tif",
+    ".tiff",
+}
+
+VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".mkv",
+    ".mov",
+    ".webm",
+    ".avi",
+}
+
+
+def home() -> Path:
+    return Path.home()
+
+
+def config_file() -> Path:
+    xdg = os.environ.get("XDG_CONFIG_HOME", str(home() / ".config"))
+    return Path(xdg) / "skwd-wall" / "config.json"
+
+
+def cache_root() -> Path:
+    xdg = os.environ.get("XDG_CACHE_HOME", str(home() / ".cache"))
+    return Path(xdg) / "skwd-wall"
+
+
+def union_dir() -> Path:
+    return cache_root() / "wallpaper-union"
+
+
+def normalize(path: str) -> str:
+    value = os.path.expandvars(path.strip())
+    value = os.path.expanduser(value)
+    return str(Path(value).resolve())
+
+
+def ensure_config() -> dict:
+    path = config_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not path.is_file():
+        install_dir = Path("/usr/local/share/skwd-wall")
+        example = install_dir / "data" / "config.json.example"
+        if example.is_file():
+            data = json.loads(example.read_text())
+        else:
+            data = {}
+    else:
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            data = {}
+
+    if not isinstance(data, dict):
+        data = {}
+
+    paths = data.get("paths")
+    if not isinstance(paths, dict):
+        paths = {}
+    data["paths"] = paths
+
+    sources = paths.get("wallpaperSources")
+    if not isinstance(sources, list):
+        sources = []
+
+    merged = []
+    seen = set()
+
+    legacy = paths.get("wallpaper")
+    if isinstance(legacy, str) and legacy.strip():
+        legacy_norm = normalize(legacy)
+        if legacy_norm not in seen and not legacy_norm.endswith("/wallpaper-union"):
+            merged.append(legacy_norm)
+            seen.add(legacy_norm)
+
+    for item in sources:
+        if isinstance(item, str) and item.strip():
+            norm = normalize(item)
+            if norm not in seen:
+                merged.append(norm)
+                seen.add(norm)
+
+    for item in DEFAULT_SOURCES:
+        norm = normalize(item)
+        if norm not in seen:
+            merged.append(norm)
+            seen.add(norm)
+
+    paths["wallpaperSources"] = merged
+    paths["wallpaper"] = str(union_dir())
+    if not isinstance(paths.get("videoWallpaper"), str) or not str(paths["videoWallpaper"]).strip():
+        paths["videoWallpaper"] = str(union_dir())
+
+    data["compositor"] = "hyprland"
+    save_config(data)
+    return data
+
+
+def save_config(data: dict) -> None:
+    path = config_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=4, ensure_ascii=False) + "\n")
+
+
+def iter_files(source: Path):
+    for path in source.rglob("*"):
+        if path.is_file():
+            ext = path.suffix.lower()
+            if ext in IMAGE_EXTENSIONS or ext in VIDEO_EXTENSIONS:
+                yield path
+
+
+def build_union_from_sources(sources: list[str]) -> None:
+    target = union_dir()
+    parent = target.parent
+    temp = parent / (target.name + ".tmp")
+    old = parent / (target.name + ".old")
+
+    shutil.rmtree(temp, ignore_errors=True)
+    temp.mkdir(parents=True, exist_ok=True)
+
+    for src in sources:
+        source = Path(src)
+        if not source.is_dir():
+            continue
+
+        for item in iter_files(source):
+            digest = hashlib.sha1(str(item).encode("utf-8")).hexdigest()[:10]
+            stem = item.stem or "wallpaper"
+            safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in stem)[:80]
+            name = f"{safe}__{digest}{item.suffix.lower()}"
+            link = temp / name
+            if not link.exists():
+                try:
+                    link.symlink_to(item)
+                except OSError:
+                    pass
+
+    shutil.rmtree(old, ignore_errors=True)
+    if target.exists() or target.is_symlink():
+        target.rename(old)
+    temp.rename(target)
+    shutil.rmtree(old, ignore_errors=True)
+
+
+def load_sources() -> list[str]:
+    data = ensure_config()
+    paths = data.get("paths", {})
+    sources = paths.get("wallpaperSources", [])
+    return [s for s in sources if isinstance(s, str)]
+
+
+def cmd_sync() -> int:
+    sources = load_sources()
+    build_union_from_sources(sources)
+    return 0
+
+
+def cmd_list() -> int:
+    for entry in load_sources():
+        print(entry)
+    return 0
+
+
+def cmd_add(path: str) -> int:
+    data = ensure_config()
+    paths = data["paths"]
+    sources = [s for s in paths.get("wallpaperSources", []) if isinstance(s, str)]
+    norm = normalize(path)
+    if norm not in sources:
+        sources.append(norm)
+        paths["wallpaperSources"] = sources
+        save_config(data)
+    build_union_from_sources(sources)
+    return 0
+
+
+def cmd_remove(path: str) -> int:
+    data = ensure_config()
+    paths = data["paths"]
+    sources = [s for s in paths.get("wallpaperSources", []) if isinstance(s, str)]
+    norm = normalize(path)
+    sources = [s for s in sources if s != norm]
+    paths["wallpaperSources"] = sources
+    save_config(data)
+    build_union_from_sources(sources)
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Manage skwd-wall wallpaper sources")
+    sub = parser.add_subparsers(dest="cmd")
+
+    sub.add_parser("sync")
+    sub.add_parser("list")
+    add_p = sub.add_parser("add")
+    add_p.add_argument("path")
+    rm_p = sub.add_parser("remove")
+    rm_p.add_argument("path")
+
+    args = parser.parse_args()
+    if args.cmd in {None, "sync"}:
+        return cmd_sync()
+    if args.cmd == "list":
+        return cmd_list()
+    if args.cmd == "add":
+        return cmd_add(args.path)
+    if args.cmd == "remove":
+        return cmd_remove(args.path)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+MADOS_SKWD_WALL_SOURCES
+    chmod +x /usr/local/bin/mados-skwd-wall-sources
+
+    cat > /usr/local/bin/mados-skwd-wall-daemon << 'MADOS_SKWD_WALL_DAEMON'
+#!/usr/bin/env bash
+set -euo pipefail
+
+export SKWD_WALL_INSTALL="/usr/local/share/skwd-wall"
+export SKWD_WALL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/skwd-wall"
+
+/usr/local/bin/mados-skwd-wall-sources sync >/dev/null 2>&1 || true
+
+exec quickshell -p /usr/local/share/skwd-wall/daemon.qml
+MADOS_SKWD_WALL_DAEMON
+    chmod +x /usr/local/bin/mados-skwd-wall-daemon
+
+    cat > /usr/local/bin/mados-skwd-wall-doctor << 'MADOS_SKWD_WALL_DOCTOR'
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "== skwd-wall doctor =="
+
+check_cmd() {
+    local cmd="$1"
+    if command -v "$cmd" >/dev/null 2>&1; then
+        echo "[ok] $cmd"
+    else
+        echo "[missing] $cmd"
+    fi
+}
+
+check_cmd quickshell
+check_cmd awww
+check_cmd matugen
+check_cmd ffmpeg
+check_cmd magick
+check_cmd sqlite3
+check_cmd inotifywait
+
+if [[ -f /usr/local/share/skwd-wall/daemon.qml ]]; then
+    echo "[ok] daemon.qml"
+else
+    echo "[missing] /usr/local/share/skwd-wall/daemon.qml"
+fi
+
+if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/skwd-wall/config.json" ]]; then
+    echo "[ok] config.json"
+else
+    echo "[missing] ~/.config/skwd-wall/config.json"
+fi
+
+echo "-- systemd user --"
+systemctl --user is-enabled skwd-wall.service 2>/dev/null || true
+systemctl --user is-active skwd-wall.service 2>/dev/null || true
+
+echo "-- ipc --"
+quickshell ipc -p /usr/local/share/skwd-wall/daemon.qml show 2>/dev/null || true
+
+echo "-- recent logs --"
+journalctl --user -u skwd-wall.service -n 40 --no-pager 2>/dev/null || true
+MADOS_SKWD_WALL_DOCTOR
+    chmod +x /usr/local/bin/mados-skwd-wall-doctor
+
+    echo "✓ skwd-wall installed to ${SKWD_WALL_INSTALL_DIR}"
+    return 0
+}
+
+# Canonical skwd-wall installer (overrides legacy wrapper-heavy flow)
 install_skwd_wall() {
     echo "Installing skwd-wall..."
 
@@ -543,48 +934,59 @@ install_skwd_wall() {
         return 1
     fi
 
-    mkdir -p "$INSTALL_DIR"
+    mkdir -p "$INSTALL_DIR" "/usr/local/share" "/opt/mados" /etc/skel/.config/skwd-wall /etc/skel/.config/systemd/user
     rm -rf "$SKWD_WALL_INSTALL_DIR"
     mv "${build_dir}/skwd-wall" "$SKWD_WALL_INSTALL_DIR"
-    rm -rf "$build_dir"
 
-    cat > "$SKWD_WALL_BIN" << 'SKWD_WALL_WRAPPER'
-#!/bin/bash
-set -euo pipefail
+    rm -rf "$SKWD_WALL_COMPAT_DIR"
+    ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"
 
-SKWD_DAEMON="/opt/mados/skwd-wall/daemon.qml"
-SKWD_PATTERN="quickshell.*${SKWD_DAEMON}"
-
-start_daemon() {
-    if pgrep -f "$SKWD_PATTERN" >/dev/null 2>&1; then
-        return 0
+    if [[ ! -e "$SKWD_WALL_INSTALL_DIR/scripts" && -d "$SKWD_WALL_INSTALL_DIR/data/scripts" ]]; then
+        ln -s "$SKWD_WALL_INSTALL_DIR/data/scripts" "$SKWD_WALL_INSTALL_DIR/scripts"
     fi
 
-    quickshell -p "$SKWD_DAEMON" >/dev/null 2>&1 &
+    if [[ -f "$SKWD_WALL_INSTALL_DIR/data/config.json.example" ]]; then
+        cp "$SKWD_WALL_INSTALL_DIR/data/config.json.example" /etc/skel/.config/skwd-wall/config.json
+        sed -i 's/"compositor":[[:space:]]*"[^"]*"/"compositor": "hyprland"/' /etc/skel/.config/skwd-wall/config.json
+    fi
 
-    local tries=0
-    while [ $tries -lt 25 ]; do
-        if pgrep -f "$SKWD_PATTERN" >/dev/null 2>&1; then
-            return 0
+    if [[ ! -f /etc/skel/.config/systemd/user/skwd-wall.service ]]; then
+        cat > /etc/skel/.config/systemd/user/skwd-wall.service << 'SKWD_WALL_SERVICE_FALLBACK'
+[Unit]
+Description=skwd-wall wallpaper selector daemon
+Documentation=https://github.com/liixini/skwd-wall
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/mados-skwd-wall-daemon
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target
+SKWD_WALL_SERVICE_FALLBACK
+    fi
+
+    if [[ -d /home/mados ]]; then
+        mkdir -p /home/mados/.config/skwd-wall /home/mados/.config/systemd/user
+        if [[ -f /etc/skel/.config/skwd-wall/config.json ]]; then
+            cp /etc/skel/.config/skwd-wall/config.json /home/mados/.config/skwd-wall/config.json
         fi
-        sleep 0.1
-        tries=$((tries + 1))
+        if [[ -f /etc/skel/.config/systemd/user/skwd-wall.service ]]; then
+            cp /etc/skel/.config/systemd/user/skwd-wall.service /home/mados/.config/systemd/user/skwd-wall.service
+        fi
+        chown -R 1000:1000 /home/mados/.config/skwd-wall /home/mados/.config/systemd
+    fi
+
+    for helper in /usr/local/bin/mados-wallpaper-picker /usr/local/bin/skwd-wall /usr/local/bin/mados-skwd-wall-daemon /usr/local/bin/mados-skwd-wall-sources /usr/local/bin/mados-skwd-wall-doctor; do
+        if [[ -f "$helper" ]]; then
+            chmod +x "$helper"
+        fi
     done
 
-    return 1
-}
-
-if [[ "$1" == "daemon" ]]; then
-    exec quickshell -p "$SKWD_DAEMON"
-elif [[ "$1" == "toggle" ]]; then
-    start_daemon || exit 1
-    exec quickshell ipc -p "$SKWD_DAEMON" call wallpaper toggle
-else
-    start_daemon || exit 1
-    exec quickshell ipc -p "$SKWD_DAEMON" call wallpaper toggle
-fi
-SKWD_WALL_WRAPPER
-    chmod +x "$SKWD_WALL_BIN"
+    rm -rf "$build_dir"
 
     echo "✓ skwd-wall installed to ${SKWD_WALL_INSTALL_DIR}"
     return 0

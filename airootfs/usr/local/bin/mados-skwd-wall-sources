@@ -1,0 +1,234 @@
+#!/usr/bin/env python3
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+from pathlib import Path
+
+DEFAULT_SOURCES = [
+    "~/.local/share/mados/wallpapers",
+    "~/Pictures/Wallpapers",
+]
+
+IMAGE_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".gif",
+    ".bmp",
+    ".tif",
+    ".tiff",
+}
+
+VIDEO_EXTENSIONS = {
+    ".mp4",
+    ".mkv",
+    ".mov",
+    ".webm",
+    ".avi",
+}
+
+
+def home() -> Path:
+    return Path.home()
+
+
+def config_file() -> Path:
+    xdg = os.environ.get("XDG_CONFIG_HOME", str(home() / ".config"))
+    return Path(xdg) / "skwd-wall" / "config.json"
+
+
+def cache_root() -> Path:
+    xdg = os.environ.get("XDG_CACHE_HOME", str(home() / ".cache"))
+    return Path(xdg) / "skwd-wall"
+
+
+def union_dir() -> Path:
+    return cache_root() / "wallpaper-union"
+
+
+def normalize(path: str) -> str:
+    value = os.path.expandvars(path.strip())
+    value = os.path.expanduser(value)
+    return str(Path(value).resolve())
+
+
+def save_config(data: dict) -> None:
+    path = config_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=4, ensure_ascii=False) + "\n")
+
+
+def ensure_config() -> dict:
+    path = config_file()
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not path.is_file():
+        install_dir = Path("/usr/local/share/skwd-wall")
+        example = install_dir / "data" / "config.json.example"
+        if example.is_file():
+            data = json.loads(example.read_text())
+        else:
+            data = {}
+    else:
+        try:
+            data = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            data = {}
+
+    if not isinstance(data, dict):
+        data = {}
+
+    paths = data.get("paths")
+    if not isinstance(paths, dict):
+        paths = {}
+    data["paths"] = paths
+
+    sources = paths.get("wallpaperSources")
+    if not isinstance(sources, list):
+        sources = []
+
+    merged = []
+    seen = set()
+
+    legacy = paths.get("wallpaper")
+    if isinstance(legacy, str) and legacy.strip():
+        legacy_norm = normalize(legacy)
+        if legacy_norm not in seen and not legacy_norm.endswith("/wallpaper-union"):
+            merged.append(legacy_norm)
+            seen.add(legacy_norm)
+
+    for item in sources:
+        if isinstance(item, str) and item.strip():
+            norm = normalize(item)
+            if norm not in seen:
+                merged.append(norm)
+                seen.add(norm)
+
+    for item in DEFAULT_SOURCES:
+        norm = normalize(item)
+        if norm not in seen:
+            merged.append(norm)
+            seen.add(norm)
+
+    paths["wallpaperSources"] = merged
+    paths["wallpaper"] = str(union_dir())
+    if not isinstance(paths.get("videoWallpaper"), str) or not str(paths["videoWallpaper"]).strip():
+        paths["videoWallpaper"] = str(union_dir())
+
+    data["compositor"] = "hyprland"
+    save_config(data)
+    return data
+
+
+def iter_files(source: Path):
+    for path in source.rglob("*"):
+        if path.is_file():
+            ext = path.suffix.lower()
+            if ext in IMAGE_EXTENSIONS or ext in VIDEO_EXTENSIONS:
+                yield path
+
+
+def build_union_from_sources(sources: list[str]) -> None:
+    target = union_dir()
+    parent = target.parent
+    temp = parent / (target.name + ".tmp")
+    old = parent / (target.name + ".old")
+
+    shutil.rmtree(temp, ignore_errors=True)
+    temp.mkdir(parents=True, exist_ok=True)
+
+    for src in sources:
+        source = Path(src)
+        if not source.is_dir():
+            continue
+
+        for item in iter_files(source):
+            digest = hashlib.sha1(str(item).encode("utf-8")).hexdigest()[:10]
+            stem = item.stem or "wallpaper"
+            safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in stem)[:80]
+            name = f"{safe}__{digest}{item.suffix.lower()}"
+            link = temp / name
+            if not link.exists():
+                try:
+                    link.symlink_to(item)
+                except OSError:
+                    pass
+
+    shutil.rmtree(old, ignore_errors=True)
+    if target.exists() or target.is_symlink():
+        target.rename(old)
+    temp.rename(target)
+    shutil.rmtree(old, ignore_errors=True)
+
+
+def load_sources() -> list[str]:
+    data = ensure_config()
+    paths = data.get("paths", {})
+    sources = paths.get("wallpaperSources", [])
+    return [s for s in sources if isinstance(s, str)]
+
+
+def cmd_sync() -> int:
+    build_union_from_sources(load_sources())
+    return 0
+
+
+def cmd_list() -> int:
+    for entry in load_sources():
+        print(entry)
+    return 0
+
+
+def cmd_add(path: str) -> int:
+    data = ensure_config()
+    paths = data["paths"]
+    sources = [s for s in paths.get("wallpaperSources", []) if isinstance(s, str)]
+    norm = normalize(path)
+    if norm not in sources:
+        sources.append(norm)
+        paths["wallpaperSources"] = sources
+        save_config(data)
+    build_union_from_sources(sources)
+    return 0
+
+
+def cmd_remove(path: str) -> int:
+    data = ensure_config()
+    paths = data["paths"]
+    sources = [s for s in paths.get("wallpaperSources", []) if isinstance(s, str)]
+    norm = normalize(path)
+    paths["wallpaperSources"] = [s for s in sources if s != norm]
+    save_config(data)
+    build_union_from_sources(paths["wallpaperSources"])
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Manage skwd-wall wallpaper sources")
+    sub = parser.add_subparsers(dest="cmd")
+
+    sub.add_parser("sync")
+    sub.add_parser("list")
+    add_p = sub.add_parser("add")
+    add_p.add_argument("path")
+    rm_p = sub.add_parser("remove")
+    rm_p.add_argument("path")
+
+    args = parser.parse_args()
+    if args.cmd in {None, "sync"}:
+        return cmd_sync()
+    if args.cmd == "list":
+        return cmd_list()
+    if args.cmd == "add":
+        return cmd_add(args.path)
+    if args.cmd == "remove":
+        return cmd_remove(args.path)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

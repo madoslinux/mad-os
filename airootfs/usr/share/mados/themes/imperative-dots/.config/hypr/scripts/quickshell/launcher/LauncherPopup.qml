@@ -22,6 +22,7 @@ Item {
     readonly property string frequencyScriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/record_frequency.py"
     readonly property string stateScriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/update_state.py"
     readonly property string launcherConfigPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/config.json"
+    readonly property string hiddenAppsConfigPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/hidden-apps.json"
     readonly property string launcherCacheDir: Quickshell.env("HOME") + "/.cache/quickshell/launcher"
     readonly property string frequencyFilePath: launcherCacheDir + "/freq.json"
     readonly property string stateFilePath: launcherCacheDir + "/state.json"
@@ -29,7 +30,11 @@ Item {
     readonly property int expandedCardWidth: Math.max(220, Math.round(toNumber(cfg("ui", "expandedCardWidth", 360), 360)))
     readonly property bool showBadges: toBool(cfg("ui", "showBadges", true), true)
     readonly property bool showSteamHeroBackground: toBool(cfg("ui", "showSteamHeroBackground", true), true)
+    readonly property var defaultHiddenDesktopFiles: toLookup(hiddenConfigData.desktopFiles)
+    readonly property var defaultHiddenAppNames: toLookup(hiddenConfigData.appNames)
+    readonly property var defaultHiddenExecHeads: toLookup(hiddenConfigData.execHeads)
     property var stateData: ({ "favorites": {}, "hidden": {} })
+    property var hiddenConfigData: defaultHiddenConfig()
     property string contextAppId: ""
     property bool contextFavorite: false
     property bool contextHidden: false
@@ -68,6 +73,25 @@ Item {
 
         let bucket = stateData.hidden;
         return bucket && typeof bucket === "object" && bucket[key] === true;
+    }
+
+    function isDefaultHidden(app) {
+        if (!app || typeof app !== "object")
+            return false;
+
+        let desktopFile = String(app.desktopFile || "").toLowerCase();
+        if (desktopFile !== "" && defaultHiddenDesktopFiles[desktopFile] === true)
+            return true;
+
+        let name = String(app.name || "").toLowerCase().trim();
+        if (name !== "" && defaultHiddenAppNames[name] === true)
+            return true;
+
+        let execHead = String(app.execHead || "").toLowerCase().trim();
+        if (execHead !== "" && defaultHiddenExecHeads[execHead] === true)
+            return true;
+
+        return false;
     }
 
     function persistState(action, appId, enabled) {
@@ -208,6 +232,67 @@ Item {
         };
     }
 
+    function defaultHiddenConfig() {
+        return {
+            "desktopFiles": [
+                "nm-connection-editor.desktop",
+                "bssh.desktop",
+                "avahi-discover.desktop",
+                "bvnc.desktop",
+                "blueman-adapters.desktop",
+                "blueman-manager.desktop",
+                "lxappearance.desktop",
+                "lstopo.desktop",
+                "libreoffice-startcenter.desktop",
+                "libreoffice-base.desktop",
+                "libreoffice-draw.desktop",
+                "easyeffects.desktop",
+                "htop.desktop",
+                "btop.desktop",
+                "libreoffice-math.desktop",
+                "mados-launcher.desktop",
+                "mados-equalizer.desktop",
+                "qt5ct.desktop",
+                "qt6ct.desktop",
+                "vim.desktop",
+                "exo-preferred-applications.desktop",
+                "pavucontrol.desktop"
+            ],
+            "appNames": [
+                "advanced network configuration",
+                "avahi ssh server browser",
+                "avahi zeroconf browser",
+                "avahi vnc server browser",
+                "bluetooth adapters",
+                "bluetooth manager",
+                "customize look and feel",
+                "easy effects",
+                "easyeffects",
+                "hardware locality lstopo",
+                "libreoffice",
+                "libreoffice base",
+                "libreoffice draw",
+                "htop",
+                "btop",
+                "libreoffice math",
+                "mados equalizer",
+                "mados-equalizer",
+                "mados launcher",
+                "preferred applications",
+                "qt5 settings",
+                "qt6 settings",
+                "vim",
+                "volume control",
+                "pulseaudio volume control"
+            ],
+            "execHeads": [
+                "mados-launcher",
+                "mados-equalizer",
+                "vim"
+            ]
+        };
+    }
+
     function cfg(section, key, fallback) {
         let sectionObj = configData[section];
         if (!sectionObj || typeof sectionObj !== "object")
@@ -234,6 +319,33 @@ Item {
         return fallback;
     }
 
+    function normalizeLookupKey(value) {
+        return String(value || "").toLowerCase().trim();
+    }
+
+    function toLookup(value) {
+        let output = {};
+        if (Array.isArray(value)) {
+            for (let i = 0; i < value.length; i++) {
+                let key = normalizeLookupKey(value[i]);
+                if (key !== "")
+                    output[key] = true;
+            }
+            return output;
+        }
+
+        if (value && typeof value === "object") {
+            let keys = Object.keys(value);
+            for (let j = 0; j < keys.length; j++) {
+                let key = normalizeLookupKey(keys[j]);
+                if (key !== "" && value[keys[j]] === true)
+                    output[key] = true;
+            }
+        }
+
+        return output;
+    }
+
     function applyConfig(rawConfig) {
         let merged = defaultConfig();
         if (!rawConfig || typeof rawConfig !== "object") {
@@ -258,9 +370,32 @@ Item {
         configData = merged;
     }
 
+    function applyHiddenConfig(rawConfig) {
+        let merged = defaultHiddenConfig();
+        if (!rawConfig || typeof rawConfig !== "object") {
+            hiddenConfigData = merged;
+            return;
+        }
+
+        let sections = ["desktopFiles", "appNames", "execHeads"];
+        for (let i = 0; i < sections.length; i++) {
+            let name = sections[i];
+            let incoming = rawConfig[name];
+            if (Array.isArray(incoming))
+                merged[name] = incoming;
+        }
+
+        hiddenConfigData = merged;
+    }
+
     function loadLauncherConfig() {
         if (!configReadProcess.running)
             configReadProcess.running = true;
+    }
+
+    function loadHiddenConfig() {
+        if (!hiddenConfigReadProcess.running)
+            hiddenConfigReadProcess.running = true;
     }
 
     function shellQuote(value) {
@@ -368,8 +503,10 @@ Item {
             let source = String(app.source || "desktop").toLowerCase();
             let thumbPath = String(app.thumbPath || "");
             let heroPath = String(app.heroPath || "");
+            let desktopFile = String(app.desktopFile || "").toLowerCase();
+            let execHead = String(app.execHead || "").toLowerCase();
             let isGame = app.isGame === true;
-            let hidden = isHidden(appId);
+            let hidden = isHidden(appId) || isDefaultHidden(app);
             let favorite = isFavorite(appId);
             let sourceLabel = source === "steam" ? "steam" : "app";
             let haystack = (name + " " + categories + " " + tags + " " + displayCategory + " " + displayTagsText + " " + sourceLabel).toLowerCase();
@@ -381,9 +518,6 @@ Item {
                 continue;
 
             if (sourceFilter === "games" && !isGame)
-                continue;
-
-            if (sourceFilter === "steam" && source !== "steam")
                 continue;
 
             if (sourceFilter === "hidden") {
@@ -410,6 +544,8 @@ Item {
                 "isGame": isGame,
                 "terminal": app.terminal === true,
                 "source": source,
+                "desktopFile": desktopFile,
+                "execHead": execHead,
                 "favorite": favorite,
                 "hidden": hidden,
                 "score": score,
@@ -510,11 +646,13 @@ Item {
     onSearchTextChanged: applyFilter()
     onSourceFilterChanged: applyFilter()
     onConfigDataChanged: applyFilter()
+    onHiddenConfigDataChanged: applyFilter()
     onFreqDataChanged: applyFilter()
     onStateDataChanged: applyFilter()
 
     Component.onCompleted: {
         loadLauncherConfig();
+        loadHiddenConfig();
         loadFrequencyData();
         loadStateData();
         refreshApps();
@@ -579,6 +717,24 @@ Item {
                 }
 
                 root.applyConfig(parsed);
+            }
+        }
+    }
+
+    Process {
+        id: hiddenConfigReadProcess
+        command: ["bash", "-lc", "if [ -f " + shellQuote(root.hiddenAppsConfigPath) + " ]; then cat " + shellQuote(root.hiddenAppsConfigPath) + "; else printf '{}' ; fi"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let parsed = {};
+                try {
+                    parsed = JSON.parse(this.text.trim());
+                } catch (e) {
+                    parsed = {};
+                }
+
+                root.applyHiddenConfig(parsed);
             }
         }
     }
@@ -703,7 +859,6 @@ Item {
                         { "id": "all", "icon": "󰄶", "label": "All" },
                         { "id": "apps", "icon": "󰀻", "label": "Apps" },
                         { "id": "games", "icon": "󰊗", "label": "Games" },
-                        { "id": "steam", "icon": "󰓓", "label": "Steam" },
                         { "id": "hidden", "icon": "󰈉", "label": "Hidden" }
                     ]
 
@@ -744,12 +899,7 @@ Item {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (root.sourceFilter === modelData.id)
-                                    root.sourceFilter = "all";
-                                else
-                                    root.sourceFilter = modelData.id;
-                            }
+                            onClicked: root.sourceFilter = modelData.id
                         }
                     }
                 }

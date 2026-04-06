@@ -55,6 +55,38 @@ GUIDE_QML = os.path.join(
 WALLPAPER_PICKER_HELPER = os.path.join(
     REPO_DIR, "airootfs", "usr", "local", "bin", "mados-wallpaper-picker"
 )
+SKWD_DAEMON_HELPER = os.path.join(
+    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-skwd-wall-daemon"
+)
+SKWD_SOURCES_HELPER = os.path.join(
+    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-skwd-wall-sources"
+)
+SKWD_DOCTOR_HELPER = os.path.join(
+    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-skwd-wall-doctor"
+)
+SKWD_SERVICE = os.path.join(
+    REPO_DIR,
+    "airootfs",
+    "etc",
+    "skel",
+    ".config",
+    "systemd",
+    "user",
+    "skwd-wall.service",
+)
+QS_MANAGER = os.path.join(
+    REPO_DIR,
+    "airootfs",
+    "usr",
+    "share",
+    "mados",
+    "themes",
+    "imperative-dots",
+    ".config",
+    "hypr",
+    "scripts",
+    "qs_manager.sh",
+)
 
 
 def _read(path):
@@ -140,9 +172,18 @@ class TestSkwdWallIntegration(unittest.TestCase):
         self.assertIn('run_module "03-apps.sh" "setup_wallpaper_assets"', content)
         self.assertIn('run_module "03-apps.sh" "install_skwd_wall"', content)
 
+    def test_apps_script_keeps_opt_compat_symlink(self):
+        content = _read(APPS_SCRIPT)
+        self.assertIn('SKWD_WALL_COMPAT_DIR="/opt/mados/skwd-wall"', content)
+        self.assertIn('ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"', content)
+
     def test_hypr_bindings_use_wallpaper_picker_helper(self):
         self.assertIn("mados-wallpaper-picker toggle", _read(HYPR_CONF))
         self.assertIn("mados-wallpaper-picker toggle", _read(THEME_HYPR_CONF))
+
+    def test_hypr_autostart_starts_skwd_wall_daemon(self):
+        self.assertIn("systemctl --user start skwd-wall.service", _read(HYPR_CONF))
+        self.assertIn("systemctl --user start skwd-wall.service", _read(THEME_HYPR_CONF))
 
     def test_guide_uses_wallpaper_picker_helper(self):
         guide = _read(GUIDE_QML)
@@ -152,8 +193,34 @@ class TestSkwdWallIntegration(unittest.TestCase):
     def test_wallpaper_picker_helper_exists_with_fallback_path(self):
         content = _read(WALLPAPER_PICKER_HELPER)
         self.assertIn("#!/usr/bin/env bash", content)
-        self.assertIn('SKWD_DAEMON="/opt/mados/skwd-wall/daemon.qml"', content)
-        self.assertIn('quickshell ipc -p "$SKWD_DAEMON"', content)
+        self.assertIn('DAEMON_QML="/usr/local/share/skwd-wall/daemon.qml"', content)
+        self.assertIn('quickshell ipc -p "$DAEMON_QML"', content)
+        self.assertIn('systemctl --user start "$SERVICE_NAME"', content)
+
+    def test_skwd_helpers_exist_and_use_canonical_layout(self):
+        daemon_helper = _read(SKWD_DAEMON_HELPER)
+        self.assertIn("/usr/local/share/skwd-wall/daemon.qml", daemon_helper)
+        self.assertIn('SKWD_WALL_INSTALL="/usr/local/share/skwd-wall"', daemon_helper)
+
+        sources_helper = _read(SKWD_SOURCES_HELPER)
+        self.assertIn("wallpaperSources", sources_helper)
+        self.assertIn("wallpaper-union", sources_helper)
+
+        doctor_helper = _read(SKWD_DOCTOR_HELPER)
+        self.assertIn("/usr/local/share/skwd-wall/daemon.qml", doctor_helper)
+        self.assertIn("journalctl --user -u skwd-wall.service", doctor_helper)
+
+    def test_skwd_user_service_exists(self):
+        content = _read(SKWD_SERVICE)
+        self.assertIn("ExecStart=/usr/local/bin/mados-skwd-wall-daemon", content)
+        self.assertIn("Restart=on-failure", content)
+
+    def test_qs_manager_routes_wallpaper_to_skwd_wall(self):
+        content = _read(QS_MANAGER)
+        self.assertIn('if [[ "$TARGET" == "wallpaper" ]]; then', content)
+        self.assertIn("mados-wallpaper-picker toggle", content)
+        self.assertIn("mados-wallpaper-picker open", content)
+        self.assertIn("mados-wallpaper-picker close", content)
 
 
 if __name__ == "__main__":

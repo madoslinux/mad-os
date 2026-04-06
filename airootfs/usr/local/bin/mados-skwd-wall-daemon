@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export SKWD_WALL_INSTALL="/usr/local/share/skwd-wall"
+export SKWD_WALL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/skwd-wall"
+
+if quickshell ipc -p /usr/local/share/skwd-wall/daemon.qml show >/dev/null 2>&1; then
+    exit 0
+fi
+
+/usr/local/bin/mados-skwd-wall-sources sync >/dev/null 2>&1 || true
+
+exec quickshell -p /usr/local/share/skwd-wall/daemon.qml

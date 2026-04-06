@@ -43,8 +43,8 @@ function getLayout(name, mx, my, mw, mh, scale) {
         "monitors":  { w: monitorsW, h: monitorsH, rx: Math.floor((mw / 2) - (monitorsW / 2)), ry: Math.floor((mh / 2) - (monitorsH / 2)), comp: "monitors/MonitorPopup.qml" },
         "focustime": { w: focustimeW, h: focustimeH, rx: Math.floor((mw / 2) - (focustimeW / 2)), ry: Math.floor((mh / 2) - (focustimeH / 2)), comp: "focustime/FocusTimePopup.qml" },
         
-        // Guide Popup (Centered) - Widened to 1200px to fix keybind cutoffs
-        "guide":     { w: guideW, h: guideH, rx: Math.floor((mw / 2) - (guideW / 2)), ry: Math.floor((mh / 2) - (guideH / 2)), comp: "guide/GuidePopup.qml" },
+        // Guide Popup (slightly lower to avoid top clipping)
+        "guide":     { w: guideW, h: guideH, rx: Math.floor((mw / 2) - (guideW / 2)), ry: Math.floor((mh / 2) - (guideH / 2)) + s(24, ui), comp: "guide/GuidePopup.qml" },
 
         // Full width, centered vertically
         "wallpaper": { w: wallpaperW, h: wallpaperH, rx: Math.floor((mw - wallpaperW) / 2), ry: Math.floor((mh / 2) - (wallpaperH / 2)), comp: "wallpaper/WallpaperPicker.qml" },

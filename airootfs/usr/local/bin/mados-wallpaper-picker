@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ACTION="${1:-toggle}"
-SKWD_BIN="/usr/local/bin/skwd-wall"
-SKWD_DAEMON="/opt/mados/skwd-wall/daemon.qml"
+DAEMON_QML="/usr/local/share/skwd-wall/daemon.qml"
+SERVICE_NAME="skwd-wall.service"
 LOG_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/mados/skwd-wall.log"
 
 notify_error() {
@@ -17,18 +17,35 @@ ensure_log_dir() {
     mkdir -p "$(dirname "$LOG_FILE")"
 }
 
-start_daemon_direct() {
-    local pattern="quickshell.*${SKWD_DAEMON}"
+close_qs_overlay() {
+    local qs_manager="$HOME/.config/hypr/scripts/qs_manager.sh"
+    if [[ -x "$qs_manager" ]]; then
+        "$qs_manager" close "" keepfocus >>"$LOG_FILE" 2>&1 || true
+        sleep 0.08
+    fi
+}
 
-    if pgrep -f "$pattern" >/dev/null 2>&1; then
+daemon_ready() {
+    quickshell ipc -p "$DAEMON_QML" show >/dev/null 2>&1
+}
+
+start_daemon_service() {
+    if daemon_ready; then
         return 0
     fi
 
-    quickshell -p "$SKWD_DAEMON" >>"$LOG_FILE" 2>&1 &
+    /usr/local/bin/mados-skwd-wall-sources sync >>"$LOG_FILE" 2>&1 || true
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user start "$SERVICE_NAME" >>"$LOG_FILE" 2>&1 || true
+    fi
+
+    if ! daemon_ready; then
+        setsid -f /usr/local/bin/mados-skwd-wall-daemon >>"$LOG_FILE" 2>&1 || true
+    fi
 
     local tries=0
-    while [ $tries -lt 30 ]; do
-        if quickshell ipc -p "$SKWD_DAEMON" show >/dev/null 2>&1; then
+    while [[ $tries -lt 40 ]]; do
+        if daemon_ready; then
             return 0
         fi
         sleep 0.1
@@ -40,36 +57,15 @@ start_daemon_direct() {
 
 ipc_call() {
     local method="$1"
-    quickshell ipc -p "$SKWD_DAEMON" call wallpaper "$method" >>"$LOG_FILE" 2>&1
-}
-
-run_with_skwd_wrapper() {
-    if [[ ! -x "$SKWD_BIN" ]]; then
-        return 1
-    fi
-
-    case "$ACTION" in
-        toggle)
-            "$SKWD_BIN" toggle >>"$LOG_FILE" 2>&1
-            ;;
-        daemon)
-            "$SKWD_BIN" daemon >>"$LOG_FILE" 2>&1
-            ;;
-        open|close)
-            "$SKWD_BIN" toggle >>"$LOG_FILE" 2>&1 || return 1
-            ipc_call "$ACTION"
-            ;;
-        *)
-            "$SKWD_BIN" toggle >>"$LOG_FILE" 2>&1
-            ;;
-    esac
+    quickshell ipc -p "$DAEMON_QML" call wallpaper "$method" >>"$LOG_FILE" 2>&1
 }
 
 main() {
     ensure_log_dir
 
-    if run_with_skwd_wrapper; then
-        exit 0
+    if [[ ! -f "$DAEMON_QML" ]]; then
+        notify_error "skwd-wall no esta instalado en /usr/local/share/skwd-wall"
+        exit 1
     fi
 
     if ! command -v quickshell >/dev/null 2>&1; then
@@ -77,34 +73,36 @@ main() {
         exit 1
     fi
 
-    if [[ ! -f "$SKWD_DAEMON" ]]; then
-        notify_error "skwd-wall no esta instalado (/opt/mados/skwd-wall/daemon.qml)"
-        exit 1
-    fi
-
-    if [[ "$ACTION" == "daemon" ]]; then
-        exec quickshell -p "$SKWD_DAEMON"
-    fi
-
-    start_daemon_direct || {
-        notify_error "no se pudo iniciar el daemon de skwd-wall"
-        exit 1
-    }
-
     case "$ACTION" in
-        toggle|open|close)
-            if ! ipc_call "$ACTION"; then
-                notify_error "no se pudo abrir skwd-wall"
+        daemon)
+            exec /usr/local/bin/mados-skwd-wall-daemon
+            ;;
+        toggle|open)
+            close_qs_overlay
+            start_daemon_service || {
+                notify_error "no se pudo iniciar el daemon de skwd-wall"
                 exit 1
+            }
+            ;;
+        close)
+            if ! daemon_ready; then
+                exit 0
             fi
             ;;
         *)
-            if ! ipc_call "toggle"; then
-                notify_error "no se pudo abrir skwd-wall"
+            ACTION="toggle"
+            close_qs_overlay
+            start_daemon_service || {
+                notify_error "no se pudo iniciar el daemon de skwd-wall"
                 exit 1
-            fi
+            }
             ;;
     esac
+
+    if ! ipc_call "$ACTION"; then
+        notify_error "no se pudo controlar skwd-wall"
+        exit 1
+    fi
 }
 
 main "$@"
