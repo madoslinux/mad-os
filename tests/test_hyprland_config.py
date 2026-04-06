@@ -1635,6 +1635,11 @@ class TestHyprlandMatugenStartup(unittest.TestCase):
             content,
             "matugen_reload.sh must preserve user-selected GTK theme",
         )
+        self.assertNotIn(
+            'pkill -x "$gtk_proc"',
+            content,
+            "matugen_reload.sh must not force-close GTK apps during wallpaper changes",
+        )
 
     def test_gtk_env_theme_matches_hyprland_defaults(self):
         """Systemd user env must not force GTK_THEME and block user selection."""

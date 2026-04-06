@@ -102,7 +102,7 @@ DESIRED_GTK_THEME="$(grep -m1 '^gtk-theme-name=' "$GTK3_SETTINGS" 2>/dev/null | 
 if [[ -z "$DESIRED_GTK_THEME" ]] && command -v gsettings >/dev/null 2>&1; then
     DESIRED_GTK_THEME="$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'" || true)"
 fi
-[[ -z "$DESIRED_GTK_THEME" ]] && DESIRED_GTK_THEME="Adwaita"
+[[ -z "$DESIRED_GTK_THEME" ]] && DESIRED_GTK_THEME="adw-gtk3-dark"
 
 # Apply GTK preference for both GTK3/GTK4 apps
 if command -v gsettings >/dev/null 2>&1; then
@@ -141,10 +141,8 @@ mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
 ensure_gtk_theme_name "$GTK3_SETTINGS"
 ensure_gtk_theme_name "$GTK4_SETTINGS"
 
-# GTK apps often need restart to apply regenerated css
-for gtk_proc in pcmanfm lxappearance gnome-text-editor gedit nautilus; do
-    pkill -x "$gtk_proc" >/dev/null 2>&1 || true
-done
+# Do not force-close GTK apps on wallpaper changes.
+# Most apps can pick up updated colors without being killed.
 
 # Putting swayosd reload into the background to not clutter the reloading process
 if systemctl --user is-active --quiet swayosd.service; then
