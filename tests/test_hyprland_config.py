@@ -1509,6 +1509,34 @@ class TestHyprlandMatugenStartup(unittest.TestCase):
         "hyprland-colors.conf.template",
     )
 
+    GTK3_TEMPLATE = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        ".config",
+        "matugen",
+        "templates",
+        "gtk3.css.template",
+    )
+
+    GTK4_TEMPLATE = os.path.join(
+        REPO_DIR,
+        "airootfs",
+        "usr",
+        "share",
+        "mados",
+        "themes",
+        "imperative-dots",
+        ".config",
+        "matugen",
+        "templates",
+        "gtk4.css.template",
+    )
+
     KITTY_TEMPLATE = os.path.join(
         REPO_DIR,
         "airootfs",
@@ -1593,25 +1621,39 @@ class TestHyprlandMatugenStartup(unittest.TestCase):
             "matugen_reload.sh must provide helper to ensure gtk-theme-name exists",
         )
         self.assertIn(
-            'ensure_gtk_theme_name "$HOME/.config/gtk-3.0/settings.ini"',
+            'ensure_gtk_theme_name "$GTK3_SETTINGS"',
             content,
             "matugen_reload.sh must enforce GTK3 settings.ini theme key",
         )
         self.assertIn(
-            'ensure_gtk_theme_name "$HOME/.config/gtk-4.0/settings.ini"',
+            'ensure_gtk_theme_name "$GTK4_SETTINGS"',
             content,
             "matugen_reload.sh must enforce GTK4 settings.ini theme key",
         )
+        self.assertIn(
+            "DESIRED_GTK_THEME",
+            content,
+            "matugen_reload.sh must preserve user-selected GTK theme",
+        )
 
     def test_gtk_env_theme_matches_hyprland_defaults(self):
-        """Systemd user GTK_THEME must match Hyprland runtime default theme."""
+        """Systemd user env must not force GTK_THEME and block user selection."""
         with open(self.GTK_ENV_CONF) as f:
             content = f.read()
 
-        self.assertIn(
-            "GTK_THEME=Adwaita:dark",
+        self.assertNotIn(
+            "GTK_THEME=",
             content,
-            "gtk-theme.conf must align with Hyprland Adwaita dark runtime theme",
+            "gtk-theme.conf must not force GTK_THEME so users can change themes",
+        )
+
+    def test_hyprland_env_does_not_force_gtk_theme(self):
+        """Hyprland env block must not force GTK_THEME and block theme choosers."""
+        content = _read_config()
+        self.assertNotIn(
+            "env = GTK_THEME,",
+            content,
+            "hyprland.conf must not force GTK_THEME in env block",
         )
 
     def test_matugen_hyprland_template_uses_valid_replace_syntax(self):
@@ -1677,6 +1719,45 @@ class TestHyprlandMatugenStartup(unittest.TestCase):
             content,
             "kitty config must include /tmp/kitty-matugen-colors.conf",
         )
+
+    def test_gtk_templates_define_legacy_theme_variables(self):
+        """GTK templates must map legacy theme variables for broad app coverage."""
+        for template in (self.GTK3_TEMPLATE, self.GTK4_TEMPLATE):
+            with open(template) as f:
+                content = f.read()
+
+            self.assertIn(
+                "@define-color theme_bg_color",
+                content,
+                f"{os.path.basename(template)} must define theme_bg_color",
+            )
+            self.assertIn(
+                "@define-color theme_base_color",
+                content,
+                f"{os.path.basename(template)} must define theme_base_color",
+            )
+            self.assertIn(
+                "@define-color theme_selected_bg_color",
+                content,
+                f"{os.path.basename(template)} must define theme_selected_bg_color",
+            )
+
+    def test_gtk_templates_style_toolbar_and_sidebar(self):
+        """GTK templates must include toolbar/sidebar selectors used by file managers."""
+        for template in (self.GTK3_TEMPLATE, self.GTK4_TEMPLATE):
+            with open(template) as f:
+                content = f.read()
+
+            self.assertIn(
+                "toolbar",
+                content,
+                f"{os.path.basename(template)} must style toolbar backgrounds",
+            )
+            self.assertIn(
+                "placessidebar",
+                content,
+                f"{os.path.basename(template)} must style file-manager sidebar backgrounds",
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════

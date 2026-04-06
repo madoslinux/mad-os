@@ -64,8 +64,8 @@ Item {
     // STATE MANAGEMENT & FAST ANIMATIONS
     // -------------------------------------------------------------------------
     property int currentTab: 0
-    property var tabNames: ["About", "Modules", "Keybinds", "Matugen"]
-    property var tabIcons: ["", "󰣆", "󰌌", "󰏘"]
+    property var tabNames: ["Modules", "Keybinds", "Matugen", "About"]
+    property var tabIcons: ["󰣆", "󰌌", "󰏘", ""]
 
     property real introBase: 0.0
     property real introSidebar: 0.0
@@ -309,11 +309,11 @@ Item {
             transform: Translate { y: 20 * (1.0 - introContent) }
 
             // ------------------------------------------
-            // TAB 0: SYSTEM OVERVIEW
+            // TAB 3: SYSTEM OVERVIEW
             // ------------------------------------------
             Item {
                 anchors.fill: parent
-                visible: root.currentTab === 0
+                visible: root.currentTab === 3
                 opacity: visible ? 1.0 : 0.0
                 property real slideY: visible ? 0 : 10
                 Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }
@@ -434,8 +434,8 @@ Item {
                                     ColumnLayout {
                                         Layout.alignment: Qt.AlignVCenter
                                         spacing: 1
-                                        Text { text: "System Configuration Author"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
-                                        Text { text: "ilyamiro"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.mauve }
+                                        Text { text: "Imperative System Theme"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: "Author: ilyamiro"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.mauve }
                                     }
 
                                     Item { Layout.fillWidth: true }
@@ -513,11 +513,11 @@ Item {
             }
 
             // ------------------------------------------
-            // TAB 1: MODULES
+            // TAB 0: MODULES
             // ------------------------------------------
             Item {
                 anchors.fill: parent
-                visible: root.currentTab === 1
+                visible: root.currentTab === 0
                 opacity: visible ? 1.0 : 0.0
                 property real slideY: visible ? 0 : 10
                 Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }
@@ -597,11 +597,11 @@ Item {
             }
 
             // ------------------------------------------
-            // TAB 2: KEYBINDS
+            // TAB 1: KEYBINDS
             // ------------------------------------------
             Item {
                 anchors.fill: parent
-                visible: root.currentTab === 2
+                visible: root.currentTab === 1
                 opacity: visible ? 1.0 : 0.0
                 property real slideY: visible ? 0 : 10
                 Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }
@@ -710,11 +710,11 @@ Item {
             }
 
             // ------------------------------------------
-            // TAB 3: MATUGEN ENGINE
+            // TAB 2: MATUGEN ENGINE
             // ------------------------------------------
             Item {
                 anchors.fill: parent
-                visible: root.currentTab === 3
+                visible: root.currentTab === 2
                 opacity: visible ? 1.0 : 0.0
                 property real slideY: visible ? 0 : 10
                 Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }

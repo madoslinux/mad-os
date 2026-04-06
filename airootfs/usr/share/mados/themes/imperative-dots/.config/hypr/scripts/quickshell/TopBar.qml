@@ -62,6 +62,7 @@ PanelWindow {
     property string weatherIcon: ""
     property string weatherTemp: "--°"
     property string weatherHex: mocha.yellow
+    property bool showWeatherInTopBar: false
     
     property string wifiStatus: "Off"
     property string wifiIcon: "󰤮"
@@ -297,7 +298,35 @@ PanelWindow {
             }
         }
     }
-    Timer { interval: 150000; running: true; repeat: true; triggeredOnStart: true; onTriggered: weatherPoller.running = true }
+
+    Process {
+        id: weatherConfigTopBarPoller
+        command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/calendar/weather.sh --get-config"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let txt = this.text.trim();
+                if (txt === "") return;
+                try {
+                    let cfg = JSON.parse(txt);
+                    let key = (cfg.key || "").trim();
+                    barWindow.showWeatherInTopBar = key !== "" && key !== "Skipped" && key !== "OPENWEATHER_KEY";
+                } catch (e) {}
+            }
+        }
+    }
+
+    Timer {
+        interval: 150000
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            weatherConfigTopBarPoller.running = true;
+            if (barWindow.showWeatherInTopBar) {
+                weatherPoller.running = true;
+            }
+        }
+    }
 
     // Native Qt Time Formatting
     Timer {
@@ -705,6 +734,9 @@ PanelWindow {
 
                 // Weatherbox
                 RowLayout {
+                    visible: barWindow.showWeatherInTopBar
+                    opacity: barWindow.showWeatherInTopBar ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                     spacing: 8
                     Text { 
                         text: barWindow.weatherIcon; 

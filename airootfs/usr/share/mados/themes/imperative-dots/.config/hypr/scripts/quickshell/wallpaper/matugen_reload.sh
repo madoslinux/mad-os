@@ -95,38 +95,51 @@ if command -v hyprctl >/dev/null 2>&1; then
     hyprctl reload >/dev/null 2>&1 || true
 fi
 
-# Apply GTK dark preference for both GTK3/GTK4 apps
+# Keep GTK settings files aligned with runtime theme so apps start correctly
+GTK3_SETTINGS="$HOME/.config/gtk-3.0/settings.ini"
+GTK4_SETTINGS="$HOME/.config/gtk-4.0/settings.ini"
+DESIRED_GTK_THEME="$(grep -m1 '^gtk-theme-name=' "$GTK3_SETTINGS" 2>/dev/null | cut -d= -f2- || true)"
+if [[ -z "$DESIRED_GTK_THEME" ]] && command -v gsettings >/dev/null 2>&1; then
+    DESIRED_GTK_THEME="$(gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null | tr -d "'" || true)"
+fi
+[[ -z "$DESIRED_GTK_THEME" ]] && DESIRED_GTK_THEME="Adwaita"
+
+# Apply GTK preference for both GTK3/GTK4 apps
 if command -v gsettings >/dev/null 2>&1; then
-    gsettings set org.gnome.desktop.interface gtk-theme "Adwaita" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface gtk-theme "$DESIRED_GTK_THEME" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface icon-theme "Nordzy-dark" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface cursor-theme "Adwaita" >/dev/null 2>&1 || true
     gsettings set org.gnome.desktop.interface color-scheme "prefer-dark" >/dev/null 2>&1 || true
 fi
 
-# Keep GTK settings files aligned with runtime theme so apps start correctly
+# Ensure a theme key exists, but do not override user-selected GTK theme.
 ensure_gtk_theme_name() {
     local settings_file="$1"
+    local current_theme=""
 
     if [[ ! -f "$settings_file" ]]; then
-        cat > "$settings_file" <<'EOF'
+        cat > "$settings_file" <<EOF
 [Settings]
-gtk-theme-name=Adwaita
+gtk-theme-name=${DESIRED_GTK_THEME}
 EOF
         return
     fi
 
     if grep -q '^gtk-theme-name=' "$settings_file"; then
-        sed -i 's/^gtk-theme-name=.*/gtk-theme-name=Adwaita/' "$settings_file"
+        current_theme="$(grep -m1 '^gtk-theme-name=' "$settings_file" | cut -d= -f2-)"
+        if [[ -z "$current_theme" ]]; then
+            sed -i "s/^gtk-theme-name=.*/gtk-theme-name=${DESIRED_GTK_THEME}/" "$settings_file"
+        fi
     elif grep -q '^\[Settings\]' "$settings_file"; then
-        printf 'gtk-theme-name=Adwaita\n' >> "$settings_file"
+        printf 'gtk-theme-name=%s\n' "$DESIRED_GTK_THEME" >> "$settings_file"
     else
-        printf '\n[Settings]\ngtk-theme-name=Adwaita\n' >> "$settings_file"
+        printf '\n[Settings]\ngtk-theme-name=%s\n' "$DESIRED_GTK_THEME" >> "$settings_file"
     fi
 }
 
 mkdir -p "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0"
-ensure_gtk_theme_name "$HOME/.config/gtk-3.0/settings.ini"
-ensure_gtk_theme_name "$HOME/.config/gtk-4.0/settings.ini"
+ensure_gtk_theme_name "$GTK3_SETTINGS"
+ensure_gtk_theme_name "$GTK4_SETTINGS"
 
 # GTK apps often need restart to apply regenerated css
 for gtk_proc in pcmanfm lxappearance gnome-text-editor gedit nautilus; do

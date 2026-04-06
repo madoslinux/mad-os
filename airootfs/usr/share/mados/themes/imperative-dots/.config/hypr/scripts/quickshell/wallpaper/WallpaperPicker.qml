@@ -20,6 +20,8 @@ Item {
     property int visibleItemCount: -1
     property int scrollAccum: 0
     property int scrollThreshold: 300 
+    property int thumbnailPrefetchRadius: 8
+    property int thumbnailRenderRadius: 5
 
     // Filter System Properties
     property string currentFilter: "All"
@@ -789,7 +791,10 @@ Item {
         } 
     }
     
-    Shortcut { sequence: "Escape"; onActivated: { if (window.currentFilter === "Search") { window.currentFilter = "All"; } } }
+    Shortcut {
+        sequence: "Escape"
+        onActivated: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"])
+    }
     Shortcut { sequence: "Tab"; onActivated: window.cycleFilter(1) }
     Shortcut { sequence: "Backtab"; onActivated: window.cycleFilter(-1) }
 
@@ -906,7 +911,7 @@ Item {
         clip: false 
 
         interactive: !window.isScrollingBlocked
-        cacheBuffer: 2000
+        cacheBuffer: 800
 
         highlightRangeMode: ListView.StrictlyEnforceRange
         preferredHighlightBegin: (width / 2) - ((window.itemWidth * 1.5 + window.spacing) / 2)
@@ -989,6 +994,9 @@ Item {
             
             readonly property bool isVideo: safeFileName.startsWith("000_")
             readonly property bool matchesFilter: window.checkItemMatchesFilter(safeFileName, isVideo, window.cacheVersion, window.currentFilter)
+            readonly property int distanceToCenter: Math.abs(index - Math.max(0, view.currentIndex))
+            readonly property bool shouldPrefetch: distanceToCenter <= window.thumbnailPrefetchRadius || isVisuallyEnlarged
+            readonly property bool shouldRenderThumb: distanceToCenter <= window.thumbnailRenderRadius || isVisuallyEnlarged
             
             readonly property real targetWidth: isVisuallyEnlarged ? (window.itemWidth * 1.5) : (window.itemWidth * 0.5)
             readonly property real targetHeight: isVisuallyEnlarged ? (window.itemHeight + 30) : window.itemHeight 
@@ -1033,7 +1041,7 @@ Item {
 
                 Image {
                     anchors.fill: parent
-                    source: fileUrl !== undefined ? fileUrl : ""
+                    source: delegateRoot.shouldPrefetch && fileUrl !== undefined ? fileUrl : ""
                     sourceSize: Qt.size(1, 1)
                     fillMode: Image.Stretch
                     visible: true 
@@ -1043,17 +1051,27 @@ Item {
                 Item {
                     anchors.fill: parent
                     anchors.margins: window.borderWidth 
-                    Rectangle { anchors.fill: parent; color: "black" }
+                    Rectangle {
+                        anchors.fill: parent
+                        color: Qt.rgba(_theme.surface0.r, _theme.surface0.g, _theme.surface0.b, 0.9)
+                    }
                     clip: true
 
                     Image {
+                        id: thumbImg
                         anchors.centerIn: parent
                         anchors.horizontalCenterOffset: -50 
                         width: (window.itemWidth * 1.5) + ((window.itemHeight + 30) * Math.abs(window.skewFactor)) + 50
                         height: window.itemHeight + 30
                         fillMode: Image.PreserveAspectCrop
-                        source: fileUrl !== undefined ? fileUrl : ""
+                        source: delegateRoot.shouldRenderThumb && fileUrl !== undefined ? fileUrl : ""
+                        sourceSize: Qt.size(900, 500)
                         asynchronous: true
+                        visible: status === Image.Ready
+                        opacity: status === Image.Ready ? 1.0 : 0.0
+                        cache: true
+
+                        Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
 
                         transform: Matrix4x4 {
                             property real s: -window.skewFactor
