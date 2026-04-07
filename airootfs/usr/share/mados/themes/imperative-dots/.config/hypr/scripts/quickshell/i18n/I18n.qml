@@ -441,7 +441,7 @@ QtObject {
             "es": "Perfil de audio", "en": "Audio Profile", "fr": "Audio Profile", "de": "Audio Profile", "it": "Audio Profile", "pt": "Audio Profile", "ru": "Audio Profile", "ja": "Audio Profile", "zh": "Audio Profile"
         },
         "Unknown": {
-            "es": "Desconocido", "en": "Unknown", "fr": "Unknown", "de": "Unknown", "it": "Unknown", "pt": "Unknown", "ru": "Unknown", "ja": "Unknown", "zh": "Unknown"
+            "es": "Desconocido", "en": "Unknown", "fr": "Inconnu", "de": "Unbekannt", "it": "Sconosciuto", "pt": "Desconhecido", "ru": "Неизвестно", "ja": "不明", "zh": "未知"
         },
         "MAC Address": {
             "es": "Direccion MAC", "en": "MAC Address", "fr": "MAC Address", "de": "MAC Address", "it": "MAC Address", "pt": "MAC Address", "ru": "MAC Address", "ja": "MAC Address", "zh": "MAC Address"
@@ -528,61 +528,61 @@ QtObject {
             "es": "Horas pico", "en": "Peak hours", "fr": "Peak hours", "de": "Peak hours", "it": "Peak hours", "pt": "Peak hours", "ru": "Peak hours", "ja": "Peak hours", "zh": "Peak hours"
         },
         "Monday": {
-            "es": "Lunes", "en": "Monday", "fr": "Monday", "de": "Monday", "it": "Monday", "pt": "Monday", "ru": "Monday", "ja": "Monday", "zh": "Monday"
+            "es": "Lunes", "en": "Monday", "fr": "Lundi", "de": "Montag", "it": "Lunedì", "pt": "Segunda-feira", "ru": "Понедельник", "ja": "月曜日", "zh": "星期一"
         },
         "Tuesday": {
-            "es": "Martes", "en": "Tuesday", "fr": "Tuesday", "de": "Tuesday", "it": "Tuesday", "pt": "Tuesday", "ru": "Tuesday", "ja": "Tuesday", "zh": "Tuesday"
+            "es": "Martes", "en": "Tuesday", "fr": "Mardi", "de": "Dienstag", "it": "Martedì", "pt": "Terça-feira", "ru": "Вторник", "ja": "火曜日", "zh": "星期二"
         },
         "Wednesday": {
-            "es": "Miercoles", "en": "Wednesday", "fr": "Wednesday", "de": "Wednesday", "it": "Wednesday", "pt": "Wednesday", "ru": "Wednesday", "ja": "Wednesday", "zh": "Wednesday"
+            "es": "Miércoles", "en": "Wednesday", "fr": "Mercredi", "de": "Mittwoch", "it": "Mercoledì", "pt": "Quarta-feira", "ru": "Среда", "ja": "水曜日", "zh": "星期三"
         },
         "Thursday": {
-            "es": "Jueves", "en": "Thursday", "fr": "Thursday", "de": "Thursday", "it": "Thursday", "pt": "Thursday", "ru": "Thursday", "ja": "Thursday", "zh": "Thursday"
+            "es": "Jueves", "en": "Thursday", "fr": "Jeudi", "de": "Donnerstag", "it": "Giovedì", "pt": "Quinta-feira", "ru": "Четверг", "ja": "木曜日", "zh": "星期四"
         },
         "Friday": {
-            "es": "Viernes", "en": "Friday", "fr": "Friday", "de": "Friday", "it": "Friday", "pt": "Friday", "ru": "Friday", "ja": "Friday", "zh": "Friday"
+            "es": "Viernes", "en": "Friday", "fr": "Vendredi", "de": "Freitag", "it": "Venerdì", "pt": "Sexta-feira", "ru": "Пятница", "ja": "金曜日", "zh": "星期五"
         },
         "Saturday": {
-            "es": "Sabado", "en": "Saturday", "fr": "Saturday", "de": "Saturday", "it": "Saturday", "pt": "Saturday", "ru": "Saturday", "ja": "Saturday", "zh": "Saturday"
+            "es": "Sábado", "en": "Saturday", "fr": "Samedi", "de": "Samstag", "it": "Sabato", "pt": "Sábado", "ru": "Суббота", "ja": "土曜日", "zh": "星期六"
         },
         "Sunday": {
-            "es": "Domingo", "en": "Sunday", "fr": "Sunday", "de": "Sunday", "it": "Sunday", "pt": "Sunday", "ru": "Sunday", "ja": "Sunday", "zh": "Sunday"
+            "es": "Domingo", "en": "Sunday", "fr": "Dimanche", "de": "Sonntag", "it": "Domenica", "pt": "Domingo", "ru": "Воскресенье", "ja": "日曜日", "zh": "星期日"
         },
         "January": {
-            "es": "Enero", "en": "January", "fr": "January", "de": "January", "it": "January", "pt": "January", "ru": "January", "ja": "January", "zh": "January"
+            "es": "Enero", "en": "January", "fr": "Janvier", "de": "Januar", "it": "Gennaio", "pt": "Janeiro", "ru": "Январь", "ja": "1月", "zh": "一月"
         },
         "February": {
-            "es": "Febrero", "en": "February", "fr": "February", "de": "February", "it": "February", "pt": "February", "ru": "February", "ja": "February", "zh": "February"
+            "es": "Febrero", "en": "February", "fr": "Février", "de": "Februar", "it": "Febbraio", "pt": "Fevereiro", "ru": "Февраль", "ja": "2月", "zh": "二月"
         },
         "March": {
-            "es": "Marzo", "en": "March", "fr": "March", "de": "March", "it": "March", "pt": "March", "ru": "March", "ja": "March", "zh": "March"
+            "es": "Marzo", "en": "March", "fr": "Mars", "de": "März", "it": "Marzo", "pt": "Março", "ru": "Март", "ja": "3月", "zh": "三月"
         },
         "April": {
-            "es": "Abril", "en": "April", "fr": "April", "de": "April", "it": "April", "pt": "April", "ru": "April", "ja": "April", "zh": "April"
+            "es": "Abril", "en": "April", "fr": "Avril", "de": "April", "it": "Aprile", "pt": "Abril", "ru": "Апрель", "ja": "4月", "zh": "四月"
         },
         "May": {
-            "es": "Mayo", "en": "May", "fr": "May", "de": "May", "it": "May", "pt": "May", "ru": "May", "ja": "May", "zh": "May"
+            "es": "Mayo", "en": "May", "fr": "Mai", "de": "Mai", "it": "Maggio", "pt": "Maio", "ru": "Май", "ja": "5月", "zh": "五月"
         },
         "June": {
-            "es": "Junio", "en": "June", "fr": "June", "de": "June", "it": "June", "pt": "June", "ru": "June", "ja": "June", "zh": "June"
+            "es": "Junio", "en": "June", "fr": "Juin", "de": "Juni", "it": "Giugno", "pt": "Junho", "ru": "Июнь", "ja": "6月", "zh": "六月"
         },
         "July": {
-            "es": "Julio", "en": "July", "fr": "July", "de": "July", "it": "July", "pt": "July", "ru": "July", "ja": "July", "zh": "July"
+            "es": "Julio", "en": "July", "fr": "Juillet", "de": "Juli", "it": "Luglio", "pt": "Julho", "ru": "Июль", "ja": "7月", "zh": "七月"
         },
         "August": {
-            "es": "Agosto", "en": "August", "fr": "August", "de": "August", "it": "August", "pt": "August", "ru": "August", "ja": "August", "zh": "August"
+            "es": "Agosto", "en": "August", "fr": "Août", "de": "August", "it": "Agosto", "pt": "Agosto", "ru": "Август", "ja": "8月", "zh": "八月"
         },
         "September": {
-            "es": "Septiembre", "en": "September", "fr": "September", "de": "September", "it": "September", "pt": "September", "ru": "September", "ja": "September", "zh": "September"
+            "es": "Septiembre", "en": "September", "fr": "Septembre", "de": "September", "it": "Settembre", "pt": "Setembro", "ru": "Сентябрь", "ja": "9月", "zh": "九月"
         },
         "October": {
-            "es": "Octubre", "en": "October", "fr": "October", "de": "October", "it": "October", "pt": "October", "ru": "October", "ja": "October", "zh": "October"
+            "es": "Octubre", "en": "October", "fr": "Octobre", "de": "Oktober", "it": "Ottobre", "pt": "Outubro", "ru": "Октябрь", "ja": "10月", "zh": "十月"
         },
         "November": {
-            "es": "Noviembre", "en": "November", "fr": "November", "de": "November", "it": "November", "pt": "November", "ru": "November", "ja": "November", "zh": "November"
+            "es": "Noviembre", "en": "November", "fr": "Novembre", "de": "November", "it": "Novembre", "pt": "Novembro", "ru": "Ноябрь", "ja": "11月", "zh": "十一月"
         },
         "December": {
-            "es": "Diciembre", "en": "December", "fr": "December", "de": "December", "it": "December", "pt": "December", "ru": "December", "ja": "December", "zh": "December"
+            "es": "Diciembre", "en": "December", "fr": "Décembre", "de": "Dezember", "it": "Dicembre", "pt": "Dezembro", "ru": "Декабрь", "ja": "12月", "zh": "十二月"
         },
         "00:00": {
             "es": "00:00", "en": "00:00", "fr": "00:00", "de": "00:00", "it": "00:00", "pt": "00:00", "ru": "00:00", "ja": "00:00", "zh": "00:00"
@@ -600,49 +600,115 @@ QtObject {
             "es": "23:00", "en": "23:00", "fr": "23:00", "de": "23:00", "it": "23:00", "pt": "23:00", "ru": "23:00", "ja": "23:00", "zh": "23:00"
         },
         "LOADING...": {
-            "es": "CARGANDO...", "en": "LOADING...", "fr": "LOADING...", "de": "LOADING...", "it": "LOADING...", "pt": "LOADING...", "ru": "LOADING...", "ja": "LOADING...", "zh": "LOADING..."
+            "es": "CARGANDO...", "en": "LOADING...", "fr": "CHARGEMENT...", "de": "LADEN...", "it": "CARICAMENTO...", "pt": "CARREGANDO...", "ru": "ЗАГРУЗКА...", "ja": "読み込み中...", "zh": "加载中..."
         },
         "Weather API Setup": {
-            "es": "Configurar API del clima", "en": "Weather API Setup", "fr": "Weather API Setup", "de": "Weather API Setup", "it": "Weather API Setup", "pt": "Weather API Setup", "ru": "Weather API Setup", "ja": "Weather API Setup", "zh": "Weather API Setup"
+            "es": "Configurar API del clima", "en": "Weather API Setup", "fr": "Configuration de l'API météo", "de": "Weather-API einrichten", "it": "Configura API meteo", "pt": "Configurar API do clima", "ru": "Настройка API погоды", "ja": "天気API設定", "zh": "天气 API 设置"
         },
         "OpenWeatherMap API Key": {
-            "es": "API Key de OpenWeatherMap", "en": "OpenWeatherMap API Key", "fr": "OpenWeatherMap API Key", "de": "OpenWeatherMap API Key", "it": "OpenWeatherMap API Key", "pt": "OpenWeatherMap API Key", "ru": "OpenWeatherMap API Key", "ja": "OpenWeatherMap API Key", "zh": "OpenWeatherMap API Key"
+            "es": "Clave API de OpenWeatherMap", "en": "OpenWeatherMap API Key", "fr": "Clé API OpenWeatherMap", "de": "OpenWeatherMap-API-Schlüssel", "it": "Chiave API OpenWeatherMap", "pt": "Chave da API OpenWeatherMap", "ru": "Ключ API OpenWeatherMap", "ja": "OpenWeatherMap APIキー", "zh": "OpenWeatherMap API 密钥"
         },
         "Paste your API key": {
-            "es": "Pega tu API key", "en": "Paste your API key", "fr": "Paste your API key", "de": "Paste your API key", "it": "Paste your API key", "pt": "Paste your API key", "ru": "Paste your API key", "ja": "Paste your API key", "zh": "Paste your API key"
+            "es": "Pega tu clave API", "en": "Paste your API key", "fr": "Collez votre clé API", "de": "API-Schlüssel einfügen", "it": "Incolla la tua chiave API", "pt": "Cole sua chave de API", "ru": "Вставьте ключ API", "ja": "APIキーを貼り付け", "zh": "粘贴你的 API 密钥"
         },
         "City ID": {
-            "es": "ID de ciudad", "en": "City ID", "fr": "City ID", "de": "City ID", "it": "City ID", "pt": "City ID", "ru": "City ID", "ja": "City ID", "zh": "City ID"
+            "es": "ID de ciudad", "en": "City ID", "fr": "ID de ville", "de": "Stadt-ID", "it": "ID città", "pt": "ID da cidade", "ru": "ID города", "ja": "都市ID", "zh": "城市 ID"
         },
         "Example: 2643743": {
-            "es": "Ejemplo: 2643743", "en": "Example: 2643743", "fr": "Example: 2643743", "de": "Example: 2643743", "it": "Example: 2643743", "pt": "Example: 2643743", "ru": "Example: 2643743", "ja": "Example: 2643743", "zh": "Example: 2643743"
+            "es": "Ejemplo: 2643743", "en": "Example: 2643743", "fr": "Exemple : 2643743", "de": "Beispiel: 2643743", "it": "Esempio: 2643743", "pt": "Exemplo: 2643743", "ru": "Пример: 2643743", "ja": "例: 2643743", "zh": "示例：2643743"
         },
         "Units": {
-            "es": "Unidades", "en": "Units", "fr": "Units", "de": "Units", "it": "Units", "pt": "Units", "ru": "Units", "ja": "Units", "zh": "Units"
+            "es": "Unidades", "en": "Units", "fr": "Unités", "de": "Einheiten", "it": "Unità", "pt": "Unidades", "ru": "Единицы", "ja": "単位", "zh": "单位"
         },
         "metric": {
-            "es": "metric", "en": "metric", "fr": "metric", "de": "metric", "it": "metric", "pt": "metric", "ru": "metric", "ja": "metric", "zh": "metric"
+            "es": "métrico", "en": "metric", "fr": "métrique", "de": "metrisch", "it": "metrico", "pt": "métrico", "ru": "метрическая", "ja": "メートル法", "zh": "公制"
         },
         "imperial": {
-            "es": "imperial", "en": "imperial", "fr": "imperial", "de": "imperial", "it": "imperial", "pt": "imperial", "ru": "imperial", "ja": "imperial", "zh": "imperial"
+            "es": "imperial", "en": "imperial", "fr": "impérial", "de": "imperial", "it": "imperiale", "pt": "imperial", "ru": "имперская", "ja": "ヤード・ポンド法", "zh": "英制"
         },
         "Cancel": {
-            "es": "Cancelar", "en": "Cancel", "fr": "Cancel", "de": "Cancel", "it": "Cancel", "pt": "Cancel", "ru": "Cancel", "ja": "Cancel", "zh": "Cancel"
+            "es": "Cancelar", "en": "Cancel", "fr": "Annuler", "de": "Abbrechen", "it": "Annulla", "pt": "Cancelar", "ru": "Отмена", "ja": "キャンセル", "zh": "取消"
         },
         "Save": {
-            "es": "Guardar", "en": "Save", "fr": "Save", "de": "Save", "it": "Save", "pt": "Save", "ru": "Save", "ja": "Save", "zh": "Save"
+            "es": "Guardar", "en": "Save", "fr": "Enregistrer", "de": "Speichern", "it": "Salva", "pt": "Salvar", "ru": "Сохранить", "ja": "保存", "zh": "保存"
         },
         "Validating...": {
-            "es": "Validando...", "en": "Validating...", "fr": "Validating...", "de": "Validating...", "it": "Validating...", "pt": "Validating...", "ru": "Validating...", "ja": "Validating...", "zh": "Validating..."
+            "es": "Validando...", "en": "Validating...", "fr": "Validation...", "de": "Wird geprüft...", "it": "Verifica in corso...", "pt": "Validando...", "ru": "Проверка...", "ja": "検証中...", "zh": "正在验证..."
         },
         "Saved. Refreshing weather...": {
-            "es": "Guardado. Actualizando clima...", "en": "Saved. Refreshing weather...", "fr": "Saved. Refreshing weather...", "de": "Saved. Refreshing weather...", "it": "Saved. Refreshing weather...", "pt": "Saved. Refreshing weather...", "ru": "Saved. Refreshing weather...", "ja": "Saved. Refreshing weather...", "zh": "Saved. Refreshing weather..."
+            "es": "Guardado. Actualizando clima...", "en": "Saved. Refreshing weather...", "fr": "Enregistré. Actualisation de la météo...", "de": "Gespeichert. Wetter wird aktualisiert...", "it": "Salvato. Aggiornamento meteo...", "pt": "Salvo. Atualizando clima...", "ru": "Сохранено. Обновление погоды...", "ja": "保存しました。天気を更新中...", "zh": "已保存。正在刷新天气..."
         },
         "Invalid API key or city id": {
-            "es": "API key o city id invalido", "en": "Invalid API key or city id", "fr": "Invalid API key or city id", "de": "Invalid API key or city id", "it": "Invalid API key or city id", "pt": "Invalid API key or city id", "ru": "Invalid API key or city id", "ja": "Invalid API key or city id", "zh": "Invalid API key or city id"
+            "es": "API key o city id inválido", "en": "Invalid API key or city id", "fr": "Clé API ou ID de ville invalide", "de": "Ungültiger API-Schlüssel oder Stadt-ID", "it": "Chiave API o ID città non valido", "pt": "Chave API ou ID da cidade inválido", "ru": "Неверный API-ключ или ID города", "ja": "APIキーまたは都市IDが無効です", "zh": "API 密钥或城市 ID 无效"
         },
         "Validation failed": {
-            "es": "Validacion fallida", "en": "Validation failed", "fr": "Validation failed", "de": "Validation failed", "it": "Validation failed", "pt": "Validation failed", "ru": "Validation failed", "ja": "Validation failed", "zh": "Validation failed"
+            "es": "Validación fallida", "en": "Validation failed", "fr": "Échec de validation", "de": "Validierung fehlgeschlagen", "it": "Convalida fallita", "pt": "Falha na validação", "ru": "Ошибка проверки", "ja": "検証に失敗しました", "zh": "验证失败"
+        },
+        "Mo": {
+            "es": "Lu", "en": "Mo", "fr": "Lu", "de": "Mo", "it": "Lu", "pt": "Seg", "ru": "Пн", "ja": "月", "zh": "周一"
+        },
+        "Tu": {
+            "es": "Ma", "en": "Tu", "fr": "Ma", "de": "Di", "it": "Ma", "pt": "Ter", "ru": "Вт", "ja": "火", "zh": "周二"
+        },
+        "We": {
+            "es": "Mi", "en": "We", "fr": "Me", "de": "Mi", "it": "Me", "pt": "Qua", "ru": "Ср", "ja": "水", "zh": "周三"
+        },
+        "Th": {
+            "es": "Ju", "en": "Th", "fr": "Je", "de": "Do", "it": "Gi", "pt": "Qui", "ru": "Чт", "ja": "木", "zh": "周四"
+        },
+        "Fr": {
+            "es": "Vi", "en": "Fr", "fr": "Ve", "de": "Fr", "it": "Ve", "pt": "Sex", "ru": "Пт", "ja": "金", "zh": "周五"
+        },
+        "Sa": {
+            "es": "Sá", "en": "Sa", "fr": "Sa", "de": "Sa", "it": "Sa", "pt": "Sáb", "ru": "Сб", "ja": "土", "zh": "周六"
+        },
+        "Su": {
+            "es": "Do", "en": "Su", "fr": "Di", "de": "So", "it": "Do", "pt": "Dom", "ru": "Вс", "ja": "日", "zh": "周日"
+        },
+        "WIND": {
+            "es": "VIENTO", "en": "WIND", "fr": "VENT", "de": "WIND", "it": "VENTO", "pt": "VENTO", "ru": "ВЕТЕР", "ja": "風", "zh": "风"
+        },
+        "HUMID": {
+            "es": "HUMEDAD", "en": "HUMID", "fr": "HUMIDITÉ", "de": "FEUCHTE", "it": "UMIDITÀ", "pt": "UMIDADE", "ru": "ВЛАЖН.", "ja": "湿度", "zh": "湿度"
+        },
+        "RAIN": {
+            "es": "LLUVIA", "en": "RAIN", "fr": "PLUIE", "de": "REGEN", "it": "PIOGGIA", "pt": "CHUVA", "ru": "ДОЖДЬ", "ja": "雨", "zh": "降雨"
+        },
+        "FEELS": {
+            "es": "SENSAC.", "en": "FEELS", "fr": "RESSENTI", "de": "GEFÜHLT", "it": "PERCEPITA", "pt": "SENSAÇÃO", "ru": "ОЩУЩ.", "ja": "体感", "zh": "体感"
+        },
+        "No API Key": {
+            "es": "Sin clave API", "en": "No API Key", "fr": "Aucune clé API", "de": "Kein API-Schlüssel", "it": "Nessuna chiave API", "pt": "Sem chave de API", "ru": "Нет API-ключа", "ja": "APIキー未設定", "zh": "未设置 API 密钥"
+        },
+        "Missing API key or city id": {
+            "es": "Falta API key o city id", "en": "Missing API key or city id", "fr": "Clé API ou ID de ville manquant", "de": "API-Schlüssel oder Stadt-ID fehlt", "it": "Manca la chiave API o l'ID città", "pt": "Falta a chave API ou o ID da cidade", "ru": "Отсутствует API-ключ или ID города", "ja": "APIキーまたは都市IDがありません", "zh": "缺少 API 密钥或城市 ID"
+        },
+        "OpenWeather request failed": {
+            "es": "Fallo en solicitud a OpenWeather", "en": "OpenWeather request failed", "fr": "Échec de la requête OpenWeather", "de": "OpenWeather-Anfrage fehlgeschlagen", "it": "Richiesta OpenWeather non riuscita", "pt": "Falha na requisição ao OpenWeather", "ru": "Ошибка запроса OpenWeather", "ja": "OpenWeather リクエストに失敗しました", "zh": "OpenWeather 请求失败"
+        },
+        "OpenWeather validation failed": {
+            "es": "Validación de OpenWeather fallida", "en": "OpenWeather validation failed", "fr": "Validation OpenWeather échouée", "de": "OpenWeather-Validierung fehlgeschlagen", "it": "Convalida OpenWeather fallita", "pt": "Falha na validação do OpenWeather", "ru": "Ошибка проверки OpenWeather", "ja": "OpenWeather の検証に失敗しました", "zh": "OpenWeather 验证失败"
+        },
+        "Mist": {
+            "es": "Niebla", "en": "Mist", "fr": "Brume", "de": "Nebel", "it": "Nebbia", "pt": "Névoa", "ru": "Туман", "ja": "霧", "zh": "薄雾"
+        },
+        "Sunny": {
+            "es": "Soleado", "en": "Sunny", "fr": "Ensoleillé", "de": "Sonnig", "it": "Soleggiato", "pt": "Ensolarado", "ru": "Солнечно", "ja": "晴れ", "zh": "晴朗"
+        },
+        "Clear": {
+            "es": "Despejado", "en": "Clear", "fr": "Dégagé", "de": "Klar", "it": "Sereno", "pt": "Céu limpo", "ru": "Ясно", "ja": "快晴", "zh": "晴"
+        },
+        "Cloudy": {
+            "es": "Nublado", "en": "Cloudy", "fr": "Nuageux", "de": "Bewölkt", "it": "Nuvoloso", "pt": "Nublado", "ru": "Облачно", "ja": "くもり", "zh": "多云"
+        },
+        "Rainy": {
+            "es": "Lluvioso", "en": "Rainy", "fr": "Pluvieux", "de": "Regnerisch", "it": "Piovoso", "pt": "Chuvoso", "ru": "Дождливо", "ja": "雨", "zh": "有雨"
+        },
+        "Storm": {
+            "es": "Tormenta", "en": "Storm", "fr": "Orage", "de": "Sturm", "it": "Tempesta", "pt": "Tempestade", "ru": "Гроза", "ja": "嵐", "zh": "暴风雨"
+        },
+        "Snow": {
+            "es": "Nieve", "en": "Snow", "fr": "Neige", "de": "Schnee", "it": "Neve", "pt": "Neve", "ru": "Снег", "ja": "雪", "zh": "雪"
         },
         "HR": {
             "es": "HR", "en": "HR", "fr": "HR", "de": "HR", "it": "HR", "pt": "HR", "ru": "HR", "ja": "HR", "zh": "HR"

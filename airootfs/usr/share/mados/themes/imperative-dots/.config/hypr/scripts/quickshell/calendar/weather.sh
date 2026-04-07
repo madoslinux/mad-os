@@ -22,6 +22,56 @@ KEY="$OPENWEATHER_KEY"
 ID="$OPENWEATHER_CITY_ID"
 UNIT="${OPENWEATHER_UNIT:-metric}" # Default to metric if not set
 
+normalize_locale() {
+    local raw short
+    raw="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+    raw="${raw%%@*}"
+    raw="${raw%%.*}"
+    raw="${raw//-/_}"
+
+    case "$raw" in
+        ""|c|posix)
+            echo "en"
+            return
+            ;;
+    esac
+
+    short="${raw%%_*}"
+    case "$short" in
+        en|es|fr|de|it|pt|ru|ja|zh)
+            echo "$short"
+            ;;
+        *)
+            echo "en"
+            ;;
+    esac
+}
+
+detect_lang() {
+    local candidate
+    for candidate in "${LC_ALL:-}" "${LC_MESSAGES:-}" "${LANG:-}"; do
+        if [ -n "$candidate" ]; then
+            normalize_locale "$candidate"
+            return
+        fi
+    done
+    echo "en"
+}
+
+map_openweather_lang() {
+    case "${1:-en}" in
+        zh)
+            echo "zh_cn"
+            ;;
+        *)
+            echo "${1:-en}"
+            ;;
+    esac
+}
+
+APP_LANG="$(detect_lang)"
+API_LANG="$(map_openweather_lang "$APP_LANG")"
+
 mkdir -p "${cache_dir}"
 
 get_icon() {
@@ -59,9 +109,9 @@ get_data() {
         final_json="["
         for i in {0..4}; do
             future_date=$(date -d "+$i days")
-            f_day=$(date -d "$future_date" "+%a")
-            f_full_day=$(date -d "$future_date" "+%A")
-            f_date_num=$(date -d "$future_date" "+%d %b")
+            f_day=$(LC_ALL=C date -d "$future_date" "+%a")
+            f_full_day=$(LC_ALL=C date -d "$future_date" "+%A")
+            f_date_num=$(LC_ALL=C date -d "$future_date" "+%d %b")
             
             final_json="${final_json} {
                 \"id\": \"${i}\",
@@ -77,6 +127,7 @@ get_data() {
                 \"icon\": \"\",
                 \"hex\": \"#cdd6f4\",
                 \"desc\": \"No API Key\",
+                \"requires_setup\": true,
                 \"hourly\": [{\"time\": \"00:00\", \"temp\": \"0.0\", \"icon\": \"\", \"hex\": \"#cdd6f4\"}]
             },"
         done
@@ -88,7 +139,7 @@ get_data() {
     # ---------------------------------------------------------
     # STANDARD API FETCH LOGIC
     # ---------------------------------------------------------
-    forecast_url="http://api.openweathermap.org/data/2.5/forecast?APPID=${KEY}&id=${ID}&units=${UNIT}"
+    forecast_url="http://api.openweathermap.org/data/2.5/forecast?APPID=${KEY}&id=${ID}&units=${UNIT}&lang=${API_LANG}"
     raw_api=$(curl -sf "$forecast_url")
     
     # If API fails, stop
@@ -159,9 +210,9 @@ get_data() {
             f_icon=$(echo "$f_icon_data" | cut -d'|' -f1)
             f_hex=$(get_hex "$f_code")
             
-            f_day=$(date -d "$d" "+%a")
-            f_full_day=$(date -d "$d" "+%A")
-            f_date_num=$(date -d "$d" "+%d %b")
+            f_day=$(LC_ALL=C date -d "$d" "+%a")
+            f_full_day=$(LC_ALL=C date -d "$d" "+%A")
+            f_date_num=$(LC_ALL=C date -d "$d" "+%d %b")
 
             hourly_json="["
             count_slots=$(echo "$day_data" | jq '. | length')
@@ -197,6 +248,7 @@ get_data() {
                 \"icon\": \"${f_icon}\",
                 \"hex\": \"${f_hex}\",
                 \"desc\": \"${f_desc}\",
+                \"requires_setup\": false,
                 \"hourly\": ${hourly_json}
             },"
             ((counter++))
@@ -319,7 +371,7 @@ elif [[ "$1" == "--set-config" ]]; then
 
     if [[ "$http_code" != "200" && "$api_code" != "200" ]]; then
         if [[ -z "$api_msg" ]]; then
-            api_msg="OpenWeather validation failed (HTTP ${http_code})"
+            api_msg="OpenWeather validation failed"
         fi
         esc_msg=$(printf '%s' "$api_msg" | sed 's/"/\\"/g')
         printf '{"ok":false,"message":"%s"}\n' "$esc_msg"

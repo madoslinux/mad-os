@@ -340,7 +340,7 @@ Item {
                         weatherForcePoller.running = true
                         saveCloseTimer.start()
                     } else {
-                        window.weatherSettingsStatus = res.message || I18n.s("Invalid API key or city id")
+                        window.weatherSettingsStatus = res.message ? I18n.s(res.message) : I18n.s("Invalid API key or city id")
                         window.weatherSettingsStatusColor = window.red
                     }
                 } catch (e) {
@@ -386,6 +386,27 @@ Item {
     property int monthOffset: 0
     property int targetMonthOffset: 0
     property string targetMonthName: ""
+    readonly property var _weekdayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    readonly property var _monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    readonly property var shortWeekdayNames: [I18n.s("Mo"), I18n.s("Tu"), I18n.s("We"), I18n.s("Th"), I18n.s("Fr"), I18n.s("Sa"), I18n.s("Su")]
+
+    function localizedWeekdayName(dayIndex) {
+        let safeIndex = Math.max(0, Math.min(6, dayIndex))
+        return I18n.s(window._weekdayNames[safeIndex])
+    }
+
+    function localizedMonthName(monthIndex) {
+        let safeIndex = Math.max(0, Math.min(11, monthIndex))
+        return I18n.s(window._monthNames[safeIndex])
+    }
+
+    function localizedFullDate(dateObj) {
+        let dayName = window.localizedWeekdayName(dateObj.getDay())
+        let monthName = window.localizedMonthName(dateObj.getMonth())
+        let dayNum = Qt.formatDateTime(dateObj, "dd")
+        return dayName + ", " + monthName + " " + dayNum
+    }
+
     ListModel { id: calendarModel }
 
     property real calendarContentOpacity: 1.0
@@ -435,7 +456,7 @@ Item {
         let isRealCurrentMonth = (actualToday.getMonth() === targetMonth && actualToday.getFullYear() === targetYear);
         let todayDate = actualToday.getDate();
 
-        window.targetMonthName = Qt.formatDateTime(d, "MMMM yyyy");
+        window.targetMonthName = window.localizedMonthName(targetMonth) + " " + targetYear;
 
         let firstDay = new Date(targetYear, targetMonth, 1).getDay();
         firstDay = (firstDay === 0) ? 6 : firstDay - 1; 
@@ -654,7 +675,7 @@ Item {
 
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: Qt.formatDateTime(window.currentTime, "dddd, MMMM dd")
+                        text: window.localizedFullDate(window.currentTime)
                         font.family: "Michroma"
                         font.weight: Font.Bold
                         font.pixelSize: 16
@@ -820,7 +841,7 @@ Item {
                     RowLayout {
                         Layout.fillWidth: true
                         Repeater {
-                            model: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+                            model: window.shortWeekdayNames
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData
@@ -919,7 +940,7 @@ Item {
                 Text {
                     Layout.preferredWidth: 110 // Fixed width so the buttons don't jump around
                     horizontalAlignment: Text.AlignHCenter // Keeps the day name centered between the buttons
-                    text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].day_full.toUpperCase() : I18n.s("LOADING...")
+                    text: window.weatherData && window.weatherData.forecast[window.weatherView] ? I18n.s(window.weatherData.forecast[window.weatherView].day_full).toUpperCase() : I18n.s("LOADING...")
                     font.family: "Michroma"
                     font.weight: Font.Black
                     font.pixelSize: 16
@@ -967,7 +988,7 @@ Item {
                         
                         Text {
                             Layout.alignment: Qt.AlignHCenter
-                            text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].desc : ""
+                            text: window.weatherData && window.weatherData.forecast[window.weatherView] ? I18n.s(window.weatherData.forecast[window.weatherView].desc) : ""
                             font.family: "Michroma"
                             font.weight: Font.Bold
                             font.pixelSize: 16
@@ -981,7 +1002,12 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             hoverEnabled: true
-                            enabled: window.weatherData && window.weatherData.forecast && window.weatherData.forecast[window.weatherView] && window.weatherData.forecast[window.weatherView].desc === "No API Key"
+                            enabled: window.weatherData && window.weatherData.forecast && window.weatherData.forecast[window.weatherView] && (
+                                window.weatherData.forecast[window.weatherView].requires_setup === true ||
+                                window.weatherData.forecast[window.weatherView].requires_setup === "true" ||
+                                window.weatherData.forecast[window.weatherView].desc === "No API Key" ||
+                                window.weatherData.forecast[window.weatherView].desc === I18n.s("No API Key")
+                            )
                             onClicked: {
                                 weatherConfigPoller.running = true
                                 window.weatherSettingsStatus = ""
@@ -1010,7 +1036,7 @@ Item {
                                 property var forecast: window.weatherData && window.weatherData.forecast[window.targetWeatherView] ? window.weatherData.forecast[window.targetWeatherView] : null
 
                                 property string gaugeIcon: index === 0 ? "" : index === 1 ? "" : index === 2 ? "" : ""
-                                property string gaugeLbl: index === 0 ? "WIND" : index === 1 ? "HUMID" : index === 2 ? "RAIN" : "FEELS"
+                                property string gaugeLbl: index === 0 ? I18n.s("WIND") : index === 1 ? I18n.s("HUMID") : index === 2 ? I18n.s("RAIN") : I18n.s("FEELS")
 
                                 property string gaugeVal: forecast ? (
                                     index === 0 ? forecast.wind + "m/s" :

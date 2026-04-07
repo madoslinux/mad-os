@@ -59,6 +59,25 @@ PanelWindow {
     property string fullDateStr: ""
     property int typeInIndex: 0
     property string dateStr: fullDateStr.substring(0, typeInIndex)
+    readonly property var _weekdayNames: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    readonly property var _monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+    function localizedWeekdayName(dayIndex) {
+        let safeIndex = Math.max(0, Math.min(6, dayIndex))
+        return I18n.s(_weekdayNames[safeIndex])
+    }
+
+    function localizedMonthName(monthIndex) {
+        let safeIndex = Math.max(0, Math.min(11, monthIndex))
+        return I18n.s(_monthNames[safeIndex])
+    }
+
+    function localizedFullDate(dateObj) {
+        let dayName = localizedWeekdayName(dateObj.getDay())
+        let monthName = localizedMonthName(dateObj.getMonth())
+        let dayNum = Qt.formatDateTime(dateObj, "dd")
+        return dayName + ", " + monthName + " " + dayNum
+    }
 
     property string weatherIcon: ""
     property string weatherTemp: "--°"
@@ -344,7 +363,7 @@ PanelWindow {
         onTriggered: {
             let d = new Date();
             barWindow.timeStr = Qt.formatDateTime(d, "hh:mm:ss AP");
-            barWindow.fullDateStr = Qt.formatDateTime(d, "dddd, MMMM dd");
+            barWindow.fullDateStr = barWindow.localizedFullDate(d);
             if (barWindow.typeInIndex >= barWindow.fullDateStr.length) {
                 barWindow.typeInIndex = barWindow.fullDateStr.length;
             }
