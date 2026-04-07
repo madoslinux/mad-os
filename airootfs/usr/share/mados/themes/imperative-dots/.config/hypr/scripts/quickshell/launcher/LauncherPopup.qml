@@ -1156,37 +1156,17 @@ Item {
                             visible: !visualStage.thumbReady && iconImage.status !== Image.Ready && themeIconImage.status !== Image.Ready
                         }
 
-                        Rectangle {
+                        Text {
                             anchors.top: parent.top
                             anchors.right: parent.right
-                            anchors.topMargin: 6
-                            anchors.rightMargin: 2
-                            width: 32
-                            height: 32
-                            radius: 16
-                            color: Qt.rgba(theme.crust.r, theme.crust.g, theme.crust.b, 0.72)
-                            border.width: 1
-                            border.color: Qt.rgba(theme.surface2.r, theme.surface2.g, theme.surface2.b, 0.9)
+                            anchors.topMargin: 9
+                            anchors.rightMargin: 8
+                            text: model.favorite ? "★" : "☆"
+                            font.family: "Michroma"
+                            font.pixelSize: 24
+                            font.weight: Font.Bold
+                            color: model.favorite ? theme.yellow : theme.subtext1
                             visible: card.showStarControl
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: model.favorite ? "★" : "☆"
-                                font.family: "Michroma"
-                                font.pixelSize: 14
-                                font.weight: Font.Bold
-                                color: model.favorite ? theme.yellow : theme.subtext0
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    root.toggleFavorite(model.id);
-                                    mouse.accepted = true;
-                                }
-                            }
                         }
 
                     }

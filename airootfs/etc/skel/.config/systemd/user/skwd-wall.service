@@ -1,6 +1,6 @@
 [Unit]
 Description=skwd-wall wallpaper selector daemon
-Documentation=https://github.com/liixini/skwd-wall
+Documentation=https://github.com/madkoding/skwd-wall
 PartOf=graphical-session.target
 After=graphical-session.target
 

@@ -514,7 +514,7 @@ install_oh_my_zsh() {
     return 0
 }
 
-SKWD_WALL_REPO="liixini/skwd-wall"
+SKWD_WALL_REPO="madkoding/skwd-wall"
 SKWD_WALL_INSTALL_DIR="/usr/local/share/skwd-wall"
 SKWD_WALL_COMPAT_DIR="/opt/mados/skwd-wall"
 SKWD_WALL_BIN="/usr/local/bin/skwd-wall"
@@ -556,7 +556,7 @@ install_skwd_wall_legacy() {
     cat > /etc/skel/.config/systemd/user/skwd-wall.service << 'SKWD_WALL_SERVICE'
 [Unit]
 Description=skwd-wall wallpaper selector daemon
-Documentation=https://github.com/liixini/skwd-wall
+Documentation=https://github.com/madkoding/skwd-wall
 PartOf=graphical-session.target
 After=graphical-session.target
 
@@ -958,7 +958,7 @@ install_skwd_wall() {
         cat > /etc/skel/.config/systemd/user/skwd-wall.service << 'SKWD_WALL_SERVICE_FALLBACK'
 [Unit]
 Description=skwd-wall wallpaper selector daemon
-Documentation=https://github.com/liixini/skwd-wall
+Documentation=https://github.com/madkoding/skwd-wall
 PartOf=graphical-session.target
 After=graphical-session.target
 

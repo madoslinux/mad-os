@@ -3,11 +3,20 @@ set -euo pipefail
 
 export SKWD_WALL_INSTALL="/usr/local/share/skwd-wall"
 export SKWD_WALL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/skwd-wall"
+SKWD_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/skwd-wall"
+UNION_DIR="${SKWD_CACHE_DIR}/wallpaper-union"
+STATE_FILE="${SKWD_CACHE_DIR}/source-sync-state.json"
 
 if quickshell ipc -p /usr/local/share/skwd-wall/daemon.qml show >/dev/null 2>&1; then
     exit 0
 fi
 
-/usr/local/bin/mados-skwd-wall-sources sync >/dev/null 2>&1 || true
+/usr/local/bin/mados-skwd-wall-sources prepare >/dev/null 2>&1 || true
+
+if [[ ! -f "$STATE_FILE" || ! -d "$UNION_DIR" || -z "$(ls -A "$UNION_DIR" 2>/dev/null)" ]]; then
+    /usr/local/bin/mados-skwd-wall-sources sync >/dev/null 2>&1 || true
+else
+    /usr/local/bin/mados-skwd-wall-sources sync >/dev/null 2>&1 &
+fi
 
 exec quickshell -p /usr/local/share/skwd-wall/daemon.qml

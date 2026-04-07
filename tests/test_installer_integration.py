@@ -177,6 +177,13 @@ class TestSkwdWallIntegration(unittest.TestCase):
         self.assertIn('SKWD_WALL_COMPAT_DIR="/opt/mados/skwd-wall"', content)
         self.assertIn('ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"', content)
 
+    def test_apps_script_uses_madkoding_skwd_fork(self):
+        content = _read(APPS_SCRIPT)
+        self.assertIn('SKWD_WALL_REPO="madkoding/skwd-wall"', content)
+        self.assertNotIn('SKWD_WALL_REPO="liixini/skwd-wall"', content)
+        self.assertNotIn("WallhavenBrowser.qml", content)
+        self.assertNotIn("SteamWorkshopBrowser.qml", content)
+
     def test_hypr_bindings_use_wallpaper_picker_helper(self):
         self.assertIn("mados-wallpaper-picker toggle", _read(HYPR_CONF))
         self.assertIn("mados-wallpaper-picker toggle", _read(THEME_HYPR_CONF))
@@ -204,10 +211,13 @@ class TestSkwdWallIntegration(unittest.TestCase):
         daemon_helper = _read(SKWD_DAEMON_HELPER)
         self.assertIn("/usr/local/share/skwd-wall/daemon.qml", daemon_helper)
         self.assertIn('SKWD_WALL_INSTALL="/usr/local/share/skwd-wall"', daemon_helper)
+        self.assertIn("mados-skwd-wall-sources prepare", daemon_helper)
 
         sources_helper = _read(SKWD_SOURCES_HELPER)
         self.assertIn("wallpaperSources", sources_helper)
         self.assertIn("wallpaper-union", sources_helper)
+        self.assertIn("source-sync-state.json", sources_helper)
+        self.assertIn("SYNC_THROTTLE_SECONDS", sources_helper)
         self.assertIn('"/usr/share/backgrounds"', sources_helper)
         self.assertIn('"/usr/share/mados/wallpapers"', sources_helper)
 

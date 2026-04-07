@@ -26,7 +26,9 @@
         "custom/power"
     ],
     "sway/workspaces": {
-        "format": "{name}",
+        "format": "{name}{windows}",
+        "format-window-separator": "",
+        "window-rewrite-default": " •",
         "disable-scroll": false,
         "all-outputs": true,
         "persistent-workspaces": {

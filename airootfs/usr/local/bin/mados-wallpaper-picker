@@ -29,7 +29,7 @@ close_qs_overlay() {
 }
 
 daemon_ready() {
-    timeout 0.6 quickshell ipc -p "$DAEMON_QML" show >/dev/null 2>&1
+    timeout 0.3 quickshell ipc -p "$DAEMON_QML" show >/dev/null 2>&1
 }
 
 start_daemon_service() {
@@ -37,7 +37,8 @@ start_daemon_service() {
         return 0
     fi
 
-    /usr/local/bin/mados-skwd-wall-sources sync >>"$LOG_FILE" 2>&1 || true
+    /usr/local/bin/mados-skwd-wall-sources prepare >>"$LOG_FILE" 2>&1 || true
+    /usr/local/bin/mados-skwd-wall-sources sync >>"$LOG_FILE" 2>&1 &
     if command -v systemctl >/dev/null 2>&1; then
         systemctl --user start "$SERVICE_NAME" >>"$LOG_FILE" 2>&1 || true
     fi
@@ -47,7 +48,7 @@ start_daemon_service() {
     fi
 
     local tries=0
-    while [[ $tries -lt 40 ]]; do
+    while [[ $tries -lt 18 ]]; do
         if daemon_ready; then
             return 0
         fi
