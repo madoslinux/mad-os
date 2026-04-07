@@ -1350,7 +1350,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
                                 root.setFavorite(root.contextAppId, !root.contextFavorite);
-                                root.contextFavorite = !root.contextFavorite;
+                                root.hideContextMenu();
                                 mouse.accepted = true;
                             }
                         }

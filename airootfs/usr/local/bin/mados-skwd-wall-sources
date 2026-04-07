@@ -37,6 +37,7 @@ VIDEO_EXTENSIONS = {
 }
 
 SYNC_THROTTLE_SECONDS = 900
+FINGERPRINT_CHUNK_SIZE = 131072
 
 
 def home() -> Path:
@@ -221,6 +222,32 @@ def iter_files(source: Path):
                 yield path
 
 
+def file_fingerprint(path: Path) -> str:
+    """Return a stable lightweight content fingerprint for deduplication."""
+    try:
+        stats = path.stat()
+    except OSError:
+        return ""
+
+    hasher = hashlib.sha1()
+    hasher.update(str(stats.st_size).encode("utf-8"))
+
+    try:
+        with path.open("rb") as handle:
+            head = handle.read(FINGERPRINT_CHUNK_SIZE)
+            hasher.update(head)
+
+            if stats.st_size > FINGERPRINT_CHUNK_SIZE:
+                tail_offset = max(0, stats.st_size - FINGERPRINT_CHUNK_SIZE)
+                handle.seek(tail_offset)
+                tail = handle.read(FINGERPRINT_CHUNK_SIZE)
+                hasher.update(tail)
+    except OSError:
+        return ""
+
+    return hasher.hexdigest()
+
+
 def build_union_from_sources(sources: list[str]) -> None:
     target = union_dir()
     parent = target.parent
@@ -230,12 +257,27 @@ def build_union_from_sources(sources: list[str]) -> None:
     shutil.rmtree(temp, ignore_errors=True)
     temp.mkdir(parents=True, exist_ok=True)
 
+    seen_targets: set[str] = set()
+    seen_fingerprints: set[str] = set()
+
     for src in sources:
         source = Path(src)
         if not source.is_dir():
             continue
 
         for item in iter_files(source):
+            try:
+                resolved = str(item.resolve())
+            except OSError:
+                resolved = str(item)
+
+            if resolved in seen_targets:
+                continue
+
+            fingerprint = file_fingerprint(item)
+            if fingerprint and fingerprint in seen_fingerprints:
+                continue
+
             digest = hashlib.sha1(str(item).encode("utf-8")).hexdigest()[:10]
             stem = item.stem or "wallpaper"
             safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in stem)[:80]
@@ -244,6 +286,9 @@ def build_union_from_sources(sources: list[str]) -> None:
             if not link.exists():
                 try:
                     link.symlink_to(item)
+                    seen_targets.add(resolved)
+                    if fingerprint:
+                        seen_fingerprints.add(fingerprint)
                 except OSError:
                     pass
 

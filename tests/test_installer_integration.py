@@ -218,6 +218,8 @@ class TestSkwdWallIntegration(unittest.TestCase):
         self.assertIn("wallpaper-union", sources_helper)
         self.assertIn("source-sync-state.json", sources_helper)
         self.assertIn("SYNC_THROTTLE_SECONDS", sources_helper)
+        self.assertIn("file_fingerprint", sources_helper)
+        self.assertIn("seen_fingerprints", sources_helper)
         self.assertIn('"/usr/share/backgrounds"', sources_helper)
         self.assertIn('"/usr/share/mados/wallpapers"', sources_helper)
 
