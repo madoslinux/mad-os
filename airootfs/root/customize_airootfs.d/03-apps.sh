@@ -623,6 +623,10 @@ DEFAULT_SOURCES = [
     "/opt/mados/mados_wallpaper",
 ]
 
+EXCLUDED_SOURCE_PATHS = [
+    "/usr/share/backgrounds/sway",
+]
+
 IMAGE_EXTENSIONS = {
     ".jpg",
     ".jpeg",
@@ -736,8 +740,11 @@ def save_config(data: dict) -> None:
 
 
 def iter_files(source: Path):
+    excluded_paths = [Path(item) for item in EXCLUDED_SOURCE_PATHS]
     for path in source.rglob("*"):
         if path.is_file():
+            if any(path.is_relative_to(excluded) for excluded in excluded_paths):
+                continue
             ext = path.suffix.lower()
             if ext in IMAGE_EXTENSIONS or ext in VIDEO_EXTENSIONS:
                 yield path
