@@ -456,6 +456,7 @@ Item {
     readonly property int inactiveBorderWidth: 3
     readonly property int spacing: 10
     readonly property real skewFactor: -0.35
+    readonly property real michromaScale: 0.75
 
     // Mouse input UX throttle (Not a layout logic timer)
     Timer {
@@ -1215,7 +1216,7 @@ Item {
                     
                     color: _theme.text
                     font.family: "Michroma"
-                    font.pixelSize: 14
+                    font.pixelSize: Math.round(14 * window.michromaScale)
                     font.bold: true
                     elide: Text.ElideRight
 
@@ -1257,6 +1258,7 @@ Item {
                             anchors.centerIn: parent
                             color: window.currentFilter === modelData.name ? _theme.text : Qt.rgba(_theme.text.r, _theme.text.g, _theme.text.b, 0.7)
                             font.family: "Michroma"
+                            font.pixelSize: Math.round(12 * window.michromaScale)
                             font.bold: window.currentFilter === modelData.name
                             Behavior on color { ColorAnimation { duration: 400; easing.type: Easing.OutQuart } }
                         }
@@ -1428,7 +1430,7 @@ Item {
                     
                     color: _theme.text
                     font.family: "Michroma"
-                    font.pixelSize: 16 
+                    font.pixelSize: Math.round(16 * window.michromaScale)
                     clip: true
                     
                     onTextEdited: {
