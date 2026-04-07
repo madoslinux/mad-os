@@ -4,6 +4,7 @@ import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: window
@@ -296,7 +297,7 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter 
                         }
                         Text { 
-                            text: "HR"; font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
+                            text: I18n.s("HR"); font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
                             color: window.subtext0; anchors.horizontalCenter: parent.horizontalCenter 
                         }
                     }
@@ -335,7 +336,7 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter 
                         }
                         Text { 
-                            text: "MIN"; font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
+                            text: I18n.s("MIN"); font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
                             color: window.subtext0; anchors.horizontalCenter: parent.horizontalCenter 
                         }
                     }
@@ -1082,7 +1083,7 @@ Item {
                                     Text {
                                         font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 13
                                         color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                        text: label
+                                        text: I18n.s(label)
                                         Behavior on color { ColorAnimation { duration: 200 } }
                                     }
                                 }

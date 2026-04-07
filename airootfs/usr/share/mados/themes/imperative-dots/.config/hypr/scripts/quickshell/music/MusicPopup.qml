@@ -6,6 +6,7 @@ import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: root
@@ -637,7 +638,7 @@ Item {
                                         spacing: titleClipRect.marqueeSpacing
                                         Text {
                                             id: titleTextMain
-                                            text: root.musicData.title
+                                            text: root.musicData.title === "Loading..." ? I18n.s("Loading...") : root.musicData.title
                                             color: root.dynamicTextColor
                                             font.family: "Michroma"
                                             font.pixelSize: 20
@@ -657,7 +658,7 @@ Item {
                                         // The clone that creates the seamless endless loop
                                         Text {
                                             id: titleTextClone
-                                            text: root.musicData.title
+                                            text: root.musicData.title === "Loading..." ? I18n.s("Loading...") : root.musicData.title
                                             color: root.dynamicTextColor
                                             font.family: "Michroma"
                                             font.pixelSize: 20
@@ -689,7 +690,7 @@ Item {
                             }
 
                             Text {
-                                text: root.musicData.artist ? "BY " + root.musicData.artist : ""
+                                text: root.musicData.artist ? I18n.s("BY") + " " + root.musicData.artist : ""
                                 color: root.subtext0 // Better matugen match
                                 font.family: "Michroma"
                                 font.pixelSize: 14
@@ -711,11 +712,11 @@ Item {
                                         anchors.centerIn: parent
                                         spacing: 6
                                         Text { text: root.musicData.deviceIcon || "󰓃"; color: root.mauve; font.family: "Iosevka Nerd Font"; font.pixelSize: 14 }
-                                        Text { text: root.musicData.deviceName || "Speaker"; color: root.overlay2; font.family: "Michroma"; font.pixelSize: 12; font.bold: true }
+                                        Text { text: root.musicData.deviceName || I18n.s("Speaker"); color: root.overlay2; font.family: "Michroma"; font.pixelSize: 12; font.bold: true }
                                     }
                                 }
                                 Text {
-                                    text: "VIA " + (root.musicData.source || "Offline")
+                                    text: I18n.s("VIA") + " " + (root.musicData.source || I18n.s("Offline"))
                                     color: root.overlay2 // Better matugen match
                                     font.family: "Michroma"
                                     font.pixelSize: 12
@@ -963,7 +964,7 @@ Item {
                         opacity: root.introEqHeader
                         transform: Translate { y: 15 * (1 - root.introEqHeader) }
 
-                        Text { text: "Equalizer"; color: root.mauve; font.family: "Michroma"; font.pixelSize: 16; font.bold: true; Layout.fillWidth: true }
+                        Text { text: I18n.s("Equalizer"); color: root.mauve; font.family: "Michroma"; font.pixelSize: 16; font.bold: true; Layout.fillWidth: true }
                         
                         // Redesigned Apply Button
                         Rectangle {
@@ -985,7 +986,7 @@ Item {
                             Text {
                                 id: applyTxt
                                 anchors.centerIn: parent
-                                text: root.eqData.pending ? "Apply" : "Saved"
+                                text: root.eqData.pending ? I18n.s("Apply") : I18n.s("Saved")
                                 color: root.eqData.pending ? root.base : root.subtext0
                                 font.family: "Michroma"
                                 font.pixelSize: 12
@@ -1010,7 +1011,7 @@ Item {
                                 }
                             }
                         }
-                        Text { text: root.eqData.preset || "Flat"; color: root.subtext0; font.family: "Michroma"; font.pixelSize: 14; font.bold: true; Layout.leftMargin: 15 }
+                        Text { text: I18n.s(root.eqData.preset || "Flat"); color: root.subtext0; font.family: "Michroma"; font.pixelSize: 14; font.bold: true; Layout.leftMargin: 15 }
                     }
 
                     // Eq Sliders Container with Canvas Lightning Overlay
@@ -1440,7 +1441,7 @@ Item {
 
         Text {
             anchors.centerIn: parent
-            text: parent.name
+            text: I18n.s(parent.name)
             color: parent.isActivePreset ? root.base : (parent.isHovered ? root.text : root.subtext0)
             font.family: "Michroma"
             font.pixelSize: 12

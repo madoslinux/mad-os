@@ -5,6 +5,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: root
@@ -64,7 +65,12 @@ Item {
     // STATE MANAGEMENT & FAST ANIMATIONS
     // -------------------------------------------------------------------------
     property int currentTab: 0
-    property var tabNames: ["Modules", "Keybinds", "Matugen", "About"]
+    property var tabNames: [
+        I18n.s("Modules"),
+        I18n.s("Keybinds"),
+        I18n.s("Matugen"),
+        I18n.s("About")
+    ]
     property var tabIcons: ["󰣆", "󰌌", "󰏘", ""]
 
     property real introBase: 0.0
@@ -77,42 +83,42 @@ Item {
         dynamicKeybindsModel.clear();
         
         let binds = [
-            { k1: "SUPER", k2: "RETURN", action: "Open Terminal (Kitty)", cmd: "kitty" },
-            { k1: "SUPER", k2: "D", action: "App Launcher", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle launcher" },
-            { k1: "ALT", k2: "TAB", action: "Window Switcher", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh open switcher next" },
-            { k1: "SUPER", k2: "C", action: "Clipboard History", cmd: "bash ~/.config/hypr/scripts/clipboard_menu.sh" },
-            { k1: "SUPER", k2: "F", action: "Open Firefox", cmd: "firefox" },
-            { k1: "SUPER", k2: "E", action: "Open Nautilus", cmd: "nautilus" },
-            { k1: "SUPER", k2: "Q", action: "Close Active Window/Widget", cmd: "bash -c 'if hyprctl activewindow | grep -q \"title: qs-master\"; then ~/.config/hypr/scripts/qs_manager.sh close; else hyprctl dispatch killactive; fi'" },
-            { k1: "SUPER+SHIFT", k2: "F", action: "Toggle Floating", cmd: "hyprctl dispatch togglefloating" },
-            { k1: "SUPER", k2: "L", action: "Lock Screen", cmd: "bash ~/.config/hypr/scripts/lock.sh" },
-            { k1: "PRINT", k2: "", action: "Screenshot", cmd: "bash ~/.config/hypr/scripts/screenshot.sh" },
-            { k1: "SHIFT", k2: "PRINT", action: "Screenshot (Edit)", cmd: "bash ~/.config/hypr/scripts/screenshot.sh --edit" },
-            { k1: "ALT+SHIFT", k2: "", action: "Switch Keyboard Layout", cmd: "hyprctl switchxkblayout main next" },
+            { k1: "SUPER", k2: "RETURN", action: I18n.s("Open Terminal (Kitty)"), cmd: "kitty" },
+            { k1: "SUPER", k2: "D", action: I18n.s("App Launcher"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle launcher" },
+            { k1: "ALT", k2: "TAB", action: I18n.s("Window Switcher"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh open switcher next" },
+            { k1: "SUPER", k2: "C", action: I18n.s("Clipboard History"), cmd: "bash ~/.config/hypr/scripts/clipboard_menu.sh" },
+            { k1: "SUPER", k2: "F", action: I18n.s("Open Firefox"), cmd: "firefox" },
+            { k1: "SUPER", k2: "E", action: I18n.s("Open Nautilus"), cmd: "nautilus" },
+            { k1: "SUPER", k2: "Q", action: I18n.s("Close Active Window/Widget"), cmd: "bash -c 'if hyprctl activewindow | grep -q \"title: qs-master\"; then ~/.config/hypr/scripts/qs_manager.sh close; else hyprctl dispatch killactive; fi'" },
+            { k1: "SUPER+SHIFT", k2: "F", action: I18n.s("Toggle Floating"), cmd: "hyprctl dispatch togglefloating" },
+            { k1: "SUPER", k2: "L", action: I18n.s("Lock Screen"), cmd: "bash ~/.config/hypr/scripts/lock.sh" },
+            { k1: "PRINT", k2: "", action: I18n.s("Screenshot"), cmd: "bash ~/.config/hypr/scripts/screenshot.sh" },
+            { k1: "SHIFT", k2: "PRINT", action: I18n.s("Screenshot (Edit)"), cmd: "bash ~/.config/hypr/scripts/screenshot.sh --edit" },
+            { k1: "ALT+SHIFT", k2: "", action: I18n.s("Switch Keyboard Layout"), cmd: "hyprctl switchxkblayout main next" },
             
-            { k1: "SUPER", k2: "W", action: "Toggle Wallpaper Picker", cmd: "mados-wallpaper-picker toggle" },
-            { k1: "SUPER+CTRL", k2: "W", action: "Search Wallpapers on Web", cmd: "mados-wallpaper-picker web" },
-            { k1: "SUPER", k2: "R", action: "Toggle Music Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle music" },
-            { k1: "SUPER", k2: "B", action: "Toggle Battery Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle battery" },
-            { k1: "SUPER", k2: "S", action: "Toggle Calendar Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle calendar" },
-            { k1: "SUPER", k2: "N", action: "Toggle Network Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle network" },
-            { k1: "SUPER", k2: "V", action: "Toggle Volume Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle volume" },
-            { k1: "SUPER", k2: "M", action: "Toggle Monitors Widget", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle monitors" },
-            { k1: "SUPER+SHIFT", k2: "T", action: "Toggle FocusTime", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle focustime" },
-            { k1: "SUPER+SHIFT", k2: "S", action: "Toggle Stewart AI", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle stewart" },
-            { k1: "SUPER", k2: "A", action: "Toggle Notifications", cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle notifications" },
+            { k1: "SUPER", k2: "W", action: I18n.s("Toggle Wallpaper Picker"), cmd: "mados-wallpaper-picker toggle" },
+            { k1: "SUPER+CTRL", k2: "W", action: I18n.s("Search Wallpapers on Web"), cmd: "mados-wallpaper-picker web" },
+            { k1: "SUPER", k2: "R", action: I18n.s("Toggle Music Widget"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle music" },
+            { k1: "SUPER", k2: "B", action: I18n.s("Toggle Battery Widget"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle battery" },
+            { k1: "SUPER", k2: "S", action: I18n.s("Toggle Calendar Widget"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle calendar" },
+            { k1: "SUPER", k2: "N", action: I18n.s("Toggle Network Widget"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle network" },
+            { k1: "SUPER", k2: "V", action: I18n.s("Toggle Volume Widget"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle volume" },
+            { k1: "SUPER", k2: "M", action: I18n.s("Toggle Monitors Widget"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle monitors" },
+            { k1: "SUPER+SHIFT", k2: "T", action: I18n.s("Toggle FocusTime"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle focustime" },
+            { k1: "SUPER+SHIFT", k2: "S", action: I18n.s("Toggle Stewart AI"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle stewart" },
+            { k1: "SUPER", k2: "A", action: I18n.s("Toggle Notifications"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle notifications" },
 
-            { k1: "SUPER", k2: "SPACE", action: "Play/Pause Media", cmd: "playerctl play-pause" },
-            { k1: "Media", k2: "Play/Pause", action: "Play/Pause Media", cmd: "playerctl play-pause" },
-            { k1: "Media", k2: "Vol Up/Down", action: "Adjust Volume", cmd: "swayosd-client --output-volume raise" },
-            { k1: "Media", k2: "Mute", action: "Mute Volume", cmd: "swayosd-client --output-volume mute-toggle" },
-            { k1: "Media", k2: "Mic Mute", action: "Mute Microphone", cmd: "swayosd-client --input-volume mute-toggle" },
-            { k1: "Media", k2: "Brightness", action: "Adjust Brightness", cmd: "swayosd-client --brightness raise" },
-            { k1: "CAPS", k2: "LOCK", action: "Caps Lock OSD", cmd: "swayosd-client --caps-lock" },
+            { k1: "SUPER", k2: "SPACE", action: I18n.s("Play/Pause Media"), cmd: "playerctl play-pause" },
+            { k1: "Media", k2: "Play/Pause", action: I18n.s("Play/Pause Media"), cmd: "playerctl play-pause" },
+            { k1: "Media", k2: "Vol Up/Down", action: I18n.s("Adjust Volume"), cmd: "swayosd-client --output-volume raise" },
+            { k1: "Media", k2: "Mute", action: I18n.s("Mute Volume"), cmd: "swayosd-client --output-volume mute-toggle" },
+            { k1: "Media", k2: "Mic Mute", action: I18n.s("Mute Microphone"), cmd: "swayosd-client --input-volume mute-toggle" },
+            { k1: "Media", k2: "Brightness", action: I18n.s("Adjust Brightness"), cmd: "swayosd-client --brightness raise" },
+            { k1: "CAPS", k2: "LOCK", action: I18n.s("Caps Lock OSD"), cmd: "swayosd-client --caps-lock" },
 
-            { k1: "SUPER", k2: "ARROWS", action: "Move Focus", cmd: "hyprctl dispatch movefocus r" },
-            { k1: "SUPER+CTRL", k2: "ARROWS", action: "Move Window", cmd: "hyprctl dispatch movewindow r" },
-            { k1: "SUPER+SHIFT", k2: "ARROWS", action: "Resize Window", cmd: "hyprctl dispatch resizeactive 50 0" }
+            { k1: "SUPER", k2: "ARROWS", action: I18n.s("Move Focus"), cmd: "hyprctl dispatch movefocus r" },
+            { k1: "SUPER+CTRL", k2: "ARROWS", action: I18n.s("Move Window"), cmd: "hyprctl dispatch movewindow r" },
+            { k1: "SUPER+SHIFT", k2: "ARROWS", action: I18n.s("Resize Window"), cmd: "hyprctl dispatch resizeactive 50 0" }
         ];
 
         for (let item of binds) {
@@ -123,6 +129,10 @@ Item {
     Component.onCompleted: {
         startupSequence.start();
         buildKeybinds();
+        for (let i = 0; i < systemDataModel.count; i++) {
+            let item = systemDataModel.get(i)
+            systemDataModel.setProperty(i, "role", I18n.s(item.role))
+        }
     }
 
     SequentialAnimation {
@@ -223,7 +233,7 @@ Item {
                         ColumnLayout {
                             Layout.alignment: Qt.AlignVCenter
                             spacing: 2
-                            Text { text: "Imperative"; font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 15; color: root.text; Layout.alignment: Qt.AlignLeft }
+                            Text { text: I18n.s("Imperative"); font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 15; color: root.text; Layout.alignment: Qt.AlignLeft }
                             Text { text: "v1.0.4"; font.family: "Michroma"; font.pixelSize: 11; color: root.subtext0; Layout.alignment: Qt.AlignLeft }
                         }
                     }
@@ -348,7 +358,7 @@ Item {
                             spacing: 10
 
                             Text {
-                                text: "About"
+                                text: I18n.s("About")
                                 font.family: "Michroma"
                                 font.weight: Font.Black
                                 font.pixelSize: 16
@@ -384,7 +394,7 @@ Item {
                                     ColumnLayout {
                                         Layout.alignment: Qt.AlignVCenter
                                         spacing: 1
-                                        Text { text: "madOS Distro Author"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: I18n.s("madOS Distro Author"); font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
                                         Text { text: "madkoding"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.blue }
                                     }
 
@@ -435,8 +445,8 @@ Item {
                                     ColumnLayout {
                                         Layout.alignment: Qt.AlignVCenter
                                         spacing: 1
-                                        Text { text: "Imperative System Theme"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
-                                        Text { text: "Author: ilyamiro"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.mauve }
+                                        Text { text: I18n.s("Imperative System Theme"); font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: I18n.s("Author: ilyamiro"); font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.mauve }
                                     }
 
                                     Item { Layout.fillWidth: true }
@@ -486,8 +496,8 @@ Item {
                                     ColumnLayout {
                                         Layout.alignment: Qt.AlignVCenter
                                         spacing: 1
-                                        Text { text: "SKWD Shell and Wallpaper manager"; font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
-                                        Text { text: "Author: liixini"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.teal }
+                                        Text { text: I18n.s("SKWD Shell and Wallpaper manager"); font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
+                                        Text { text: I18n.s("Author: liixini"); font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.teal }
                                     }
 
                                     Item { Layout.fillWidth: true }
@@ -510,7 +520,7 @@ Item {
                         }
                     }
 
-                    Text { text: "System Architecture"; font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter; Layout.topMargin: 5 }
+                    Text { text: I18n.s("System Architecture"); font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter; Layout.topMargin: 5 }
                     
                     GridLayout {
                         Layout.fillWidth: true
@@ -590,11 +600,19 @@ Item {
                     ListElement { title: "Stewart AI"; target: "stewart"; icon: "󰚩"; desc: "Voice assistant integration.\n(Reserved for future, currently disabled)" }
                 }
 
+                Component.onCompleted: {
+                    for (let i = 0; i < modulesDataModel.count; i++) {
+                        let item = modulesDataModel.get(i)
+                        modulesDataModel.setProperty(i, "title", I18n.s(item.title))
+                        modulesDataModel.setProperty(i, "desc", I18n.s(item.desc))
+                    }
+                }
+
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 20; spacing: 20
 
-                    Text { text: "Interactive Modules"; font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter }
-                    Text { text: "Click any card to toggle the live module overlay."; font.family: "Michroma"; font.pixelSize: 14; color: root.subtext0; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: I18n.s("Interactive Modules"); font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: I18n.s("Click any card to toggle the live module overlay."); font.family: "Michroma"; font.pixelSize: 14; color: root.subtext0; Layout.alignment: Qt.AlignVCenter }
                     
                     ScrollView {
                         Layout.fillWidth: true; Layout.fillHeight: true
@@ -669,8 +687,8 @@ Item {
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 20; spacing: 20
 
-                    Text { text: "Navigation & Control"; font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter }
-                    Text { text: "Click any row below to instantly execute the keybind command."; font.family: "Michroma"; font.pixelSize: 14; color: root.subtext0; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: I18n.s("Navigation & Control"); font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: I18n.s("Click any row below to instantly execute the keybind command."); font.family: "Michroma"; font.pixelSize: 14; color: root.subtext0; Layout.alignment: Qt.AlignVCenter }
                     
                     ScrollView {
                         Layout.fillWidth: true; Layout.fillHeight: true
@@ -689,7 +707,7 @@ Item {
                                 RowLayout {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 10
                                     
-                                    Text { text: "Workspaces (SUPER + 1-9)"; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 13; color: root.text; Layout.alignment: Qt.AlignVCenter }
+                                    Text { text: I18n.s("Workspaces (SUPER + 1-9)"); font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 13; color: root.text; Layout.alignment: Qt.AlignVCenter }
                                     Item { Layout.fillWidth: true }
                                     
                                     Repeater {
@@ -782,7 +800,7 @@ Item {
                 ColumnLayout {
                     anchors.fill: parent; anchors.margins: 20; spacing: 20
 
-                    Text { text: "Theming Engine"; font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: I18n.s("Theming Engine"); font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: root.text; Layout.alignment: Qt.AlignVCenter }
                     
                     // Diagram Area
                     Rectangle {
@@ -798,7 +816,7 @@ Item {
                             ColumnLayout {
                                 Layout.alignment: Qt.AlignVCenter; spacing: 8
                                 Rectangle { Layout.alignment: Qt.AlignHCenter; width: 60; height: 60; radius: 10; color: root.surface1; Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: 28; color: root.text } }
-                                Text { text: "Wallpaper"; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: root.text; Layout.alignment: Qt.AlignHCenter }
+                                Text { text: I18n.s("Wallpaper"); font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: root.text; Layout.alignment: Qt.AlignHCenter }
                             }
                             
                             // Arrow 1
@@ -826,7 +844,7 @@ Item {
                                 width: 180; height: 90; radius: 12; color: root.base; border.color: root.ambientPurple; border.width: 2; Layout.alignment: Qt.AlignVCenter
                                 ColumnLayout {
                                     anchors.centerIn: parent; spacing: 8
-                                    Text { text: "Matugen Core"; font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 15; color: root.ambientPurple; Layout.alignment: Qt.AlignHCenter }
+                                    Text { text: I18n.s("Matugen Core"); font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 15; color: root.ambientPurple; Layout.alignment: Qt.AlignHCenter }
                                     RowLayout {
                                         spacing: 4; Layout.alignment: Qt.AlignHCenter
                                         Repeater {
@@ -861,14 +879,14 @@ Item {
                             ColumnLayout {
                                 Layout.alignment: Qt.AlignVCenter; spacing: 8
                                 Rectangle { Layout.alignment: Qt.AlignHCenter; width: 60; height: 60; radius: 10; color: root.surface1; Text { anchors.centerIn: parent; text: "󰏘"; font.family: "Iosevka Nerd Font"; font.pixelSize: 28; color: root.text } }
-                                Text { text: "Templates"; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: root.text; Layout.alignment: Qt.AlignHCenter }
+                                Text { text: I18n.s("Templates"); font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: root.text; Layout.alignment: Qt.AlignHCenter }
                             }
 
                             Item { Layout.fillWidth: true } // Right spacer for perfect centering
                         }
                     }
 
-                    Text { text: "When you change wallpapers, Matugen extracts the dominant colors and injects them directly into these configuration files in real-time:"; font.family: "Michroma"; font.pixelSize: 13; color: root.subtext0; Layout.fillWidth: true; wrapMode: Text.WordWrap; Layout.alignment: Qt.AlignVCenter }
+                    Text { text: I18n.s("When you change wallpapers, Matugen extracts the dominant colors and injects them directly into these configuration files in real-time:"); font.family: "Michroma"; font.pixelSize: 13; color: root.subtext0; Layout.fillWidth: true; wrapMode: Text.WordWrap; Layout.alignment: Qt.AlignVCenter }
 
                     // Template Files Grid
                     GridLayout {

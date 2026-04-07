@@ -5,6 +5,7 @@ import QtCore
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: window
@@ -329,21 +330,21 @@ Item {
                 }
 
                 if (window.activeMode === "wifi") {
-                    let sigValue = obj.signal !== undefined ? obj.signal + "%" : "Calculating...";
-                    nodes.push({ id: "sig_" + i, name: sigValue, icon: obj.icon || "󰤨", action: "Signal Strength", isInfoNode: true, isActionable: false, parentIndex: cIndex });
-                    nodes.push({ id: "sec_" + i, name: obj.security || "Open", icon: "󰦝", action: "Security", isInfoNode: true, isActionable: false, parentIndex: cIndex });
-                    if (obj.ip) nodes.push({ id: "ip_" + i, name: obj.ip, icon: "󰩟", action: "IP Address", isInfoNode: true, isActionable: false, parentIndex: cIndex });
-                    if (obj.freq) nodes.push({ id: "freq_" + i, name: obj.freq, icon: "󰖧", action: "Band", isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                    let sigValue = obj.signal !== undefined ? obj.signal + "%" : I18n.s("Calculating...");
+                    nodes.push({ id: "sig_" + i, name: sigValue, icon: obj.icon || "󰤨", action: I18n.s("Signal Strength"), isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                    nodes.push({ id: "sec_" + i, name: obj.security ? I18n.s(obj.security) : I18n.s("Open"), icon: "󰦝", action: I18n.s("Security"), isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                    if (obj.ip) nodes.push({ id: "ip_" + i, name: obj.ip, icon: "󰩟", action: I18n.s("IP Address"), isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                    if (obj.freq) nodes.push({ id: "freq_" + i, name: obj.freq, icon: "󰖧", action: I18n.s("Band"), isInfoNode: true, isActionable: false, parentIndex: cIndex });
                 } else {
-                    nodes.push({ id: "bat_" + obj.mac, name: (obj.battery || "0") + "%", icon: "󰥉", action: "Battery", isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                    nodes.push({ id: "bat_" + obj.mac, name: (obj.battery || "0") + "%", icon: "󰥉", action: I18n.s("Battery"), isInfoNode: true, isActionable: false, parentIndex: cIndex });
                     if (obj.profile) {
-                        nodes.push({ id: "prof_" + obj.mac, name: obj.profile, icon: (obj.profile === "Hi-Fi (A2DP)" ? "󰓃" : "󰋎"), action: "Audio Profile", isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                        nodes.push({ id: "prof_" + obj.mac, name: I18n.s(obj.profile), icon: (obj.profile === "Hi-Fi (A2DP)" ? "󰓃" : "󰋎"), action: I18n.s("Audio Profile"), isInfoNode: true, isActionable: false, parentIndex: cIndex });
                     }
-                    nodes.push({ id: "mac_" + obj.mac, name: obj.mac || "Unknown", icon: "󰒋", action: "MAC Address", isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                    nodes.push({ id: "mac_" + obj.mac, name: obj.mac || I18n.s("Unknown"), icon: "󰒋", action: I18n.s("MAC Address"), isInfoNode: true, isActionable: false, parentIndex: cIndex });
                 }
             }
             // Always bind to -1 to prevent index jump 'pops'. We'll control its layout via pure math.
-            nodes.push({ id: "action_scan", name: "Scan Devices", icon: "󰍉", action: "Switch View", isInfoNode: true, isActionable: true, cmdStr: "TOGGLE_VIEW", parentIndex: -1 });
+            nodes.push({ id: "action_scan", name: I18n.s("Scan Devices"), icon: "󰍉", action: I18n.s("Switch View"), isInfoNode: true, isActionable: true, cmdStr: "TOGGLE_VIEW", parentIndex: -1 });
         }
         
         if (window.isListLocked) window.nextInfoList = nodes;
@@ -386,7 +387,7 @@ Item {
             newNetworks.sort((a, b) => a.id.localeCompare(b.id));
 
             if (window.isWifiConn && window.activeMode === "wifi") {
-                newNetworks.push({ id: "action_settings", ssid: "Current Device", mac: "", name: "Current Device", icon: "󰒓", security: "", action: "View Info", isInfoNode: false, isActionable: true, cmdStr: "TOGGLE_VIEW", parentIndex: -1 });
+                newNetworks.push({ id: "action_settings", ssid: I18n.s("Current Device"), mac: "", name: I18n.s("Current Device"), icon: "󰒓", security: "", action: I18n.s("View Info"), isInfoNode: false, isActionable: true, cmdStr: "TOGGLE_VIEW", parentIndex: -1 });
             }
 
             if (JSON.stringify(window.wifiList) !== JSON.stringify(newNetworks)) {
@@ -458,7 +459,7 @@ Item {
             newDevices.sort((a, b) => a.id.localeCompare(b.id));
 
             if (window.isBtConn && window.activeMode === "bt") {
-                newDevices.push({ id: "action_settings", ssid: "", mac: "action_settings", name: "Current Device", icon: "󰒓", action: "View Info", isInfoNode: false, isActionable: true, cmdStr: "TOGGLE_VIEW", parentIndex: -1 });
+                newDevices.push({ id: "action_settings", ssid: "", mac: "action_settings", name: I18n.s("Current Device"), icon: "󰒓", action: I18n.s("View Info"), isInfoNode: false, isActionable: true, cmdStr: "TOGGLE_VIEW", parentIndex: -1 });
             }
 
             if (JSON.stringify(window.btList) !== JSON.stringify(newDevices)) {
@@ -997,8 +998,8 @@ Item {
                                     font.pixelSize: 14 - (3 * coreContainer.multiShift)
                                     color: window.overlay0
                                     text: window.currentPowerPending 
-                                        ? ((window.activeMode === "wifi" ? window.expectedWifiPower : window.expectedBtPower) === "on" ? "Powering On..." : "Powering Off...") 
-                                        : (!window.currentPower ? "Radio Offline" : "Scanning...")
+                                        ? ((window.activeMode === "wifi" ? window.expectedWifiPower : window.expectedBtPower) === "on" ? I18n.s("Powering On...") : I18n.s("Powering Off...")) 
+                                        : (!window.currentPower ? I18n.s("Radio Offline") : I18n.s("Scanning..."))
                                 }
                             }
 
@@ -1039,7 +1040,7 @@ Item {
                                         Layout.alignment: Qt.AlignHCenter
                                         font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 11
                                         color: isMyDisconnecting ? window.overlay1 : (coreMa.containsMouse ? window.crust : "#99000000")
-                                        text: isMyDisconnecting ? "Disconnecting..." : (centralCore.disconnectFill > 0.01 ? "Hold..." : "Connected")
+                                        text: isMyDisconnecting ? I18n.s("Disconnecting...") : (centralCore.disconnectFill > 0.01 ? I18n.s("Hold...") : I18n.s("Connected"))
                                         Behavior on color { ColorAnimation { duration: 200 } }
                                     }
                                 }
@@ -1081,7 +1082,7 @@ Item {
                                             Layout.alignment: Qt.AlignHCenter
                                             font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 11
                                             color: window.text
-                                            text: isMyDisconnecting ? "Disconnecting..." : (centralCore.disconnectFill > 0.01 ? "Hold..." : "Connected")
+                                            text: isMyDisconnecting ? I18n.s("Disconnecting...") : (centralCore.disconnectFill > 0.01 ? I18n.s("Hold...") : I18n.s("Connected"))
                                         }
                                     }
                                 }
@@ -1517,7 +1518,7 @@ Item {
                                                 anchors.left: parent.left
                                                 anchors.leftMargin: floatCard.textOffset
                                                 anchors.verticalCenter: parent.verticalCenter
-                                                text: floatCard.itemName
+                                                text: I18n.s(floatCard.itemName)
                                                 font.family: "Michroma"
                                                 font.weight: Font.Bold
                                                 font.pixelSize: 13
@@ -1528,7 +1529,7 @@ Item {
                                                 anchors.leftMargin: 30
                                                 anchors.verticalCenter: parent.verticalCenter
                                                 visible: floatCard.doMarquee
-                                                text: floatCard.itemName
+                                                text: I18n.s(floatCard.itemName)
                                                 font.family: "Michroma"
                                                 font.weight: Font.Bold
                                                 font.pixelSize: 13
@@ -1540,7 +1541,7 @@ Item {
                                             font.family: "Michroma"
                                             font.pixelSize: 10
                                             color: floatCard.isMyBusy ? window.activeColor : window.overlay0
-                                            text: floatCard.isMyBusy ? "Connecting..." : (floatCard.renderFill > 0.1 && floatCard.renderFill < 1.0 ? "Hold..." : action)
+                                            text: floatCard.isMyBusy ? I18n.s("Connecting...") : (floatCard.renderFill > 0.1 && floatCard.renderFill < 1.0 ? I18n.s("Hold...") : I18n.s(action))
                                             Behavior on color { ColorAnimation { duration: 200 } }
                                         }
                                     }
@@ -1574,7 +1575,7 @@ Item {
                                                     anchors.left: parent.left
                                                     anchors.leftMargin: floatCard.textOffset
                                                     anchors.verticalCenter: parent.verticalCenter
-                                                    text: floatCard.itemName
+                                                    text: I18n.s(floatCard.itemName)
                                                     font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 13; color: window.crust 
                                                 }
                                                 Text { 
@@ -1582,13 +1583,13 @@ Item {
                                                     anchors.leftMargin: 30
                                                     anchors.verticalCenter: parent.verticalCenter
                                                     visible: floatCard.doMarquee
-                                                    text: floatCard.itemName
+                                                    text: I18n.s(floatCard.itemName)
                                                     font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 13; color: window.crust 
                                                 }
                                             }
                                             Text {
                                                 font.family: "Michroma"; font.pixelSize: 10; color: window.crust
-                                                text: floatCard.isMyBusy ? "Connecting..." : (floatCard.renderFill > 0.1 && floatCard.renderFill < 1.0 ? "Hold..." : action)
+                                                text: floatCard.isMyBusy ? I18n.s("Connecting...") : (floatCard.renderFill > 0.1 && floatCard.renderFill < 1.0 ? I18n.s("Hold...") : I18n.s(action))
                                             }
                                         }
                                     }
@@ -1712,7 +1713,7 @@ Item {
                             anchors.centerIn: parent
                             spacing: 8
                             Text { font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: window.activeMode === "wifi" ? window.crust : window.text; text: "󰤨"; Behavior on color { ColorAnimation{duration:200} } }
-                            Text { font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 13; color: window.activeMode === "wifi" ? window.crust : window.text; text: "Wi-Fi"; Behavior on color { ColorAnimation{duration:200} } }
+                            Text { font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 13; color: window.activeMode === "wifi" ? window.crust : window.text; text: I18n.s("Wi-Fi"); Behavior on color { ColorAnimation{duration:200} } }
                         }
                         MouseArea {
                             id: wifiTabMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -1749,7 +1750,7 @@ Item {
                             anchors.centerIn: parent
                             spacing: 8
                             Text { font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: window.activeMode === "bt" ? window.crust : window.text; text: "󰂯"; Behavior on color { ColorAnimation{duration:200} } }
-                            Text { font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 13; color: window.activeMode === "bt" ? window.crust : window.text; text: "Bluetooth"; Behavior on color { ColorAnimation{duration:200} } }
+                            Text { font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 13; color: window.activeMode === "bt" ? window.crust : window.text; text: I18n.s("Bluetooth"); Behavior on color { ColorAnimation{duration:200} } }
                         }
                         MouseArea {
                             id: btTabMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor

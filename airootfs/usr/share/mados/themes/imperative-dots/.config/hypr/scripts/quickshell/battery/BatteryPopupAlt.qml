@@ -5,6 +5,7 @@ import QtCore
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: window
@@ -299,7 +300,7 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter 
                         }
                         Text { 
-                            text: "HR"; font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
+                            text: I18n.s("HR"); font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
                             color: window.subtext0; anchors.horizontalCenter: parent.horizontalCenter 
                         }
                     }
@@ -336,7 +337,7 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter 
                         }
                         Text { 
-                            text: "MIN"; font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
+                            text: I18n.s("MIN"); font.pixelSize: 8; font.family: "Michroma"; font.weight: Font.Bold
                             color: window.subtext0; anchors.horizontalCenter: parent.horizontalCenter 
                         }
                     }
@@ -455,7 +456,7 @@ Item {
                             Text { font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: window.blue; text: "" }
                             Text { font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: window.text; text: Math.round(cpuOrb.animVal) + "%" }
                         }
-                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: "CPU LOAD" }
+                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: I18n.s("CPU LOAD") }
                     }
                     MouseArea { id: cpuMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor }
                 }
@@ -500,7 +501,7 @@ Item {
                             Text { font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: window.mauve; text: "󰍛" }
                             Text { font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: window.text; text: Math.round(ramOrb.animVal) + "%" }
                         }
-                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: "MEMORY" }
+                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: I18n.s("MEMORY") }
                     }
                     MouseArea { id: ramMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor }
                 }
@@ -545,7 +546,7 @@ Item {
                             Text { font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: window.peach; text: "󰋊" }
                             Text { font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 28; color: window.text; text: Math.round(diskOrb.animVal) + "%" }
                         }
-                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: "STORAGE" }
+                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: I18n.s("STORAGE") }
                     }
                     MouseArea { id: diskMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor }
                 }
@@ -590,7 +591,7 @@ Item {
                             Text { font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: window.red; text: "" }
                             Text { font.family: "Iosevka Nerd Font"; font.weight: Font.Black; font.pixelSize: 28; color: window.text; text: Math.round(tempOrb.animVal) + "°" }
                         }
-                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: "SYSTEM TEMP" }
+                        Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.weight: Font.Bold; font.pixelSize: 12; color: window.subtext0; text: I18n.s("SYSTEM TEMP") }
                     }
                     MouseArea { id: tempMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor }
                 }
@@ -1018,7 +1019,7 @@ Item {
                                     Text {
                                         font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 13
                                         color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                        text: label
+                                        text: I18n.s(label)
                                         Behavior on color { ColorAnimation { duration: 200 } }
                                     }
                                 }

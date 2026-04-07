@@ -5,6 +5,7 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import "../" 
+import "../i18n"
 
 Item {
     id: window
@@ -52,8 +53,8 @@ Item {
     property bool jumpToLastOnFilterChange: false
 
     readonly property var filterData: [
-        { name: "All", hex: "", label: "All" },
-        { name: "Video", hex: "", label: "Vid" },
+        { name: "All", hex: "", label: I18n.s("All") },
+        { name: "Video", hex: "", label: I18n.s("Videos") },
         { name: "Red", hex: "#FF4500", label: "" },
         { name: "Orange", hex: "#FFA500", label: "" },
         { name: "Yellow", hex: "#FFD700", label: "" },
@@ -62,7 +63,7 @@ Item {
         { name: "Purple", hex: "#8A2BE2", label: "" },
         { name: "Pink", hex: "#FF69B4", label: "" },
         { name: "Monochrome", hex: "#A9A9A9", label: "" },
-        { name: "Search", hex: "", label: "Search" } 
+        { name: "Search", hex: "", label: I18n.s("Search") } 
     ]
 
     // -------------------------------------------------------------------------
@@ -236,23 +237,23 @@ Item {
                                (window.currentFilter !== "Search" && window.isLoading)
 
     property string currentNotification: {
-        if (window.isDownloadingWallpaper) return "Downloading wallpaper...";
+        if (window.isDownloadingWallpaper) return I18n.s("Downloading wallpaper...");
 
         if (window.currentFilter === "Search") {
-            if (!window.hasSearched) return "Type something to search...";
-            if (window.isSearchPaused) return "Search Paused";
-            if (window.visibleItemCount === 0) return "Searching DDG (FHD+)...";
+            if (!window.hasSearched) return I18n.s("Type something to search...");
+            if (window.isSearchPaused) return I18n.s("Search Paused");
+            if (window.visibleItemCount === 0) return I18n.s("Searching DDG (FHD+)...");
             // If it's not paused and has items, it is actively generating thumbnails
-            return "Generating thumbnails..."; 
+            return I18n.s("Generating thumbnails..."); 
         }
 
-        if (isLoading) return "Generating thumbnails...";
-        if (window.visibleItemCount === 0) return "No wallpapers found";
+        if (isLoading) return I18n.s("Generating thumbnails...");
+        if (window.visibleItemCount === 0) return I18n.s("No wallpapers found");
         
         if (window.currentFilter === "All") return "";
-        if (window.currentFilter === "Video") return "Videos";
+        if (window.currentFilter === "Video") return I18n.s("Videos");
         
-        return window.currentFilter;
+        return I18n.s(window.currentFilter);
     }
     
     // Block the notification flag during initial load to stop UI shifting

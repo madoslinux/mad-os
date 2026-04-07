@@ -6,6 +6,7 @@ import QtCore
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: window
@@ -69,7 +70,7 @@ Item {
 
     // Top Orb Active State Links
     property string activeId: ""
-    property string activeName: "No Device"
+    property string activeName: I18n.s("No Device")
     property string activeDesc: ""
     property int activeVol: 0
     property bool activeMute: false
@@ -421,7 +422,7 @@ Item {
                                     font.weight: Font.Black
                                     font.pixelSize: 32
                                     color: window.activeMute ? window.red : window.text
-                                    text: window.activeMute ? "MUTE" : window.activeVol + "%"
+                                    text: window.activeMute ? I18n.s("MUTE") : window.activeVol + "%"
                                     Behavior on color { ColorAnimation { duration: 200 } }
                                 }
 
@@ -449,7 +450,7 @@ Item {
                                         font.weight: Font.Black
                                         font.pixelSize: 32
                                         color: window.crust
-                                        text: window.activeMute ? "MUTE" : window.activeVol + "%"
+                                        text: window.activeMute ? I18n.s("MUTE") : window.activeVol + "%"
                                     }
                                 }
                             }
@@ -485,7 +486,7 @@ Item {
                                     Layout.fillWidth: true; elide: Text.ElideRight
                                     font.family: "Michroma"; font.pixelSize: 13
                                     color: window.subtext0
-                                    text: window.activeTab === "apps" ? "Master Output Volume" : window.activeDesc
+                                    text: window.activeTab === "apps" ? I18n.s("Master Output Volume") : window.activeDesc
                                 }
                             }
 
@@ -596,9 +597,9 @@ Item {
                         
                         Repeater {
                             model: ListModel {
-                                ListElement { tabId: "outputs"; icon: "󰓃"; label: "Outputs" } 
-                                ListElement { tabId: "inputs"; icon: "󰍬"; label: "Inputs" }   
-                                ListElement { tabId: "apps"; icon: "󰎆"; label: "Streams" } 
+                                ListElement { tabId: "outputs"; icon: "󰓃"; label: "Outputs" }
+                                ListElement { tabId: "inputs"; icon: "󰍬"; label: "Inputs" }
+                                ListElement { tabId: "apps"; icon: "󰎆"; label: "Streams" }
                             }
                             
                             delegate: Item {
@@ -617,7 +618,7 @@ Item {
                                     Text {
                                         font.family: "Michroma"; font.weight: Font.Black; font.pixelSize: 13
                                         color: window.activeTab === tabId ? window.crust : (tabMa.containsMouse ? window.text : window.subtext0)
-                                        text: label
+                                        text: I18n.s(label)
                                         Behavior on color { ColorAnimation { duration: 200 } }
                                     }
                                 }
@@ -672,7 +673,7 @@ Item {
                                 anchors.centerIn: parent
                                 spacing: 10
                                 Text { Layout.alignment: Qt.AlignHCenter; font.family: "Iosevka Nerd Font"; font.pixelSize: 32; color: window.surface2; text: "󰖁" }
-                                Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.pixelSize: 14; color: window.overlay0; text: "No active streams" }
+                                Text { Layout.alignment: Qt.AlignHCenter; font.family: "Michroma"; font.pixelSize: 14; color: window.overlay0; text: I18n.s("No active streams") }
                             }
                         }
 
@@ -762,7 +763,7 @@ Item {
                                             Layout.fillWidth: true; elide: Text.ElideRight
                                             font.family: "Michroma"; font.pixelSize: 11
                                             color: isActiveNode ? Qt.darker(window.crust, 1.5) : window.subtext0
-                                            text: isActiveNode ? "Active Default" : model.name
+                                            text: isActiveNode ? I18n.s("Active Default") : model.name
                                         }
                                     }
                                 }

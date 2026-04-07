@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: root
@@ -118,8 +119,8 @@ Item {
             let w = parsed[i];
             windowsModel.append({
                 "address": String(w.address || ""),
-                "title": String(w.title || "Untitled"),
-                "appId": String(w.class || "App"),
+                "title": String(w.title || I18n.s("Untitled")),
+                "appId": String(w.class || I18n.s("App")),
                 "workspaceId": (w.workspace && w.workspace.id !== undefined) ? Number(w.workspace.id) : 0,
                 "focused": Number(w.focusHistoryID || 1) === 0
             });
@@ -242,7 +243,7 @@ Item {
             Layout.fillWidth: true
 
             Text {
-                text: "WINDOW SWITCHER"
+                text: I18n.s("WINDOW SWITCHER")
                 font.family: "Michroma"
                 font.pixelSize: 18
                 font.weight: Font.Black
@@ -254,7 +255,7 @@ Item {
             }
 
             Text {
-                text: windowsModel.count + " windows"
+                text: windowsModel.count + " " + I18n.s("windows")
                 font.family: "Michroma"
                 font.pixelSize: 11
                 font.weight: Font.Bold
@@ -357,7 +358,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: (model.appId || "App").toUpperCase()
+                            text: (model.appId || I18n.s("App")).toUpperCase()
                             font.family: "Michroma"
                             font.pixelSize: 12
                             font.weight: Font.Black
@@ -367,7 +368,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: model.title || "Untitled"
+                            text: model.title || I18n.s("Untitled")
                             font.family: "Michroma"
                             font.pixelSize: 11
                             color: theme.subtext0
@@ -384,7 +385,7 @@ Item {
                             Layout.fillWidth: true
 
                             Text {
-                                text: "WS " + model.workspaceId
+                                text: I18n.s("WS") + " " + model.workspaceId
                                 font.family: "Michroma"
                                 font.pixelSize: 10
                                 font.weight: Font.Bold
@@ -405,7 +406,7 @@ Item {
                                 Text {
                                     id: focusedLabel
                                     anchors.centerIn: parent
-                                    text: "FOCUSED"
+                                    text: I18n.s("FOCUSED")
                                     font.family: "Michroma"
                                     font.pixelSize: 9
                                     font.weight: Font.Bold
@@ -429,7 +430,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     visible: windowsModel.count === 0
-                    text: "NO WINDOWS"
+                    text: I18n.s("NO WINDOWS")
                     font.family: "Michroma"
                     font.pixelSize: 18
                     font.weight: Font.Black
@@ -440,7 +441,7 @@ Item {
 
         Text {
             Layout.fillWidth: true
-            text: "Tab/Shift+Tab to switch, Enter to focus, Esc to cancel"
+            text: I18n.s("Tab/Shift+Tab to switch, Enter to focus, Esc to cancel")
             horizontalAlignment: Text.AlignHCenter
             font.family: "Michroma"
             font.pixelSize: 10

@@ -6,6 +6,7 @@ import QtCore
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: window
@@ -32,7 +33,11 @@ Item {
     readonly property color sapphire: _theme.sapphire
     readonly property color blue: _theme.blue
 
-    readonly property var monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    readonly property var monthNames: [
+        I18n.s("January"), I18n.s("February"), I18n.s("March"), I18n.s("April"),
+        I18n.s("May"), I18n.s("June"), I18n.s("July"), I18n.s("August"),
+        I18n.s("September"), I18n.s("October"), I18n.s("November"), I18n.s("December")
+    ]
 
     // -------------------------------------------------------------------------
     // STATE & POLLING PATHS
@@ -49,7 +54,7 @@ Item {
     property int averageSeconds: 0
     property int yesterdaySeconds: 0
     property string weekRangeStr: ""
-    property string liveActiveApp: "Desktop"
+    property string liveActiveApp: I18n.s("Desktop")
     
     // UI State for Week Overview
     property bool isWeekView: false
@@ -64,7 +69,7 @@ Item {
     property var weekAppsData: []
     property var weekHeatmapData: [[],[],[],[],[],[],[]]
     property real maxWeekHour: 1
-    property string peakUsageHours: "N/A"
+    property string peakUsageHours: I18n.s("N/A")
 
     // 48 blocks for 30-minute intervals (2 bars per hour)
     property var hourlyData: new Array(48).fill(0)
@@ -176,7 +181,7 @@ Item {
         window.averageSeconds = data.average || 0;
         window.yesterdaySeconds = data.yesterday || 0;
         window.weekRangeStr = data.week_range || "";
-        window.liveActiveApp = data.current || "Unknown";
+        window.liveActiveApp = data.current || I18n.s("Unknown");
 
         if (window.isFirstLoad) firstLoadTimer.start();
 
@@ -221,7 +226,7 @@ Item {
         if (max2HourVal > 0) {
             window.peakUsageHours = formatAMPM(peakStart) + " - " + formatAMPM(peakStart + 2);
         } else {
-            window.peakUsageHours = "N/A";
+            window.peakUsageHours = I18n.s("N/A");
         }
 
         let parsedWeek = data.week || [];
@@ -307,7 +312,7 @@ Item {
         let monthName = window.monthNames[d.getMonth()];
         let dateNum = d.getDate();
         let isToday = getIsoDate(d) === getIsoDate(new Date());
-        return isToday ? "Today" : `${monthName} ${dateNum}`;
+        return isToday ? I18n.s("Today") : `${monthName} ${dateNum}`;
     }
 
     function changeDay(offsetDays) {
@@ -630,7 +635,7 @@ Item {
                             font.weight: Font.DemiBold
                             font.pixelSize: 18
                             color: window.text
-                            text: window.isWeekView ? (window.weekRangeStr !== "" ? window.weekRangeStr : "Week Overview") : (window.selectedAppClass !== "" ? `${window.selectedAppName} - ${window.getFancyDate(window.activeDate)}` : window.getFancyDate(window.activeDate))
+                            text: window.isWeekView ? (window.weekRangeStr !== "" ? window.weekRangeStr : I18n.s("Week Overview")) : (window.selectedAppClass !== "" ? `${window.selectedAppName} - ${window.getFancyDate(window.activeDate)}` : window.getFancyDate(window.activeDate))
                         }
 
                         Item { Layout.fillWidth: true } // Right Spacer
@@ -701,7 +706,7 @@ Item {
                                         font.weight: Font.DemiBold
                                         font.pixelSize: 14
                                         color: window.subtext0
-                                        text: "Daily average"
+                                        text: I18n.s("Daily average")
                                     }
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
@@ -800,7 +805,7 @@ Item {
                                         font.weight: Font.DemiBold
                                         font.pixelSize: 15
                                         color: window.overlay0
-                                        text: (window.totalSeconds === 0 && window.yesterdaySeconds === 0) ? "No data" : "Same time"
+                                        text: (window.totalSeconds === 0 && window.yesterdaySeconds === 0) ? I18n.s("No data") : I18n.s("Same time")
                                         visible: (window.totalSeconds === 0 && window.yesterdaySeconds === 0) || window.totalSeconds === window.yesterdaySeconds
                                     }
                                 }
@@ -1128,7 +1133,7 @@ Item {
                                         font.weight: Font.DemiBold
                                         font.pixelSize: 14
                                         color: window.text
-                                        text: "Daily usage"
+                                        text: I18n.s("Daily usage")
                                     }
 
                                     RowLayout {
@@ -1170,15 +1175,15 @@ Item {
                                     // X-Axis Labels 24h
                                     RowLayout {
                                         Layout.fillWidth: true
-                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "00:00" }
+                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("00:00") }
                                         Item { Layout.fillWidth: true }
-                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "06:00" }
+                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("06:00") }
                                         Item { Layout.fillWidth: true }
-                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "12:00" }
+                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("12:00") }
                                         Item { Layout.fillWidth: true }
-                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "18:00" }
+                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("18:00") }
                                         Item { Layout.fillWidth: true }
-                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "23:00" }
+                                        Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("23:00") }
                                     }
                                 }
                             }
@@ -1242,7 +1247,7 @@ Item {
                                                 transform: Translate { x: -20 * (1 - introMidLeft) + (dayIndex * 5 * (1 - introMidLeft)) }
 
                                                 Text {
-                                                    text: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][dayIndex]
+                                                    text: [I18n.s("Monday"), I18n.s("Tuesday"), I18n.s("Wednesday"), I18n.s("Thursday"), I18n.s("Friday"), I18n.s("Saturday"), I18n.s("Sunday")][dayIndex]
                                                     font.family: "Michroma"
                                                     font.weight: Font.Normal
                                                     font.pixelSize: 12
@@ -1320,7 +1325,7 @@ Item {
                                                     font.weight: Font.Medium
                                                     font.pixelSize: 12
                                                     color: window.subtext0
-                                                    text: "Daily average"
+                                                    text: I18n.s("Daily average")
                                                 }
                                                 Text {
                                                     Layout.alignment: Qt.AlignHCenter
@@ -1349,7 +1354,7 @@ Item {
                                                     font.weight: Font.Medium
                                                     font.pixelSize: 12
                                                     color: window.subtext0
-                                                    text: "Peak hours"
+                                                    text: I18n.s("Peak hours")
                                                 }
                                                 Text {
                                                     Layout.alignment: Qt.AlignHCenter
@@ -1371,15 +1376,15 @@ Item {
                                     // Spacer matches the day-name label width above
                                     Item { Layout.preferredWidth: 75 + 8 } // 75 label + 8 spacing
 
-                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "00:00"; Layout.alignment: Qt.AlignLeft }
+                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("00:00"); Layout.alignment: Qt.AlignLeft }
                                     Item { Layout.fillWidth: true }
-                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "06:00"; Layout.alignment: Qt.AlignHCenter }
+                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("06:00"); Layout.alignment: Qt.AlignHCenter }
                                     Item { Layout.fillWidth: true }
-                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "12:00"; Layout.alignment: Qt.AlignHCenter }
+                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("12:00"); Layout.alignment: Qt.AlignHCenter }
                                     Item { Layout.fillWidth: true }
-                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "18:00"; Layout.alignment: Qt.AlignHCenter }
+                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("18:00"); Layout.alignment: Qt.AlignHCenter }
                                     Item { Layout.fillWidth: true }
-                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: "23:00"; Layout.alignment: Qt.AlignRight }
+                                    Text { font.family: "Michroma"; font.weight: Font.Medium; font.pixelSize: 11; color: window.overlay0; text: I18n.s("23:00"); Layout.alignment: Qt.AlignRight }
 
                                     // Spacer matches the stats column width above so labels stop there
                                     Item { Layout.preferredWidth: 120 + 32 } // 120 stats col + 16 spacing

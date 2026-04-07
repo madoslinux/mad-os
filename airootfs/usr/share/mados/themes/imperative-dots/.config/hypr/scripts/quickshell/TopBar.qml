@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.SystemTray
+import "./i18n"
 
 PanelWindow {
     id: barWindow
@@ -934,7 +935,7 @@ PanelWindow {
 
                         RowLayout { id: helpLayoutRow; anchors.centerIn: parent; spacing: 6
                             Text { text: "?"; font.family: "Michroma"; font.pixelSize: 14; font.weight: Font.Black; color: parent.parent.isHovered ? mocha.blue : mocha.text }
-                            Text { text: "Help"; font.family: "Michroma"; font.pixelSize: 11; font.weight: Font.Bold; color: parent.parent.isHovered ? mocha.blue : mocha.subtext0 }
+                            Text { text: I18n.s("Help"); font.family: "Michroma"; font.pixelSize: 11; font.weight: Font.Bold; color: parent.parent.isHovered ? mocha.blue : mocha.subtext0 }
                         }
                         MouseArea {
                             id: helpMouse
@@ -982,7 +983,9 @@ PanelWindow {
                             Text { text: barWindow.wifiIcon; font.family: "Iosevka Nerd Font"; font.pixelSize: 16; color: barWindow.isWifiOn ? mocha.base : mocha.subtext0 }
                             Text { 
                                 id: wifiText
-                                text: barWindow.sysPollerLoaded ? (barWindow.isWifiOn ? (barWindow.wifiSsid !== "" ? barWindow.wifiSsid : "On") : "Off") : ""
+                                text: barWindow.sysPollerLoaded
+                                  ? (barWindow.isWifiOn ? (barWindow.wifiSsid !== "" ? barWindow.wifiSsid : I18n.s("On")) : I18n.s("Off"))
+                                  : ""
                                 visible: text !== ""
                                 font.family: "Michroma"; font.pixelSize: 13; font.weight: Font.Black; 
                                 color: barWindow.isWifiOn ? mocha.base : mocha.text; 

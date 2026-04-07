@@ -1,7 +1,76 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "== skwd-wall doctor =="
+detect_lang() {
+    local locale
+    locale="${LC_ALL:-${LC_MESSAGES:-${LANG:-en_US.UTF-8}}}"
+    locale="${locale%%.*}"
+    locale="${locale%%@*}"
+
+    case "$locale" in
+        es* ) echo "es" ;;
+        en* ) echo "en" ;;
+        fr* ) echo "fr" ;;
+        de* ) echo "de" ;;
+        it* ) echo "it" ;;
+        pt* ) echo "pt" ;;
+        ru* ) echo "ru" ;;
+        ja* ) echo "ja" ;;
+        zh* ) echo "zh" ;;
+        * ) echo "en" ;;
+    esac
+}
+
+UI_LANG="$(detect_lang)"
+
+t() {
+    local key="$1"
+    case "${UI_LANG}:${key}" in
+        es:title) echo "== doctor de skwd-wall ==" ;;
+        en:title) echo "== skwd-wall doctor ==" ;;
+        fr:title) echo "== diagnostic skwd-wall ==" ;;
+        de:title) echo "== skwd-wall diagnose ==" ;;
+        it:title) echo "== diagnostica skwd-wall ==" ;;
+        pt:title) echo "== diagnostico skwd-wall ==" ;;
+        ru:title) echo "== diagnostika skwd-wall ==" ;;
+        ja:title) echo "== skwd-wall doctor ==" ;;
+        zh:title) echo "== skwd-wall doctor ==" ;;
+
+        es:systemd_user) echo "-- systemd usuario --" ;;
+        en:systemd_user) echo "-- systemd user --" ;;
+        fr:systemd_user) echo "-- systemd utilisateur --" ;;
+        de:systemd_user) echo "-- systemd benutzer --" ;;
+        it:systemd_user) echo "-- systemd utente --" ;;
+        pt:systemd_user) echo "-- systemd usuario --" ;;
+        ru:systemd_user) echo "-- systemd polzovatel --" ;;
+        ja:systemd_user) echo "-- systemd user --" ;;
+        zh:systemd_user) echo "-- systemd user --" ;;
+
+        es:ipc) echo "-- ipc --" ;;
+        en:ipc) echo "-- ipc --" ;;
+        fr:ipc) echo "-- ipc --" ;;
+        de:ipc) echo "-- ipc --" ;;
+        it:ipc) echo "-- ipc --" ;;
+        pt:ipc) echo "-- ipc --" ;;
+        ru:ipc) echo "-- ipc --" ;;
+        ja:ipc) echo "-- ipc --" ;;
+        zh:ipc) echo "-- ipc --" ;;
+
+        es:recent_logs) echo "-- registros recientes --" ;;
+        en:recent_logs) echo "-- recent logs --" ;;
+        fr:recent_logs) echo "-- journaux recents --" ;;
+        de:recent_logs) echo "-- letzte protokolle --" ;;
+        it:recent_logs) echo "-- log recenti --" ;;
+        pt:recent_logs) echo "-- logs recentes --" ;;
+        ru:recent_logs) echo "-- poslednie zhurnaly --" ;;
+        ja:recent_logs) echo "-- recent logs --" ;;
+        zh:recent_logs) echo "-- recent logs --" ;;
+
+        * ) echo "$key" ;;
+    esac
+}
+
+echo "$(t title)"
 
 check_cmd() {
     local cmd="$1"
@@ -32,12 +101,12 @@ else
     echo "[missing] ~/.config/skwd-wall/config.json"
 fi
 
-echo "-- systemd user --"
+echo "$(t systemd_user)"
 systemctl --user is-enabled skwd-wall.service 2>/dev/null || true
 systemctl --user is-active skwd-wall.service 2>/dev/null || true
 
-echo "-- ipc --"
+echo "$(t ipc)"
 quickshell ipc -p /usr/local/share/skwd-wall/daemon.qml show 2>/dev/null || true
 
-echo "-- recent logs --"
+echo "$(t recent_logs)"
 journalctl --user -u skwd-wall.service -n 40 --no-pager 2>/dev/null || true

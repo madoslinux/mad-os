@@ -4,6 +4,7 @@ import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: root
@@ -821,7 +822,7 @@ Item {
             spacing: 10
 
             Text {
-                text: filteredModel.count + " apps"
+                text: filteredModel.count + " " + I18n.s("apps")
                 font.family: "Michroma"
                 font.pixelSize: 10
                 font.weight: Font.Bold
@@ -833,7 +834,7 @@ Item {
             }
 
             Text {
-                text: loading ? "loading..." : "Tab/arrows to switch, Enter to launch"
+                text: loading ? I18n.s("loading...") : I18n.s("Tab/arrows to switch, Enter to launch")
                 font.family: "Michroma"
                 font.pixelSize: 10
                 font.weight: Font.Bold
@@ -856,10 +857,10 @@ Item {
 
                 Repeater {
                     model: [
-                        { "id": "all", "icon": "󰄶", "label": "All" },
-                        { "id": "apps", "icon": "󰀻", "label": "Apps" },
-                        { "id": "games", "icon": "󰊗", "label": "Games" },
-                        { "id": "hidden", "icon": "󰈉", "label": "Hidden" }
+                        { "id": "all", "icon": "󰄶", "label": I18n.s("All") },
+                        { "id": "apps", "icon": "󰀻", "label": I18n.s("Apps") },
+                        { "id": "games", "icon": "󰊗", "label": I18n.s("Games") },
+                        { "id": "hidden", "icon": "󰈉", "label": I18n.s("Hidden") }
                     ]
 
                     delegate: Rectangle {
@@ -976,7 +977,7 @@ Item {
 
                 Text {
                     visible: searchInput.text === ""
-                    text: "search apps..."
+                    text: I18n.s("search apps...")
                     font.family: "Michroma"
                     font.pixelSize: 10
                     color: Qt.rgba(theme.subtext1.r, theme.subtext1.g, theme.subtext1.b, 0.7)
@@ -1224,7 +1225,7 @@ Item {
                                 Text {
                                     id: steamText
                                     anchors.centerIn: parent
-                                    text: "STEAM"
+                                    text: I18n.s("STEAM")
                                     font.family: "Michroma"
                                     font.pixelSize: 8
                                     font.weight: Font.Bold
@@ -1242,7 +1243,7 @@ Item {
                                 Text {
                                     id: terminalText
                                     anchors.centerIn: parent
-                                    text: "TERMINAL"
+                                    text: I18n.s("TERMINAL")
                                     font.family: "Michroma"
                                     font.pixelSize: 8
                                     font.weight: Font.Bold
@@ -1264,7 +1265,7 @@ Item {
                                 Text {
                                     id: scoreText
                                     anchors.centerIn: parent
-                                    text: "HOT " + Number(model.frequencyCount || 0)
+                                    text: I18n.s("HOT") + " " + Number(model.frequencyCount || 0)
                                     font.family: "Michroma"
                                     font.pixelSize: 8
                                     font.weight: Font.Bold
@@ -1339,7 +1340,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: root.contextFavorite ? "Remove favorite" : "Add favorite"
+                            text: root.contextFavorite ? I18n.s("Remove favorite") : I18n.s("Add favorite")
                             font.family: "Michroma"
                             font.pixelSize: 9
                             color: theme.text
@@ -1367,7 +1368,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: root.contextHidden ? "Unhide app" : "Hide app"
+                            text: root.contextHidden ? I18n.s("Unhide app") : I18n.s("Hide app")
                             font.family: "Michroma"
                             font.pixelSize: 9
                             color: root.contextHidden ? theme.green : theme.peach
@@ -1407,7 +1408,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: !root.loading && filteredModel.count === 0
-                text: root.searchText === "" ? "NO APPS FOUND" : "NO RESULTS"
+                text: root.searchText === "" ? I18n.s("NO APPS FOUND") : I18n.s("NO RESULTS")
                 font.family: "Michroma"
                 font.pixelSize: 18
                 font.weight: Font.Black
@@ -1417,7 +1418,7 @@ Item {
             Text {
                 anchors.centerIn: parent
                 visible: root.loading
-                text: "LOADING APPS..."
+                text: I18n.s("LOADING APPS...")
                 font.family: "Michroma"
                 font.pixelSize: 14
                 font.weight: Font.Black

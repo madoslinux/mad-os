@@ -10,10 +10,89 @@ DAEMON_QML="/usr/local/share/skwd-wall/daemon.qml"
 SERVICE_NAME="skwd-wall.service"
 LOG_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/mados/skwd-wall.log"
 
+detect_lang() {
+    local locale
+    locale="${LC_ALL:-${LC_MESSAGES:-${LANG:-en_US.UTF-8}}}"
+    locale="${locale%%.*}"
+    locale="${locale%%@*}"
+
+    case "$locale" in
+        es* ) echo "es" ;;
+        en* ) echo "en" ;;
+        fr* ) echo "fr" ;;
+        de* ) echo "de" ;;
+        it* ) echo "it" ;;
+        pt* ) echo "pt" ;;
+        ru* ) echo "ru" ;;
+        ja* ) echo "ja" ;;
+        zh* ) echo "zh" ;;
+        * ) echo "en" ;;
+    esac
+}
+
+UI_LANG="$(detect_lang)"
+
+t() {
+    local key="$1"
+    case "${UI_LANG}:${key}" in
+        es:notify_title) echo "madOS fondos" ;;
+        en:notify_title) echo "madOS wallpaper" ;;
+        fr:notify_title) echo "madOS wallpaper" ;;
+        de:notify_title) echo "madOS wallpaper" ;;
+        it:notify_title) echo "madOS wallpaper" ;;
+        pt:notify_title) echo "madOS wallpaper" ;;
+        ru:notify_title) echo "madOS wallpaper" ;;
+        ja:notify_title) echo "madOS wallpaper" ;;
+        zh:notify_title) echo "madOS wallpaper" ;;
+
+        es:xdg_open_missing) echo "xdg-open no esta disponible para abrir la busqueda web" ;;
+        en:xdg_open_missing) echo "xdg-open is not available to open web search" ;;
+        fr:xdg_open_missing) echo "xdg-open n est pas disponible pour ouvrir la recherche web" ;;
+        de:xdg_open_missing) echo "xdg-open ist nicht verfuegbar fuer die Websuche" ;;
+        it:xdg_open_missing) echo "xdg-open non e disponibile per aprire la ricerca web" ;;
+        pt:xdg_open_missing) echo "xdg-open nao esta disponivel para abrir busca web" ;;
+        ru:xdg_open_missing) echo "xdg-open nedostupen dlya web poiska" ;;
+        ja:xdg_open_missing) echo "xdg-open ga web kensaku no tame ni riyo dekinai" ;;
+        zh:xdg_open_missing) echo "xdg-open wu fa da kai wang ye sou suo" ;;
+
+        es:skwd_not_installed) echo "skwd-wall no esta instalado en /usr/local/share/skwd-wall" ;;
+        en:skwd_not_installed) echo "skwd-wall is not installed in /usr/local/share/skwd-wall" ;;
+        fr:skwd_not_installed) echo "skwd-wall n est pas installe dans /usr/local/share/skwd-wall" ;;
+        de:skwd_not_installed) echo "skwd-wall ist nicht in /usr/local/share/skwd-wall installiert" ;;
+        it:skwd_not_installed) echo "skwd-wall non e installato in /usr/local/share/skwd-wall" ;;
+        pt:skwd_not_installed) echo "skwd-wall nao esta instalado em /usr/local/share/skwd-wall" ;;
+        ru:skwd_not_installed) echo "skwd-wall ne ustanovlen v /usr/local/share/skwd-wall" ;;
+        ja:skwd_not_installed) echo "skwd-wall ga /usr/local/share/skwd-wall ni insutoru sareteimasen" ;;
+        zh:skwd_not_installed) echo "skwd-wall wei an zhuang zai /usr/local/share/skwd-wall" ;;
+
+        es:quickshell_missing) echo "quickshell no esta instalado" ;;
+        en:quickshell_missing) echo "quickshell is not installed" ;;
+        fr:quickshell_missing) echo "quickshell n est pas installe" ;;
+        de:quickshell_missing) echo "quickshell ist nicht installiert" ;;
+        it:quickshell_missing) echo "quickshell non e installato" ;;
+        pt:quickshell_missing) echo "quickshell nao esta instalado" ;;
+        ru:quickshell_missing) echo "quickshell ne ustanovlen" ;;
+        ja:quickshell_missing) echo "quickshell ga insutoru sareteimasen" ;;
+        zh:quickshell_missing) echo "quickshell wei an zhuang" ;;
+
+        es:daemon_start_failed) echo "no se pudo iniciar el daemon de skwd-wall" ;;
+        en:daemon_start_failed) echo "could not start the skwd-wall daemon" ;;
+        fr:daemon_start_failed) echo "impossible de demarrer le daemon skwd-wall" ;;
+        de:daemon_start_failed) echo "skwd-wall daemon konnte nicht gestartet werden" ;;
+        it:daemon_start_failed) echo "impossibile avviare il daemon skwd-wall" ;;
+        pt:daemon_start_failed) echo "nao foi possivel iniciar o daemon do skwd-wall" ;;
+        ru:daemon_start_failed) echo "ne udalos zapustit daemon skwd-wall" ;;
+        ja:daemon_start_failed) echo "skwd-wall daemon o kaishi dekimasen deshita" ;;
+        zh:daemon_start_failed) echo "wu fa qi dong skwd-wall daemon" ;;
+
+        * ) echo "$key" ;;
+    esac
+}
+
 notify_error() {
     local message="$1"
     if command -v notify-send >/dev/null 2>&1; then
-        notify-send "madOS wallpaper" "$message" 2>/dev/null || true
+        notify-send "$(t notify_title)" "$message" 2>/dev/null || true
     fi
 }
 
@@ -79,7 +158,7 @@ open_wallhaven_web() {
         return 0
     fi
 
-    notify_error "xdg-open no disponible para abrir busqueda web"
+    notify_error "$(t xdg_open_missing)"
     return 1
 }
 
@@ -87,12 +166,12 @@ main() {
     ensure_log_dir
 
     if [[ ! -f "$DAEMON_QML" ]]; then
-        notify_error "skwd-wall no esta instalado en /usr/local/share/skwd-wall"
+        notify_error "$(t skwd_not_installed)"
         exit 1
     fi
 
     if ! command -v quickshell >/dev/null 2>&1; then
-        notify_error "quickshell no esta instalado"
+        notify_error "$(t quickshell_missing)"
         exit 1
     fi
 
@@ -107,7 +186,7 @@ main() {
         toggle|open)
             close_qs_overlay
             start_daemon_service || {
-                notify_error "no se pudo iniciar el daemon de skwd-wall"
+                notify_error "$(t daemon_start_failed)"
                 exit 1
             }
             ;;
@@ -120,7 +199,7 @@ main() {
             ACTION="toggle"
             close_qs_overlay
             start_daemon_service || {
-                notify_error "no se pudo iniciar el daemon de skwd-wall"
+                notify_error "$(t daemon_start_failed)"
                 exit 1
             }
             ;;

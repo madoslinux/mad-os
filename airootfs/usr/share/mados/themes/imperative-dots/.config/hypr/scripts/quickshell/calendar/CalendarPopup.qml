@@ -5,6 +5,7 @@ import QtCore
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: window
@@ -334,16 +335,16 @@ Item {
                 try {
                     let res = JSON.parse(txt)
                     if (res.ok) {
-                        window.weatherSettingsStatus = "Saved. Refreshing weather..."
+                        window.weatherSettingsStatus = I18n.s("Saved. Refreshing weather...")
                         window.weatherSettingsStatusColor = window.green
                         weatherForcePoller.running = true
                         saveCloseTimer.start()
                     } else {
-                        window.weatherSettingsStatus = res.message || "Invalid API key or city id"
+                        window.weatherSettingsStatus = res.message || I18n.s("Invalid API key or city id")
                         window.weatherSettingsStatusColor = window.red
                     }
                 } catch (e) {
-                    window.weatherSettingsStatus = "Validation failed"
+                    window.weatherSettingsStatus = I18n.s("Validation failed")
                     window.weatherSettingsStatusColor = window.red
                 }
             }
@@ -915,15 +916,15 @@ Item {
                             }
                         }
                         
-                        Text {
-                            Layout.preferredWidth: 110 // Fixed width so the buttons don't jump around
-                            horizontalAlignment: Text.AlignHCenter // Keeps the day name centered between the buttons
-                            text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].day_full.toUpperCase() : "LOADING..."
-                            font.family: "Michroma"
-                            font.weight: Font.Black
-                            font.pixelSize: 16
-                            color: window.text
-                        }
+                Text {
+                    Layout.preferredWidth: 110 // Fixed width so the buttons don't jump around
+                    horizontalAlignment: Text.AlignHCenter // Keeps the day name centered between the buttons
+                    text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].day_full.toUpperCase() : I18n.s("LOADING...")
+                    font.family: "Michroma"
+                    font.weight: Font.Black
+                    font.pixelSize: 16
+                    color: window.text
+                }
                         
                         MouseArea { 
                             id: wNextMa; width: 30; height: 30; hoverEnabled: true
@@ -1133,7 +1134,7 @@ Item {
                 spacing: 12
 
                 Text {
-                    text: "Weather API Setup"
+                    text: I18n.s("Weather API Setup")
                     font.family: "Michroma"
                     font.pixelSize: 20
                     font.weight: Font.Black
@@ -1141,7 +1142,7 @@ Item {
                 }
 
                 Text {
-                    text: "OpenWeatherMap API Key"
+                    text: I18n.s("OpenWeatherMap API Key")
                     font.family: "Michroma"
                     font.pixelSize: 11
                     color: window.subtext0
@@ -1150,12 +1151,12 @@ Item {
                     id: apiKeyField
                     Layout.fillWidth: true
                     text: window.weatherApiKey
-                    placeholderText: "Paste your API key"
+                    placeholderText: I18n.s("Paste your API key")
                     onTextChanged: window.weatherApiKey = text
                 }
 
                 Text {
-                    text: "City ID"
+                    text: I18n.s("City ID")
                     font.family: "Michroma"
                     font.pixelSize: 11
                     color: window.subtext0
@@ -1164,23 +1165,23 @@ Item {
                     id: cityIdField
                     Layout.fillWidth: true
                     text: window.weatherCityId
-                    placeholderText: "Example: 2643743"
+                    placeholderText: I18n.s("Example: 2643743")
                     onTextChanged: window.weatherCityId = text
                 }
 
                 RowLayout {
                     spacing: 10
                     Text {
-                        text: "Units"
+                        text: I18n.s("Units")
                         font.family: "Michroma"
                         font.pixelSize: 11
                         color: window.subtext0
                     }
                     ComboBox {
                         id: unitBox
-                        model: ["metric", "imperial"]
+                        model: [I18n.s("metric"), I18n.s("imperial")]
                         currentIndex: window.weatherUnit === "imperial" ? 1 : 0
-                        onCurrentTextChanged: window.weatherUnit = currentText
+                        onCurrentTextChanged: window.weatherUnit = currentText === I18n.s("imperial") ? "imperial" : "metric"
                     }
                 }
 
@@ -1197,7 +1198,7 @@ Item {
                         border.color: window.surface2
                         Text {
                             anchors.centerIn: parent
-                            text: "Cancel"
+                            text: I18n.s("Cancel")
                             font.family: "Michroma"
                             font.pixelSize: 12
                             color: window.text
@@ -1215,7 +1216,7 @@ Item {
                         color: Qt.rgba(window.blue.r, window.blue.g, window.blue.b, 0.85)
                         Text {
                             anchors.centerIn: parent
-                            text: "Save"
+                            text: I18n.s("Save")
                             font.family: "Michroma"
                             font.pixelSize: 12
                             font.weight: Font.Black
@@ -1224,7 +1225,7 @@ Item {
                         MouseArea {
                             anchors.fill: parent
                             onClicked: {
-                                window.weatherSettingsStatus = "Validating..."
+                                window.weatherSettingsStatus = I18n.s("Validating...")
                                 window.weatherSettingsStatusColor = window.yellow
                                 weatherConfigSaver.running = true
                             }

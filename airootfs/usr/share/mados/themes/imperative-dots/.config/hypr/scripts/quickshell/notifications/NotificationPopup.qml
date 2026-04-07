@@ -4,6 +4,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.Notifications
 import "../"
+import "../i18n"
 
 Scope {
     id: notifScope
@@ -137,7 +138,7 @@ Scope {
                 spacing: 8
 
                 Text {
-                    text: "NOTIFICATIONS"
+                    text: I18n.s("NOTIFICATIONS")
                     font.family: "Michroma"
                     font.pixelSize: 12
                     font.weight: Font.Black
@@ -156,7 +157,7 @@ Scope {
                     Text {
                         id: clearLabel
                         anchors.centerIn: parent
-                        text: "CLEAR"
+                        text: I18n.s("CLEAR")
                         font.family: "Michroma"
                         font.pixelSize: 10
                         font.weight: Font.Bold
@@ -207,7 +208,7 @@ Scope {
                 Text {
                     anchors.centerIn: parent
                     visible: !notifScope.hasNotifs
-                    text: "NO NOTIFICATIONS"
+                    text: I18n.s("NO NOTIFICATIONS")
                     font.family: "Michroma"
                     font.pixelSize: 13
                     font.weight: Font.Black
@@ -391,7 +392,7 @@ Scope {
                 spacing: 6
 
                 Text {
-                    text: card.notification ? (card.notification.appName || "Notification") : "Notification"
+                    text: card.notification ? (card.notification.appName || I18n.s("Notification")) : I18n.s("Notification")
                     font.family: "Michroma"
                     font.pixelSize: 10
                     font.weight: Font.Bold
@@ -459,7 +460,7 @@ Scope {
                         Text {
                             id: actionLabel
                             anchors.centerIn: parent
-                            text: action && action.text ? action.text : "Action"
+                            text: action && action.text ? action.text : I18n.s("Action")
                             font.family: "Michroma"
                             font.pixelSize: 10
                             font.weight: Font.Bold

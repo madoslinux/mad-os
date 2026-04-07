@@ -4,6 +4,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../i18n"
 
 Item {
     id: window
@@ -415,7 +416,7 @@ Item {
                                                 font.weight: Font.Bold
                                                 font.pixelSize: 16
                                                 color: window.text
-                                                text: monitorsModel.count > 0 ? monitorsModel.get(0).name : "Unknown" 
+                                                text: monitorsModel.count > 0 ? monitorsModel.get(0).name : I18n.s("Unknown")
                                             }
                                             Text { 
                                                 Layout.alignment: Qt.AlignHCenter
@@ -1052,7 +1053,7 @@ Item {
                             font.weight: Font.Black
                             font.pixelSize: 14
                             color: window.crust
-                            text: monitorsModel.count > 1 ? "Apply All" : "Apply" 
+                            text: monitorsModel.count > 1 ? I18n.s("Apply All") : I18n.s("Apply")
                         }
                     }
                 }
@@ -1079,7 +1080,7 @@ Item {
                         if (monitorsModel.count === 1) {
                             let mon = monitorsModel.get(0);
                             let monitorStr = mon.name + "," + mon.resW + "x" + mon.resH + "@" + mon.rate + ",auto," + mon.sysScale + ",transform," + (mon.transform !== undefined ? mon.transform : 0);
-                            Quickshell.execDetached(["notify-send", "Display Update", "Applied: " + mon.resW + "x" + mon.resH + " @ " + mon.rate + "Hz"]);
+                            Quickshell.execDetached(["notify-send", I18n.s("Display Update"), I18n.s("Applied:") + " " + mon.resW + "x" + mon.resH + " @ " + mon.rate + "Hz"]);
                             Quickshell.execDetached(["sh", "-c", "hyprctl keyword monitor " + monitorStr]);
                         } else {
                             let rects = [];
@@ -1132,7 +1133,7 @@ Item {
                             
                             let fullCommand = "hyprctl --batch '" + batchCmds.join(" ; ") + "'";
                             Quickshell.execDetached(["sh", "-c", fullCommand]);
-                            Quickshell.execDetached(["notify-send", "Display Update", "Applied layout for: " + summaryString]);
+                            Quickshell.execDetached(["notify-send", I18n.s("Display Update"), I18n.s("Applied layout for:") + " " + summaryString]);
                         }
                     }
                 }

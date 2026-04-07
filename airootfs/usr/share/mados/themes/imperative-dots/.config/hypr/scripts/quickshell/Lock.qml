@@ -8,6 +8,7 @@ import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Pam
 import "../"
+import "i18n"
 
 ShellRoot {
     id: root
@@ -42,7 +43,7 @@ ShellRoot {
         id: lockUI
         property bool failed: false
         property bool authenticating: false
-        property string statusText: "Locked"
+        property string statusText: I18n.s("Locked")
     }
 
     // System Authentication hook
@@ -58,7 +59,7 @@ ShellRoot {
                 Qt.quit();
             } else {
                 lockUI.failed = true;
-                lockUI.statusText = "Access Denied";
+                lockUI.statusText = I18n.s("Access Denied");
                 pam.start();
             }
         }
@@ -578,7 +579,7 @@ ShellRoot {
                                     onAccepted: {
                                         if (text.length > 0 && pam.responseRequired && !lockUI.authenticating) {
                                             lockUI.authenticating = true;
-                                            lockUI.statusText = "Authenticating...";
+                                            lockUI.statusText = I18n.s("Authenticating...");
                                             lockUI.failed = false;
                                             pam.respond(text);
                                             text = ""; 
@@ -617,9 +618,9 @@ ShellRoot {
 
                                         if (text.length > 0) {
                                             lockUI.failed = false;
-                                            lockUI.statusText = "Enter PIN";
+                                            lockUI.statusText = I18n.s("Enter PIN");
                                         } else {
-                                            if (!lockUI.failed) lockUI.statusText = "Locked";
+                                            if (!lockUI.failed) lockUI.statusText = I18n.s("Locked");
                                         }
                                     }
                                 }
@@ -831,7 +832,7 @@ ShellRoot {
                         // --- SETTINGS SECTION ---
                         // FIX: use mauve for section header
                         Text { 
-                            text: "SETTINGS"
+                            text: I18n.s("SETTINGS")
                             font.family: "Michroma"
                             font.weight: Font.Black
                             font.pixelSize: 12
@@ -844,7 +845,7 @@ ShellRoot {
                         RowLayout {
                             Layout.fillWidth: true; Layout.leftMargin: 18; Layout.rightMargin: 18; Layout.topMargin: 4
                             Text {
-                                text: "Hide password"
+                                text: I18n.s("Hide password")
                                 font.family: "Michroma"
                                 font.pixelSize: 14
                                 font.weight: Font.Medium
@@ -885,7 +886,7 @@ ShellRoot {
                             RowLayout {
                                 Layout.fillWidth: true
                                 Text {
-                                    text: "Reveal delay"
+                                    text: I18n.s("Reveal delay")
                                     font.family: "Michroma"
                                     font.pixelSize: 14
                                     font.weight: Font.Medium
@@ -969,7 +970,7 @@ ShellRoot {
 
                         // --- SYSTEM ACTIONS SECTION ---
                         Text {
-                            text: "SYSTEM"
+                            text: I18n.s("SYSTEM")
                             font.family: "Michroma"
                             font.weight: Font.Black
                             font.pixelSize: 12
@@ -990,7 +991,7 @@ ShellRoot {
                                 anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 0
                                 Text { text: "󰜉"; font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: ma1.containsMouse ? root.blue : Qt.rgba(root.blue.r, root.blue.g, root.blue.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
                                 Item { Layout.fillWidth: true }
-                                Text { text: "Reboot"; font.family: "Michroma"; font.pixelSize: 15; font.weight: Font.Medium; color: ma1.containsMouse ? root.blue : Qt.rgba(root.blue.r, root.blue.g, root.blue.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
+                                Text { text: I18n.s("Reboot"); font.family: "Michroma"; font.pixelSize: 15; font.weight: Font.Medium; color: ma1.containsMouse ? root.blue : Qt.rgba(root.blue.r, root.blue.g, root.blue.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
                             }
                             MouseArea { 
                                 id: ma1; anchors.fill: parent; hoverEnabled: true;
@@ -1013,7 +1014,7 @@ ShellRoot {
                                 anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 0
                                 Text { text: "󰒲"; font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: ma2.containsMouse ? root.mauve : Qt.rgba(root.mauve.r, root.mauve.g, root.mauve.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
                                 Item { Layout.fillWidth: true }
-                                Text { text: "Suspend"; font.family: "Michroma"; font.pixelSize: 15; font.weight: Font.Medium; color: ma2.containsMouse ? root.mauve : Qt.rgba(root.mauve.r, root.mauve.g, root.mauve.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
+                                Text { text: I18n.s("Suspend"); font.family: "Michroma"; font.pixelSize: 15; font.weight: Font.Medium; color: ma2.containsMouse ? root.mauve : Qt.rgba(root.mauve.r, root.mauve.g, root.mauve.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
                             }
                             MouseArea { 
                                 id: ma2; anchors.fill: parent; hoverEnabled: true;
@@ -1036,7 +1037,7 @@ ShellRoot {
                                 anchors.fill: parent; anchors.leftMargin: 16; anchors.rightMargin: 16; spacing: 0
                                 Text { text: "󰐥"; font.family: "Iosevka Nerd Font"; font.pixelSize: 18; color: ma3.containsMouse ? root.red : Qt.rgba(root.red.r, root.red.g, root.red.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
                                 Item { Layout.fillWidth: true }
-                                Text { text: "Power Off"; font.family: "Michroma"; font.pixelSize: 15; font.weight: Font.Medium; color: ma3.containsMouse ? root.red : Qt.rgba(root.red.r, root.red.g, root.red.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
+                                Text { text: I18n.s("Power Off"); font.family: "Michroma"; font.pixelSize: 15; font.weight: Font.Medium; color: ma3.containsMouse ? root.red : Qt.rgba(root.red.r, root.red.g, root.red.b, 0.6); Behavior on color { ColorAnimation { duration: 200 } } }
                             }
                             MouseArea { 
                                 id: ma3; anchors.fill: parent; hoverEnabled: true;
