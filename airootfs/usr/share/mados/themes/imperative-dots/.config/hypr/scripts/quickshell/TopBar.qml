@@ -83,14 +83,15 @@ PanelWindow {
     property string kbLayout: "us"
     
     ListModel { id: workspacesModel }
+    property int workspaceSlots: 6
 
     function ensureWorkspaceDefaults() {
-        if (workspacesModel.count === 4) {
+        if (workspacesModel.count === workspaceSlots) {
             return;
         }
         workspacesModel.clear();
-        for (let i = 1; i <= 4; i++) {
-            workspacesModel.append({ "wsId": i.toString(), "wsState": "empty" });
+        for (let i = 1; i <= workspaceSlots; i++) {
+            workspacesModel.append({ "wsId": i.toString(), "wsState": "empty", "wsOccupied": false });
         }
     }
 
@@ -142,15 +143,23 @@ PanelWindow {
                         if (workspacesModel.count !== newData.length) {
                             workspacesModel.clear();
                             for (let i = 0; i < newData.length; i++) {
-                                workspacesModel.append({ "wsId": newData[i].id.toString(), "wsState": newData[i].state });
+                                workspacesModel.append({
+                                    "wsId": newData[i].id.toString(),
+                                    "wsState": newData[i].state,
+                                    "wsOccupied": !!newData[i].occupied
+                                });
                             }
                         } else {
                             for (let i = 0; i < newData.length; i++) {
+                                const nextOccupied = !!newData[i].occupied;
                                 if (workspacesModel.get(i).wsState !== newData[i].state) {
                                     workspacesModel.setProperty(i, "wsState", newData[i].state);
                                 }
                                 if (workspacesModel.get(i).wsId !== newData[i].id.toString()) {
                                     workspacesModel.setProperty(i, "wsId", newData[i].id.toString());
+                                }
+                                if (workspacesModel.get(i).wsOccupied !== nextOccupied) {
+                                    workspacesModel.setProperty(i, "wsOccupied", nextOccupied);
                                 }
                             }
                         }
@@ -474,6 +483,11 @@ PanelWindow {
                             // Mapped dynamically from the ListModel (Qt version-safe)
                             property string stateLabel: (typeof wsState !== "undefined") ? wsState : ((modelData && modelData.wsState) ? modelData.wsState : "empty")
                             property string wsName: (typeof wsId !== "undefined") ? wsId : ((modelData && modelData.wsId) ? modelData.wsId : (index + 1).toString())
+                            property bool hasWindows: (typeof wsOccupied !== "undefined")
+                                                      ? Boolean(wsOccupied)
+                                                      : ((modelData && typeof modelData.wsOccupied !== "undefined")
+                                                         ? Boolean(modelData.wsOccupied)
+                                                         : stateLabel === "occupied")
                             
                             property real targetWidth: 32
                             Layout.preferredWidth: targetWidth
@@ -488,8 +502,10 @@ PanelWindow {
                                         : (stateLabel === "occupied" 
                                             ? Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.9) 
                                             : "transparent"))
-                            border.width: stateLabel === "empty" ? 1 : 0
-                            border.color: Qt.rgba(mocha.overlay2.r, mocha.overlay2.g, mocha.overlay2.b, 0.35)
+                            border.width: stateLabel === "active" ? 0 : 1
+                            border.color: hasWindows
+                                        ? Qt.rgba(mocha.green.r, mocha.green.g, mocha.green.b, 0.6)
+                                        : Qt.rgba(mocha.overlay2.r, mocha.overlay2.g, mocha.overlay2.b, 0.35)
 
                             scale: isHovered && stateLabel !== "active" ? 1.08 : 1.0
                             Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
@@ -532,9 +548,25 @@ PanelWindow {
                                         : (isHovered 
                                             ? mocha.crust 
                                             : (stateLabel === "occupied" ? mocha.text : mocha.subtext1))
-                                        
+                                
                                 Behavior on color { ColorAnimation { duration: 250 } }
                             }
+
+                            Rectangle {
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: 3
+                                width: hasWindows ? 12 : 0
+                                height: 3
+                                radius: 2
+                                color: stateLabel === "active" ? mocha.crust : mocha.green
+                                opacity: hasWindows ? 1 : 0
+                                visible: opacity > 0
+
+                                Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                            }
+
                             MouseArea {
                                 id: wsPillMouse
                                 hoverEnabled: true
