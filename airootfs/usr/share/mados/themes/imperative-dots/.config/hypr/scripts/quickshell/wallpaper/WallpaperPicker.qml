@@ -452,7 +452,8 @@ Item {
 
     readonly property int itemWidth: 400
     readonly property int itemHeight: 420
-    readonly property int borderWidth: 3
+    readonly property int activeBorderWidth: 1
+    readonly property int inactiveBorderWidth: 3
     readonly property int spacing: 10
     readonly property real skewFactor: -0.35
 
@@ -997,6 +998,7 @@ Item {
             readonly property bool isCurrent: ListView.isCurrentItem && !window.isScrollingBlocked
             readonly property bool isFakeSelected: window.isScrollingBlocked && index === 0
             readonly property bool isVisuallyEnlarged: isCurrent || isFakeSelected
+            readonly property int cardBorderWidth: isVisuallyEnlarged ? window.activeBorderWidth : window.inactiveBorderWidth
             
             readonly property bool isVideo: safeFileName.startsWith("000_")
             readonly property bool matchesFilter: window.checkItemMatchesFilter(safeFileName, isVideo, window.cacheVersion, window.currentFilter)
@@ -1035,6 +1037,9 @@ Item {
                     property real s: window.skewFactor
                     matrix: Qt.matrix4x4(1, s, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
                 }
+                layer.enabled: true
+                layer.smooth: true
+                layer.samples: 4
                 
                 MouseArea {
                     anchors.fill: parent
@@ -1056,7 +1061,7 @@ Item {
 
                 Item {
                     anchors.fill: parent
-                    anchors.margins: window.borderWidth 
+                    anchors.margins: delegateRoot.cardBorderWidth
                     Rectangle {
                         anchors.fill: parent
                         color: Qt.rgba(_theme.surface0.r, _theme.surface0.g, _theme.surface0.b, 0.9)

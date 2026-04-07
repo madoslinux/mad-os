@@ -1053,13 +1053,14 @@ Item {
                         preferredRendererType: Shape.GeometryRenderer
                         layer.enabled: true
                         layer.smooth: true
+                        layer.samples: 4
 
                         ShapePath {
                             joinStyle: ShapePath.RoundJoin
                             capStyle: ShapePath.RoundCap
                             fillColor: card.current ? Qt.rgba(theme.surface1.r, theme.surface1.g, theme.surface1.b, 0.95) : Qt.rgba(theme.surface0.r, theme.surface0.g, theme.surface0.b, 0.74)
                             strokeColor: card.current ? Qt.rgba(theme.blue.r, theme.blue.g, theme.blue.b, 1.0) : Qt.rgba(theme.surface2.r, theme.surface2.g, theme.surface2.b, 0.8)
-                            strokeWidth: card.current ? 2 : 1
+                            strokeWidth: 1
                             startX: card.skewOffset + 1.5
                             startY: 1.5
                             PathLine { x: card.width - 1.5; y: 1.5 }
