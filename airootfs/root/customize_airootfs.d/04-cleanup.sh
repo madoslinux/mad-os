@@ -128,6 +128,8 @@ hide_unwanted_desktop_entries() {
         /usr/share/applications/qvidcap.desktop
         /usr/share/applications/mpv.desktop
         /usr/share/applications/uuctl.desktop
+        /usr/share/applications/foot-server.desktop
+        /usr/share/applications/footclient.desktop
     )
     
     for desktop_file in "${unwanted[@]}"; do
