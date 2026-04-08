@@ -638,7 +638,7 @@ Item {
         recordSelection(app.id, app.name);
 
         if (app.terminal === true)
-            command = "${TERMINAL:-kitty} -e bash -lc " + shellQuote(command);
+            command = "${TERMINAL:-foot} -e bash -lc " + shellQuote(command);
 
         Quickshell.execDetached(["bash", "-lc", "setsid -f " + command + " >/dev/null 2>&1"]);
         closeLauncher();

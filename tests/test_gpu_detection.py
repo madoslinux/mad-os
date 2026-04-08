@@ -597,6 +597,18 @@ class TestGPUDetectionPackages(unittest.TestCase):
         self.assertIn("sway", packages, "sway must be in packages.x86_64")
         self.assertIn("hyprland", packages, "hyprland must be in packages.x86_64")
 
+    def test_x11_fallback_packages_included(self):
+        """xorg-server and xorg-xinit must be present for sway X11 fallback."""
+        packages = self._read_packages()
+        self.assertIn("xorg-server", packages, "xorg-server must be in packages.x86_64")
+        self.assertIn("xorg-xinit", packages, "xorg-xinit must be in packages.x86_64")
+        self.assertIn("xf86-video-dummy", packages, "xf86-video-dummy must be in packages.x86_64")
+        self.assertIn("xf86-video-vesa", packages, "xf86-video-vesa must be in packages.x86_64")
+        self.assertIn("xf86-video-fbdev", packages, "xf86-video-fbdev must be in packages.x86_64")
+        self.assertIn("i3-wm", packages, "i3-wm must be in packages.x86_64")
+        self.assertIn("i3status", packages, "i3status must be in packages.x86_64")
+        self.assertIn("dmenu", packages, "dmenu must be in packages.x86_64")
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Simulated compositor selection logic
@@ -801,6 +813,20 @@ class TestDetectionToSessionChain(unittest.TestCase):
         with open(profiledef) as f:
             content = f.read()
         self.assertIn("sway-session", content, "profiledef.sh must include sway-session")
+
+    def test_profiledef_includes_sway_x11_session(self):
+        """profiledef.sh must set permissions for sway-x11-session."""
+        profiledef = os.path.join(REPO_DIR, "profiledef.sh")
+        with open(profiledef) as f:
+            content = f.read()
+        self.assertIn("sway-x11-session", content, "profiledef.sh must include sway-x11-session")
+
+    def test_profiledef_includes_mados_i3_session(self):
+        """profiledef.sh must set permissions for mados-i3-session."""
+        profiledef = os.path.join(REPO_DIR, "profiledef.sh")
+        with open(profiledef) as f:
+            content = f.read()
+        self.assertIn("mados-i3-session", content, "profiledef.sh must include mados-i3-session")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1511,6 +1537,39 @@ class TestVMwareRenderingFallback(unittest.TestCase):
             "sway-session must contain retry logic message 'retrying with software rendering'",
         )
 
+    def test_sway_session_has_drm_missing_fallback(self):
+        """sway-session must fall back to sway-x11-session when DRM card is missing."""
+        path = os.path.join(BIN_DIR, "sway-session")
+        if not os.path.isfile(path):
+            self.skipTest("sway-session not found")
+        with open(path) as f:
+            content = f.read()
+        self.assertIn(
+            "drm_card_available",
+            content,
+            "sway-session must define drm_card_available helper",
+        )
+        self.assertIn(
+            "wait_for_drm_card",
+            content,
+            "sway-session must wait briefly for DRM devices before fallback",
+        )
+        self.assertIn(
+            "mados-i3-session",
+            content,
+            "sway-session must include mados-i3-session fallback when DRM is missing",
+        )
+        self.assertIn(
+            "sway-x11-session",
+            content,
+            "sway-session must invoke sway-x11-session when DRM is missing",
+        )
+        self.assertIn(
+            "sway-x11-session failed, trying i3 fallback",
+            content,
+            "sway-session must log fallback from sway-x11-session to i3",
+        )
+
     def test_sway_session_still_execs_sway(self):
         """sway-session must still exec sway in the fallback path."""
         path = os.path.join(BIN_DIR, "sway-session")
@@ -1519,6 +1578,25 @@ class TestVMwareRenderingFallback(unittest.TestCase):
         with open(path) as f:
             content = f.read()
         self.assertIn("exec sway", content, "sway-session must exec sway for the fallback path")
+
+    def test_x11_fallback_forces_mesa_vendor(self):
+        """X11 fallback scripts must force Mesa GL/EGL vendor to avoid NVIDIA crashes."""
+        for name in ["mados-i3-session", "sway-x11-session"]:
+            path = os.path.join(BIN_DIR, name)
+            if not os.path.isfile(path):
+                self.skipTest(f"{name} not found")
+            with open(path) as f:
+                content = f.read()
+            self.assertIn(
+                "__GLX_VENDOR_LIBRARY_NAME=mesa",
+                content,
+                f"{name} must force Mesa GLX vendor",
+            )
+            self.assertIn(
+                "__EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json",
+                content,
+                f"{name} must force Mesa EGL vendor",
+            )
 
     # --- hyprland-session legacy hardware detection -----------------------
 

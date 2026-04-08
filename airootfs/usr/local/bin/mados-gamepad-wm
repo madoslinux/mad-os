@@ -280,7 +280,7 @@ class InhibitChecker:
     def _is_known_desktop_app(app_id, wm_class):
         """Return True if this is a known desktop app (not a game) in fullscreen."""
         known_apps = {
-            "kitty", "chromium", "firefox", "code", "code-oss",
+            "foot", "chromium", "firefox", "code", "code-oss",
             "pcmanfm", "wofi", "waybar", "mako",
             "pavucontrol", "blueman", "nm-applet",
             "mados-installer", "mados-photo-viewer", "mados-pdf-viewer",
@@ -375,7 +375,7 @@ class SwayBackend:
     def layout_toggle(self):     self._sway("layout toggle tabbed split")
 
     # ── Apps ──
-    def terminal(self):   self._run("kitty &")
+    def terminal(self):   self._run("foot &")
     def launcher(self):   self._run("wofi --show drun &")
     def file_manager(self): self._run("pcmanfm &")
 
@@ -928,7 +928,7 @@ def main():
 
     print(f"{LOG_PREFIX} Ready! {mod} button is the modifier key.")
     print(f"{LOG_PREFIX} Bindings ({profile} profile):")
-    print(f"  {mod} + A        → Terminal (kitty)")
+    print(f"  {mod} + A        → Terminal (foot)")
     print(f"  {mod} + B        → Close window")
     print(f"  {mod} + X        → App launcher (wofi)")
     print(f"  {mod} + Y        → File manager")

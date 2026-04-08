@@ -10,7 +10,7 @@ help_data = [
     (
         "General",
         [
-            ("Super + Return", "Open terminal (kitty)"),
+            ("Super + Return", "Open terminal (foot)"),
             ("Super + D", "Open app launcher (wofi)"),
             ("Super + Q", "Close window"),
             ("Super + E", "Open file manager"),

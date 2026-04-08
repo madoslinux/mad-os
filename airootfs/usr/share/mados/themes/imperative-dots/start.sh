@@ -13,8 +13,8 @@ THEME_SWAYNC="${THEME_ROOT}/.config/swaync"
 TARGET_SWAYNC="${XDG_CONF_HOME}/swaync"
 THEME_WOFI="${THEME_ROOT}/.config/wofi"
 TARGET_WOFI="${XDG_CONF_HOME}/wofi"
-THEME_KITTY="${THEME_ROOT}/.config/kitty"
-TARGET_KITTY="${XDG_CONF_HOME}/kitty"
+THEME_FOOT="/etc/skel/.config/foot"
+TARGET_FOOT="${XDG_CONF_HOME}/foot"
 
 OWNERSHIP_MARKER="${XDG_CONF_HOME}/imperative-dots/managed-hypr-scripts"
 
@@ -73,8 +73,11 @@ prepare_user_runtime() {
     rm -rf "${TARGET_SWAYNC}"
     cp -a "${THEME_SWAYNC}" "${TARGET_SWAYNC}"
 
-    rm -rf "${TARGET_KITTY}"
-    cp -a "${THEME_KITTY}" "${TARGET_KITTY}"
+    rm -rf "${TARGET_FOOT}"
+    mkdir -p "${TARGET_FOOT}"
+    if [[ -f "${THEME_FOOT}/foot.ini" ]]; then
+        cp -a "${THEME_FOOT}/foot.ini" "${TARGET_FOOT}/foot.ini"
+    fi
 
     mkdir -p "${XDG_CONF_HOME}/gtk-3.0" "${XDG_CONF_HOME}/gtk-4.0" "${XDG_CONF_HOME}/qt5ct/colors" "${XDG_CONF_HOME}/qt6ct/colors" "${XDG_CONF_HOME}/mako"
 

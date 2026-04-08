@@ -85,12 +85,14 @@ animations {
 }
 decoration {
     blur {
-        enabled = false
+        enabled = true
+        size = 4
+        passes = 2
     }
     shadow {
         enabled = false
     }
-    rounding = 0
+    rounding = 10
 }
 misc {
     vfr = true

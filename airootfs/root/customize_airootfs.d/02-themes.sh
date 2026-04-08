@@ -50,6 +50,7 @@ install_nordzy_icons() {
     return 0
 }
 
+
 install_michroma_font() {
     local michroma_dir="/usr/share/fonts/truetype/michroma"
     local michroma_url="https://github.com/google/fonts/raw/main/ofl/michroma/Michroma-Regular.ttf"
@@ -104,6 +105,7 @@ install_logos_and_splashes() {
 install_themes() {
     install_nordic_theme
     install_nordzy_icons
+
     install_michroma_font
     install_logos_and_splashes
     fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true

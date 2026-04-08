@@ -74,8 +74,48 @@ apply_software_rendering() {
     export CHROMIUM_FLAGS="${CHROMIUM_FLAGS:-} --disable-gpu"
 }
 
+drm_card_available() {
+    local card
+    for card in /dev/dri/card*; do
+        if [ -e "$card" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+wait_for_drm_card() {
+    local retries=10
+    local delay=0.3
+    local i
+
+    for i in $(seq 1 "$retries"); do
+        if drm_card_available; then
+            return 0
+        fi
+        sleep "$delay"
+    done
+    return 1
+}
+
 # Launch sway with fallback to software rendering if hardware rendering fails.
 # If software rendering is already configured, exec sway directly.
+if ! wait_for_drm_card; then
+    logger -p user.warning -t mados-sway "No DRM card device detected before sway launch"
+    if [ -x /usr/local/bin/sway-x11-session ]; then
+        if /usr/local/bin/sway-x11-session; then
+            exit 0
+        fi
+        logger -p user.warning -t mados-sway "sway-x11-session failed, trying i3 fallback"
+    fi
+    if [ -x /usr/local/bin/mados-i3-session ]; then
+        exec /usr/local/bin/mados-i3-session
+    fi
+    logger -p user.err -t mados-sway "sway-x11-session not available; cannot recover from missing DRM"
+    echo "No DRM device found and no X11 fallback is available"
+    exit 1
+fi
+
 if [ "${WLR_RENDERER:-}" = "pixman" ]; then
     logger -p user.info -t mados-sway "Launching sway compositor (software rendering)"
     exec sway

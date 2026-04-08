@@ -20,7 +20,7 @@ PanelWindow {
     // Scaled bar dimensions
     height: Math.max(32, Math.round(48 * uiScale))
     margins {
-        top: Math.max(4, Math.round(8 * uiScale))
+        top: Math.max(0, Math.round(8 * uiScale) - 19)
         bottom: 0
         left: Math.max(2, Math.round(4 * uiScale))
         right: Math.max(2, Math.round(4 * uiScale))

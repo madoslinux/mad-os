@@ -1,0 +1,36 @@
+/* SwayOSD - Nord Theme for madOS */
+
+window#osd-container {
+    background-color: #2E3440;
+    border: 2px solid #88C0D0;
+    border-radius: 32px;
+    padding: 24px;
+    margin: 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+trough {
+    background-color: #3B4252;
+    border-radius: 99px;
+    border: none;
+    min-height: 12px;
+}
+
+progress {
+    background-image: linear-gradient(to right, #88C0D0, #81A1C1);
+    border-radius: 99px;
+    border: none;
+    min-height: 12px;
+}
+
+label {
+    color: #ECEFF4;
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+image {
+    color: #88C0D0;
+    -gtk-icon-style: symbolic;
+}

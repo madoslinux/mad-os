@@ -228,6 +228,39 @@ export LIBGL_ALWAYS_SOFTWARE=1
 sway
 ```
 
+If Sway fails with `Unable to create backend any DRM device`, the guest likely
+does not expose `/dev/dri/card*`. madOS now includes an automatic fallback path:
+
+- `sway-session` checks for a DRM card before launching native wlroots DRM mode.
+- If DRM is missing, it now prefers `/usr/local/bin/mados-i3-session` (X11 i3 fallback).
+- If i3 fallback is unavailable, it tries `/usr/local/bin/sway-x11-session`.
+- `sway-x11-session` launches Sway nested on X11 (`WLR_BACKENDS=x11`) via
+  `xinit` + `Xorg` using software rendering.
+- For very limited virtual GPUs, it retries Xorg with explicit `vesa`,
+  `fbdev`, and `dummy` drivers before giving up.
+- `mados-i3-session` also uses Xorg fallback drivers (`vesa`/`fbdev`/`dummy`) and
+  starts an i3 desktop as a last-resort no-DRM interactive environment.
+
+Manual verification:
+
+```bash
+ls -l /dev/dri
+journalctl -b | grep -Ei "mados-sway|sway-x11|drm|backend"
+```
+
+QEMU test scenarios from host:
+
+```bash
+# Keep DRM, force software rendering in guest
+./run-qemu.sh --preset software-drm
+
+# Simulate missing DRM (for i3/X11 fallback validation)
+./run-qemu.sh --preset no-drm-test
+
+# Open interactive launcher (presets + options)
+./run-qemu.sh --interactive
+```
+
 ### No Audio
 
 **Symptom:** No sound output.

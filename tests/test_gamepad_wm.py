@@ -746,13 +746,13 @@ class TestInhibitChecker(unittest.TestCase):
 
     def test_does_not_match_desktop_apps(self):
         """_matches_game must NOT match desktop app names."""
-        for app in ["kitty", "chromium", "code", "pcmanfm", "wofi"]:
+        for app in ["foot", "chromium", "code", "pcmanfm", "wofi"]:
             with self.subTest(app=app):
                 self.assertFalse(self.mod.InhibitChecker._matches_game(app))
 
     def test_known_desktop_app_detection(self):
         """_is_known_desktop_app must recognize madOS desktop apps."""
-        self.assertTrue(self.mod.InhibitChecker._is_known_desktop_app("kitty", ""))
+        self.assertTrue(self.mod.InhibitChecker._is_known_desktop_app("foot", ""))
         self.assertTrue(self.mod.InhibitChecker._is_known_desktop_app("chromium", ""))
         self.assertTrue(self.mod.InhibitChecker._is_known_desktop_app("mados-launcher", ""))
         self.assertFalse(self.mod.InhibitChecker._is_known_desktop_app("unknown_game", ""))

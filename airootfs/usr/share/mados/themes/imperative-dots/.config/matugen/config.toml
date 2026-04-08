@@ -5,10 +5,6 @@ reload_apps = false
 input_path = "~/.config/hypr/scripts/quickshell/colors.json.template"
 output_path = "/tmp/qs_colors.json"
 
-[templates.kitty]
-input_path = "~/.config/matugen/templates/kitty-colors.conf.template"
-output_path = "/tmp/kitty-matugen-colors.conf"
-
 [templates.neovim]
 input_path = "~/.config/matugen/templates/nvim-colors.lua.template"
 output_path = "~/.config/nvim/matugen_colors.lua"
@@ -48,6 +44,10 @@ output_path = "~/.config/hypr/matugen-colors.conf"
 [templates.gtk3]
 input_path = "~/.config/matugen/templates/gtk3.css.template"
 output_path = "~/.config/gtk-3.0/gtk.css"
+
+[templates.foot]
+input_path = "~/.config/matugen/templates/foot-colors.ini.template"
+output_path = "/tmp/foot-matugen-colors.ini"
 
 [templates.gtk4]
 input_path = "~/.config/matugen/templates/gtk4.css.template"

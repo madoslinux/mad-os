@@ -41,7 +41,7 @@ except Exception as e:
 # If Tera dumped {"color": "#hex"} into your text files, this strips it to #hex.
 TEXT_FILES=(
     "$HOME/.config/hypr/matugen-colors.conf"
-    "/tmp/kitty-matugen-colors.conf"
+    "/tmp/foot-matugen-colors.ini"
     "$HOME/.config/nvim/matugen_colors.lua"
     "$HOME/.config/cava/colors"
     "$HOME/.config/swayosd/style.css"
@@ -68,9 +68,6 @@ done
 # ------------------------------------------------------------------------------
 # 3. Reload System Components
 # ------------------------------------------------------------------------------
-
-# Reload Kitty instances
-killall -USR1 kitty
 
 # Reload CAVA
 if pgrep -x "cava" > /dev/null; then

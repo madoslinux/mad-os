@@ -83,7 +83,7 @@ Item {
         dynamicKeybindsModel.clear();
         
         let binds = [
-            { k1: "SUPER", k2: "RETURN", action: I18n.s("Open Terminal (Kitty)"), cmd: "kitty" },
+            { k1: "SUPER", k2: "RETURN", action: I18n.s("Open Terminal (Foot)"), cmd: "foot" },
             { k1: "SUPER", k2: "D", action: I18n.s("App Launcher"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh toggle launcher" },
             { k1: "ALT", k2: "TAB", action: I18n.s("Window Switcher"), cmd: "bash ~/.config/hypr/scripts/qs_manager.sh open switcher next" },
             { k1: "SUPER", k2: "C", action: I18n.s("Clipboard History"), cmd: "bash ~/.config/hypr/scripts/clipboard_menu.sh" },
@@ -337,7 +337,7 @@ Item {
                     ListElement { pkg: "Quickshell"; role: "UI Framework"; icon: "󰣆"; clr: "mauve"; link: "https://git.outfoxxed.me/outfoxxed/quickshell" }
                     ListElement { pkg: "Matugen"; role: "Theme Engine"; icon: "󰏘"; clr: "peach"; link: "https://github.com/InioX/matugen" }
                     ListElement { pkg: "SKWD Launcher"; role: "App Launcher"; icon: ""; clr: "green"; link: "https://github.com/liixini/skwd" }
-                    ListElement { pkg: "Kitty"; role: "Terminal Emulator"; icon: "󰄛"; clr: "yellow"; link: "https://sw.kovidgoyal.net/kitty/" }
+                    ListElement { pkg: "Foot"; role: "Terminal Emulator"; icon: "󰄛"; clr: "yellow"; link: "https://codeberg.org/dnkl/foot" }
                     ListElement { pkg: "SwayOSD / NC"; role: "Overlays & Notifs"; icon: "󰂚"; clr: "pink"; link: "https://github.com/ErikReider/SwayOSD" }
                 }
 
@@ -446,7 +446,7 @@ Item {
                                         Layout.alignment: Qt.AlignVCenter
                                         spacing: 1
                                         Text { text: I18n.s("Imperative System Theme"); font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
-                                        Text { text: I18n.s("Author: ilyamiro"); font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.mauve }
+                                        Text { text: "ilyamiro"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.mauve }
                                     }
 
                                     Item { Layout.fillWidth: true }
@@ -497,7 +497,7 @@ Item {
                                         Layout.alignment: Qt.AlignVCenter
                                         spacing: 1
                                         Text { text: I18n.s("SKWD Shell and Wallpaper manager"); font.family: "Michroma"; font.pixelSize: 10; color: root.subtext0; font.weight: Font.Medium }
-                                        Text { text: I18n.s("Author: liixini"); font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.teal }
+                                        Text { text: "liixini"; font.family: "Michroma"; font.pixelSize: 16; font.weight: Font.Black; color: root.teal }
                                     }
 
                                     Item { Layout.fillWidth: true }
@@ -895,7 +895,7 @@ Item {
                         
                         Repeater {
                             model: [
-                                { f: "kitty-colors.conf", i: "󰄛", c: "yellow" },
+                                { f: "foot-colors.ini", i: "󰄛", c: "yellow" },
                                 { f: "nvim-colors.lua", i: "", c: "green" },
                                 { f: "wofi/style.css", i: "", c: "blue" },
                                 { f: "cava-colors.ini", i: "󰎆", c: "mauve" },

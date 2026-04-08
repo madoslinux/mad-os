@@ -1537,7 +1537,7 @@ class TestHyprlandMatugenStartup(unittest.TestCase):
         "gtk4.css.template",
     )
 
-    KITTY_TEMPLATE = os.path.join(
+    FOOT_TEMPLATE = os.path.join(
         REPO_DIR,
         "airootfs",
         "usr",
@@ -1546,9 +1546,12 @@ class TestHyprlandMatugenStartup(unittest.TestCase):
         "themes",
         "imperative-dots",
         ".config",
-        "kitty",
-        "kitty.conf",
+        "matugen",
+        "templates",
+        "foot-colors.ini.template",
     )
+
+    FOOT_CONFIG = os.path.join(SKEL_DIR, ".config", "foot", "foot.ini")
 
     THEME_START = os.path.join(
         REPO_DIR,
@@ -1693,36 +1696,131 @@ class TestHyprlandMatugenStartup(unittest.TestCase):
             "Session matugen config must avoid writing to /usr/share/sddm",
         )
 
-    def test_theme_start_syncs_kitty_config(self):
-        """imperative-dots start script must deploy kitty config for matugen colors."""
+    def test_theme_start_syncs_foot_config(self):
+        """imperative-dots start script must deploy foot config for matugen colors."""
         with open(self.THEME_START) as f:
             content = f.read()
 
         self.assertIn(
-            "THEME_KITTY",
+            "THEME_FOOT",
             content,
-            "start.sh must define THEME_KITTY source path",
+            "start.sh must define THEME_FOOT source path",
         )
         self.assertIn(
-            "TARGET_KITTY",
+            "TARGET_FOOT",
             content,
-            "start.sh must define TARGET_KITTY destination path",
-        )
-        self.assertIn(
-            'cp -a "${THEME_KITTY}" "${TARGET_KITTY}"',
-            content,
-            "start.sh must copy kitty config into user config",
+            "start.sh must define TARGET_FOOT destination path",
         )
 
-    def test_kitty_config_includes_matugen_palette(self):
-        """Kitty config must include generated matugen color file."""
-        with open(self.KITTY_TEMPLATE) as f:
+    def test_foot_template_exists(self):
+        """Foot matugen template must exist."""
+        self.assertTrue(
+            os.path.isfile(self.FOOT_TEMPLATE),
+            "foot-colors.ini.template must exist in matugen templates directory",
+        )
+
+    def test_foot_template_has_basic_color_mappings(self):
+        """Foot template must map matugen variables to basic terminal colors."""
+        with open(self.FOOT_TEMPLATE) as f:
+            content = f.read()
+
+        for key in ("foreground", "background", "regular0", "regular7", "bright0", "bright7"):
+            self.assertIn(
+                key,
+                content,
+                f"foot template must define {key} color mapping",
+            )
+
+    def test_foot_template_has_selection_colors(self):
+        """Foot template must map selection colors from matugen palette."""
+        with open(self.FOOT_TEMPLATE) as f:
             content = f.read()
 
         self.assertIn(
-            "include /tmp/kitty-matugen-colors.conf",
+            "selection-foreground",
             content,
-            "kitty config must include /tmp/kitty-matugen-colors.conf",
+            "foot template must define selection-foreground",
+        )
+        self.assertIn(
+            "selection-background",
+            content,
+            "foot template must define selection-background",
+        )
+
+    def test_foot_template_uses_matugen_variables(self):
+        """Foot template must use matugen Tera template variables."""
+        with open(self.FOOT_TEMPLATE) as f:
+            content = f.read()
+
+        self.assertIn(
+            "{{colors.",
+            content,
+            "foot template must use matugen {{colors.*}} variables",
+        )
+
+    def test_foot_template_uses_colors_dark_section(self):
+        """Foot template must use [colors-dark] section for dark scheme."""
+        with open(self.FOOT_TEMPLATE) as f:
+            content = f.read()
+
+        self.assertIn(
+            "[colors-dark]",
+            content,
+            "foot template must use [colors-dark] section (not [colors])",
+        )
+
+    def test_foot_template_uses_replace_filter(self):
+        """Foot template must strip # prefix from hex colors via replace filter."""
+        with open(self.FOOT_TEMPLATE) as f:
+            content = f.read()
+
+        self.assertIn(
+            '| replace: "#", ""',
+            content,
+            'foot template must use | replace: "#", "" filter to strip # from hex colors',
+        )
+
+    def test_matugen_config_has_foot_template(self):
+        """Matugen config.toml must include foot template entry."""
+        with open(self.MATUGEN_CONFIG) as f:
+            content = f.read()
+
+        self.assertIn(
+            "[templates.foot]",
+            content,
+            "matugen config must have [templates.foot] section",
+        )
+        self.assertIn(
+            "foot-colors.ini.template",
+            content,
+            "matugen config must reference foot-colors.ini.template",
+        )
+        self.assertIn(
+            "/tmp/foot-matugen-colors.ini",
+            content,
+            "matugen config must output to /tmp/foot-matugen-colors.ini",
+        )
+
+    def test_foot_config_includes_matugen_palette(self):
+        """Foot config must include generated matugen color file."""
+        with open(self.FOOT_CONFIG) as f:
+            content = f.read()
+
+        self.assertIn(
+            "include=/tmp/foot-matugen-colors.ini",
+            content,
+            "foot.ini must include /tmp/foot-matugen-colors.ini",
+        )
+
+    def test_reload_script_includes_foot_colors_file(self):
+        """Matugen reload script must flatten foot colors file."""
+        with open(self.RELOAD_SCRIPT) as f:
+            content = f.read()
+
+        self.assertIn(
+            "/tmp/foot-matugen-colors.ini",
+            content,
+            "matugen_reload.sh must include /tmp/foot-matugen-colors.ini in TEXT_FILES",
         )
 
     def test_gtk_templates_define_legacy_theme_variables(self):

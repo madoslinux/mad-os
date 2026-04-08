@@ -30,7 +30,7 @@ set $up k
 set $right l
 
 # Applications
-set $term kitty
+set $term foot
 set $menu wofi --show drun
 
 # Color Scheme - Nord-inspired Professional
@@ -185,15 +185,21 @@ bindsym $mod+r mode "resize"
 
 ### Utilities
 
-# Audio (PipeWire)
-bindsym --locked XF86AudioMute exec wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-bindsym --locked XF86AudioLowerVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-bindsym --locked XF86AudioRaiseVolume exec wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ -l 1.0
-bindsym --locked XF86AudioMicMute exec wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+# SwayOSD — on-screen display for volume/brightness/caps-lock
+exec systemctl --user enable --now swayosd-server
 
-# Brightness
-bindsym --locked XF86MonBrightnessDown exec brightnessctl set 5%-
-bindsym --locked XF86MonBrightnessUp exec brightnessctl set 5%+
+# Audio (PipeWire via SwayOSD)
+bindsym --locked XF86AudioMute exec swayosd-client --output-volume mute-toggle
+bindsym --locked XF86AudioLowerVolume exec swayosd-client --output-volume lower
+bindsym --locked XF86AudioRaiseVolume exec swayosd-client --output-volume raise
+bindsym --locked XF86AudioMicMute exec swayosd-client --input-volume mute-toggle
+
+# Brightness via SwayOSD
+bindsym --locked XF86MonBrightnessDown exec swayosd-client --brightness lower
+bindsym --locked XF86MonBrightnessUp exec swayosd-client --brightness raise
+
+# Caps Lock indicator
+bindsym --locked Caps_Lock exec swayosd-client --caps-lock
 
 # On-screen keyboard toggle
 bindsym $mod+F12 exec mados-squeekboard toggle

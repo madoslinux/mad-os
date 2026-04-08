@@ -179,6 +179,8 @@ configure_wheel_group() {
     if id 1000 &>/dev/null; then
         groupadd -g 10 wheel 2>/dev/null || true
         usermod -aG wheel 1000 2>/dev/null || true
+        usermod -aG input 1000 2>/dev/null || true
+        usermod -aG video 1000 2>/dev/null || true
         
         for bin in ollama opencode; do
             for path in /usr/bin/$bin /usr/local/bin/$bin; do

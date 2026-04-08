@@ -443,7 +443,16 @@ class TestSwayBindsymSyntax(unittest.TestCase):
         }
         bind_lines = self._get_bindsym_lines()
         for value, line in bind_lines:
-            flags = re.findall(r"(--\S+)", value)
+            # Only check flags that appear before the key combo
+            # Sway flags come before the key name, e.g. "bindsym --locked XF86Audio..."
+            # After the key combo comes "exec ..." which may contain --args for the command
+            parts = value.split()
+            flags = []
+            for part in parts:
+                if part.startswith("--"):
+                    flags.append(part)
+                else:
+                    break
             for flag in flags:
                 with self.subTest(line=line[:80], flag=flag):
                     self.assertIn(
@@ -973,6 +982,95 @@ class TestSwaySessionScript(unittest.TestCase):
             "Must set MOZ_ENABLE_WAYLAND=1 for Firefox Wayland support",
         )
 
+    def test_references_sway_x11_fallback(self):
+        """sway-session must reference sway-x11-session fallback path."""
+        self.assertIn(
+            "sway-x11-session",
+            self.content,
+            "sway-session must reference sway-x11-session fallback",
+        )
+
+
+class TestSwayX11SessionScript(unittest.TestCase):
+    """Verify sway-x11-session fallback script is correct."""
+
+    def setUp(self):
+        self.script_path = os.path.join(BIN_DIR, "sway-x11-session")
+        if os.path.isfile(self.script_path):
+            with open(self.script_path) as f:
+                self.content = f.read()
+
+    def test_script_exists(self):
+        """sway-x11-session script must exist."""
+        self.assertTrue(os.path.isfile(self.script_path), "sway-x11-session missing")
+
+    def test_has_shebang(self):
+        """sway-x11-session must have a bash shebang."""
+        self.assertTrue(
+            self.content.startswith("#!/bin/bash"),
+            "Must start with #!/bin/bash",
+        )
+
+    def test_uses_x11_backend(self):
+        """sway-x11-session must force wlroots x11 backend."""
+        self.assertIn(
+            "WLR_BACKENDS=x11",
+            self.content,
+            "Must set WLR_BACKENDS=x11",
+        )
+
+    def test_uses_xinit_and_xorg(self):
+        """sway-x11-session must launch xinit/Xorg."""
+        self.assertIn("xinit", self.content, "Must use xinit for nested X11 launch")
+        self.assertIn("Xorg", self.content, "Must use Xorg for nested X11 launch")
+
+    def test_has_xorg_driver_fallbacks(self):
+        """sway-x11-session must try vesa and fbdev drivers."""
+        self.assertIn("vesa", self.content, "Must try Xorg vesa fallback")
+        self.assertIn("fbdev", self.content, "Must try Xorg fbdev fallback")
+        self.assertIn("dummy", self.content, "Must try Xorg dummy fallback")
+
+    def test_sets_sway_output_mode_from_x11_root(self):
+        """sway-x11-session must derive and inject output mode from X11 root geometry."""
+        self.assertIn("xrandr --current", self.content, "Must query X11 root geometry via xrandr")
+        self.assertIn("output * mode", self.content, "Must inject output mode for Sway fallback")
+        self.assertIn("sway -c", self.content, "Must launch sway with generated fallback config")
+
+
+class TestI3FallbackSessionScript(unittest.TestCase):
+    """Verify mados-i3-session no-DRM fallback script is correct."""
+
+    def setUp(self):
+        self.script_path = os.path.join(BIN_DIR, "mados-i3-session")
+        if os.path.isfile(self.script_path):
+            with open(self.script_path) as f:
+                self.content = f.read()
+
+    def test_script_exists(self):
+        """mados-i3-session script must exist."""
+        self.assertTrue(os.path.isfile(self.script_path), "mados-i3-session missing")
+
+    def test_uses_startx_and_xorg(self):
+        """mados-i3-session must launch startx/Xorg."""
+        self.assertIn("startx", self.content, "Must use startx in i3 fallback")
+        self.assertIn("Xorg", self.content, "Must use Xorg in i3 fallback")
+
+    def test_execs_i3(self):
+        """mados-i3-session must launch i3 session."""
+        self.assertIn("exec i3", self.content, "Must execute i3 in fallback session")
+
+    def test_has_xorg_driver_fallbacks(self):
+        """mados-i3-session must try vesa/fbdev/dummy drivers."""
+        self.assertIn("vesa", self.content, "Must try vesa in i3 fallback")
+        self.assertIn("fbdev", self.content, "Must try fbdev in i3 fallback")
+        self.assertIn("dummy", self.content, "Must try dummy in i3 fallback")
+
+    def test_disables_glx_and_dri_extensions(self):
+        """mados-i3-session must disable GLX/DRI to avoid vendor crashes."""
+        self.assertIn("-extension GLX", self.content, "Must disable GLX extension")
+        self.assertIn("-extension DRI2", self.content, "Must disable DRI2 extension")
+        self.assertIn("-extension DRI3", self.content, "Must disable DRI3 extension")
+
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Feature parity with Hyprland compositor
@@ -1269,46 +1367,77 @@ class TestSwayConfigFeatureParity(unittest.TestCase):
 
     # --- Both compositors use same tools ---
 
-    def test_both_use_wpctl_for_audio(self):
-        """Both compositors must use wpctl (PipeWire) for audio control."""
+    def test_both_use_swayosd_for_audio(self):
+        """Both compositors must use swayosd-client for audio control."""
         self.assertIn(
-            "wpctl",
+            "swayosd-client",
             self.sway,
-            "Sway config must use wpctl for PipeWire audio control",
+            "Sway config must use swayosd-client for audio control",
         )
         if self.hyprland:
             self.assertIn(
-                "wpctl",
+                "swayosd-client",
                 self.hyprland,
-                "Hyprland config must use wpctl for PipeWire audio control",
+                "Hyprland config must use swayosd-client for audio control",
             )
 
-    def test_both_use_brightnessctl(self):
-        """Both compositors must use brightnessctl for brightness control."""
+    def test_both_use_swayosd_for_brightness(self):
+        """Both compositors must use swayosd-client for brightness control."""
         self.assertIn(
-            "brightnessctl",
+            "swayosd-client --brightness",
             self.sway,
-            "Sway config must use brightnessctl for brightness",
+            "Sway config must use swayosd-client --brightness for brightness",
         )
         if self.hyprland:
             self.assertIn(
-                "brightnessctl",
+                "swayosd-client --brightness",
                 self.hyprland,
-                "Hyprland config must use brightnessctl for brightness",
+                "Hyprland config must use swayosd-client --brightness for brightness",
             )
 
-    def test_both_use_kitty_terminal(self):
-        """Both compositors must use kitty as the terminal emulator."""
+    def test_both_use_swayosd_server(self):
+        """Both compositors must start swayosd-server."""
         self.assertIn(
-            "kitty",
+            "swayosd-server",
             self.sway,
-            "Sway config must define kitty as terminal",
+            "Sway config must start swayosd-server",
         )
         if self.hyprland:
             self.assertIn(
-                "kitty",
+                "swayosd-server",
                 self.hyprland,
-                "Hyprland config must define kitty as terminal",
+                "Hyprland config must start swayosd-server",
+            )
+
+    def test_both_have_caps_lock_osd(self):
+        """Both compositors must have caps lock OSD binding."""
+        self.assertIn(
+            "swayosd-client --caps-lock",
+            self.sway,
+            "Sway config must bind Caps_Lock to swayosd-client --caps-lock",
+        )
+        if self.hyprland:
+            self.assertIn(
+                "swayosd-client --caps-lock",
+                self.hyprland,
+                "Hyprland config must bind Caps_Lock to swayosd-client --caps-lock",
+            )
+
+    def test_sway_uses_foot_terminal(self):
+        """Sway config must use foot as the terminal emulator."""
+        self.assertIn(
+            "foot",
+            self.sway,
+            "Sway config must define foot as terminal",
+        )
+
+    def test_hyprland_uses_foot_terminal(self):
+        """Hyprland config keeps foot as the terminal emulator."""
+        if self.hyprland:
+            self.assertIn(
+                "foot",
+                self.hyprland,
+                "Hyprland config must define foot as terminal",
             )
 
     def test_both_use_wofi_launcher(self):

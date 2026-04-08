@@ -101,12 +101,7 @@ QtObject {
         "App Launcher": {
             "es": "App Launcher", "en": "App Launcher", "fr": "App Launcher", "de": "App Launcher", "it": "App Launcher", "pt": "App Launcher", "ru": "App Launcher", "ja": "App Launcher", "zh": "App Launcher"
         },
-        "Author: ilyamiro": {
-            "es": "Author: ilyamiro", "en": "Author: ilyamiro", "fr": "Author: ilyamiro", "de": "Author: ilyamiro", "it": "Author: ilyamiro", "pt": "Author: ilyamiro", "ru": "Author: ilyamiro", "ja": "Author: ilyamiro", "zh": "Author: ilyamiro"
-        },
-        "Author: liixini": {
-            "es": "Author: liixini", "en": "Author: liixini", "fr": "Author: liixini", "de": "Author: liixini", "it": "Author: liixini", "pt": "Author: liixini", "ru": "Author: liixini", "ja": "Author: liixini", "zh": "Author: liixini"
-        },
+
         "Caps Lock OSD": {
             "es": "Caps Lock OSD", "en": "Caps Lock OSD", "fr": "Caps Lock OSD", "de": "Caps Lock OSD", "it": "Caps Lock OSD", "pt": "Caps Lock OSD", "ru": "Caps Lock OSD", "ja": "Caps Lock OSD", "zh": "Caps Lock OSD"
         },

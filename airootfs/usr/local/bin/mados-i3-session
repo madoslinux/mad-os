@@ -1,0 +1,109 @@
+#!/bin/bash
+set -euo pipefail
+
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=i3
+export DESKTOP_SESSION=i3
+export GTK_THEME="${GTK_THEME:-Adwaita:dark}"
+export __GLX_VENDOR_LIBRARY_NAME=mesa
+export __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json
+
+if ! command -v startx >/dev/null 2>&1; then
+    logger -p user.err -t mados-i3 "startx not found; cannot run i3 fallback"
+    echo "startx not found; cannot start i3 fallback"
+    exit 1
+fi
+
+if ! command -v i3 >/dev/null 2>&1; then
+    logger -p user.err -t mados-i3 "i3 not found; cannot run i3 fallback"
+    echo "i3 not found; cannot start i3 fallback"
+    exit 1
+fi
+
+if ! command -v Xorg >/dev/null 2>&1; then
+    logger -p user.err -t mados-i3 "Xorg not found; cannot run i3 fallback"
+    echo "Xorg not found; cannot start i3 fallback"
+    exit 1
+fi
+
+TMP_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+XINITRC="$(mktemp "${TMP_DIR}/mados-i3-xinitrc.XXXXXX")"
+XORG_CONF_DIR="$(mktemp -d "${TMP_DIR}/mados-i3-xorg.XXXXXX")"
+XORG_CONF="${XORG_CONF_DIR}/xorg.conf"
+
+cleanup() {
+    rm -f "$XINITRC"
+    rm -rf "$XORG_CONF_DIR"
+}
+trap cleanup EXIT
+
+cat > "$XINITRC" << 'EOF'
+#!/bin/sh
+export XDG_SESSION_TYPE=x11
+export XDG_CURRENT_DESKTOP=i3
+export DESKTOP_SESSION=i3
+export DISPLAY=:0
+exec i3
+EOF
+chmod +x "$XINITRC"
+
+write_xorg_conf() {
+    local driver="$1"
+    cat > "$XORG_CONF" << EOF
+Section "Monitor"
+    Identifier "FallbackMonitor"
+EndSection
+
+Section "Device"
+    Identifier "FallbackGPU"
+    Driver "${driver}"
+EndSection
+
+Section "Screen"
+    Identifier "FallbackScreen"
+    Device "FallbackGPU"
+    Monitor "FallbackMonitor"
+EndSection
+
+Section "ServerLayout"
+    Identifier "FallbackLayout"
+    Screen "FallbackScreen"
+EndSection
+EOF
+}
+
+run_with_driver() {
+    local driver="$1"
+    local module_path="/usr/lib/xorg/modules/drivers/${driver}_drv.so"
+
+    if [ ! -f "$module_path" ]; then
+        logger -p user.warning -t mados-i3 "Skipping i3 X11 driver ${driver}: module not found (${module_path})"
+        return 1
+    fi
+
+    write_xorg_conf "$driver"
+    logger -p user.warning -t mados-i3 "Trying i3 fallback with Xorg driver: ${driver}"
+    (
+        cd "$XORG_CONF_DIR"
+        startx "$XINITRC" -- /usr/bin/Xorg :0 -nolisten tcp -config xorg.conf -extension GLX -extension DRI2 -extension DRI3
+    )
+}
+
+logger -p user.warning -t mados-i3 "No DRM card found, launching i3 fallback over X11"
+echo "No DRM card found, launching i3 fallback over X11"
+
+if run_with_driver "vesa"; then
+    exit 0
+fi
+
+if run_with_driver "fbdev"; then
+    exit 0
+fi
+
+if run_with_driver "dummy"; then
+    exit 0
+fi
+
+logger -p user.err -t mados-i3 "i3 X11 fallback failed (vesa/fbdev/dummy)"
+echo "i3 X11 fallback failed (vesa/fbdev/dummy). Check /var/log/Xorg.0.log"
+exit 1
