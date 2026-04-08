@@ -1,6 +1,6 @@
 # madOS
 
-AI-orchestrated Arch Linux distribution built with `archiso`. Targets low-RAM systems (1.9GB) with Intel Atom processors, featuring OpenCode AI assistant, Sway/Hyprland desktop environments, and a GTK graphical installer.
+Arch Linux distribution built with `archiso`. Targets low-RAM systems (1.9GB) with Intel Atom processors, featuring OpenCode AI assistant, Sway/Hyprland desktop environments, and a GTK graphical installer.
 
 ## Features
 
