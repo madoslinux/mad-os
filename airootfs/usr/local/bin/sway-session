@@ -116,6 +116,52 @@ if ! wait_for_drm_card; then
     exit 1
 fi
 
+get_edid_native_resolution() {
+    local resolution=""
+    local edid_file=""
+    local display=""
+
+    for conn in /sys/class/drm/card*-*; do
+        [ -d "$conn" ] || continue
+        status=$(cat "$conn/status" 2>/dev/null || echo "unknown")
+        if [ "$status" = "connected" ]; then
+            display=$(basename "$conn")
+            edid_file="$conn/edid"
+            break
+        fi
+    done
+
+    [ -z "$display" ] && return 1
+    [ ! -s "$edid_file" ] && return 1
+
+    if command -v edid-decode >/dev/null 2>&1; then
+        local modeline
+        modeline=$(edid-decode "$edid_file" 2>/dev/null | grep -m1 "Preferred mode" || true)
+        if [ -n "$modeline" ]; then
+            resolution=$(echo "$modeline" | grep -oP '\d+x\d+' | head -1 || true)
+        fi
+    fi
+
+    if [ -z "$resolution" ] && [ -s "$edid_file" ]; then
+        local hex_edid
+        hex_edid=$(xxd -p "$edid_file" 2>/dev/null | tr -d '\n' || true)
+        if [ -n "$hex_edid" ]; then
+            local width height
+            width=$(printf '%d' "0x${hex_edid:168:4}" 2>/dev/null || true)
+            height=$(printf '%d' "0x${hex_edid:172:4}" 2>/dev/null || true)
+            if [ -n "$width" ] && [ -n "$height" ] && [ "$width" -gt 0 ] && [ "$height" -gt 0 ]; then
+                resolution="${width}x${height}"
+            fi
+        fi
+    fi
+
+    if [ -n "$resolution" ]; then
+        echo "$resolution"
+        return 0
+    fi
+    return 1
+}
+
 if [ "${WLR_RENDERER:-}" = "pixman" ]; then
     logger -p user.info -t mados-sway "Launching sway compositor (software rendering)"
     exec sway
@@ -125,8 +171,25 @@ fi
 # failed during renderer initialisation — retry with pixman.
 logger -p user.info -t mados-sway "Launching sway compositor"
 START_TIME=$(date +%s)
-sway
-EXIT_CODE=$?
+
+# Check if we need to generate a config with native resolution from EDID
+NATIVE_RES=$(get_edid_native_resolution || true)
+if [ -n "$NATIVE_RES" ] && [ -f "$HOME/.config/sway/config" ]; then
+    SWAY_TMP_CONFIG="${XDG_RUNTIME_DIR:-/tmp}/mados-sway-wayland-config.$$"
+    cp "$HOME/.config/sway/config" "$SWAY_TMP_CONFIG"
+    {
+        printf "\n# mados wayland dynamic output mode (EDID native)\n"
+        printf "output * mode %s\n" "$NATIVE_RES"
+        printf "output * pos 0 0\n"
+        printf "output * scale 1\n"
+    } >> "$SWAY_TMP_CONFIG"
+    logger -p user.info -t mados-sway "Wayland: using EDID native resolution ${NATIVE_RES}"
+    sway -c "$SWAY_TMP_CONFIG"
+    EXIT_CODE=$?
+else
+    sway
+    EXIT_CODE=$?
+fi
 END_TIME=$(date +%s)
 ELAPSED=$((END_TIME - START_TIME))
 

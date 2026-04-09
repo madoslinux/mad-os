@@ -184,7 +184,7 @@ configure_wheel_group() {
         usermod -aG input 1000 2>/dev/null || true
         usermod -aG video 1000 2>/dev/null || true
         
-        for bin in ollama opencode; do
+        for bin in ollama opencode openclaw forge; do
             for path in /usr/bin/$bin /usr/local/bin/$bin; do
                 if [[ -f "$path" ]]; then
                     chown root:wheel "$path"

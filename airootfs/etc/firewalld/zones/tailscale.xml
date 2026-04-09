@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<zone>
+  <short>Tailscale</short>
+  <description>For Tailscale VPN interface. Allows all traffic from VPN peers.</description>
+  <interface name="tailscale0"/>
+  <masquerade/>
+</zone>

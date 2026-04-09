@@ -1,9 +1,0 @@
-/* Allow mados user to run pkexec without password in Wayland */
-polkit.addRule(function(action, subject) {
-    if (subject.user === "mados") {
-        if (action.id === "org.archlinux.pkexec.gufw" ||
-            action.id === "com.ubuntu.pkexec.gufw") {
-            return polkit.Result.YES;
-        }
-    }
-});

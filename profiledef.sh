@@ -30,6 +30,7 @@ file_permissions=(
   ["/root/customize_airootfs.d/03-apps.sh"]="0:0:755"
   ["/root/customize_airootfs.d/06-network.sh"]="0:0:755"
   ["/root/customize_airootfs.d/07-pacman-runtime.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/08-firefox-defaults.sh"]="0:0:755"
   ["/root/customize_airootfs.d/05-shell-theme.sh"]="0:0:755"
   ["/root/customize_airootfs.d/04-cleanup.sh"]="0:0:755"
   ["/root/.automated_script.sh"]="0:0:755"
@@ -119,19 +120,19 @@ file_permissions=(
   ["/etc/mados/"]="0:0:755"
   ["/usr/share/icons/hicolor/48x48/apps/mados-wallpaper.png"]="0:0:644"
 
-  # Sudoers configuration
-  ["/etc/sudoers"]="0:0:440"
-  ["/etc/sudoers.d/gufw"]="0:0:440"
-
-  # UFW Firewall
-  ["/usr/local/bin/gufw"]="0:0:755"
-  ["/usr/local/bin/gufw-pkexec"]="0:0:755"
-  ["/etc/polkit-1/rules.d/49-nopasswd_gufw.rules"]="0:0:644"
-  ["/usr/share/applications/gufw-sudo.desktop"]="0:0:644"
-  ["/usr/share/polkit-1/actions/org.archlinux.pkexec.gufw.policy"]="0:0:644"
-
   # Security hardening
   ["/etc/sysctl.d/99-security.conf"]="0:0:644"
+
+  # nftables Firewall
+  ["/etc/nftables.conf"]="0:0:644"
+  ["/etc/systemd/system/nftables.service"]="0:0:644"
+
+  # Firewall
+  ["/etc/firewalld/"]="0:0:755"
+  ["/etc/firewalld/zones/"]="0:0:755"
+  ["/etc/firewalld/services/"]="0:0:755"
+  ["/etc/firewalld/firewalld.conf"]="0:0:644"
+  ["/etc/systemd/system/firewalld.service"]="0:0:644"
 
   # USBGuard
   ["/etc/usbguard/usbguard-daemon.conf"]="0:0:644"
@@ -164,6 +165,17 @@ file_permissions=(
   ["/etc/systemd/system/mados-pacman-sandbox-compat.service"]="0:0:644"
   ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
+
+  ["/usr/local/bin/firefox"]="0:0:755"
+  ["/usr/share/applications/firefox.desktop"]="0:0:644"
+
+  # Audio fix (Dummy Output workaround)
+  ["/root/customize_airootfs.d/09-audio-fix.sh"]="0:0:755"
+  ["/usr/local/bin/mados-audio-health-check"]="0:0:755"
+  ["/etc/wireplumber/wireplumber.conf.d/50-audio-profile.conf"]="0:0:644"
+  ["/etc/modprobe.d/mados-audio.conf"]="0:0:644"
+  ["/etc/modules-load.d/mados-audio.conf"]="0:0:644"
+  ["/etc/xdg/autostart/mados-audio-health.desktop"]="0:0:644"
 
   # Btrfs Snapper
   ["/usr/local/bin/mados-snapper"]="0:0:755"

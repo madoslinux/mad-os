@@ -87,7 +87,7 @@ enable_services() {
         "mados-snapper.timer"
         "bluetooth.service"
         "NetworkManager.service"
-        "ufw.service"
+        "firewalld.service"
         "fail2ban.service"
         "usbguard.service"
     )

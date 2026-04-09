@@ -15,11 +15,14 @@ Item {
     property var rawApps: []
     property int selectedIndex: -1
     property int scrollAccum: 0
-    property bool loading: false
+    property bool loading: true
+    property bool initialLoadComplete: false
     property var freqData: ({})
     property var configData: defaultConfig()
 
     readonly property string launcherScriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/list_apps.py"
+    readonly property string launcherIpcScriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/launcher_ipc.py"
+    readonly property string launcherDaemonScriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/launcher_cache_daemon.py"
     readonly property string frequencyScriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/record_frequency.py"
     readonly property string stateScriptPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/update_state.py"
     readonly property string launcherConfigPath: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/launcher/config.json"
@@ -27,6 +30,11 @@ Item {
     readonly property string launcherCacheDir: Quickshell.env("HOME") + "/.cache/quickshell/launcher"
     readonly property string frequencyFilePath: launcherCacheDir + "/freq.json"
     readonly property string stateFilePath: launcherCacheDir + "/state.json"
+    property bool daemonAvailable: false
+    property bool daemonPingResult: false
+    property bool daemonGetSucceeded: false
+    property bool daemonStartRequested: false
+    property int daemonPingAttempts: 0
     readonly property int compactCardWidth: Math.max(120, Math.round(toNumber(cfg("ui", "compactCardWidth", 176), 176)))
     readonly property int expandedCardWidth: Math.max(220, Math.round(toNumber(cfg("ui", "expandedCardWidth", 360), 360)))
     readonly property bool showBadges: toBool(cfg("ui", "showBadges", true), true)
@@ -477,11 +485,35 @@ Item {
     }
 
     function refreshApps() {
-        if (loadAppsProcess.running)
+        if (loadAppsProcess.running || daemonGetAppsProcess.running)
             return;
 
         loading = true;
-        loadAppsProcess.running = true;
+
+        if (daemonAvailable) {
+            daemonGetAppsProcess.running = true;
+        } else {
+            loadAppsProcess.running = true;
+        }
+    }
+
+    function ensureDaemonRunning() {
+        if (!daemonCheckProcess.running)
+            daemonCheckProcess.running = true;
+    }
+
+    function startDaemon() {
+        if (daemonStartRequested)
+            return;
+
+        daemonStartRequested = true;
+        daemonPingAttempts = 0;
+        Quickshell.execDetached([
+            "bash",
+            "-lc",
+            "mkdir -p " + shellQuote(launcherCacheDir) + " && nohup python3 -u " + shellQuote(launcherDaemonScriptPath) + " >/dev/null 2>&1 &"
+        ]);
+        daemonPingRetryTimer.start();
     }
 
     function applyFilter() {
@@ -656,7 +688,7 @@ Item {
         loadHiddenConfig();
         loadFrequencyData();
         loadStateData();
-        refreshApps();
+        ensureDaemonRunning();
         focusTimer.start();
     }
 
@@ -702,6 +734,29 @@ Item {
         id: focusTimer
         interval: 60
         onTriggered: searchInput.forceActiveFocus()
+    }
+
+    Timer {
+        id: daemonPingRetryTimer
+        interval: 250
+        repeat: true
+        running: false
+
+        onTriggered: {
+            if (root.daemonAvailable) {
+                stop();
+                return;
+            }
+
+            if (daemonCheckProcess.running)
+                return;
+
+            root.daemonPingAttempts += 1;
+            daemonCheckProcess.running = true;
+
+            if (root.daemonPingAttempts >= 12)
+                stop();
+        }
     }
 
     Process {
@@ -796,12 +851,90 @@ Item {
                     parsed = [];
 
                 root.rawApps = parsed;
+                root.initialLoadComplete = true;
                 root.loading = false;
                 root.applyFilter();
             }
         }
 
         onExited: root.loading = false
+    }
+
+    Process {
+        id: daemonCheckProcess
+        command: ["python3", root.launcherIpcScriptPath, "ping"]
+        stdout: StdioCollector {
+            id: daemonCheckCollector
+            onStreamFinished: {
+                root.daemonPingResult = this.text.trim() === "OK";
+            }
+        }
+
+        onStarted: {
+            root.daemonPingResult = false;
+        }
+
+        onExited: {
+            if (root.daemonPingResult) {
+                root.daemonAvailable = true;
+                daemonPingRetryTimer.stop();
+                root.refreshApps();
+            } else {
+                root.daemonAvailable = false;
+                if (!root.daemonStartRequested)
+                    root.startDaemon();
+                else if (!daemonPingRetryTimer.running && root.rawApps.length === 0)
+                    root.refreshApps();
+            }
+        }
+    }
+
+    Process {
+        id: daemonGetAppsProcess
+        command: ["python3", root.launcherIpcScriptPath, "get_apps"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let parsed = null;
+                try {
+                    parsed = JSON.parse(this.text.trim());
+                } catch (e) {
+                    parsed = null;
+                }
+
+                if (!Array.isArray(parsed)) {
+                    root.daemonGetSucceeded = false;
+                    return;
+                }
+
+                if (parsed.length <= 0) {
+                    root.daemonGetSucceeded = false;
+                    return;
+                }
+
+                root.rawApps = parsed;
+                root.daemonGetSucceeded = true;
+                root.daemonAvailable = true;
+                root.initialLoadComplete = true;
+                root.loading = false;
+                root.applyFilter();
+            }
+        }
+
+        onStarted: {
+            root.daemonGetSucceeded = false;
+        }
+
+        onExited: {
+            root.loading = false;
+            if (!root.daemonGetSucceeded) {
+                root.daemonAvailable = false;
+                if (!loadAppsProcess.running) {
+                    root.loading = true;
+                    loadAppsProcess.running = true;
+                }
+            }
+        }
     }
 
     ListModel {
@@ -824,7 +957,7 @@ Item {
             Text {
                 text: filteredModel.count + " " + I18n.s("apps")
                 font.family: "Michroma"
-                font.pixelSize: 10
+                font.pixelSize: 12
                 font.weight: Font.Bold
                 color: theme.subtext0
             }
@@ -836,7 +969,7 @@ Item {
             Text {
                 text: loading ? I18n.s("loading...") : I18n.s("Tab/arrows to switch, Enter to launch")
                 font.family: "Michroma"
-                font.pixelSize: 10
+                font.pixelSize: 12
                 font.weight: Font.Bold
                 color: theme.subtext1
             }
@@ -882,14 +1015,14 @@ Item {
                             Text {
                                 text: modelData.icon
                                 font.family: "Iosevka Nerd Font"
-                                font.pixelSize: 13
+                                font.pixelSize: 15
                                 color: active ? theme.base : theme.text
                             }
 
                             Text {
                                 text: modelData.label
                                 font.family: "Michroma"
-                                font.pixelSize: 8
+                                font.pixelSize: 10
                                 font.weight: Font.Bold
                                 color: active ? theme.base : theme.text
                                 elide: Text.ElideRight
@@ -923,7 +1056,7 @@ Item {
                     Layout.fillWidth: true
                     text: root.searchText
                     font.family: "Michroma"
-                    font.pixelSize: 11
+                    font.pixelSize: 13
                     color: theme.text
                     clip: true
                     selectByMouse: true
@@ -979,7 +1112,7 @@ Item {
                     visible: searchInput.text === ""
                     text: I18n.s("search apps...")
                     font.family: "Michroma"
-                    font.pixelSize: 10
+                    font.pixelSize: 12
                     color: Qt.rgba(theme.subtext1.r, theme.subtext1.g, theme.subtext1.b, 0.7)
                 }
             }
@@ -1163,12 +1296,12 @@ Item {
                             anchors.right: parent.right
                             anchors.topMargin: 9
                             anchors.rightMargin: 8
-                            text: model.favorite ? "★" : "☆"
+                            text: "★"
                             font.family: "Michroma"
                             font.pixelSize: 24
                             font.weight: Font.Bold
-                            color: model.favorite ? theme.yellow : theme.subtext1
-                            visible: card.showStarControl
+                            color: theme.yellow
+                            visible: model.favorite
                         }
 
                     }
@@ -1186,7 +1319,7 @@ Item {
                             Layout.fillWidth: true
                             text: (model.name || "App").toUpperCase()
                             font.family: "Michroma"
-                            font.pixelSize: 11
+                            font.pixelSize: 13
                             font.weight: Font.Black
                             color: card.current ? theme.blue : theme.text
                             elide: Text.ElideRight
@@ -1196,7 +1329,7 @@ Item {
                             Layout.fillWidth: true
                             text: model.displayCategory || "App"
                             font.family: "Michroma"
-                            font.pixelSize: 9
+                            font.pixelSize: 11
                             color: theme.subtext0
                             elide: Text.ElideRight
                         }
@@ -1206,7 +1339,7 @@ Item {
                             visible: (model.displayTagsText || "") !== ""
                             text: model.displayTagsText || ""
                             font.family: "Michroma"
-                            font.pixelSize: 8
+                            font.pixelSize: 10
                             color: theme.overlay1
                             elide: Text.ElideRight
                         }
@@ -1227,7 +1360,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: I18n.s("STEAM")
                                     font.family: "Michroma"
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     font.weight: Font.Bold
                                     color: theme.base
                                 }
@@ -1245,7 +1378,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: I18n.s("TERMINAL")
                                     font.family: "Michroma"
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     font.weight: Font.Bold
                                     color: theme.base
                                 }
@@ -1267,7 +1400,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: I18n.s("HOT") + " " + Number(model.frequencyCount || 0)
                                     font.family: "Michroma"
-                                    font.pixelSize: 8
+                                    font.pixelSize: 10
                                     font.weight: Font.Bold
                                     color: theme.base
                                 }
@@ -1342,7 +1475,7 @@ Item {
                             anchors.centerIn: parent
                             text: root.contextFavorite ? I18n.s("Remove favorite") : I18n.s("Add favorite")
                             font.family: "Michroma"
-                            font.pixelSize: 9
+                            font.pixelSize: 11
                             color: theme.text
                         }
 
@@ -1370,7 +1503,7 @@ Item {
                             anchors.centerIn: parent
                             text: root.contextHidden ? I18n.s("Unhide app") : I18n.s("Hide app")
                             font.family: "Michroma"
-                            font.pixelSize: 9
+                            font.pixelSize: 11
                             color: root.contextHidden ? theme.green : theme.peach
                         }
 
@@ -1407,7 +1540,7 @@ Item {
 
             Text {
                 anchors.centerIn: parent
-                visible: !root.loading && filteredModel.count === 0
+                visible: root.initialLoadComplete && !root.loading && filteredModel.count === 0
                 text: root.searchText === "" ? I18n.s("NO APPS FOUND") : I18n.s("NO RESULTS")
                 font.family: "Michroma"
                 font.pixelSize: 18

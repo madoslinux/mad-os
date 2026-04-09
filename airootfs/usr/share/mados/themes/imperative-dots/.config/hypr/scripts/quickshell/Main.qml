@@ -25,10 +25,12 @@ FloatingWindow {
     property int activeMy: 0
     property int activeMw: 1920
     property int activeMh: 1080
+    property string ipcFilePath: Quickshell.env("QS_IPC_FILE") || "/tmp/qs_widget_state"
+    property string activeWidgetFilePath: Quickshell.env("QS_ACTIVE_WIDGET_FILE") || "/tmp/qs_active_widget"
 
     property string currentActive: "hidden" 
     onCurrentActiveChanged: {
-        Quickshell.execDetached(["bash", "-c", "echo '" + currentActive + "' > /tmp/qs_active_widget"]);
+        Quickshell.execDetached(["bash", "-c", "printf '%s\n' '" + currentActive + "' > '" + activeWidgetFilePath + "'"]);
     }
 
     property bool isVisible: false
@@ -278,21 +280,27 @@ FloatingWindow {
     }
 
     Timer {
-        interval: 50; running: true; repeat: true
+        interval: 150; running: true; repeat: true
         onTriggered: { if (!ipcPoller.running) ipcPoller.running = true; }
     }
 
     Process {
         id: ipcPoller
-        command: ["bash", "-c", "if [ -f /tmp/qs_widget_state ]; then cat /tmp/qs_widget_state; rm /tmp/qs_widget_state; fi"]
+        command: ["bash", "-c", "IPC_FILE='" + ipcFilePath + "'; if [ -f \"$IPC_FILE\" ]; then cat \"$IPC_FILE\"; rm -f \"$IPC_FILE\"; fi"]
         stdout: StdioCollector {
             onStreamFinished: {
                 let rawCmd = this.text.trim();
                 if (rawCmd === "") return;
+                rawCmd = rawCmd.split(/\r?\n/)[0].trim();
+                if (rawCmd === "") return;
+                if (/[\s\x00]/.test(rawCmd)) return;
 
                 let parts = rawCmd.split(":");
                 let cmd = parts[0];
                 let arg = parts.length > 1 ? parts[1] : "";
+
+                // Ignore workspace-only commands (1-9) from workspace clicks
+                if (/^[0-9]+$/.test(cmd)) return;
 
                 // Feed monitor dimensions dynamically into masterWindow
                 if (parts.length >= 6) {

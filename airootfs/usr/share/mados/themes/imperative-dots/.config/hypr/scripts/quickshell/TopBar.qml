@@ -111,7 +111,7 @@ PanelWindow {
         }
         workspacesModel.clear();
         for (let i = 1; i <= workspaceSlots; i++) {
-            workspacesModel.append({ "wsId": i.toString(), "wsState": "empty", "wsOccupied": false });
+            workspacesModel.append({ "wsId": i.toString(), "wsState": "empty" });
         }
     }
 
@@ -142,14 +142,14 @@ PanelWindow {
     // 1. The continuous background daemon
     Process {
         id: wsDaemon
-        command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/workspaces.sh > /tmp/qs_workspaces.json"]
+        command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/workspaces.sh"]
         running: true
     }
 
     // 2. The lightweight reader
     Process {
         id: wsReader
-        command: ["bash", "-c", "tail -n 1 /tmp/qs_workspaces.json 2>/dev/null"]
+        command: ["bash", "-c", "cat /tmp/qs_workspaces.json 2>/dev/null"]
         stdout: StdioCollector {
             onStreamFinished: {
                 let txt = this.text.trim();
@@ -165,33 +165,28 @@ PanelWindow {
                             for (let i = 0; i < newData.length; i++) {
                                 workspacesModel.append({
                                     "wsId": newData[i].id.toString(),
-                                    "wsState": newData[i].state,
-                                    "wsOccupied": !!newData[i].occupied
+                                    "wsState": newData[i].state
                                 });
                             }
                         } else {
                             for (let i = 0; i < newData.length; i++) {
-                                const nextOccupied = !!newData[i].occupied;
                                 if (workspacesModel.get(i).wsState !== newData[i].state) {
                                     workspacesModel.setProperty(i, "wsState", newData[i].state);
                                 }
                                 if (workspacesModel.get(i).wsId !== newData[i].id.toString()) {
                                     workspacesModel.setProperty(i, "wsId", newData[i].id.toString());
                                 }
-                                if (workspacesModel.get(i).wsOccupied !== nextOccupied) {
-                                    workspacesModel.setProperty(i, "wsOccupied", nextOccupied);
-                                }
                             }
                         }
-                    } catch(e) {}
+                    } catch(e) { console.warn("Workspace parse error:", e) }
                 }
             }
         }
     }
 
-    // 3. Ultra-fast 50ms loop.
+    // 3. Polling loop (1s interval)
     Timer { 
-        interval: 50 
+        interval: 1000 
         running: true 
         repeat: true 
         onTriggered: wsReader.running = true 
@@ -247,7 +242,7 @@ PanelWindow {
                 if (txt !== "") {
                     try {
                         let data = JSON.parse(txt);
-                        
+
                         // Targeted Updates
                         if (barWindow.wifiStatus !== data.wifi.status) barWindow.wifiStatus = data.wifi.status;
                         if (barWindow.wifiIcon !== data.wifi.icon) barWindow.wifiIcon = data.wifi.icon;
@@ -283,9 +278,15 @@ PanelWindow {
     Process {
         id: sysWaiter
         command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/sys_waiter.sh"]
-        stdout: StdioCollector {
-            onStreamFinished: sysPoller.running = true
-        }
+        onExited: sysPoller.running = true
+    }
+
+    Timer {
+        interval: 500
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: sysPoller.running = true
     }
 
     // Weather remains a slow poll since it fetches from web
@@ -500,14 +501,9 @@ PanelWindow {
                             id: wsPill
                             property bool isHovered: wsPillMouse.containsMouse
                             
-                            // Mapped dynamically from the ListModel (Qt version-safe)
-                            property string stateLabel: (typeof wsState !== "undefined") ? wsState : ((modelData && modelData.wsState) ? modelData.wsState : "empty")
-                            property string wsName: (typeof wsId !== "undefined") ? wsId : ((modelData && modelData.wsId) ? modelData.wsId : (index + 1).toString())
-                            property bool hasWindows: (typeof wsOccupied !== "undefined")
-                                                      ? Boolean(wsOccupied)
-                                                      : ((modelData && typeof modelData.wsOccupied !== "undefined")
-                                                         ? Boolean(modelData.wsOccupied)
-                                                         : stateLabel === "occupied")
+                            // Mapped dynamically from the ListModel
+                            property string stateLabel: model.wsState
+                            property string wsName: model.wsId
                             
                             property real targetWidth: 32
                             Layout.preferredWidth: targetWidth
@@ -522,10 +518,6 @@ PanelWindow {
                                         : (stateLabel === "occupied" 
                                             ? Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.9) 
                                             : "transparent"))
-                            border.width: stateLabel === "active" ? 0 : 1
-                            border.color: hasWindows
-                                        ? Qt.rgba(mocha.green.r, mocha.green.g, mocha.green.b, 0.6)
-                                        : Qt.rgba(mocha.overlay2.r, mocha.overlay2.g, mocha.overlay2.b, 0.35)
 
                             scale: isHovered && stateLabel !== "active" ? 1.08 : 1.0
                             Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
@@ -576,11 +568,11 @@ PanelWindow {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 anchors.bottom: parent.bottom
                                 anchors.bottomMargin: 3
-                                width: hasWindows ? 12 : 0
+                                width: stateLabel === "occupied" ? 12 : 0
                                 height: 3
                                 radius: 2
                                 color: stateLabel === "active" ? mocha.crust : mocha.green
-                                opacity: hasWindows ? 1 : 0
+                                opacity: stateLabel === "occupied" ? 1 : 0
                                 visible: opacity > 0
 
                                 Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
@@ -591,7 +583,7 @@ PanelWindow {
                                 id: wsPillMouse
                                 hoverEnabled: true
                                 anchors.fill: parent
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh " + wsName])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "hyprctl dispatch workspace " + wsName])
                             }
                         }
                     }

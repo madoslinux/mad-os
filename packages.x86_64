@@ -153,8 +153,14 @@ network-manager-applet
 pipewire
 pipewire-pulse
 pipewire-alsa
+pipewire-audio
+pipewire-jack
 wireplumber
 alsa-utils
+alsa-firmware
+alsa-ucm-conf
+alsa-topology-conf
+sof-firmware
 pavucontrol
 easyeffects
 flac
@@ -184,6 +190,7 @@ papirus-icon-theme
 ttf-jetbrains-mono-nerd
 ttf-iosevka-nerd
 ttf-carlito
+gnu-free-fonts
 
 # Información del sistema
 fastfetch
@@ -196,6 +203,7 @@ parted
 # Utilidades de red
 dhcpcd
 wpa_supplicant
+iwd
 
 # Sistema de archivos
 dosfstools
@@ -226,6 +234,15 @@ ollama
 # OpenCode AI Assistant (~30MB)
 opencode
 
+# AI tools dependencies
+# OpenClaw needs nodejs + npm
+nodejs
+npm
+# ForgeCode needs bat, fd, fzf
+bat
+fd
+fzf
+
 # madOS Native Apps Dependencies
 # madOS Photo Viewer - image viewing and video playback
 # GStreamer with gtksink support (from gst-plugin-gtk package)
@@ -247,8 +264,7 @@ libjxl
 poppler-glib
 
 # Firewall
-gufw
-ufw
+firewalld
 
 # Security
 usbguard

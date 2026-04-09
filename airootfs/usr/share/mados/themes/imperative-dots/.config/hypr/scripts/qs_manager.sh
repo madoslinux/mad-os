@@ -21,6 +21,20 @@ NETWORK_MODE_FILE="/tmp/qs_network_mode"
 PREV_FOCUS_FILE="/tmp/qs_prev_focus"
 SWITCHER_ACTIVE_FILE="/tmp/qs_switcher_active"
 
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+SESSION_ID="${HYPRLAND_INSTANCE_SIGNATURE:-$(id -u)}"
+QS_STATE_DIR="${RUNTIME_DIR}/mados-quickshell-${SESSION_ID}"
+mkdir -p "$QS_STATE_DIR"
+
+IPC_FILE="${QS_IPC_FILE:-${QS_STATE_DIR}/qs_widget_state}"
+ACTIVE_WIDGET_FILE="${QS_ACTIVE_WIDGET_FILE:-${QS_STATE_DIR}/qs_active_widget}"
+NETWORK_MODE_FILE="${QS_STATE_DIR}/qs_network_mode"
+PREV_FOCUS_FILE="${QS_STATE_DIR}/qs_prev_focus"
+SWITCHER_ACTIVE_FILE="${QS_STATE_DIR}/qs_switcher_active"
+
+export QS_IPC_FILE="$IPC_FILE"
+export QS_ACTIVE_WIDGET_FILE="$ACTIVE_WIDGET_FILE"
+
 ACTION="$1"
 TARGET="$2"
 SUBTARGET="$3"
@@ -31,18 +45,11 @@ SUBTARGET="$3"
 if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
     WORKSPACE_NUM="$ACTION"
     MOVE_OPT="$2"
-    
-    echo "close" > "$IPC_FILE"
-    
-    CMD="workspace $WORKSPACE_NUM"
-    [[ "$MOVE_OPT" == "move" ]] && CMD="movetoworkspace $WORKSPACE_NUM"
 
-    TARGET_ADDR=$(hyprctl clients -j | jq -r ".[] | select(.workspace.id == $WORKSPACE_NUM and .class != \"qs-master\") | .address" | head -n 1)
-
-    if [[ -n "$TARGET_ADDR" && "$TARGET_ADDR" != "null" ]]; then
-        hyprctl --batch "dispatch $CMD ; keyword cursor:no_warps true ; dispatch focuswindow address:$TARGET_ADDR ; keyword cursor:no_warps false"
+    if [[ "$MOVE_OPT" == "move" ]]; then
+        hyprctl dispatch movetoworkspace "$WORKSPACE_NUM"
     else
-        hyprctl --batch "dispatch $CMD ; keyword cursor:no_warps true ; dispatch focuswindow qs-master ; keyword cursor:no_warps false"
+        hyprctl dispatch workspace "$WORKSPACE_NUM"
     fi
 
     exit 0
@@ -250,7 +257,7 @@ if [[ "$ACTION" == "close" ]]; then
 fi
 
 if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
-    ACTIVE_WIDGET=$(cat /tmp/qs_active_widget 2>/dev/null)
+    ACTIVE_WIDGET=$(cat "$ACTIVE_WIDGET_FILE" 2>/dev/null)
     CURRENT_MODE=$(cat "$NETWORK_MODE_FILE" 2>/dev/null)
 
     # Dynamically fetch focused monitor geometry and adjust for Wayland layout scale

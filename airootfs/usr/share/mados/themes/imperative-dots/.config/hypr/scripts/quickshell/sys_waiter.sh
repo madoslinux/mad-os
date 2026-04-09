@@ -1,23 +1,35 @@
 #!/usr/bin/env bash
 
-# Kill any child listening jobs on exit so we don't spawn infinite zombies
-trap 'kill $(jobs -p) 2>/dev/null' EXIT
+# Enable monitor mode so background jobs get placed in their own process groups.
+# This allows us to cleanly kill the subshells AND all of their children (pactl, nmcli, grep).
+set -m
 
-# Wrap each listener in a subshell that sleeps infinitely if the command fails.
-# This prevents `wait -n` from triggering instantly on a missing dependency, 
-# which causes Quickshell to rapid-loop and freeze updates.
+cleanup() {
+    # Send SIGTERM to all process groups associated with our background jobs, leaving no orphans.
+    for pid in $(jobs -p); do
+        kill -TERM -$pid 2>/dev/null
+    done
+}
+trap cleanup EXIT
 
-( pactl subscribe 2>/dev/null | grep --line-buffered -E "Event 'change' on sink" | head -n 1 || sleep infinity ) &
-( nmcli monitor 2>/dev/null | grep --line-buffered -E "connected|disconnected|unavailable|enabled|disabled" | head -n 1 || sleep infinity ) &
-( dbus-monitor --system "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.Device1'" 2>/dev/null | grep --line-buffered "interface" | head -n 1 || sleep infinity ) &
-( udevadm monitor --subsystem-match=power_supply 2>/dev/null | grep --line-buffered "change" | head -n 1 || sleep infinity ) &
-( socat -u UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock - 2>/dev/null | grep --line-buffered "activelayout" | head -n 1 || sleep infinity ) &
+# Run listeners. We redirect ALL output to /dev/null so Quickshell doesn't
+# hang trying to read an inherited file descriptor.
+# Notice the removal of "|| sleep infinity". If a service is down, we WANT it to fail
+# so the script can quickly restart and try connecting again.
+( pactl subscribe 2>/dev/null | grep --line-buffered -E "Event 'change' on sink" | head -n 1 ) >/dev/null 2>&1 &
+( nmcli monitor 2>/dev/null | grep --line-buffered -E "connected|disconnected|unavailable|enabled|disabled" | head -n 1 ) >/dev/null 2>&1 &
+( dbus-monitor --system "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.Device1'" 2>/dev/null | grep --line-buffered "interface" | head -n 1 ) >/dev/null 2>&1 &
+( udevadm monitor --subsystem-match=power_supply 2>/dev/null | grep --line-buffered "change" | head -n 1 ) >/dev/null 2>&1 &
+( socat -u UNIX-CONNECT:$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock - 2>/dev/null | grep --line-buffered "activelayout" | head -n 1 ) >/dev/null 2>&1 &
+( playerctl metadata --follow --format '{{status}} {{title}}' 2>/dev/null | grep -m 2 "" | tail -n 1 | grep -q . ) >/dev/null 2>&1 &
 
-# MPRIS / Playerctl changes via DBus (Session Bus)
-( dbus-monitor --session "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',path='/org/mpris/MediaPlayer2'" 2>/dev/null | grep --line-buffered "interface" | head -n 1 || sleep infinity ) &
-
-# Failsafe: Force a silent UI refresh every 60 seconds just in case an event is missed
-sleep 60 &
+# Failsafe: Force a silent UI refresh every 60 seconds
+sleep 60 >/dev/null 2>&1 &
 
 # Wait for the *first* background job to successfully complete an event
-wait -n
+# (or exit instantly if a service is completely down at boot).
+wait -n 2>/dev/null
+
+# Delay slightly to prevent 100% CPU usage looping if a service is completely down
+# and crashing its monitor instantly.
+sleep 1

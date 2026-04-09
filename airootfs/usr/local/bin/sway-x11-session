@@ -43,7 +43,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cat > "$XINITRC" << 'EOF'
+cat > "$XINITRC" << 'XINITEOF'
 #!/bin/sh
 export XDG_CURRENT_DESKTOP=sway
 export XDG_SESSION_TYPE=wayland
@@ -56,9 +56,59 @@ export MESA_GL_VERSION_OVERRIDE=3.3
 export GSK_RENDERER=cairo
 export CHROMIUM_FLAGS="${CHROMIUM_FLAGS:-} --disable-gpu"
 
+get_edid_native_resolution() {
+    local resolution=""
+    local edid_file=""
+    local display=""
+
+    for conn in /sys/class/drm/card*-*; do
+        [ -d "$conn" ] || continue
+        status=$(cat "$conn/status" 2>/dev/null || echo "unknown")
+        if [ "$status" = "connected" ]; then
+            display=$(basename "$conn")
+            edid_file="$conn/edid"
+            break
+        fi
+    done
+
+    [ -z "$display" ] && return 1
+    [ ! -s "$edid_file" ] && return 1
+
+    if command -v edid-decode >/dev/null 2>&1; then
+        local modeline
+        modeline=$(edid-decode "$edid_file" 2>/dev/null | grep -m1 "Preferred mode" || true)
+        if [ -n "$modeline" ]; then
+            resolution=$(echo "$modeline" | grep -oP '\d+x\d+' | head -1 || true)
+        fi
+    fi
+
+    if [ -z "$resolution" ] && [ -s "$edid_file" ]; then
+        local hex_edid
+        hex_edid=$(xxd -p "$edid_file" 2>/dev/null | tr -d '\n' || true)
+        if [ -n "$hex_edid" ]; then
+            local width height
+            width=$(printf '%d' "0x${hex_edid:168:4}" 2>/dev/null || true)
+            height=$(printf '%d' "0x${hex_edid:172:4}" 2>/dev/null || true)
+            if [ -n "$width" ] && [ -n "$height" ] && [ "$width" -gt 0 ] && [ "$height" -gt 0 ]; then
+                resolution="${width}x${height}"
+            fi
+        fi
+    fi
+
+    if [ -n "$resolution" ]; then
+        echo "$resolution"
+        return 0
+    fi
+    return 1
+}
+
 ROOT_MODE=""
 if command -v xrandr >/dev/null 2>&1; then
-    ROOT_MODE="$(xrandr --current 2>/dev/null | awk 'match($0, /current[[:space:]]+([0-9]+)[[:space:]]+x[[:space:]]+([0-9]+)/, m) { print m[1] "x" m[2]; exit }')"
+    if ! get_edid_native_resolution >/dev/null 2>&1; then
+        ROOT_MODE="$(xrandr --current 2>/dev/null | awk 'match($0, /current[[:space:]]+([0-9]+)[[:space:]]+x[[:space:]]+([0-9]+)/, m) { print m[1] "x" m[2]; exit }')"
+    else
+        ROOT_MODE="$(get_edid_native_resolution)"
+    fi
 fi
 
 if [ -n "$ROOT_MODE" ] && [ -f "$HOME/.config/sway/config" ]; then
@@ -70,12 +120,12 @@ if [ -n "$ROOT_MODE" ] && [ -f "$HOME/.config/sway/config" ]; then
         printf "output * pos 0 0\n"
         printf "output * scale 1\n"
     } >> "$SWAY_TMP_CONFIG"
-    logger -p user.info -t mados-sway "X11 fallback using root mode ${ROOT_MODE}"
+    logger -p user.info -t mados-sway "X11 fallback using native mode ${ROOT_MODE}"
     exec sway -c "$SWAY_TMP_CONFIG"
 fi
 
 exec sway
-EOF
+XINITEOF
 chmod +x "$XINITRC"
 
 write_xorg_conf() {

@@ -1,2 +1,0 @@
-mados ALL=(ALL) NOPASSWD: /usr/bin/gufw, /usr/bin/gufw-pkexec, /usr/local/bin/gufw, /usr/bin/python3 /usr/bin/gufw, /usr/bin/python3 /usr/lib/python3.14/site-packages/gufw/gufw.py
-Defaults!GUFW_WIDGET env_keep += "WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE DISPLAY"

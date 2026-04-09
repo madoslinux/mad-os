@@ -394,7 +394,7 @@ Item {
                     onClicked: { 
                         exitAnim.start(); // Trigger graceful UI exit
                         Quickshell.execDetached(["sh", "-c", "loginctl terminate-user $USER"]); 
-                        Quickshell.execDetached(["sh", "-c", "echo 'close' > /tmp/qs_widget_state"]); 
+                        Quickshell.execDetached(["sh", "-c", "echo 'close' > \"${QS_IPC_FILE:-/tmp/qs_widget_state}\""]); 
                     }
                 }
             }
@@ -1017,7 +1017,7 @@ Item {
 
                             Timer {
                                 id: exitTimer; interval: 500 
-                                onTriggered: { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > /tmp/qs_widget_state"]); }
+                                onTriggered: { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > \"${QS_IPC_FILE:-/tmp/qs_widget_state}\""]); }
                             }
                         }
                     }

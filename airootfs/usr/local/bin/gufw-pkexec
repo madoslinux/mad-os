@@ -1,2 +1,0 @@
-#!/bin/bash
-python3 /usr/lib/python3.14/site-packages/gufw/gufw.py "$@"

@@ -1,0 +1,15 @@
+[Unit]
+Description=firewalld - dynamic firewall daemon
+Before=network.target
+After=dbus.service
+Wants=dbus.service
+
+[Service]
+Type=dbus
+ExecStart=/usr/bin/firewalld --nofork --nopid
+ExecReload=/usr/bin/firewalld --reload
+ProtectSystem=full
+ProtectHome=yes
+
+[Install]
+WantedBy=multi-user.target

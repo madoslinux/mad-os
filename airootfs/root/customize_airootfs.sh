@@ -118,10 +118,29 @@ if ! run_module "07-pacman-runtime.sh" "configure_runtime_pacman"; then
     exit 1
 fi
 
+# 08-firefox-defaults.sh - Configure Firefox for low memory
+if ! run_module "08-firefox-defaults.sh" "setup_skel_firefox_prefs"; then
+    echo "FATAL: Firefox defaults configuration failed"
+    exit 1
+fi
+setup_root_firefox_prefs
+setup_firefox_wrapper
+
+# 09-audio-fix.sh - Fix audio "Dummy Output" and enable PipeWire services
+if ! run_module "09-audio-fix.sh" "main"; then
+    echo "FATAL: Audio fix configuration failed"
+    exit 1
+fi
+
 # 04-cleanup.sh - Cleanup
 if ! run_module "04-cleanup.sh" "cleanup_all"; then
     echo "FATAL: Cleanup failed"
     exit 1
+fi
+
+# 09-ai-tools.sh - Install AI tools (OpenClaw, ForgeCode) from AUR
+if ! run_module "09-ai-tools.sh" "install_ai_tools"; then
+    echo "WARNING: AI tools installation had issues (non-fatal, tools may need manual install)"
 fi
 
 echo ""

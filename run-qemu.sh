@@ -13,6 +13,7 @@ DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 RENDER_MODE="${RENDER_MODE:-auto}"
 DISPLAY_BACKEND="${DISPLAY_BACKEND:-gtk}"
 VIDEO_PROFILE="${VIDEO_PROFILE:-virtio}"
+ENABLE_AUDIO="${ENABLE_AUDIO:-1}"
 INTERACTIVE=0
 USE_LAST=0
 
@@ -42,6 +43,7 @@ Options:
   --disk-file <path>    Disk image path
   --iso <path>          ISO path (default: latest from out/)
   --preset <name>       Preset: normal | software-drm | no-drm-test
+  --no-audio            Disable audio
   --help                Show this help
 
 Examples:
@@ -84,6 +86,7 @@ DISK_FILE=${DISK_FILE}
 RENDER_MODE=${RENDER_MODE}
 DISPLAY_BACKEND=${DISPLAY_BACKEND}
 VIDEO_PROFILE=${VIDEO_PROFILE}
+ENABLE_AUDIO=${ENABLE_AUDIO}
 EOF
 }
 
@@ -276,6 +279,10 @@ parse_args() {
                 preset_name="$2"
                 shift 2
                 ;;
+            --no-audio)
+                ENABLE_AUDIO=0
+                shift
+                ;;
             --help|-h)
                 print_usage
                 exit 0
@@ -370,6 +377,30 @@ set_uefi_firmware() {
     fi
 }
 
+set_audio_opts() {
+    if [[ "$ENABLE_AUDIO" -eq 1 ]]; then
+        local audio_backend=""
+        local audio_device=""
+
+        if [[ -d /dev/snd ]] && ls /dev/snd/* >/dev/null 2>&1; then
+            audio_backend="alsa"
+            audio_device="ac97"
+        else
+            audio_backend="none"
+            audio_device="ac97"
+        fi
+
+        echo "Audio enabled (${audio_backend}/${audio_device})"
+        AUDIO_OPTS=(
+            -audiodev "${audio_backend},id=audio0"
+            -device "${audio_device},audiodev=audio0"
+        )
+    else
+        echo "Audio disabled"
+        AUDIO_OPTS=()
+    fi
+}
+
 build_qemu_cmd() {
     QEMU_CMD=(
         qemu-system-x86_64
@@ -385,6 +416,7 @@ build_qemu_cmd() {
         "${DMI_OPTS[@]}"
         -device qemu-xhci
         -device usb-tablet
+        "${AUDIO_OPTS[@]}"
         "${QEMU_EXTRA_ARGS[@]}"
     )
 
@@ -405,6 +437,7 @@ print_config() {
     echo "  Render mode: ${RENDER_MODE}"
     echo "  Display backend: ${DISPLAY_BACKEND}"
     echo "  Video profile: ${VIDEO_PROFILE}"
+    echo "  Audio: $([ "$ENABLE_AUDIO" -eq 1 ] && echo "enabled" || echo "disabled")"
     echo ""
 }
 
@@ -473,6 +506,7 @@ main() {
 
     set_kvm_accel
     set_uefi_firmware
+    set_audio_opts
 
     echo ""
     echo "Starting QEMU..."

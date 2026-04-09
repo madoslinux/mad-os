@@ -135,10 +135,19 @@ EOF
 }
 
 seed_runtime_state() {
+    local runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+    local session_id="${HYPRLAND_INSTANCE_SIGNATURE:-$(id -u)}"
+    local state_dir="${runtime_dir}/mados-quickshell-${session_id}"
+
     mkdir -p "${HOME}/.cache/quickshell/weather"
     mkdir -p "${HOME}/.cache/wallpaper_picker/thumbs"
-    : > /tmp/qs_active_widget
-    : > /tmp/qs_widget_state
+    mkdir -p "${state_dir}"
+
+    export QS_IPC_FILE="${state_dir}/qs_widget_state"
+    export QS_ACTIVE_WIDGET_FILE="${state_dir}/qs_active_widget"
+
+    : > "${QS_ACTIVE_WIDGET_FILE}"
+    : > "${QS_IPC_FILE}"
 }
 
 ensure_wallpaper_dir() {
@@ -148,6 +157,22 @@ ensure_wallpaper_dir() {
         export WALLPAPER_DIR="${HOME}/Images/Wallpapers"
         mkdir -p "${WALLPAPER_DIR}"
     fi
+}
+
+start_launcher_cache_daemon() {
+    local launcher_dir="${TARGET_HYPR_SCRIPTS}/quickshell/launcher"
+    local ipc_script="${launcher_dir}/launcher_ipc.py"
+    local daemon_script="${launcher_dir}/launcher_cache_daemon.py"
+
+    if [[ ! -f "${ipc_script}" || ! -f "${daemon_script}" ]]; then
+        return 0
+    fi
+
+    if python3 "${ipc_script}" ping >/dev/null 2>&1; then
+        return 0
+    fi
+
+    nohup python3 -u "${daemon_script}" >/dev/null 2>&1 &
 }
 
 launch_quickshell() {
@@ -190,6 +215,7 @@ main() {
     prepare_user_runtime
     seed_runtime_state
     ensure_wallpaper_dir
+    start_launcher_cache_daemon
     launch_quickshell
 
     log_info "imperative-dots started successfully"

@@ -179,7 +179,7 @@ Item {
             ) >/dev/null 2>&1 & disown
         `
         Quickshell.execDetached(["bash", "-c", fullScript])
-        Quickshell.execDetached(["bash", "-c", "echo 'close' > /tmp/qs_widget_state"])
+        Quickshell.execDetached(["bash", "-c", "echo 'close' > \"${QS_IPC_FILE:-/tmp/qs_widget_state}\""])
     }
 
     // -------------------------------------------------------------------------
