@@ -125,7 +125,6 @@ file_permissions=(
   ["/etc/firewalld/zones/"]="0:0:755"
   ["/etc/firewalld/firewalld.conf"]="0:0:644"
   ["/etc/systemd/system/firewalld.service"]="0:0:644"
-  ["/etc/systemd/system/multi-user.target.wants/firewalld.service"]="0:0:644"
 
   # USBGuard
   ["/etc/usbguard/usbguard-daemon.conf"]="0:0:644"
@@ -161,11 +160,8 @@ file_permissions=(
 
 
 
-  # Audio fix (Dummy Output workaround)
+  # Audio fix (Dummy Output workaround) - configs created by 09-audio-fix.sh
   ["/root/customize_airootfs.d/09-audio-fix.sh"]="0:0:755"
-  ["/etc/wireplumber/wireplumber.conf.d/50-audio-profile.conf"]="0:0:644"
-  ["/etc/modprobe.d/mados-audio.conf"]="0:0:644"
-  ["/etc/modules-load.d/mados-audio.conf"]="0:0:644"
 
   # Btrfs Snapper
   ["/usr/local/bin/mados-snapper"]="0:0:755"
