@@ -71,16 +71,13 @@ file_permissions=(
   ["/usr/local/bin/mados-skwd-wall-daemon"]="0:0:755"
   ["/usr/local/bin/mados-skwd-wall-sources"]="0:0:755"
   ["/usr/local/bin/mados-skwd-wall-doctor"]="0:0:755"
-  ["/usr/local/bin/skwd-wall"]="0:0:755"
+
   ["/etc/skel/.config/systemd/user/skwd-wall.service"]="0:0:644"
   ["/usr/local/bin/swww"]="0:0:755"
   ["/usr/local/bin/swww-daemon"]="0:0:755"
   ["/usr/local/lib/mados-media-helper.sh"]="0:0:755"
   ["/usr/local/bin/mados-persistence"]="0:0:755"
   ["/usr/local/bin/mados-installer-autostart"]="0:0:755"
-
-  # XDG autostart - nm-applet.desktop is provided by networkmanager if needed
-  ["/etc/xdg/autostart/nm-applet.desktop"]="0:0:644"
 
   ["/usr/local/bin/mados-vbox-guest"]="0:0:755"
   ["/usr/local/bin/mados-persist-sync.sh"]="0:0:755"
@@ -123,16 +120,12 @@ file_permissions=(
   # Security hardening
   ["/etc/sysctl.d/99-security.conf"]="0:0:644"
 
-  # nftables Firewall
-  ["/etc/nftables.conf"]="0:0:644"
-  ["/etc/systemd/system/nftables.service"]="0:0:644"
-
   # Firewall
   ["/etc/firewalld/"]="0:0:755"
   ["/etc/firewalld/zones/"]="0:0:755"
-  ["/etc/firewalld/services/"]="0:0:755"
   ["/etc/firewalld/firewalld.conf"]="0:0:644"
   ["/etc/systemd/system/firewalld.service"]="0:0:644"
+  ["/etc/systemd/system/multi-user.target.wants/firewalld.service"]="0:0:644"
 
   # USBGuard
   ["/etc/usbguard/usbguard-daemon.conf"]="0:0:644"
@@ -166,16 +159,13 @@ file_permissions=(
   ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
 
-  ["/usr/local/bin/firefox"]="0:0:755"
-  ["/usr/share/applications/firefox.desktop"]="0:0:644"
+
 
   # Audio fix (Dummy Output workaround)
   ["/root/customize_airootfs.d/09-audio-fix.sh"]="0:0:755"
-  ["/usr/local/bin/mados-audio-health-check"]="0:0:755"
   ["/etc/wireplumber/wireplumber.conf.d/50-audio-profile.conf"]="0:0:644"
   ["/etc/modprobe.d/mados-audio.conf"]="0:0:644"
   ["/etc/modules-load.d/mados-audio.conf"]="0:0:644"
-  ["/etc/xdg/autostart/mados-audio-health.desktop"]="0:0:644"
 
   # Btrfs Snapper
   ["/usr/local/bin/mados-snapper"]="0:0:755"
