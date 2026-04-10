@@ -115,6 +115,7 @@ pre-commit install
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 - [AGENTS.md](AGENTS.md) - Agentic coding guidelines
+- [docs/HARDWARE_QUIRKS.md](docs/HARDWARE_QUIRKS.md) - Hardware compatibility quirks and disable switches
 - `airootfs/usr/share/doc/madOS/` - In-system documentation
 
 ## License

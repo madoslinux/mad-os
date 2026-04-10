@@ -107,6 +107,7 @@ networkmanager
 wireless_tools
 rsync
 inotify-tools
+rfkill
 
 # Screenshots Wayland
 grim
@@ -177,6 +178,7 @@ cava
 make
 pkgconf
 pciutils
+usbutils
 
 # GTK themes (more preinstalled choices for LXAppearance/GTK apps)
 adw-gtk-theme

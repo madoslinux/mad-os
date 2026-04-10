@@ -85,6 +85,7 @@ enable_services() {
 
     local services=(
         "mados-snapper.timer"
+        "mados-hw-quirks.service"
         "bluetooth.service"
         "NetworkManager.service"
         "firewalld.service"

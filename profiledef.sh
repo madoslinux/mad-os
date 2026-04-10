@@ -88,6 +88,7 @@ file_permissions=(
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
   ["/usr/local/bin/mados-health-check"]="0:0:755"
   ["/usr/local/bin/mados-network-bootstrap.sh"]="0:0:755"
+  ["/usr/local/bin/mados-hw-quirks.sh"]="0:0:755"
   ["/usr/local/bin/mados-pacman-sandbox-compat"]="0:0:755"
   ["/usr/local/bin/mados-shellbar-start"]="0:0:755"
   ["/usr/local/bin/mados-hide-steam"]="0:0:755"
@@ -153,7 +154,25 @@ file_permissions=(
 
   # Framebuffer and GPU early services
   ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
+  ["/etc/systemd/system/mados-hw-quirks.service"]="0:0:644"
   ["/etc/systemd/system/mados-network-bootstrap.service"]="0:0:644"
+
+  # Hardware quirk rules
+  ["/usr/local/lib/mados-hw-quirks.d/"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks-lib.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/10-rtl8723de-rtw88.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/20-intel-wifi-power-save-off.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/21-realtek-rtl8821ce.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/30-intel-i915-legacy-stability.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/31-amdgpu-stability.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/40-nvme-conservative-power.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/50-audio-hda-fallback.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/51-audio-sof-to-hda-fallback.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/60-usb-wifi-autosuspend-off.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/70-acpi-backlight-dmi.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/80-suspend-prefer-s2idle-dmi.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/81-suspend-resume-network-reset.sh"]="0:0:755"
+  ["/usr/lib/systemd/system-sleep/mados-resume-network-reset"]="0:0:755"
   ["/etc/systemd/system/mados-pacman-sandbox-compat.service"]="0:0:644"
   ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"

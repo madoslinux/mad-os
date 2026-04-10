@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STATE_FILE="${MADOS_SUSPEND_RESET_MARKER:-/run/mados/suspend-reset-needed}"
+
+log() {
+    logger -t mados-sleep-quirk "$*"
+}
+
+if [[ "${1:-}" != "post" ]]; then
+    exit 0
+fi
+
+if [[ ! -f "$STATE_FILE" ]]; then
+    exit 0
+fi
+
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl try-restart NetworkManager.service >/dev/null 2>&1 || true
+fi
+
+if command -v rfkill >/dev/null 2>&1; then
+    rfkill unblock all >/dev/null 2>&1 || true
+fi
+
+log "resume network reset path executed"
+exit 0
