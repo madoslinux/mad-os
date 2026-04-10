@@ -21,7 +21,7 @@ if command -v lsmod >/dev/null 2>&1; then
     if lsmod 2>/dev/null | grep -q "^mt76"; then
         mt76_loaded=true
     fi
-done
+fi
 
 if [[ "$mt76_loaded" == "false" ]]; then
     if command -v lspci >/dev/null 2>&1; then
