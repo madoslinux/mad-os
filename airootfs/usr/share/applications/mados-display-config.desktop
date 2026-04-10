@@ -7,3 +7,4 @@ Icon=preferences-desktop-display
 Terminal=false
 Categories=Settings;
 Keywords=display;monitor;resolution;rotation;sway;
+OnlyShowIn=Sway;

@@ -265,7 +265,10 @@ Item {
                 "qt6ct.desktop",
                 "vim.desktop",
                 "exo-preferred-applications.desktop",
-                "pavucontrol.desktop"
+                "pavucontrol.desktop",
+                "mados-display-config.desktop",
+                "mados-updater.desktop",
+                "nvidia-settings.desktop"
             ],
             "appNames": [
                 "advanced network configuration",
@@ -292,12 +295,18 @@ Item {
                 "qt6 settings",
                 "vim",
                 "volume control",
-                "pulseaudio volume control"
+                "pulseaudio volume control",
+                "mados display config",
+                "mados updater",
+                "nvidia x server settings"
             ],
             "execHeads": [
                 "mados-launcher",
                 "mados-equalizer",
-                "vim"
+                "vim",
+                "mados-display-config",
+                "mados-updater",
+                "nvidia-settings"
             ]
         };
     }

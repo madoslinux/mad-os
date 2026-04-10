@@ -35,6 +35,8 @@ Build requirements:
 - `packages.x86_64` is the default low-RAM profile used for ISO builds
 - `packages.optional-heavy.x86_64` contains optional desktop-heavy extras
 - To install extras on an installed system: `sudo pacman -S --needed - < packages.optional-heavy.x86_64`
+- Base profile includes Steam + LibreOffice for Word/Excel/PowerPoint support
+- ONLYOFFICE is available as `onlyoffice-bin` from AUR (not in official Arch repos used by archiso)
 
 ## Project Structure
 

@@ -2,9 +2,6 @@
 # Install manually if needed:
 #   sudo pacman -S --needed - < packages.optional-heavy.x86_64
 
-# Gaming
-steam
-
 # Office and language packs
 libreoffice-fresh
 libreoffice-fresh-es
@@ -22,3 +19,8 @@ hyphen-es
 
 # Graphics
 gimp
+
+# Extra document compatibility options (optional)
+# - onlyoffice-bin (AUR): Better DOCX/XLSX/PPTX fidelity (not available in official repos)
+# - wps-office (AUR): High compatibility for Microsoft Office formats
+# - calligra: Alternative KDE office suite

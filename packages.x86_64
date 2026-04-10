@@ -50,6 +50,7 @@ i3status
 dmenu
 polybar
 feh
+steam
 # i3lock
 # qtile
 # niri
@@ -57,6 +58,7 @@ feh
 # Aplicaciones principales
 foot
 firefox
+libreoffice-fresh
 vim
 nano
 code
