@@ -30,6 +30,12 @@ Build requirements:
 - **Minimum**: Intel Atom, 1.9GB RAM
 - **Recommended**: Intel/AMD integrated graphics, 4GB+ RAM
 
+## Package Profiles
+
+- `packages.x86_64` is the default low-RAM profile used for ISO builds
+- `packages.optional-heavy.x86_64` contains optional desktop-heavy extras
+- To install extras on an installed system: `sudo pacman -S --needed - < packages.optional-heavy.x86_64`
+
 ## Project Structure
 
 ```

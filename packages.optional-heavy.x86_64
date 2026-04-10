@@ -1,0 +1,24 @@
+# Optional heavy desktop package set for non-minimal builds
+# Install manually if needed:
+#   sudo pacman -S --needed - < packages.optional-heavy.x86_64
+
+# Gaming
+steam
+
+# Office and language packs
+libreoffice-fresh
+libreoffice-fresh-es
+libreoffice-fresh-en-gb
+libreoffice-fresh-pt-br
+libreoffice-fresh-pt
+libreoffice-fresh-fr
+libreoffice-fresh-de
+libreoffice-fresh-it
+libreoffice-fresh-ru
+libreoffice-fresh-zh-cn
+hunspell-es_ar
+mythes-es
+hyphen-es
+
+# Graphics
+gimp

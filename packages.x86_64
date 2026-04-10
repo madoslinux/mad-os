@@ -53,7 +53,6 @@ feh
 # i3lock
 # qtile
 # niri
-steam
 
 # Aplicaciones principales
 foot
@@ -275,18 +274,5 @@ clamav
 fail2ban
 zenity
 
-# Office and Graphics
-libreoffice-fresh
-libreoffice-fresh-es
-libreoffice-fresh-en-gb
-libreoffice-fresh-pt-br
-libreoffice-fresh-pt
-libreoffice-fresh-fr
-libreoffice-fresh-de
-libreoffice-fresh-it
-libreoffice-fresh-ru
-libreoffice-fresh-zh-cn
-hunspell-es_ar
-mythes-es
-hyphen-es
-gimp
+# Optional desktop extras moved to packages.optional-heavy.x86_64
+# This default profile stays aligned with low-RAM targets.

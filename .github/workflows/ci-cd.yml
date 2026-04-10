@@ -48,6 +48,11 @@ jobs:
               shellcheck -s bash --severity=error "$script"
             fi
           done
+          if [ -d airootfs/usr/local/lib/mados-hw-quirks.d ]; then
+            find airootfs/usr/local/lib/mados-hw-quirks.d -type f -name "*.sh" | while read -r script; do
+              shellcheck -s bash --severity=error "$script"
+            done
+          fi
           if [ -d airootfs/usr/local/lib/mados_installer/scripts ]; then
             find airootfs/usr/local/lib/mados_installer/scripts -type f -name "*.sh" | while read -r script; do
               shellcheck -s bash --severity=error "$script"
@@ -64,10 +69,10 @@ jobs:
         run: pip install ruff
 
       - name: Run ruff check
-        run: ruff check airootfs tests || true
+        run: ruff check airootfs tests
 
       - name: Run ruff format check
-        run: ruff format --check airootfs tests || true
+        run: ruff format --check airootfs tests
 
   test-unit:
     name: "Unit: ${{ matrix.category }}"
@@ -79,7 +84,7 @@ jobs:
       matrix:
         include:
           - category: "Core & OTA"
-            files: "tests/test_boot_scripts.py tests/test_mados_ota.py tests/test_liveusb_scripts.py"
+            files: "tests/test_boot_scripts.py tests/test_liveusb_scripts.py tests/test_wifi_quirks.py tests/test_boot_compat_entries.py"
           - category: "Desktop Config"
             files: "tests/test_hyprland_config.py tests/test_sway_config.py"
 
@@ -99,9 +104,11 @@ jobs:
       - name: Run tests
         run: |
           for file in ${{ matrix.files }}; do
-            if [ -f "$file" ]; then
-              python3 -m pytest "$file" -v
+            if [ ! -f "$file" ]; then
+              echo "Missing test file: $file"
+              exit 1
             fi
+            python3 -m pytest "$file" -v
           done
 
   test-integration:

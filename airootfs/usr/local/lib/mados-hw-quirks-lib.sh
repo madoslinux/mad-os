@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+MADOS_QUIRKS_CMDLINE_PATH="${MADOS_QUIRKS_CMDLINE_PATH:-/proc/cmdline}"
+
 hwq_log() {
     printf '%s\n' "mados-hw-quirks: $*"
 }
 
 hwq_get_disable_token() {
     local cmdline token
-    cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
+    cmdline="$(cat "$MADOS_QUIRKS_CMDLINE_PATH" 2>/dev/null || true)"
 
     for token in $cmdline; do
         if [[ "$token" == mados.disable_quirks=* ]]; then

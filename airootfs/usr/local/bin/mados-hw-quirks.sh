@@ -8,7 +8,7 @@ log() {
     printf '%s\n' "mados-hw-quirks: $*"
 }
 
-get_disable_token() {
+fallback_disable_token() {
     local cmdline token
     cmdline="$(cat /proc/cmdline 2>/dev/null || true)"
 
@@ -20,7 +20,6 @@ get_disable_token() {
     done
 
     printf '%s\n' ""
-    return 0
 }
 
 if [[ -f "$LIB_PATH" ]]; then
@@ -33,7 +32,7 @@ if command -v hwq_is_global_disabled >/dev/null 2>&1; then
         log "disabled via kernel parameter mados.disable_quirks=1"
         exit 0
     fi
-elif [[ "$(get_disable_token)" == "1" ]]; then
+elif [[ "$(fallback_disable_token)" == "1" ]]; then
     log "disabled via kernel parameter mados.disable_quirks=1"
     exit 0
 fi

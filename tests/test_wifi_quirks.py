@@ -3,6 +3,7 @@
 
 import os
 import subprocess
+import tempfile
 import unittest
 
 
@@ -213,6 +214,55 @@ class TestHwQuirkRules(unittest.TestCase):
             content = f.read()
         self.assertIn("systemctl try-restart NetworkManager.service", content)
         self.assertIn("rfkill unblock all", content)
+
+
+class TestHwQuirksLibraryBehavior(unittest.TestCase):
+    """Validate helper-library behavior with controlled cmdline input."""
+
+    def test_group_disable_match(self):
+        with tempfile.NamedTemporaryFile("w", delete=False) as f:
+            f.write("quiet splash mados.disable_quirks=wifi,gpu\n")
+            cmdline_path = f.name
+
+        script = 'source "$1"; if hwq_is_group_disabled wifi; then echo yes; else echo no; fi'
+        env = os.environ.copy()
+        env["MADOS_QUIRKS_CMDLINE_PATH"] = cmdline_path
+        result = subprocess.run(
+            ["bash", "-c", script, "bash", QUIRKS_LIB_PATH],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+        try:
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout.strip(), "yes")
+        finally:
+            if os.path.exists(cmdline_path):
+                os.unlink(cmdline_path)
+
+    def test_disable_token_parsing_from_custom_cmdline_path(self):
+        with tempfile.NamedTemporaryFile("w", delete=False) as f:
+            f.write("quiet splash mados.disable_quirks=wifi,gpu\n")
+            cmdline_path = f.name
+
+        script = 'source "$1"; hwq_get_disable_token'
+        env = os.environ.copy()
+        env["MADOS_QUIRKS_CMDLINE_PATH"] = cmdline_path
+
+        result = subprocess.run(
+            ["bash", "-c", script, "bash", QUIRKS_LIB_PATH],
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+
+        try:
+            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.stdout.strip(), "wifi,gpu")
+        finally:
+            if os.path.exists(cmdline_path):
+                os.unlink(cmdline_path)
 
 
 if __name__ == "__main__":

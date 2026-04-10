@@ -13,6 +13,16 @@ error() {
     echo "[mados-autoinstall] ERROR: $1" >&2
 }
 
+run_as_root() {
+    if [[ "$(id -u)" -eq 0 ]]; then
+        "$@"
+    elif command -v sudo &>/dev/null; then
+        sudo "$@"
+    else
+        return 1
+    fi
+}
+
 detect_and_configure_gpu() {
     log "Detecting GPU hardware..."
 
@@ -35,7 +45,7 @@ detect_and_configure_gpu() {
             nvidia)
                 log "NVIDIA GPU detected - installing nvidia-open driver..."
                 if command -v pacman &>/dev/null; then
-                    sudo pacman -S --noconfirm nvidia-open-dkms nvidia-settings 2>/dev/null || true
+                    run_as_root pacman -S --noconfirm nvidia-open-dkms nvidia-settings 2>/dev/null || true
                 fi
                 ;;
             amdgpu)
@@ -67,11 +77,11 @@ configure_btrfs_snapshots() {
         if command -v snapper &>/dev/null; then
             if [[ ! -f "${target_dir}/etc/snapper/configs/root" ]]; then
                 log "Creating snapper configuration..."
-                sudo snapper -c root create-config "${target_dir}" 2>/dev/null || true
+                run_as_root snapper -c root create-config "${target_dir}" 2>/dev/null || true
             fi
 
             log "Enabling and starting snapper timer..."
-            sudo systemctl --now enable snapper-timer.timer 2>/dev/null || true
+            run_as_root systemctl --now enable snapper-timer.timer 2>/dev/null || true
         else
             log "snapper not installed, skipping Btrfs snapshot configuration"
         fi
@@ -96,7 +106,7 @@ enable_services() {
     for svc in "${services[@]}"; do
         if systemctl list-unit-files "$svc" &>/dev/null; then
             log "Enabling $svc..."
-            sudo systemctl enable "$svc" 2>/dev/null || true
+            run_as_root systemctl enable "$svc" 2>/dev/null || true
         fi
     done
 }

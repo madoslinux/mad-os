@@ -83,3 +83,22 @@ Examples:
 - Safe Compat entry (third option)
 
 Safe Compat uses conservative kernel options for difficult hardware.
+
+## Adding a New Quirk Rule
+
+Use this checklist to keep behavior predictable:
+
+1. Create a new executable rule in `airootfs/usr/local/lib/mados-hw-quirks.d/` with numeric prefix ordering (for example `90-foo-bar.sh`).
+2. Use strict mode and source the helper library:
+   - `set -euo pipefail`
+   - `source /usr/local/lib/mados-hw-quirks-lib.sh` (when present)
+3. Gate the quirk by hardware evidence first (PCI/USB/DMI/sysfs checks), then apply the smallest effective change.
+4. Respect group disable switches using `hwq_is_group_disabled`.
+5. Fail safe: non-matching systems must exit without side effects.
+6. Add file permissions in `profiledef.sh` and tests in `tests/test_wifi_quirks.py`.
+
+Preferred matching strategy:
+
+- Exact IDs (`lspci -nn`, `lsusb`) over vendor-only matches.
+- DMI checks should require both vendor/product context for laptop families.
+- Avoid broad module parameter changes unless there is a known regression pattern.
