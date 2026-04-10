@@ -72,7 +72,7 @@ sysctl_conf="/etc/sysctl.d/99-audio-latency.conf"
     echo "# Applied by mados-hw-quirks 34-intel-hda-position-fix.sh"
     echo ""
     echo "# Reduce timer interrupts for audio stability"
-    kernel.timer_latency_monitoring = 0
+    echo "kernel.timer_latency_monitoring=0"
 } > "$sysctl_conf"
 
 log "Applied snd-hda-intel position_fix=1 for audio stability"

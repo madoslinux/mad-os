@@ -73,7 +73,7 @@ sysctl_conf="/etc/sysctl.d/99-intel-low-power-cpu.conf"
     echo "# Applied by mados-hw-quirks 32-intel-low-power-cpu-stability.sh"
     echo ""
     echo "# Reduce timer interrupt frequency for power savings"
-    kernel.timer_latency_monitoring = 0
+    echo "kernel.timer_latency_monitoring=0"
 } > "$sysctl_conf"
 
 log "Applied intel_idle.max_cstate=1 and i915.enable_dc=0 for low-power Intel CPU stability"
