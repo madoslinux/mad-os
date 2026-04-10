@@ -220,10 +220,12 @@ snapper
 virtualbox-guest-utils
 open-vm-tools
 
-# Login manager
-lightdm
-lightdm-gtk-greeter
-cage
+# Login manager (SDDM with Qylock themes)
+sddm
+qt6-declarative
+qt6-5compat
+qt6-svg
+perl
 
 # Gamepad/Steam Deck support
 python-evdev

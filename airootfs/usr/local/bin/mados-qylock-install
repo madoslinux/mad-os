@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# mados-qylock-install - Install Quickshell lockscreen for madOS
+set -euo pipefail
+
+TARGET_DIR="$HOME/.local/share/quickshell-lockscreen"
+THEMES_LINK="$TARGET_DIR/themes_link"
+CONFIG_DIR="$HOME/.config/qylock"
+QYLOCK_THEMES="/root/qylock-themes"
+
+if ! command -v quickshell &> /dev/null; then
+    echo "ERROR: Quickshell is not installed. This lockscreen requires quickshell."
+    echo "Install it with: pacman -S quickshell"
+    exit 1
+fi
+
+if [ ! -d "$QYLOCK_THEMES" ]; then
+    echo "ERROR: Qylock themes not found at $QYLOCK_THEMES"
+    echo "Please ensure you are running this on a madOS installation."
+    exit 1
+fi
+
+echo "=============================================="
+echo "  madOS - Quickshell Lockscreen Installer"
+echo "=============================================="
+echo ""
+
+select_theme() {
+    local themes_dir="$QYLOCK_THEMES"
+    local theme_name="nier-automata"
+
+    echo "Available lockscreen themes:"
+    echo ""
+
+    if command -v fzf &> /dev/null; then
+        theme_name=$(ls -1 "$themes_dir" | fzf --prompt="Select theme: " --height=15 --reverse --border --header="Use arrow keys/Enter to select lockscreen theme")
+    fi
+
+    if [ -z "$theme_name" ]; then
+        echo "No theme selected. Using default: nier-automata"
+        theme_name="nier-automata"
+    fi
+
+    echo ""
+    echo "Selected: $theme_name"
+    echo "$theme_name" > "$CONFIG_DIR/theme"
+}
+
+install_lockscreen() {
+    echo "Installing Quickshell lockscreen..."
+    echo ""
+
+    rm -rf "$TARGET_DIR"
+    mkdir -p "$(dirname "$TARGET_DIR")"
+
+    if [ -d "/root/quickshell-lockscreen" ]; then
+        cp -r /root/quickshell-lockscreen "$TARGET_DIR"
+    else
+        echo "ERROR: Quickshell lockscreen source not found at /root/quickshell-lockscreen"
+        exit 1
+    fi
+
+    ln -sfn "$QYLOCK_THEMES" "$THEMES_LINK"
+    chmod +x "$TARGET_DIR/lock.sh"
+
+    mkdir -p "$CONFIG_DIR"
+
+    echo "✓ Lockscreen installed to $TARGET_DIR"
+}
+
+show_shortcut_instructions() {
+    echo ""
+    echo "=============================================="
+    echo "  Keyboard Shortcut Setup"
+    echo "=============================================="
+    echo ""
+    echo "To lock your screen, bind a shortcut to the lock script."
+    echo ""
+    echo "Example for swaync or your WM config:"
+    echo "  bindsym \$mod+l exec $TARGET_DIR/lock.sh"
+    echo ""
+    echo "Or run manually:"
+    echo "  $TARGET_DIR/lock.sh"
+    echo ""
+    echo "NOTE: This lockscreen uses ext-session-lock-v1 protocol."
+    echo "      It works with Sway, Hyprland, and other Wayland compositors."
+    echo "      It does NOT work on KDE Plasma (KWin)."
+    echo ""
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    install_lockscreen
+    select_theme
+    show_shortcut_instructions
+    echo "✓ Setup complete!"
+fi

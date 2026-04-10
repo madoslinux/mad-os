@@ -4,7 +4,7 @@
 
 [[ -f ~/.bashrc ]] && . ~/.bashrc
 
-# Auto-start compositor on TTY1 (live ISO only — installed system uses lightdm)
+# Auto-start compositor on TTY1 (live ISO only — installed system uses SDDM)
 # Uses Hyprland on modern hardware, Sway on legacy/software-rendering hardware
 if [ -z "$WAYLAND_DISPLAY" ] && [ "$(tty)" = "/dev/tty1" ] && [ -d /run/archiso ]; then
   SESSION_LOG="$HOME/.cache/mados-session.log"

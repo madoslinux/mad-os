@@ -54,7 +54,7 @@ check_services() {
     local services=(
         "NetworkManager"
         "systemd-resolved"
-        "lightdm"
+        "sddm"
         "bluetooth"
         "earlyoom"
         "zram"
@@ -237,10 +237,10 @@ check_desktop() {
         print_check "Hyprland compositor" "warn" "Not installed"
     fi
     
-    if systemctl is-active --quiet lightdm 2>/dev/null; then
-        print_check "lightdm display manager" "pass"
+    if systemctl is-active --quiet sddm 2>/dev/null; then
+        print_check "sddm display manager" "pass"
     else
-        print_check "lightdm display manager" "fail" "Not running"
+        print_check "sddm display manager" "fail" "Not running"
     fi
     
     if [[ -d /usr/share/plymouth/themes/mados ]]; then
