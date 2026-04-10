@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
-import sys, json, time, re, os
-import urllib.request, urllib.parse, http.cookiejar
+import http.cookiejar
+import json
+import os
+import re
+import sys
+import time
+import urllib.parse
+import urllib.request
 
 LOG_FILE = "/tmp/qs_python_scraper.log"
 
@@ -9,7 +15,7 @@ def log(msg):
     try:
         with open(LOG_FILE, "a") as f:
             f.write(f"{time.strftime('%H:%M:%S')} - {msg}\n")
-    except:
+    except Exception:
         pass
 
 
@@ -127,7 +133,7 @@ def main():
 if __name__ == "__main__":
     try:
         os.remove(LOG_FILE)
-    except:
+    except Exception:
         pass
 
     try:

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-import sqlite3
-import json
-import os
 import argparse
 import calendar
+import json
+import os
 import re
+import sqlite3
 from datetime import date, timedelta
 
 DB_PATH = os.path.expanduser("~/.local/share/focustime/focustime.db")
@@ -50,7 +50,7 @@ def build_desktop_cache():
                     path = os.path.join(directory, f)
                     try:
                         name, icon, wmclass = None, "", None
-                        with open(path, "r", encoding="utf-8") as file:
+                        with open(path, encoding="utf-8") as file:
                             for line in file:
                                 line = line.strip()
                                 if line.startswith("Name=") and not name:
@@ -151,8 +151,8 @@ def main():
     )
     c.execute(
         f"""
-        SELECT COUNT(DISTINCT log_date), SUM(seconds) 
-        FROM focus_log 
+        SELECT COUNT(DISTINCT log_date), SUM(seconds)
+        FROM focus_log
         WHERE log_date >= ? AND log_date <= ? AND seconds > 0 {filter_sql}
     """,
         params_avg,
@@ -167,11 +167,11 @@ def main():
 
     c.execute(
         f"""
-        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs 
-        FROM focus_log 
+        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs
+        FROM focus_log
         WHERE log_date = ?{filter_sql}
         GROUP BY app_class
-        ORDER BY secs DESC 
+        ORDER BY secs DESC
     """,
         params,
     )
@@ -194,10 +194,10 @@ def main():
     # Weekly Top Apps
     c.execute(
         f"""
-        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs 
-        FROM focus_log 
+        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs
+        FROM focus_log
         WHERE log_date >= ? AND log_date <= ? {filter_sql}
-        GROUP BY app_class 
+        GROUP BY app_class
         ORDER BY secs DESC LIMIT 50
     """,
         params_avg,

@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-import subprocess
 import json
+import subprocess
 import sys
 
 
 def run_cmd(cmd):
     try:
         return subprocess.check_output(cmd, shell=True, stderr=subprocess.DEVNULL).decode("utf-8")
-    except:
+    except Exception:
         return "[]"
 
 
 def parse_pactl(output):
     try:
         return json.loads(output)
-    except:
+    except Exception:
         return []
 
 
@@ -36,7 +36,7 @@ def get_data():
         info = parse_pactl(run_cmd("pactl -f json info"))
         default_sink = info.get("default_sink_name", "")
         default_source = info.get("default_source_name", "")
-    except:
+    except Exception:
         default_sink = ""
         default_source = ""
 

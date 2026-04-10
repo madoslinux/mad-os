@@ -56,6 +56,27 @@ ruff format .
 ruff check --fix . && ruff format .
 ```
 
+### ShellCheck (Shell Scripts)
+
+```bash
+# Install shellcheck (Arch Linux)
+sudo pacman -S shellcheck
+
+# Run shellcheck on all executable scripts
+find airootfs/usr/local/bin -type f -executable | while read -r script; do
+  if head -1 "$script" | grep -qE "(bash|sh)$"; then
+    shellcheck -s bash --severity=error "$script"
+  fi
+done
+
+# Run shellcheck on installer scripts
+if [ -d airootfs/usr/local/lib/mados_installer/scripts ]; then
+  find airootfs/usr/local/lib/mados_installer/scripts -type f -name "*.sh" | while read -r script; do
+    shellcheck -s bash --severity=error "$script"
+  done
+fi
+```
+
 ### Pre-commit Hooks
 
 ```bash

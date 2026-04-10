@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-import subprocess
-import sqlite3
-import time
-import os
-import socket
-import json
-import threading
 import calendar
+import json
+import os
 import re
+import socket
+import sqlite3
+import subprocess
+import threading
+import time
 from datetime import date, datetime, timedelta
 
 current_app_class = "Desktop"
@@ -62,7 +62,7 @@ def build_desktop_cache():
                     path = os.path.join(directory, f)
                     try:
                         name, icon, wmclass = None, "", None
-                        with open(path, "r", encoding="utf-8") as file:
+                        with open(path, encoding="utf-8") as file:
                             for line in file:
                                 line = line.strip()
                                 if line.startswith("Name=") and not name:
@@ -267,8 +267,8 @@ def dump_state_to_json(c):
     # Calculate average ONLY over days in current week that have non-zero usage
     c.execute(
         """
-        SELECT COUNT(DISTINCT log_date), SUM(seconds) 
-        FROM focus_log 
+        SELECT COUNT(DISTINCT log_date), SUM(seconds)
+        FROM focus_log
         WHERE log_date >= ? AND log_date <= ? AND seconds > 0
     """,
         (monday.isoformat(), sunday.isoformat()),
@@ -283,10 +283,10 @@ def dump_state_to_json(c):
 
     c.execute(
         """
-        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs 
-        FROM focus_log 
-        WHERE log_date = ? 
-        GROUP BY app_class 
+        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs
+        FROM focus_log
+        WHERE log_date = ?
+        GROUP BY app_class
         ORDER BY secs DESC
     """,
         (target_date.isoformat(),),
@@ -310,10 +310,10 @@ def dump_state_to_json(c):
     # Weekly Top Apps
     c.execute(
         """
-        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs 
-        FROM focus_log 
-        WHERE log_date >= ? AND log_date <= ? 
-        GROUP BY app_class 
+        SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs
+        FROM focus_log
+        WHERE log_date >= ? AND log_date <= ?
+        GROUP BY app_class
         ORDER BY secs DESC LIMIT 50
     """,
         (monday.isoformat(), sunday.isoformat()),
@@ -498,7 +498,7 @@ def main():
                 """
                 INSERT INTO focus_log (log_date, app_class, seconds, app_title)
                 VALUES (?, ?, ?, ?)
-                ON CONFLICT(log_date, app_class) 
+                ON CONFLICT(log_date, app_class)
                 DO UPDATE SET seconds = seconds + 1, app_title = excluded.app_title
             """,
                 (today, current_app_class, 1, current_app_title),

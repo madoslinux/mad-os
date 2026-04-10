@@ -100,7 +100,6 @@ file_permissions=(
   ["/etc/skel/.config/polybar/scripts/workspaces.sh"]="0:0:755"
   ["/etc/skel/.config/i3/launcher.sh"]="0:0:755"
   ["/etc/skel/.config/waybar/scripts/network.sh"]="0:0:755"
-  ["/usr/local/bin/mados-logs"]="0:0:755"
 
   # mados-chwd (hardware detection)
   ["/usr/local/bin/mados-chwd"]="0:0:755"
@@ -163,6 +162,9 @@ file_permissions=(
 
   # Audio fix (Dummy Output workaround) - configs created by 09-audio-fix.sh
   ["/root/customize_airootfs.d/09-audio-fix.sh"]="0:0:755"
+
+  # AI tools installation
+  ["/root/customize_airootfs.d/09-ai-tools.sh"]="0:0:755"
 
   # Btrfs Snapper
   ["/usr/local/bin/mados-snapper"]="0:0:755"
