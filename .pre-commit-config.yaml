@@ -4,6 +4,7 @@ repos:
     hooks:
       - id: shellcheck
         args: ["--severity=error"]
+        files: \.sh$
 
   - repo: local
     hooks:
@@ -23,7 +24,7 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        args: ["."]
+        args: ["--check", "."]
 
   - repo: local
     hooks:
