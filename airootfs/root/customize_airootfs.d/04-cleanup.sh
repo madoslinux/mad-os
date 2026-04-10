@@ -147,17 +147,17 @@ EOF
 }
 
 install_yay() {
-    local yay_version="12.4.1"
+    local yay_version="12.5.7"
     local yay_bin="/usr/local/bin/yay"
     local yay_tmp="/tmp/yay.tar.gz"
     local yay_url="https://github.com/Jguer/yay/releases/download/v${yay_version}/yay_${yay_version}_x86_64.tar.gz"
     
-    if command -v yay &>/dev/null; then
+    if command -v yay &>/dev/null && yay --version &>/dev/null; then
         echo "yay already installed"
         return 0
     fi
     
-    if [[ -x "$yay_bin" ]]; then
+    if [[ -x "$yay_bin" ]] && "$yay_bin" --version &>/dev/null; then
         echo "yay binary found in /usr/local/bin (offline mode)"
         return 0
     fi
@@ -169,7 +169,12 @@ install_yay() {
         mv "/tmp/yay_${yay_version}_x86_64/yay" "$yay_bin"
         rm -rf "$yay_tmp" "/tmp/yay_${yay_version}_x86_64"
         chmod +x "$yay_bin"
-        echo "✓ yay installed to $yay_bin"
+        if "$yay_bin" --version &>/dev/null; then
+            echo "✓ yay installed to $yay_bin"
+        else
+            rm -f "$yay_bin"
+            echo "WARNING: yay downloaded but failed to run (libalpm mismatch)."
+        fi
     else
         echo "WARNING: Failed to download yay (offline mode requires pre-built ISO)"
     fi
@@ -184,7 +189,7 @@ configure_wheel_group() {
         usermod -aG input 1000 2>/dev/null || true
         usermod -aG video 1000 2>/dev/null || true
         
-        for bin in ollama opencode openclaw forge; do
+        for bin in ollama opencode openclaw forge forgecode; do
             for path in /usr/bin/$bin /usr/local/bin/$bin; do
                 if [[ -f "$path" ]]; then
                     chown root:wheel "$path"

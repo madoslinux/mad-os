@@ -22,6 +22,20 @@ install_openclaw() {
         yay_cmd="/usr/local/bin/yay"
     fi
 
+    if ! "$yay_cmd" --version &>/dev/null; then
+        echo "WARNING: yay found but not runnable (libalpm mismatch), skipping AUR install"
+        echo "  Falling back to npm install..."
+        if command -v npm &>/dev/null; then
+            npm install -g openclaw@latest 2>&1 && echo "✓ OpenClaw installed via npm" || {
+                echo "WARNING: OpenClaw npm install also failed"
+                echo "  Users can install manually: npm install -g openclaw@latest"
+            }
+        else
+            echo "  npm not available, cannot fallback. Install manually after boot."
+        fi
+        return 0
+    fi
+
     if $yay_cmd -S --noconfirm --needed openclaw-git 2>&1; then
         echo "✓ OpenClaw installed from AUR"
     else
@@ -41,8 +55,8 @@ install_openclaw() {
 install_forgecode() {
     echo "Installing ForgeCode from AUR..."
 
-    if command -v forge &>/dev/null; then
-        echo "forge already installed"
+    if command -v forge &>/dev/null || command -v forgecode &>/dev/null; then
+        echo "forge/forgecode already installed"
         return 0
     fi
 
@@ -55,6 +69,20 @@ install_forgecode() {
     local yay_cmd="yay"
     if [[ -x /usr/local/bin/yay ]]; then
         yay_cmd="/usr/local/bin/yay"
+    fi
+
+    if ! "$yay_cmd" --version &>/dev/null; then
+        echo "WARNING: yay found but not runnable (libalpm mismatch), skipping AUR install"
+        echo "  Falling back to curl installer..."
+        if command -v curl &>/dev/null; then
+            curl -fsSL https://forgecode.dev/cli | sh 2>&1 && echo "✓ ForgeCode installed via curl" || {
+                echo "WARNING: ForgeCode curl install also failed"
+                echo "  Users can install manually: curl -fsSL https://forgecode.dev/cli | sh"
+            }
+        else
+            echo "  curl not available, cannot fallback. Install manually after boot."
+        fi
+        return 0
     fi
 
     if $yay_cmd -S --noconfirm --needed forgecode 2>&1; then
@@ -76,7 +104,7 @@ install_forgecode() {
 configure_ai_tools_permissions() {
     echo "Configuring AI tools permissions..."
 
-    for bin in openclaw forge; do
+    for bin in openclaw forge forgecode; do
         for path in /usr/bin/$bin /usr/local/bin/$bin; do
             if [[ -f "$path" ]]; then
                 chown root:wheel "$path" 2>/dev/null || true
@@ -85,6 +113,14 @@ configure_ai_tools_permissions() {
             fi
         done
     done
+
+    if command -v forge &>/dev/null; then
+        echo "  → Forge command available: forge"
+    elif command -v forgecode &>/dev/null; then
+        echo "  → Forge command available: forgecode"
+    else
+        echo "  → WARNING: ForgeCode CLI not found after install"
+    fi
     echo "✓ AI tools permissions configured"
 }
 

@@ -93,6 +93,7 @@ file_permissions=(
   ["/usr/local/bin/mados-hide-steam"]="0:0:755"
   ["/usr/local/bin/mados-help"]="0:0:755"
   ["/usr/local/bin/mados-power"]="0:0:755"
+  ["/usr/local/bin/mados-display-config"]="0:0:755"
   ["/etc/skel/.config/polybar/launch.sh"]="0:0:755"
   ["/etc/skel/.config/polybar/scripts/volume.sh"]="0:0:755"
   ["/etc/skel/.config/polybar/scripts/wallpaper.sh"]="0:0:755"

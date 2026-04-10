@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+require_cmd() {
+    local cmd="$1"
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        swaynag -t error -m "Missing required command: $cmd"
+        exit 1
+    fi
+}
+
+mode_from_json() {
+    local json="$1"
+    local width height refresh
+
+    width="$(jq -r '.current_mode.width // empty' <<<"$json")"
+    height="$(jq -r '.current_mode.height // empty' <<<"$json")"
+    refresh="$(jq -r '.current_mode.refresh // empty' <<<"$json")"
+
+    if [[ -z "$width" || -z "$height" || -z "$refresh" ]]; then
+        return 1
+    fi
+
+    printf "%sx%s@%sHz" "$width" "$height" "$(((refresh + 500) / 1000))"
+}
+
+confirm_or_rollback() {
+    local rollback_cmd="$1"
+    local temp_dir confirm_file rollback_file nag_pid
+
+    temp_dir="$(mktemp -d)"
+    confirm_file="$temp_dir/keep"
+    rollback_file="$temp_dir/revert"
+
+    swaynag -t warning -m "Confirma el cambio de pantalla en 10 segundos o se revertira." \
+        -B "Mantener" "touch '$confirm_file'" \
+        -B "Revertir" "touch '$rollback_file'" >/dev/null 2>&1 &
+    nag_pid=$!
+
+    for _ in $(seq 1 10); do
+        if [[ -f "$confirm_file" ]]; then
+            kill "$nag_pid" 2>/dev/null || true
+            wait "$nag_pid" 2>/dev/null || true
+            rm -rf "$temp_dir"
+            return 0
+        fi
+
+        if [[ -f "$rollback_file" ]]; then
+            break
+        fi
+
+        sleep 1
+    done
+
+    eval "$rollback_cmd" >/dev/null 2>&1 || true
+    kill "$nag_pid" 2>/dev/null || true
+    wait "$nag_pid" 2>/dev/null || true
+    rm -rf "$temp_dir"
+    swaynag -t warning -m "Cambio revertido automaticamente." >/dev/null 2>&1 &
+    return 1
+}
+
+require_cmd swaymsg
+require_cmd jq
+require_cmd wofi
+require_cmd swaynag
+
+outputs_json="$(swaymsg -t get_outputs -r)"
+outputs_menu="$(jq -r '.[] | select(.active == true) | .name' <<<"$outputs_json")"
+
+if [[ -z "$outputs_menu" ]]; then
+    swaynag -t error -m "No hay monitores activos detectados."
+    exit 1
+fi
+
+selected_output="$(printf "%s\n" "$outputs_menu" | wofi --dmenu -p "Monitor")"
+[[ -z "$selected_output" ]] && exit 0
+
+action="$(printf "Resolucion\nRotacion\n" | wofi --dmenu -p "Accion")"
+[[ -z "$action" ]] && exit 0
+
+output_json="$(jq -c --arg name "$selected_output" '.[] | select(.name == $name)' <<<"$outputs_json")"
+
+if [[ -z "$output_json" ]]; then
+    swaynag -t error -m "No se pudo leer el estado del monitor $selected_output."
+    exit 1
+fi
+
+previous_transform="$(jq -r '.transform // "normal"' <<<"$output_json")"
+previous_mode=""
+if previous_mode="$(mode_from_json "$output_json")"; then
+    :
+else
+    previous_mode=""
+fi
+
+if [[ "$action" == "Resolucion" ]]; then
+    current_mode=""
+    if current_mode="$(mode_from_json "$output_json")"; then
+        :
+    else
+        current_mode=""
+    fi
+
+    modes_menu="$(jq -r '.modes[] | "\(.width)x\(.height)@\(((.refresh + 500) / 1000 | floor))Hz"' <<<"$output_json" | sort -u)"
+    if [[ -z "$modes_menu" ]]; then
+        swaynag -t error -m "No hay modos disponibles para $selected_output."
+        exit 1
+    fi
+
+    selection="$(printf "%s\n" "$modes_menu" | wofi --dmenu -p "Resolucion")"
+    [[ -z "$selection" ]] && exit 0
+
+    if ! swaymsg output "$selected_output" mode "$selection" >/dev/null 2>&1; then
+        swaynag -t error -m "No se pudo aplicar la resolucion $selection en $selected_output."
+        exit 1
+    fi
+else
+    selection="$(printf "normal\n90\n180\n270\n" | wofi --dmenu -p "Rotacion")"
+    [[ -z "$selection" ]] && exit 0
+
+    if ! swaymsg output "$selected_output" transform "$selection" >/dev/null 2>&1; then
+        swaynag -t error -m "No se pudo aplicar la rotacion $selection en $selected_output."
+        exit 1
+    fi
+fi
+
+if [[ -n "$previous_mode" ]]; then
+    rollback_cmd="swaymsg output '$selected_output' mode '$previous_mode' transform '$previous_transform'"
+else
+    rollback_cmd="swaymsg output '$selected_output' transform '$previous_transform'"
+fi
+
+confirm_or_rollback "$rollback_cmd" || exit 1

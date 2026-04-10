@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=madOS Display Config
+Comment=Configure monitor resolution and rotation in Sway
+Exec=mados-display-config
+Icon=preferences-desktop-display
+Terminal=false
+Categories=Settings;
+Keywords=display;monitor;resolution;rotation;sway;
