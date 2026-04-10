@@ -49,8 +49,8 @@ sysctl_conf="/etc/sysctl.d/99-atheros-wifi.conf"
     echo "# Applied by mados-hw-quirks 22-atheros-ath9k-powersave-off.sh"
     echo ""
     echo "# Increase network device budget for better throughput"
-    net.core.netdev_budget=600
-    net.core.netdev_budget_usecs=6000
+    echo "net.core.netdev_budget=600"
+    echo "net.core.netdev_budget_usecs=6000"
 } > "$sysctl_conf"
 
 log "Applied ath9k.ps_enable=0 for Atheros WiFi stability"
