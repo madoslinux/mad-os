@@ -49,12 +49,12 @@ sysctl_conf="/etc/sysctl.d/99-realtek-ethernet.conf"
     echo "# Applied by mados-hw-quirks 91-realtek-ethernet-eee-off.sh"
     echo ""
     echo "# Increase netdev budget for better network performance"
-    net.core.netdev_budget = 600
-    net.core.netdev_budget_usecs = 6000
+    echo "net.core.netdev_budget=600"
+    echo "net.core.netdev_budget_usecs=6000"
     echo ""
     echo "# Connection timeout tuning"
-    net.ipv4.tcp_fin_timeout = 15
-    net.ipv4.tcp_tw_reuse = 1
+    echo "net.ipv4.tcp_fin_timeout=15"
+    echo "net.ipv4.tcp_tw_reuse=1"
 } > "$sysctl_conf"
 
 log "Applied r8169eee=0 for Realtek Ethernet stability"
