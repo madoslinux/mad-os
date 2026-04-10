@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# shellcheck disable=SC1090
+# noqa: SC1036,SC1088
 import sys
 import subprocess
 import threading
@@ -23,7 +25,7 @@ def show_dialog(device_info):
             subprocess.run(["sudo", "-n", "usbguard", "block-device", device_id], timeout=5)
             notify("USB Bloqueado", device_info)
     except Exception as e:
-        notify("USB Detectado", device_info + f"\n(Error: {e})")
+        notify("USB Detectado", device_info + "\n(Error: {})".format(e))
 
 def notify(title, text):
     subprocess.run([
@@ -42,4 +44,4 @@ if __name__ == "__main__":
         device_info = info.stdout.strip()
         
         if device_id:
-            threading.Thread(target=show_dialog, args=(f"Dispositivo USB conectado:\n\n{device_info}",), daemon=True).start()
+            threading.Thread(target=show_dialog, args=("Dispositivo USB conectado:\n\n{}".format(device_info),), daemon=True).start()

@@ -120,14 +120,23 @@ get_volume_icon() {
 
 ## BATTERY
 get_battery_percent() {
-    if [ -f /sys/class/power_supply/BAT*/capacity ]; then
-        local bat=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1)
-        echo "${bat:-100}"
-    else echo "100"; fi
+    for bat in /sys/class/power_supply/BAT*/capacity; do
+        if [ -f "$bat" ]; then
+            local val=$(cat "$bat" 2>/dev/null | head -n1)
+            echo "${val:-100}"
+            return
+        fi
+    done
+    echo "100"
 }
 get_battery_status() {
-    if [ -f /sys/class/power_supply/BAT*/status ]; then cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -n1
-    else echo "Full"; fi
+    for bat in /sys/class/power_supply/BAT*/status; do
+        if [ -f "$bat" ]; then
+            cat "$bat" 2>/dev/null | head -n1
+            return
+        fi
+    done
+    echo "Full"
 }
 get_battery_icon() {
     local percent=$(get_battery_percent)
