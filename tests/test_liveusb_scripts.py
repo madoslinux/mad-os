@@ -238,6 +238,7 @@ class TestEnabledServicesValid(unittest.TestCase):
         "mados-persist-sync.service",  # enabled at runtime if persistence detected
         "mados-persistence-detect.service",  # enabled at runtime if persistence detected
         "mados-updater.service",  # created dynamically during build from github.com/madkoding/mados-updater
+        "mados-hw-quirks.service",  # enabled at runtime by 06-network.sh
     }
 
     def test_custom_services_are_enabled(self):

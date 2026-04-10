@@ -172,6 +172,14 @@ file_permissions=(
   ["/usr/local/lib/mados-hw-quirks.d/70-acpi-backlight-dmi.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/80-suspend-prefer-s2idle-dmi.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/81-suspend-resume-network-reset.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/32-intel-low-power-cpu-stability.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/33-intel-i915-execlist-crash.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/34-intel-hda-position-fix.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/22-atheros-ath9k-powersave-off.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/23-mt76-power-save-off.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/61-usb-hub-autosuspend-off.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/82-suspend-sata-alpm-medium.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/91-realtek-ethernet-eee-off.sh"]="0:0:755"
   ["/usr/lib/systemd/system-sleep/mados-resume-network-reset"]="0:0:755"
   ["/etc/systemd/system/mados-pacman-sandbox-compat.service"]="0:0:644"
   ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
@@ -195,5 +203,20 @@ file_permissions=(
   # Network wait service
   ["/usr/local/bin/mados-network-wait.sh"]="0:0:755"
   # ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
+
+  # Hardware quirk generated configs (created at runtime by mados-hw-quirks scripts)
+  ["/etc/modprobe.d/intel-low-power-cpu.conf"]="0:0:644"
+  ["/etc/modprobe.d/i915-execlist-off.conf"]="0:0:644"
+  ["/etc/modprobe.d/snd-hda-intel-position.conf"]="0:0:644"
+  ["/etc/modprobe.d/ath9k.conf"]="0:0:644"
+  ["/etc/modprobe.d/mt76.conf"]="0:0:644"
+  ["/etc/modprobe.d/usbcore-hub.conf"]="0:0:644"
+  ["/etc/modprobe.d/r8169-eee-off.conf"]="0:0:644"
+  ["/etc/modprobe.d/libata-alpm.conf"]="0:0:644"
+  ["/etc/sysctl.d/99-intel-low-power-cpu.conf"]="0:0:644"
+  ["/etc/sysctl.d/99-audio-latency.conf"]="0:0:644"
+  ["/etc/sysctl.d/99-atheros-wifi.conf"]="0:0:644"
+  ["/etc/sysctl.d/99-realtek-ethernet.conf"]="0:0:644"
+  ["/etc/sysctl.d/99-sata-alpm.conf"]="0:0:644"
 
 )
