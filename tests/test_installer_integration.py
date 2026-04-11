@@ -144,6 +144,10 @@ class TestInstallerContractChecks(unittest.TestCase):
             "configure-grub.sh missing GRUB_CMDLINE_LINUX_DEFAULT sanitizer call",
             self.apps_script,
         )
+        self.assertIn(
+            "configure-grub.sh still references legacy rootflag= token",
+            self.apps_script,
+        )
         self.assertIn("configure-grub.sh still forces rootflags=subvol=@", self.apps_script)
         self.assertIn("steps.py missing rsync metadata fallback", self.apps_script)
 

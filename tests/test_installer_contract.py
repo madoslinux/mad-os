@@ -169,12 +169,21 @@ class Test03AppsShContract(unittest.TestCase):
                 "missing GRUB_CMDLINE_LINUX_DEFAULT sanitizer call",
                 "sanitize GRUB_CMDLINE_LINUX_DEFAULT bare subvol args",
             ),
+            (
+                "still references legacy rootflag= token",
+                "reject legacy rootflag token in installer GRUB script",
+            ),
             ("retrying without ACL/xattr", "rsync VFAT fallback"),
             ("wifi.backend=iwd", "iwd backend removal"),
             ("enable_service iwd", "iwd service removal"),
             ("autologin-live.conf", "SDDM live autologin cleanup"),
             ("Current=pixel-night-city", "SDDM theme pin on installed system"),
             ("Current=sddm-astron_theme", "astron SDDM theme replacement"),
+            ("systemctl enable getty@tty2.service", "disable tty2 fallback enable"),
+            (
+                "Keeping SDDM as primary login path",
+                "replace tty1 fallback with SDDM-only behavior",
+            ),
         ]
 
         for pattern, description in assertions:

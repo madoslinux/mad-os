@@ -113,6 +113,11 @@ assert_installer_contract() {
         return 1
     fi
 
+    if grep -q 'rootflag=' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still references legacy rootflag= token"
+        return 1
+    fi
+
     if grep -q 'rootflags=subvol=@' "${install_path}/scripts/configure-grub.sh"; then
         echo "ERROR: Installer contract check failed: configure-grub.sh still forces rootflags=subvol=@"
         return 1
@@ -145,6 +150,16 @@ assert_installer_contract() {
 
     if ! grep -q 'Current=pixel-night-city' "${install_path}/scripts/apply-configuration.sh"; then
         echo "ERROR: Installer contract check failed: apply-configuration.sh missing SDDM theme pin"
+        return 1
+    fi
+
+    if grep -q 'systemctl enable getty@tty2.service' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh still enables getty@tty2"
+        return 1
+    fi
+
+    if grep -q 'systemctl enable getty@tty1.service' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh still enables getty@tty1 fallback"
         return 1
     fi
 
@@ -286,10 +301,34 @@ install_installer() {
     if [[ -f "${install_path}/scripts/apply-configuration.sh" ]]; then
         sed -i '/wifi\.backend=iwd/d' "${install_path}/scripts/apply-configuration.sh"
         sed -i 's/^Current=.*/Current=pixel-night-city/' "${install_path}/scripts/apply-configuration.sh"
+        sed -i '/systemctl enable getty@tty2.service/d' "${install_path}/scripts/apply-configuration.sh"
         if grep -q 'wifi.backend=iwd' "${install_path}/scripts/apply-configuration.sh"; then
             echo "ERROR: Failed to remove installer iwd backend override"
             return 1
         fi
+
+        python3 - "${install_path}/scripts/apply-configuration.sh" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+old = '''if [ "$GRAPHICAL_OK" -eq 0 ]; then
+    echo "  ⚠ Some graphical components are missing. Enabling getty@tty1 as fallback..."
+    systemctl enable getty@tty1.service 2>/dev/null || true
+fi
+'''
+
+new = '''if [ "$GRAPHICAL_OK" -eq 0 ]; then
+    echo "  ⚠ Some graphical components are missing. Keeping SDDM as primary login path."
+fi
+'''
+
+if old in t:
+    t = t.replace(old, new, 1)
+    p.write_text(t, encoding="utf-8")
+PY
 
         if ! grep -q 'madOS: disable live SDDM autologin' "${install_path}/scripts/apply-configuration.sh"; then
             cat >> "${install_path}/scripts/apply-configuration.sh" << 'EOSDDM'
@@ -343,7 +382,7 @@ sanitize_fn = '''sanitize_grub_cmdline_key() {
     current=${current#\"}
     current=${current%\"}
 
-    current=$(printf '%s' "$current" | sed -E 's/(^|[[:space:]])subvol=[^[:space:]]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')
+    current=$(printf '%s' "$current" | sed -E 's/(^|[[:space:]])subvol=[^[:space:]]+([[:space:]]|$)/ /g; s/(^|[[:space:]])rootflag=[^[:space:]]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')
     set_grub_key "$key" "\"$current\""
 }
 
