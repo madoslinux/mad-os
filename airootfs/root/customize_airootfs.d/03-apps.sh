@@ -434,40 +434,6 @@ if legacy_non_btrfs_fallback in t:
     changed = True
 
 inject_after = '    set_grub_key "GRUB_CMDLINE_LINUX" "\\"$current\\""\n'
-block = """
-    # Drop malformed bare subvol= tokens (invalid as kernel args).
-    current=$(printf '%s' "$current" | sed -E 's/(^|[[:space:]])subvol=[^[:space:]]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')
-    set_grub_key "GRUB_CMDLINE_LINUX" "\"$current\""
-}
-
-ensure_btrfs_rootflags() {
-    local root_subvol=""
-    if [[ -f /etc/fstab ]]; then
-        root_subvol=$(awk '$2 == "/" && $3 == "btrfs" { n=split($4, opts, ","); for (i=1; i<=n; i++) if (opts[i] ~ /^subvol=/) { print opts[i]; exit } }' /etc/fstab)
-    fi
-
-    if [[ -n "$root_subvol" ]]; then
-        ensure_cmdline_token "rootflags=${root_subvol}"
-    fi
-"""
-
-if inject_after in t and "ensure_btrfs_rootflags()" not in t:
-    t = t.replace(inject_after, block, 1)
-    t = t.replace('ensure_cmdline_token "plymouth.use-simpledrm=0"\n', 'ensure_cmdline_token "plymouth.use-simpledrm=0"\nensure_btrfs_rootflags\n', 1)
-
-    changed = True
-
-if "ensure_btrfs_rootflags()" in t and "Drop malformed bare subvol= tokens" not in t and inject_after in t:
-    t = t.replace(inject_after, block, 1)
-    changed = True
-
-if "ensure_btrfs_rootflags()" in t and "ensure_cmdline_token \"plymouth.use-simpledrm=0\"\nensure_btrfs_rootflags\n" not in t:
-    t = t.replace(
-        'ensure_cmdline_token "plymouth.use-simpledrm=0"\n',
-        'ensure_cmdline_token "plymouth.use-simpledrm=0"\nensure_btrfs_rootflags\n',
-        1,
-    )
-    changed = True
 
 sanitize_calls = '''sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX"
 sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX_DEFAULT"
@@ -481,6 +447,16 @@ if "sanitize_grub_cmdline_key \"GRUB_CMDLINE_LINUX\"" not in t and "ensure_btrfs
 if 'ensure_btrfs_rootflags\n' in t:
     t = t.replace('ensure_btrfs_rootflags\n', '', 1)
     changed = True
+
+# Upstream installer must not define its own ensure_btrfs_rootflags helper;
+# grub-mkconfig already manages btrfs rootflags and duplicate helpers can drift.
+if "ensure_btrfs_rootflags()" in t:
+    start = t.find("ensure_btrfs_rootflags() {")
+    if start != -1:
+        end = t.find("\n}\n", start)
+        if end != -1:
+            t = t[:start] + t[end + 3 :]
+            changed = True
 
 # Keep quiet/splash only in GRUB_CMDLINE_LINUX_DEFAULT.
 if 'ensure_cmdline_token "splash"\n' in t:

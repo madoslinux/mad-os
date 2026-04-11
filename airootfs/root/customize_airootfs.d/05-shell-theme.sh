@@ -19,8 +19,12 @@ validate_shell_theme() {
     return 0
 }
 
+install_shell_theme_module() {
+    validate_shell_theme
+}
+
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "=== madOS Shell Theme Validation ==="
-    validate_shell_theme
+    install_shell_theme_module
     echo "=== Shell theme validation complete ==="
 fi

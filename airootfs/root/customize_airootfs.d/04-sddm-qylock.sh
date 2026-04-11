@@ -10,6 +10,7 @@ SDDM_CONF_DIR="/etc/sddm.conf.d"
 SDDM_CONF="${SDDM_CONF_DIR}/theme.conf"
 SDDM_AUTOLOGIN_CONF="${SDDM_CONF_DIR}/autologin-live.conf"
 SELECTED_THEME="pixel-night-city"
+DISTRO_FONT="Michroma"
 
 mkdir -p "$SDDM_CONF_DIR"
 
@@ -80,6 +81,56 @@ PY
     return 0
 }
 
+enforce_theme_font() {
+    local theme_dir="${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
+
+    if [ ! -d "$theme_dir" ]; then
+        echo "ERROR: Theme directory not found for font replacement: $theme_dir"
+        return 1
+    fi
+
+    python3 - "$theme_dir" "$DISTRO_FONT" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+theme_dir = Path(sys.argv[1])
+font_name = sys.argv[2]
+
+patterns = [
+    # QML/Qt style
+    (re.compile(r'font\\.family\\s*:\\s*"[^"]*"'), f'font.family: "{font_name}"'),
+    (re.compile(r"font\\.family\\s*:\\s*'[^']*'"), f'font.family: "{font_name}"'),
+    (re.compile(r'font\\.family\\s*:\\s*[A-Za-z_][A-Za-z0-9_]*\\.name'), f'font.family: "{font_name}"'),
+    (re.compile(r'fontFamily\\s*:\\s*"[^"]*"'), f'fontFamily: "{font_name}"'),
+    (re.compile(r"fontFamily\\s*:\\s*'[^']*'"), f'fontFamily: "{font_name}"'),
+
+    # INI/desktop-like keys occasionally used by themes
+    (re.compile(r'^\\s*Font\\s*=\\s*.+$', re.MULTILINE), f'Font={font_name}'),
+
+    # CSS/SVG snippets embedded in theme assets
+    (re.compile(r'font-family\\s*:\\s*[^;\\n]+;'), f'font-family: "{font_name}";'),
+]
+
+changed_files = []
+for file_path in list(theme_dir.rglob("*.qml")) + list(theme_dir.rglob("*.conf")) + list(theme_dir.rglob("*.ini")) + list(theme_dir.rglob("*.desktop")) + list(theme_dir.rglob("*.css")) + list(theme_dir.rglob("*.svg")):
+    text = file_path.read_text(encoding="utf-8", errors="ignore")
+    new_text = text
+    for pattern, replacement in patterns:
+        new_text = pattern.sub(replacement, new_text)
+    if new_text != text:
+        file_path.write_text(new_text, encoding="utf-8")
+        changed_files.append(file_path.relative_to(theme_dir).as_posix())
+
+if changed_files:
+    print(f"  → Enforced distro font '{font_name}' in {len(changed_files)} files")
+else:
+    print(f"  → No explicit font declarations found; theme will use system default '{font_name}'")
+PY
+
+    return 0
+}
+
 configure_sddm() {
     echo "Configuring SDDM..."
 
@@ -143,6 +194,7 @@ install_theme_fonts() {
 install_sddm_qylock() {
     clone_qylock
     install_sddm_theme
+    enforce_theme_font
     install_theme_fonts
     configure_sddm
     prepare_quickshell_lockscreen
