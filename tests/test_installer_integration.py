@@ -203,6 +203,11 @@ class TestThemeLayoutContract(unittest.TestCase):
         self.assertIn(
             'IMPERATIVE_DOTS_INSTALL_DIR="/usr/share/mados/themes/imperative-dots"', content
         )
+        self.assertIn(
+            'if [[ -x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh" && -x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh" ]]; then',
+            content,
+        )
+        self.assertIn('echo "  → Found incomplete imperative-dots install, reinstalling"', content)
         self.assertIn('chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh"', content)
         self.assertIn(
             'chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh"', content

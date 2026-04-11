@@ -1242,8 +1242,13 @@ install_imperative_dots() {
     echo "Installing imperative-dots theme..."
 
     if [[ -d "$IMPERATIVE_DOTS_INSTALL_DIR" ]]; then
-        echo "  → imperative-dots already installed, skipping"
-        return 0
+        if [[ -x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh" && -x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh" ]]; then
+            echo "  → imperative-dots already installed, skipping"
+            return 0
+        fi
+
+        echo "  → Found incomplete imperative-dots install, reinstalling"
+        rm -rf "$IMPERATIVE_DOTS_INSTALL_DIR"
     fi
 
     local build_dir="${BUILD_DIR}/imperative-dots_$$"
