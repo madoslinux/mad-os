@@ -3,16 +3,27 @@ set -euo pipefail
 
 LOG_TAG="mados-shellbar"
 XDG_CONF_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+XDG_CACHE_HOME="${XDG_CACHE_HOME:-$HOME/.cache}"
+LOG_FILE="${XDG_CACHE_HOME}/mados-shellbar.log"
 
 THEME_DIR_USER="${XDG_CONF_HOME}/imperative-dots"
 THEME_DIR_SYSTEM="/usr/share/mados/themes/imperative-dots"
 
 log_info() {
     logger -p user.info -t "${LOG_TAG}" "$1"
+    log_file "INFO" "$1"
 }
 
 log_warn() {
     logger -p user.warning -t "${LOG_TAG}" "$1"
+    log_file "WARN" "$1"
+}
+
+log_file() {
+    local level="$1"
+    local message="$2"
+    mkdir -p "${XDG_CACHE_HOME}" >/dev/null 2>&1 || true
+    printf '%s [%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${level}" "${message}" >>"${LOG_FILE}" 2>/dev/null || true
 }
 
 cleanup_existing_bars() {

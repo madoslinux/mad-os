@@ -170,6 +170,7 @@ class TestShellbarSessionDetection(unittest.TestCase):
 
     def test_hyprland_detection_has_priority_over_sway(self):
         content = _read(SHELLBAR_START)
+        self.assertIn('LOG_FILE="${XDG_CACHE_HOME}/mados-shellbar.log"', content)
         self.assertIn("if is_hyprland_session; then", content)
         self.assertIn('echo "hyprland"', content)
 
