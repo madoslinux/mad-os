@@ -129,7 +129,7 @@ class TestInstallerRepoSource(unittest.TestCase):
                     f"Required file missing: {file_rel} (cloned from {INSTALLER_REPO_URL}@{self.latest_tag})",
                 )
 
-    def test_configure_grub_has_ensure_btrfs_rootflags(self):
+    def test_configure_grub_source_still_has_manual_btrfs_rootflags(self):
         content = (self.work_dir / "scripts/configure-grub.sh").read_text()
         self.assertIn("ensure_btrfs_rootflags()", content)
 
@@ -157,10 +157,20 @@ class Test03AppsShContract(unittest.TestCase):
             ("INSTALLER_TAG_PATTERN=", "latest-tag installer strategy"),
             ("resolve_latest_tag", "latest tag resolution helper"),
             ("clone_latest_tag", "latest tag clone helper"),
-            ("ensure_btrfs_rootflags", "GRUB cmdline hardening"),
+            (
+                "still calls ensure_btrfs_rootflags (duplicates rootflags)",
+                "disallow duplicate btrfs rootflags injection",
+            ),
             ("Drop malformed bare subvol= tokens", "remove bare subvol kernel args"),
             ("still injects bare subvol= kernel args", "reject bare subvol injection"),
-            ("missing ensure_btrfs_rootflags call", "require ensure_btrfs_rootflags invocation"),
+            (
+                "still injects splash in GRUB_CMDLINE_LINUX",
+                "avoid duplicate splash token",
+            ),
+            (
+                "still injects quiet in GRUB_CMDLINE_LINUX",
+                "avoid duplicate quiet token",
+            ),
             (
                 "missing GRUB_CMDLINE_LINUX sanitizer call",
                 "sanitize GRUB_CMDLINE_LINUX bare subvol args",
@@ -168,6 +178,10 @@ class Test03AppsShContract(unittest.TestCase):
             (
                 "missing GRUB_CMDLINE_LINUX_DEFAULT sanitizer call",
                 "sanitize GRUB_CMDLINE_LINUX_DEFAULT bare subvol args",
+            ),
+            (
+                "missing grub.cfg sanitizer",
+                "sanitize generated grub.cfg as final safety net",
             ),
             (
                 "still injects legacy rootflag= token",

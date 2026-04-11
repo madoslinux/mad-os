@@ -98,8 +98,18 @@ assert_installer_contract() {
         return 1
     fi
 
-    if ! grep -q '^ensure_btrfs_rootflags$' "${install_path}/scripts/configure-grub.sh"; then
-        echo "ERROR: Installer contract check failed: configure-grub.sh missing ensure_btrfs_rootflags call"
+    if grep -q '^ensure_btrfs_rootflags$' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still calls ensure_btrfs_rootflags (duplicates rootflags)"
+        return 1
+    fi
+
+    if grep -q '^ensure_cmdline_token "splash"$' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still injects splash in GRUB_CMDLINE_LINUX"
+        return 1
+    fi
+
+    if grep -q '^ensure_cmdline_token "quiet"$' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still injects quiet in GRUB_CMDLINE_LINUX"
         return 1
     fi
 
@@ -110,6 +120,11 @@ assert_installer_contract() {
 
     if ! grep -q 'sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX_DEFAULT"' "${install_path}/scripts/configure-grub.sh"; then
         echo "ERROR: Installer contract check failed: configure-grub.sh missing GRUB_CMDLINE_LINUX_DEFAULT sanitizer call"
+        return 1
+    fi
+
+    if ! grep -q 'sanitize_generated_grub_cfg()' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing grub.cfg sanitizer"
         return 1
     fi
 
@@ -450,6 +465,38 @@ sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX_DEFAULT"
 
 if "sanitize_grub_cmdline_key \"GRUB_CMDLINE_LINUX\"" not in t and "ensure_btrfs_rootflags" in t:
     t = t.replace('ensure_btrfs_rootflags\n', 'ensure_btrfs_rootflags\n' + sanitize_calls, 1)
+    changed = True
+
+# Avoid duplicated rootflags: GRUB's 10_linux already injects btrfs rootflags=subvol=... .
+if 'ensure_btrfs_rootflags\n' in t:
+    t = t.replace('ensure_btrfs_rootflags\n', '', 1)
+    changed = True
+
+# Keep quiet/splash only in GRUB_CMDLINE_LINUX_DEFAULT.
+if 'ensure_cmdline_token "splash"\n' in t:
+    t = t.replace('ensure_cmdline_token "splash"\n', '', 1)
+    changed = True
+
+if 'ensure_cmdline_token "quiet"\n' in t:
+    t = t.replace('ensure_cmdline_token "quiet"\n', '', 1)
+    changed = True
+
+cfg_sanitize_fn = '''sanitize_generated_grub_cfg() {
+    local cfg="/boot/grub/grub.cfg"
+    [[ -f "$cfg" ]] || return 0
+
+    # Final safety net: strip invalid bare subvol/rootflag tokens from generated menu entries.
+    sed -Ei 's/(^|[[:space:]])subvol=[^[:space:]]+([[:space:]]|$)/ /g; s/(^|[[:space:]])rootflag=[^[:space:]]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g' "$cfg"
+}
+
+'''
+
+if "sanitize_generated_grub_cfg()" not in t and "$GRUB_MKCONFIG -o /boot/grub/grub.cfg" in t:
+    t = t.replace('$GRUB_MKCONFIG -o /boot/grub/grub.cfg\n', '$GRUB_MKCONFIG -o /boot/grub/grub.cfg\nsanitize_generated_grub_cfg\n', 1)
+    changed = True
+
+if "sanitize_generated_grub_cfg()" not in t and "require_cmd \"$BLKID\"\n" in t:
+    t = t.replace('require_cmd "$BLKID"\n', 'require_cmd "$BLKID"\n\n' + cfg_sanitize_fn, 1)
     changed = True
 
 if changed:

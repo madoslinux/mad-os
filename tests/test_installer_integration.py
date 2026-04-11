@@ -123,7 +123,10 @@ class TestInstallerContractChecks(unittest.TestCase):
     def test_has_explicit_contract_assertions(self):
         self.assertIn("assert_installer_contract()", self.apps_script)
         self.assertIn("Installer contract missing required file", self.apps_script)
-        self.assertIn("configure-grub.sh missing ensure_btrfs_rootflags", self.apps_script)
+        self.assertIn(
+            "configure-grub.sh still calls ensure_btrfs_rootflags (duplicates rootflags)",
+            self.apps_script,
+        )
         self.assertIn(
             "configure-grub.sh missing bare subvol token sanitizer",
             self.apps_script,
@@ -133,7 +136,11 @@ class TestInstallerContractChecks(unittest.TestCase):
             self.apps_script,
         )
         self.assertIn(
-            "configure-grub.sh missing ensure_btrfs_rootflags call",
+            "configure-grub.sh still injects splash in GRUB_CMDLINE_LINUX",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh still injects quiet in GRUB_CMDLINE_LINUX",
             self.apps_script,
         )
         self.assertIn(
@@ -142,6 +149,10 @@ class TestInstallerContractChecks(unittest.TestCase):
         )
         self.assertIn(
             "configure-grub.sh missing GRUB_CMDLINE_LINUX_DEFAULT sanitizer call",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh missing grub.cfg sanitizer",
             self.apps_script,
         )
         self.assertIn(
