@@ -574,11 +574,19 @@ PY
 
     if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then
         sed -i '/enable_service iwd/d' "${install_path}/scripts/enable-services.sh"
+        if ! grep -q 'enable_service sshd' "${install_path}/scripts/enable-services.sh"; then
+            printf '\nenable_service sshd\n' >> "${install_path}/scripts/enable-services.sh"
+        fi
         if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
             echo "ERROR: Failed to remove iwd enable from installer services"
             return 1
         fi
+        if ! grep -q 'enable_service sshd' "${install_path}/scripts/enable-services.sh"; then
+            echo "ERROR: Failed to enforce sshd enable in installer services"
+            return 1
+        fi
         echo "  → Removed installer iwd service enable"
+        echo "  → Enforced installer sshd service enable"
     fi
 
     if ! assert_installer_contract "$install_path"; then

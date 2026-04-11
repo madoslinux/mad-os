@@ -136,8 +136,8 @@ Layout contract used by madOS:
 
 ## License
 
-See [LICENSE](LICENSE) for details.
-
+This project is licensed under `AGPL-3.0-only` (GNU Affero General Public License v3.0 only).
+See [LICENSE](LICENSE) for the full text.
 ## Resources
 
 - [GitHub](https://github.com/madkoding/mad-os)
