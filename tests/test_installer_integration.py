@@ -230,6 +230,10 @@ class TestThemeLayoutContract(unittest.TestCase):
         self.assertIn('"${THEME_INSTALL_DIR}/scripts/start/start.sh"', content)
         self.assertIn('"${THEME_INSTALL_DIR}/scripts/quickshell/Main.qml"', content)
         self.assertIn('"${THEME_INSTALL_DIR}/scripts/quickshell/TopBar.qml"', content)
+        self.assertIn(
+            '"${THEME_INSTALL_DIR}/scripts/quickshell/notifications/NotificationPopup.qml"', content
+        )
+        self.assertIn('"${THEME_INSTALL_DIR}/scripts/quickshell/i18n/I18n.qml"', content)
         self.assertIn('"${THEME_INSTALL_DIR}/config/hypr/scripts/init.sh"', content)
 
     def test_shellbar_uses_scripts_quickshell_layout(self):

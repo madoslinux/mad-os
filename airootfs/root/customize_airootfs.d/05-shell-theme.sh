@@ -25,6 +25,16 @@ validate_shell_theme() {
         return 0
     fi
 
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/notifications/NotificationPopup.qml" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/notifications/NotificationPopup.qml"
+        return 0
+    fi
+
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/i18n/I18n.qml" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/i18n/I18n.qml"
+        return 0
+    fi
+
     if [[ ! -x "${THEME_INSTALL_DIR}/config/hypr/scripts/init.sh" ]]; then
         echo "WARNING: Theme is missing executable config/hypr/scripts/init.sh"
         return 0
