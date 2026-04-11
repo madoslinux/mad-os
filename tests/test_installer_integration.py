@@ -189,6 +189,8 @@ class TestShellbarSessionDetection(unittest.TestCase):
     def test_hyprland_uses_direct_quickshell_last_resort(self):
         content = _read(SHELLBAR_START)
         self.assertIn("launch_quickshell_direct()", content)
+        self.assertIn('export QS_IPC_FILE="${state_dir}/qs_widget_state"', content)
+        self.assertIn('export QS_ACTIVE_WIDGET_FILE="${state_dir}/qs_active_widget"', content)
         self.assertIn(
             'if [[ "${session_type}" == "hyprland" ]] && launch_quickshell_direct; then', content
         )

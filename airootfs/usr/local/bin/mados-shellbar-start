@@ -164,6 +164,9 @@ launch_quickshell_direct() {
     local quickshell_dir=""
     local main_qml=""
     local bar_qml=""
+    local runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+    local session_id="${HYPRLAND_INSTANCE_SIGNATURE:-$(id -u)}"
+    local state_dir="${runtime_dir}/mados-quickshell-${session_id}"
     local attempt=1
     local max_attempts=8
 
@@ -183,6 +186,12 @@ launch_quickshell_direct() {
 
     main_qml="${quickshell_dir}/Main.qml"
     bar_qml="${quickshell_dir}/TopBar.qml"
+
+    mkdir -p "${state_dir}" >/dev/null 2>&1 || true
+    export QS_IPC_FILE="${state_dir}/qs_widget_state"
+    export QS_ACTIVE_WIDGET_FILE="${state_dir}/qs_active_widget"
+    : > "${QS_IPC_FILE}"
+    : > "${QS_ACTIVE_WIDGET_FILE}"
 
     log_warn "Attempting direct quickshell launch from ${quickshell_dir}"
     pkill -f "quickshell.*Main.qml" >/dev/null 2>&1 || true
