@@ -20,11 +20,41 @@ cleanup_existing_bars() {
 }
 
 is_hyprland_session() {
-    [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || [[ "${XDG_CURRENT_DESKTOP:-}" = "Hyprland" ]]
+    local desktop="${XDG_CURRENT_DESKTOP:-}"
+    [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || [[ "${desktop,,}" == *"hyprland"* ]]
+}
+
+has_valid_sway_socket() {
+    [[ -n "${SWAYSOCK:-}" ]] && [[ -S "${SWAYSOCK}" ]]
 }
 
 is_sway_session() {
-    [[ -n "${SWAYSOCK:-}" ]] || [[ "${XDG_CURRENT_DESKTOP:-}" = "sway" ]]
+    local desktop="${XDG_CURRENT_DESKTOP:-}"
+    has_valid_sway_socket || [[ "${desktop,,}" == *"sway"* ]]
+}
+
+detect_session_type() {
+    local desktop="${XDG_CURRENT_DESKTOP:-}"
+
+    if is_hyprland_session; then
+        log_info "Hyprland session detected (hypr_sig=${HYPRLAND_INSTANCE_SIGNATURE:+set}, desktop=${desktop:-unset}, sway_sock=${SWAYSOCK:-unset})"
+        echo "hyprland"
+        return 0
+    fi
+
+    if [[ -n "${SWAYSOCK:-}" ]] && ! has_valid_sway_socket; then
+        log_warn "Ignoring stale SWAYSOCK: ${SWAYSOCK}"
+    fi
+
+    if is_sway_session; then
+        log_info "Sway session detected (desktop=${desktop:-unset}, sway_sock=${SWAYSOCK:-unset})"
+        echo "sway"
+        return 0
+    fi
+
+    log_warn "Unable to detect compositor session (desktop=${desktop:-unset}, hypr_sig=${HYPRLAND_INSTANCE_SIGNATURE:+set}, sway_sock=${SWAYSOCK:-unset})"
+    echo "unknown"
+    return 0
 }
 
 launch_waybar() {
@@ -48,61 +78,140 @@ launch_waybar() {
 }
 
 launch_theme() {
+    local theme_candidates=("${THEME_DIR_USER}" "${THEME_DIR_SYSTEM}")
     local theme_dir=""
     local theme_launcher=""
     local theme_healthcheck=""
+    local quickshell_main=""
+    local quickshell_bar=""
+    local max_attempts=8
+    local attempt=1
 
-    if [[ -x "${THEME_DIR_USER}/scripts/start/start.sh" ]]; then
-        theme_dir="${THEME_DIR_USER}"
-    elif [[ -x "${THEME_DIR_SYSTEM}/scripts/start/start.sh" ]]; then
-        theme_dir="${THEME_DIR_SYSTEM}"
+    for theme_dir in "${theme_candidates[@]}"; do
+        theme_launcher="${theme_dir}/scripts/start/start.sh"
+        theme_healthcheck="${theme_dir}/scripts/start/healthcheck.sh"
+        quickshell_main="${theme_dir}/scripts/quickshell/Main.qml"
+        quickshell_bar="${theme_dir}/scripts/quickshell/TopBar.qml"
+
+        if [[ ! -x "${theme_launcher}" ]]; then
+            continue
+        fi
+
+        if [[ ! -f "${quickshell_main}" || ! -f "${quickshell_bar}" ]]; then
+            log_warn "Skipping incomplete theme at ${theme_dir} (missing quickshell QML)"
+            continue
+        fi
+
+        log_info "Launching imperative-dots theme from ${theme_dir}"
+        if ! "${theme_launcher}"; then
+            log_warn "Theme launcher failed at ${theme_dir}"
+            continue
+        fi
+
+        if [[ -x "${theme_healthcheck}" ]]; then
+            attempt=1
+            while [[ "$attempt" -le "$max_attempts" ]]; do
+                if "${theme_healthcheck}"; then
+                    log_info "Theme healthcheck passed for ${theme_dir} (attempt ${attempt}/${max_attempts})"
+                    log_info "Theme launched successfully"
+                    return 0
+                fi
+                sleep 0.25
+                attempt=$((attempt + 1))
+            done
+            log_warn "Theme healthcheck failed for ${theme_dir} after ${max_attempts} attempts"
+            continue
+        fi
+
+        log_info "Theme launched successfully"
+        return 0
+    done
+
+    log_warn "No valid imperative-dots launcher succeeded"
+    return 1
+}
+
+launch_theme_with_retry() {
+    local max_attempts=2
+    local attempt=1
+
+    while [[ "${attempt}" -le "${max_attempts}" ]]; do
+        if launch_theme; then
+            return 0
+        fi
+        if [[ "${attempt}" -lt "${max_attempts}" ]]; then
+            log_warn "Theme launch attempt ${attempt}/${max_attempts} failed, retrying"
+            sleep 0.5
+        fi
+        attempt=$((attempt + 1))
+    done
+
+    return 1
+}
+
+launch_quickshell_direct() {
+    local quickshell_dir=""
+    local main_qml=""
+    local bar_qml=""
+    local attempt=1
+    local max_attempts=8
+
+    if [[ -f "${XDG_CONF_HOME}/quickshell/Main.qml" && -f "${XDG_CONF_HOME}/quickshell/TopBar.qml" ]]; then
+        quickshell_dir="${XDG_CONF_HOME}/quickshell"
+    elif [[ -f "${THEME_DIR_SYSTEM}/scripts/quickshell/Main.qml" && -f "${THEME_DIR_SYSTEM}/scripts/quickshell/TopBar.qml" ]]; then
+        quickshell_dir="${THEME_DIR_SYSTEM}/scripts/quickshell"
     else
-        log_warn "No imperative-dots launcher found in user or system paths"
+        log_warn "No quickshell QML files found for direct launch"
         return 1
     fi
 
-    theme_launcher="${theme_dir}/scripts/start/start.sh"
-    theme_healthcheck="${theme_dir}/scripts/start/healthcheck.sh"
-
-    log_info "Launching imperative-dots theme from ${theme_dir}"
-    if ! "${theme_launcher}"; then
-        log_warn "Theme launcher exited with failure"
+    if ! command -v quickshell >/dev/null 2>&1; then
+        log_warn "quickshell binary not found for direct launch"
         return 1
     fi
 
-    if [[ -x "${theme_healthcheck}" ]]; then
-        local max_attempts=8
-        local attempt=1
-        while [[ "$attempt" -le "$max_attempts" ]]; do
-            if "${theme_healthcheck}"; then
-                log_info "Theme healthcheck passed (attempt ${attempt}/${max_attempts})"
-                log_info "Theme launched successfully"
-                return 0
-            fi
-            sleep 0.25
-            attempt=$((attempt + 1))
-        done
-        log_warn "Theme healthcheck failed after ${max_attempts} attempts"
-        return 1
-    fi
+    main_qml="${quickshell_dir}/Main.qml"
+    bar_qml="${quickshell_dir}/TopBar.qml"
 
-    log_info "Theme launched successfully"
-    return 0
+    log_warn "Attempting direct quickshell launch from ${quickshell_dir}"
+    pkill -f "quickshell.*Main.qml" >/dev/null 2>&1 || true
+    pkill -f "quickshell.*TopBar.qml" >/dev/null 2>&1 || true
+
+    quickshell -p "${main_qml}" >/dev/null 2>&1 &
+    quickshell -p "${bar_qml}" >/dev/null 2>&1 &
+
+    while [[ "${attempt}" -le "${max_attempts}" ]]; do
+        if pgrep -f "quickshell.*Main.qml" >/dev/null 2>&1 && pgrep -f "quickshell.*TopBar.qml" >/dev/null 2>&1; then
+            log_info "Direct quickshell launch succeeded"
+            return 0
+        fi
+        sleep 0.25
+        attempt=$((attempt + 1))
+    done
+
+    log_warn "Direct quickshell launch failed"
+    return 1
 }
 
 cleanup_existing_bars
 
-if is_sway_session; then
-    log_info "Sway session detected, launching waybar"
+session_type="$(detect_session_type)"
+
+if [[ "${session_type}" == "sway" ]]; then
+    log_info "Using waybar for Sway session"
     launch_waybar
     exit $?
 fi
 
-if launch_theme; then
+if launch_theme_with_retry; then
     exit 0
 fi
 
-log_warn "Theme launch failed, falling back to waybar"
+if [[ "${session_type}" == "hyprland" ]] && launch_quickshell_direct; then
+    exit 0
+fi
+
+log_warn "Theme launch failed after retries, falling back to waybar"
 if launch_waybar; then
     exit 0
 fi

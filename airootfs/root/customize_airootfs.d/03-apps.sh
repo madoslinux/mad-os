@@ -1274,6 +1274,7 @@ install_imperative_dots() {
 
     chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh"
     chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh"
+    find "${IMPERATIVE_DOTS_INSTALL_DIR}/config/hypr/scripts" -type f -name "*.sh" -exec chmod +x {} +
 
     echo "✓ imperative-dots installed to ${IMPERATIVE_DOTS_INSTALL_DIR}"
     return 0

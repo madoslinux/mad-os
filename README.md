@@ -108,6 +108,12 @@ pre-commit install
 
 The shell theme is installed from [theme-imperative-dots](https://github.com/madkoding/theme-imperative-dots) during ISO build.
 
+Layout contract used by madOS:
+
+- Theme startup entrypoint: `/usr/share/mados/themes/imperative-dots/scripts/start/start.sh`
+- Hypr helper scripts source: `/usr/share/mados/themes/imperative-dots/config/hypr/scripts/`
+- Quickshell widgets source: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/`
+
 - Main UI and behavior: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/LauncherPopup.qml`
 - App discovery and metadata: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/list_apps.py`
 - Launcher tuning (ranking/UI): `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/config.json`

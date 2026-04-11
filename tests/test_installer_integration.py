@@ -25,67 +25,13 @@ SWAY_CONF = os.path.join(
     REPO_DIR, "airootfs", "etc", "sway", "config.d", "50-installer-autostart.conf"
 )
 CUSTOMIZE_SCRIPT = os.path.join(REPO_DIR, "airootfs", "root", "customize_airootfs.sh")
-THEME_HYPR_CONF = os.path.join(
+SHELLBAR_START = os.path.join(REPO_DIR, "airootfs", "usr", "local", "bin", "mados-shellbar-start")
+SHELL_THEME_VALIDATOR = os.path.join(
     REPO_DIR,
     "airootfs",
-    "usr",
-    "share",
-    "mados",
-    "themes",
-    "imperative-dots",
-    ".config",
-    "hypr",
-    "hyprland.conf",
-)
-GUIDE_QML = os.path.join(
-    REPO_DIR,
-    "airootfs",
-    "usr",
-    "share",
-    "mados",
-    "themes",
-    "imperative-dots",
-    ".config",
-    "hypr",
-    "scripts",
-    "quickshell",
-    "guide",
-    "GuidePopup.qml",
-)
-WALLPAPER_PICKER_HELPER = os.path.join(
-    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-wallpaper-picker"
-)
-SKWD_DAEMON_HELPER = os.path.join(
-    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-skwd-wall-daemon"
-)
-SKWD_SOURCES_HELPER = os.path.join(
-    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-skwd-wall-sources"
-)
-SKWD_DOCTOR_HELPER = os.path.join(
-    REPO_DIR, "airootfs", "usr", "local", "bin", "mados-skwd-wall-doctor"
-)
-SKWD_SERVICE = os.path.join(
-    REPO_DIR,
-    "airootfs",
-    "etc",
-    "skel",
-    ".config",
-    "systemd",
-    "user",
-    "skwd-wall.service",
-)
-QS_MANAGER = os.path.join(
-    REPO_DIR,
-    "airootfs",
-    "usr",
-    "share",
-    "mados",
-    "themes",
-    "imperative-dots",
-    ".config",
-    "hypr",
-    "scripts",
-    "qs_manager.sh",
+    "root",
+    "customize_airootfs.d",
+    "05-shell-theme.sh",
 )
 
 
@@ -219,81 +165,70 @@ class TestAutostartStrategy(unittest.TestCase):
         self.assertIn("Hidden=true", content)
 
 
-@unittest.skip("Tests for imperative-dots theme integration - moved to theme-imperative-dots repo")
-class TestSkwdWallIntegration(unittest.TestCase):
-    """Validate skwd-wall wiring across build and runtime configs."""
+class TestShellbarSessionDetection(unittest.TestCase):
+    """Shellbar launcher should prefer correct compositor context."""
+
+    def test_hyprland_detection_has_priority_over_sway(self):
+        content = _read(SHELLBAR_START)
+        self.assertIn("if is_hyprland_session; then", content)
+        self.assertIn('echo "hyprland"', content)
+
+    def test_swaysock_requires_real_socket(self):
+        content = _read(SHELLBAR_START)
+        self.assertIn("has_valid_sway_socket()", content)
+        self.assertIn('[[ -S "${SWAYSOCK}" ]]', content)
+        self.assertIn("Ignoring stale SWAYSOCK", content)
+
+    def test_theme_launch_retries_before_waybar_fallback(self):
+        content = _read(SHELLBAR_START)
+        self.assertIn("launch_theme_with_retry()", content)
+        self.assertIn("Theme launch attempt", content)
+        self.assertIn("Theme launch failed after retries, falling back to waybar", content)
+
+    def test_hyprland_uses_direct_quickshell_last_resort(self):
+        content = _read(SHELLBAR_START)
+        self.assertIn("launch_quickshell_direct()", content)
+        self.assertIn(
+            'if [[ "${session_type}" == "hyprland" ]] && launch_quickshell_direct; then', content
+        )
+
+
+class TestThemeLayoutContract(unittest.TestCase):
+    """Theme install/runtime references must match external imperative-dots layout."""
+
+    def test_apps_script_installs_external_theme_and_start_hook(self):
+        content = _read(APPS_SCRIPT)
+        self.assertIn('IMPERATIVE_DOTS_REPO="madkoding/theme-imperative-dots"', content)
+        self.assertIn(
+            'IMPERATIVE_DOTS_INSTALL_DIR="/usr/share/mados/themes/imperative-dots"', content
+        )
+        self.assertIn('chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh"', content)
+        self.assertIn(
+            'chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh"', content
+        )
+        self.assertIn(
+            'find "${IMPERATIVE_DOTS_INSTALL_DIR}/config/hypr/scripts" -type f -name "*.sh" -exec chmod +x {} +',
+            content,
+        )
+        self.assertNotIn("/usr/share/mados/themes/imperative-dots/.config", content)
+
+    def test_shell_theme_validation_uses_start_script_path(self):
+        content = _read(SHELL_THEME_VALIDATOR)
+        self.assertIn('"${THEME_INSTALL_DIR}/scripts/start/start.sh"', content)
+        self.assertIn('"${THEME_INSTALL_DIR}/scripts/quickshell/Main.qml"', content)
+        self.assertIn('"${THEME_INSTALL_DIR}/scripts/quickshell/TopBar.qml"', content)
+        self.assertIn('"${THEME_INSTALL_DIR}/config/hypr/scripts/init.sh"', content)
+
+    def test_shellbar_uses_scripts_quickshell_layout(self):
+        content = _read(SHELLBAR_START)
+        self.assertIn('"${theme_dir}/scripts/quickshell/Main.qml"', content)
+        self.assertIn('"${theme_dir}/scripts/quickshell/TopBar.qml"', content)
+        self.assertNotIn("/usr/share/mados/themes/imperative-dots/.config", content)
 
     def test_customize_script_calls_skwd_wall_install(self):
         content = _read(CUSTOMIZE_SCRIPT)
         self.assertIn('run_module "03-apps.sh" "setup_wallpaper_assets"', content)
         self.assertIn('run_module "03-apps.sh" "install_skwd_wall"', content)
-
-    def test_apps_script_keeps_opt_compat_symlink(self):
-        content = _read(APPS_SCRIPT)
-        self.assertIn('SKWD_WALL_COMPAT_DIR="/opt/mados/skwd-wall"', content)
-        self.assertIn('ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"', content)
-
-    def test_apps_script_uses_madkoding_skwd_fork(self):
-        content = _read(APPS_SCRIPT)
-        self.assertIn('SKWD_WALL_REPO="madkoding/skwd-wall"', content)
-        self.assertNotIn('SKWD_WALL_REPO="liixini/skwd-wall"', content)
-        self.assertNotIn("WallhavenBrowser.qml", content)
-        self.assertNotIn("SteamWorkshopBrowser.qml", content)
-
-    def test_hypr_bindings_use_wallpaper_picker_helper(self):
-        self.assertIn("mados-wallpaper-picker toggle", _read(HYPR_CONF))
-        self.assertIn("mados-wallpaper-picker toggle", _read(THEME_HYPR_CONF))
-        self.assertIn("mados-wallpaper-picker web", _read(HYPR_CONF))
-        self.assertIn("mados-wallpaper-picker web", _read(THEME_HYPR_CONF))
-
-    def test_hypr_autostart_starts_skwd_wall_daemon(self):
-        self.assertIn("systemctl --user start skwd-wall.service", _read(HYPR_CONF))
-        self.assertIn("systemctl --user start skwd-wall.service", _read(THEME_HYPR_CONF))
-
-    def test_guide_uses_wallpaper_picker_helper(self):
-        guide = _read(GUIDE_QML)
-        self.assertIn("mados-wallpaper-picker toggle", guide)
-        self.assertIn("mados-wallpaper-picker web", guide)
-        self.assertNotIn("qs_manager.sh toggle wallpaper", guide)
-
-    def test_wallpaper_picker_helper_exists_with_fallback_path(self):
-        content = _read(WALLPAPER_PICKER_HELPER)
-        self.assertIn("#!/usr/bin/env bash", content)
-        self.assertIn('DAEMON_QML="/usr/local/share/skwd-wall/daemon.qml"', content)
-        self.assertIn('quickshell ipc -p "$DAEMON_QML"', content)
-        self.assertIn('systemctl --user start "$SERVICE_NAME"', content)
-
-    def test_skwd_helpers_exist_and_use_canonical_layout(self):
-        daemon_helper = _read(SKWD_DAEMON_HELPER)
-        self.assertIn("/usr/local/share/skwd-wall/daemon.qml", daemon_helper)
-        self.assertIn('SKWD_WALL_INSTALL="/usr/local/share/skwd-wall"', daemon_helper)
-        self.assertIn("mados-skwd-wall-sources prepare", daemon_helper)
-
-        sources_helper = _read(SKWD_SOURCES_HELPER)
-        self.assertIn("wallpaperSources", sources_helper)
-        self.assertIn("wallpaper-union", sources_helper)
-        self.assertIn("source-sync-state.json", sources_helper)
-        self.assertIn("SYNC_THROTTLE_SECONDS", sources_helper)
-        self.assertIn("file_fingerprint", sources_helper)
-        self.assertIn("seen_fingerprints", sources_helper)
-        self.assertIn('"/usr/share/backgrounds"', sources_helper)
-        self.assertIn('"/usr/share/mados/wallpapers"', sources_helper)
-
-        doctor_helper = _read(SKWD_DOCTOR_HELPER)
-        self.assertIn("/usr/local/share/skwd-wall/daemon.qml", doctor_helper)
-        self.assertIn("journalctl --user -u skwd-wall.service", doctor_helper)
-
-    def test_skwd_user_service_exists(self):
-        content = _read(SKWD_SERVICE)
-        self.assertIn("ExecStart=/usr/local/bin/mados-skwd-wall-daemon", content)
-        self.assertIn("Restart=on-failure", content)
-
-    def test_qs_manager_routes_wallpaper_to_skwd_wall(self):
-        content = _read(QS_MANAGER)
-        self.assertIn('if [[ "$TARGET" == "wallpaper" ]]; then', content)
-        self.assertIn("mados-wallpaper-picker toggle", content)
-        self.assertIn("mados-wallpaper-picker open", content)
-        self.assertIn("mados-wallpaper-picker close", content)
 
 
 if __name__ == "__main__":

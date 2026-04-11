@@ -15,6 +15,21 @@ validate_shell_theme() {
         return 0
     fi
 
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/Main.qml" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/Main.qml"
+        return 0
+    fi
+
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/TopBar.qml" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/TopBar.qml"
+        return 0
+    fi
+
+    if [[ ! -x "${THEME_INSTALL_DIR}/config/hypr/scripts/init.sh" ]]; then
+        echo "WARNING: Theme is missing executable config/hypr/scripts/init.sh"
+        return 0
+    fi
+
     echo "✓ imperative-dots theme validated"
     return 0
 }
