@@ -14,6 +14,8 @@ RENDER_MODE="${RENDER_MODE:-auto}"
 DISPLAY_BACKEND="${DISPLAY_BACKEND:-gtk}"
 VIDEO_PROFILE="${VIDEO_PROFILE:-virtio}"
 ENABLE_AUDIO="${ENABLE_AUDIO:-1}"
+NET_MODE="${NET_MODE:-nat}"
+BRIDGE_IF="${BRIDGE_IF:-br0}"
 INTERACTIVE=0
 USE_LAST=0
 
@@ -44,6 +46,8 @@ Options:
   --iso <path>          ISO path (default: latest from out/)
   --preset <name>       Preset: normal | software-drm | no-drm-test
   --no-audio            Disable audio
+  --net-mode <mode>     Network mode: nat | bridge
+  --bridge <ifname>     Bridge interface for bridge mode (default: br0)
   --help                Show this help
 
 Examples:
@@ -87,6 +91,8 @@ RENDER_MODE=${RENDER_MODE}
 DISPLAY_BACKEND=${DISPLAY_BACKEND}
 VIDEO_PROFILE=${VIDEO_PROFILE}
 ENABLE_AUDIO=${ENABLE_AUDIO}
+NET_MODE=${NET_MODE}
+BRIDGE_IF=${BRIDGE_IF}
 EOF
 }
 
@@ -202,6 +208,16 @@ interactive_menu() {
         DISPLAY_BACKEND="$backend_choice"
     fi
 
+    local net_mode_choice
+    net_mode_choice=$(choose_from_list "Network mode:" "nat" "bridge" || true)
+    if [[ -n "${net_mode_choice:-}" ]]; then
+        NET_MODE="$net_mode_choice"
+    fi
+
+    if [[ "$NET_MODE" == "bridge" ]]; then
+        BRIDGE_IF=$(prompt_value "Bridge interface" "$BRIDGE_IF")
+    fi
+
     local profile_choice
     profile_choice=$(choose_from_list "Video profile:" "virtio" "std (no-drm test)" || true)
     if [[ -n "${profile_choice:-}" ]]; then
@@ -282,6 +298,14 @@ parse_args() {
             --no-audio)
                 ENABLE_AUDIO=0
                 shift
+                ;;
+            --net-mode)
+                NET_MODE="$2"
+                shift 2
+                ;;
+            --bridge)
+                BRIDGE_IF="$2"
+                shift 2
                 ;;
             --help|-h)
                 print_usage
@@ -401,6 +425,30 @@ set_audio_opts() {
     fi
 }
 
+set_network_opts() {
+    case "$NET_MODE" in
+        nat)
+            echo "Network mode: NAT (QEMU user networking)"
+            NET_OPTS=(
+                -netdev user,id=net0,hostfwd=tcp::2222-:22
+                -device virtio-net-pci,netdev=net0
+            )
+            ;;
+        bridge)
+            echo "Network mode: bridge (${BRIDGE_IF})"
+            NET_OPTS=(
+                -netdev "bridge,id=net0,br=${BRIDGE_IF}"
+                -device virtio-net-pci,netdev=net0
+            )
+            ;;
+        *)
+            echo "Invalid net mode: ${NET_MODE}"
+            echo "Valid net modes: nat, bridge"
+            exit 1
+            ;;
+    esac
+}
+
 build_qemu_cmd() {
     QEMU_CMD=(
         qemu-system-x86_64
@@ -410,8 +458,7 @@ build_qemu_cmd() {
         -cdrom "$ISO_FILE"
         -boot d
         -drive file="$DISK_FILE",format=qcow2,if=virtio
-        -net nic
-        -net user,hostfwd=tcp::2222-:22
+        "${NET_OPTS[@]}"
         "${VIDEO_OPTS[@]}"
         "${DMI_OPTS[@]}"
         -device qemu-xhci
@@ -437,6 +484,10 @@ print_config() {
     echo "  Render mode: ${RENDER_MODE}"
     echo "  Display backend: ${DISPLAY_BACKEND}"
     echo "  Video profile: ${VIDEO_PROFILE}"
+    echo "  Network mode: ${NET_MODE}"
+    if [[ "$NET_MODE" == "bridge" ]]; then
+        echo "  Bridge interface: ${BRIDGE_IF}"
+    fi
     echo "  Audio: $([ "$ENABLE_AUDIO" -eq 1 ] && echo "enabled" || echo "disabled")"
     echo ""
 }
@@ -507,6 +558,7 @@ main() {
     set_kvm_accel
     set_uefi_firmware
     set_audio_opts
+    set_network_opts
 
     echo ""
     echo "Starting QEMU..."
