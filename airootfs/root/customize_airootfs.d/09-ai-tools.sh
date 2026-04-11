@@ -27,6 +27,18 @@ install_forgecode_fallback() {
     fi
 }
 
+install_qwen_fallback() {
+    echo "  Installing via official Qwen installer..."
+    if command -v curl &>/dev/null; then
+        bash -c "$(curl -fsSL https://qwen-code-assets.oss-cn-hangzhou.aliyuncs.com/installation/install-qwen.sh)" -s --source qwenchat </dev/null 2>&1 && echo "✓ Qwen installed" || {
+            echo "WARNING: Qwen install failed"
+            echo "  Users can install manually after boot"
+        }
+    else
+        echo "  curl not available, cannot install. Install manually after boot."
+    fi
+}
+
 ensure_forge_global_command() {
     local forge_src=""
 
@@ -74,10 +86,21 @@ install_forgecode() {
     ensure_forge_global_command || true
 }
 
+install_qwen() {
+    echo "Installing Qwen..."
+
+    if command -v qwen &>/dev/null; then
+        echo "qwen already installed"
+        return 0
+    fi
+
+    install_qwen_fallback
+}
+
 configure_ai_tools_permissions() {
     echo "Configuring AI tools permissions..."
 
-    for bin in openclaw forge forgecode; do
+    for bin in openclaw forge forgecode qwen; do
         for path in /usr/bin/$bin /usr/local/bin/$bin; do
             if [[ -f "$path" ]]; then
                 chown root:wheel "$path" 2>/dev/null || true
@@ -100,6 +123,7 @@ configure_ai_tools_permissions() {
 install_ai_tools() {
     install_openclaw
     install_forgecode
+    install_qwen
     configure_ai_tools_permissions
     echo "✓ AI tools installation complete"
 }

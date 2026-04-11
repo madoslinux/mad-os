@@ -3,7 +3,7 @@
 Tests for madOS installer contract validation.
 
 Validates that the mados-installer external repository has the expected
-contract requirements met at the pinned commit (v1.0.4 / 259d14cb722f86ef17aa6a8e5f265ea88020ee38).
+contract requirements met at the pinned commit (v1.0.7 / def758a7f36f0604c7235afbf3583945661270b9).
 
 These tests verify that:
 1. The installer repo is at the expected commit
@@ -21,8 +21,8 @@ from pathlib import Path
 REPO_DIR = Path(__file__).parent.parent.resolve()
 INSTALLER_SCRIPTS_DIR = REPO_DIR / "airootfs/usr/local/lib/mados_installer/scripts"
 
-INSTALLER_TAG = "v1.0.4"
-INSTALLER_COMMIT = "259d14cb722f86ef17aa6a8e5f265ea88020ee38"
+INSTALLER_TAG = "v1.0.7"
+INSTALLER_COMMIT = "def758a7f36f0604c7235afbf3583945661270b9"
 INSTALLER_REPO_URL = "https://github.com/madoslinux/mados-installer.git"
 
 REQUIRED_FILES = [
@@ -39,7 +39,7 @@ class TestInstallerRepoCommit(unittest.TestCase):
     """Verify installer repo resolves to expected commit."""
 
     def test_installer_tag_resolves_to_commit(self):
-        """The v1.0.4 tag should resolve to the expected commit hash."""
+        """The v1.0.7 tag should resolve to the expected commit hash."""
         tag_ref = f"refs/tags/{INSTALLER_TAG}" + "^{}"
         result = subprocess.run(
             ["git", "ls-remote", INSTALLER_REPO_URL, tag_ref],
