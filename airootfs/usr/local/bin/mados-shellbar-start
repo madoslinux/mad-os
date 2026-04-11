@@ -165,8 +165,7 @@ launch_quickshell_direct() {
     local main_qml=""
     local bar_qml=""
     local runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
-    local session_id="${HYPRLAND_INSTANCE_SIGNATURE:-$(id -u)}"
-    local state_dir="${runtime_dir}/mados-quickshell-${session_id}"
+    local state_dir="${runtime_dir}/mados-quickshell"
     local attempt=1
     local max_attempts=8
 
