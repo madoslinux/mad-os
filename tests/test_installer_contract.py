@@ -129,9 +129,9 @@ class TestInstallerRepoSource(unittest.TestCase):
                     f"Required file missing: {file_rel} (cloned from {INSTALLER_REPO_URL}@{self.latest_tag})",
                 )
 
-    def test_configure_grub_source_still_has_manual_btrfs_rootflags(self):
+    def test_configure_grub_source_has_no_manual_btrfs_rootflags(self):
         content = (self.work_dir / "scripts/configure-grub.sh").read_text()
-        self.assertIn("ensure_btrfs_rootflags()", content)
+        self.assertNotIn("ensure_btrfs_rootflags()", content)
 
     def test_steps_has_rsync_fallback(self):
         content = (self.work_dir / "installer/steps.py").read_text()
@@ -161,6 +161,10 @@ class Test03AppsShContract(unittest.TestCase):
                 "still calls ensure_btrfs_rootflags (duplicates rootflags)",
                 "disallow duplicate btrfs rootflags injection",
             ),
+            (
+                "still defines ensure_btrfs_rootflags (duplicates rootflags)",
+                "disallow duplicate btrfs rootflags helper definition",
+            ),
             ("Drop malformed bare subvol= tokens", "remove bare subvol kernel args"),
             ("still injects bare subvol= kernel args", "reject bare subvol injection"),
             (
@@ -182,6 +186,22 @@ class Test03AppsShContract(unittest.TestCase):
             (
                 "missing grub.cfg sanitizer",
                 "sanitize generated grub.cfg as final safety net",
+            ),
+            (
+                "grub.cfg still contains invalid rootflag= token",
+                "assert invalid rootflag tokens are removed from grub.cfg",
+            ),
+            (
+                "grub.cfg still contains invalid bare subvol= token",
+                "assert invalid bare subvol tokens are removed from grub.cfg",
+            ),
+            (
+                "missing grub.cfg rootflag assertion",
+                "require grub.cfg rootflag assertion in contract",
+            ),
+            (
+                "missing grub.cfg bare subvol assertion",
+                "require grub.cfg bare subvol assertion in contract",
             ),
             (
                 "still injects legacy rootflag= token",

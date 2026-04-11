@@ -83,8 +83,8 @@ assert_installer_contract() {
         fi
     done
 
-    if ! grep -q 'ensure_btrfs_rootflags' "${install_path}/scripts/configure-grub.sh"; then
-        echo "ERROR: Installer contract check failed: configure-grub.sh missing ensure_btrfs_rootflags"
+    if grep -q 'ensure_btrfs_rootflags()' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still defines ensure_btrfs_rootflags (duplicates rootflags)"
         return 1
     fi
 
@@ -125,6 +125,16 @@ assert_installer_contract() {
 
     if ! grep -q 'sanitize_generated_grub_cfg()' "${install_path}/scripts/configure-grub.sh"; then
         echo "ERROR: Installer contract check failed: configure-grub.sh missing grub.cfg sanitizer"
+        return 1
+    fi
+
+    if ! grep -q 'grub.cfg still contains invalid rootflag= token' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing grub.cfg rootflag assertion"
+        return 1
+    fi
+
+    if ! grep -q 'grub.cfg still contains invalid bare subvol= token' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing grub.cfg bare subvol assertion"
         return 1
     fi
 
@@ -502,7 +512,7 @@ if "sanitize_generated_grub_cfg()" not in t and "require_cmd \"$BLKID\"\n" in t:
 if changed:
     p.write_text(t, encoding="utf-8")
 PY
-        if ! grep -q 'ensure_btrfs_rootflags' "${install_path}/scripts/configure-grub.sh"; then
+        if ! grep -q 'sanitize_generated_grub_cfg' "${install_path}/scripts/configure-grub.sh"; then
             echo "ERROR: Failed to harden installer GRUB cmdline handling"
             return 1
         fi

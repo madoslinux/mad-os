@@ -128,6 +128,10 @@ class TestInstallerContractChecks(unittest.TestCase):
             self.apps_script,
         )
         self.assertIn(
+            "configure-grub.sh still defines ensure_btrfs_rootflags (duplicates rootflags)",
+            self.apps_script,
+        )
+        self.assertIn(
             "configure-grub.sh missing bare subvol token sanitizer",
             self.apps_script,
         )
@@ -153,6 +157,22 @@ class TestInstallerContractChecks(unittest.TestCase):
         )
         self.assertIn(
             "configure-grub.sh missing grub.cfg sanitizer",
+            self.apps_script,
+        )
+        self.assertIn(
+            "grub.cfg still contains invalid rootflag= token",
+            self.apps_script,
+        )
+        self.assertIn(
+            "grub.cfg still contains invalid bare subvol= token",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh missing grub.cfg rootflag assertion",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh missing grub.cfg bare subvol assertion",
             self.apps_script,
         )
         self.assertIn(
