@@ -65,6 +65,12 @@ if ! run_module "02-themes.sh" "install_themes"; then
 fi
 
 # 03-apps.sh - Install applications
+if ! run_module "03-apps.sh" "install_imperative_dots"; then
+    echo "FATAL: imperative-dots installation failed"
+    exit 1
+fi
+
+# 03-apps.sh - Install applications
 if ! run_module "03-apps.sh" "install_mados_apps"; then
     echo "FATAL: Apps installation failed"
     exit 1

@@ -197,6 +197,10 @@ class TestShellbarSessionDetection(unittest.TestCase):
 class TestThemeLayoutContract(unittest.TestCase):
     """Theme install/runtime references must match external imperative-dots layout."""
 
+    def test_customize_runs_imperative_dots_install(self):
+        content = _read(CUSTOMIZE_SCRIPT)
+        self.assertIn('run_module "03-apps.sh" "install_imperative_dots"', content)
+
     def test_apps_script_installs_external_theme_and_start_hook(self):
         content = _read(APPS_SCRIPT)
         self.assertIn('IMPERATIVE_DOTS_REPO="madkoding/theme-imperative-dots"', content)
