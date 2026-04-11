@@ -170,8 +170,8 @@ class Test03AppsShContract(unittest.TestCase):
                 "sanitize GRUB_CMDLINE_LINUX_DEFAULT bare subvol args",
             ),
             (
-                "still references legacy rootflag= token",
-                "reject legacy rootflag token in installer GRUB script",
+                "still injects legacy rootflag= token",
+                "reject legacy rootflag token injection in installer GRUB script",
             ),
             ("retrying without ACL/xattr", "rsync VFAT fallback"),
             ("wifi.backend=iwd", "iwd backend removal"),

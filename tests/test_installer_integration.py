@@ -145,7 +145,7 @@ class TestInstallerContractChecks(unittest.TestCase):
             self.apps_script,
         )
         self.assertIn(
-            "configure-grub.sh still references legacy rootflag= token",
+            "configure-grub.sh still injects legacy rootflag= token",
             self.apps_script,
         )
         self.assertIn("configure-grub.sh still forces rootflags=subvol=@", self.apps_script)

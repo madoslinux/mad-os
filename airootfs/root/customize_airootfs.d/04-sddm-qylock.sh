@@ -56,6 +56,7 @@ theme_dir = Path(sys.argv[1])
 replacements = {
     "Connectiong...": "Enter password...",
     "Connecting...": "Enter password...",
+    "CONNECTING...": "Enter password...",
     "Password...": "Enter password...",
 }
 

@@ -113,8 +113,8 @@ assert_installer_contract() {
         return 1
     fi
 
-    if grep -q 'rootflag=' "${install_path}/scripts/configure-grub.sh"; then
-        echo "ERROR: Installer contract check failed: configure-grub.sh still references legacy rootflag= token"
+    if grep -q 'ensure_cmdline_token "rootflag=' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still injects legacy rootflag= token"
         return 1
     fi
 
