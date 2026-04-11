@@ -48,12 +48,32 @@ install_sddm_theme() {
     cp -r "$QYLOCK_DIR/themes/${SELECTED_THEME}" "${SYSTEM_THEMES_DIR}/"
 
     local theme_dir="${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
-    local qml_file=""
-    qml_file=$(grep -R -l -E 'Connectiong\.\.\.|Connecting\.\.\.|Password\.\.\.' "$theme_dir" --include='*.qml' 2>/dev/null | head -n1 || true)
-    if [ -n "$qml_file" ]; then
-        sed -i 's/Connectiong\.\.\./Enter password.../g; s/Connecting\.\.\./Enter password.../g; s/Password\.\.\./Enter password.../g' "$qml_file"
-        echo "  → Updated password prompt text in $(basename "$qml_file")"
-    fi
+    python3 - "$theme_dir" <<'PY'
+from pathlib import Path
+import sys
+
+theme_dir = Path(sys.argv[1])
+replacements = {
+    "Connectiong...": "Enter password...",
+    "Connecting...": "Enter password...",
+    "Password...": "Enter password...",
+}
+
+updated_files = []
+for qml in theme_dir.rglob("*.qml"):
+    text = qml.read_text(encoding="utf-8", errors="ignore")
+    new_text = text
+    for old, new in replacements.items():
+        new_text = new_text.replace(old, new)
+    if new_text != text:
+        qml.write_text(new_text, encoding="utf-8")
+        updated_files.append(str(qml.name))
+
+if updated_files:
+    print("  → Updated password prompt text in:", ", ".join(sorted(set(updated_files))))
+else:
+    print("  → Password prompt text did not need changes")
+PY
 
     echo "  → Copied theme to ${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
     return 0
