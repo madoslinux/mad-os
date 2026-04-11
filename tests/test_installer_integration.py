@@ -94,19 +94,19 @@ def _read(path):
         return f.read()
 
 
-class TestInstallerPinnedReference(unittest.TestCase):
-    """Installer source should be pinned and verified for reproducible builds."""
+class TestInstallerTagReference(unittest.TestCase):
+    """Installer source should resolve dynamically from the latest tag."""
 
     @classmethod
     def setUpClass(cls):
         cls.apps_script = _read(APPS_SCRIPT)
 
-    def test_installer_ref_tag_and_commit_defined(self):
-        self.assertIn('INSTALLER_REF_TAG="', self.apps_script)
-        self.assertIn('INSTALLER_REF_COMMIT="', self.apps_script)
+    def test_installer_tag_pattern_defined(self):
+        self.assertIn('INSTALLER_TAG_PATTERN="', self.apps_script)
 
-    def test_clone_uses_verified_ref_not_main(self):
-        self.assertIn("clone_ref_verified", self.apps_script)
+    def test_clone_uses_latest_tag_not_main(self):
+        self.assertIn("clone_latest_tag", self.apps_script)
+        self.assertIn("resolve_latest_tag", self.apps_script)
         self.assertNotIn(
             'clone_latest_main "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git"',
             self.apps_script,
@@ -124,6 +124,26 @@ class TestInstallerContractChecks(unittest.TestCase):
         self.assertIn("assert_installer_contract()", self.apps_script)
         self.assertIn("Installer contract missing required file", self.apps_script)
         self.assertIn("configure-grub.sh missing ensure_btrfs_rootflags", self.apps_script)
+        self.assertIn(
+            "configure-grub.sh missing bare subvol token sanitizer",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh still injects bare subvol= kernel args",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh missing ensure_btrfs_rootflags call",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh missing GRUB_CMDLINE_LINUX sanitizer call",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh missing GRUB_CMDLINE_LINUX_DEFAULT sanitizer call",
+            self.apps_script,
+        )
         self.assertIn("configure-grub.sh still forces rootflags=subvol=@", self.apps_script)
         self.assertIn("steps.py missing rsync metadata fallback", self.apps_script)
 

@@ -57,6 +57,7 @@ file_permissions=(
   ["/usr/local/bin/hyprland-session"]="0:0:755"
   ["/usr/local/bin/start-hyprland"]="0:0:755"
   ["/usr/local/bin/select-compositor"]="0:0:755"
+  ["/usr/local/bin/mados-auto-session"]="0:0:755"
   ["/usr/local/bin/mados-logs"]="0:0:755"
   ["/usr/local/bin/mados-install-yay"]="0:0:755"
   ["/usr/local/bin/mados-hyprland-wallpaper"]="0:0:755"
@@ -186,7 +187,6 @@ file_permissions=(
   ["/etc/systemd/system/mados-pacman-sandbox-compat.service"]="0:0:644"
   ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
-
 
 
   # Audio fix (Dummy Output workaround) - configs created by 09-audio-fix.sh

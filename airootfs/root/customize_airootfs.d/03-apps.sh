@@ -16,8 +16,7 @@ MADOS_APPS=(
 GITHUB_REPO="madoslinux"
 INSTALLER_APP="mados-installer"
 INSTALLER_GITHUB_REPO="madoslinux"
-INSTALLER_REF_TAG="v1.0.7"
-INSTALLER_REF_COMMIT="def758a7f36f0604c7235afbf3583945661270b9"
+INSTALLER_TAG_PATTERN="v*"
 UPDATER_APP="mados-updater"
 UPDATER_GITHUB_REPO="madkoding"
 
@@ -36,37 +35,30 @@ clone_latest_main() {
     GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch main --no-tags "$repo_url" "$dest_dir"
 }
 
-clone_ref_verified() {
+resolve_latest_tag() {
+    local repo_url="$1"
+    local pattern="$2"
+
+    git ls-remote --refs --tags "$repo_url" "$pattern" | awk -F/ 'NF {print $NF}' | sort -V | awk 'END {print}'
+}
+
+clone_latest_tag() {
     local repo_url="$1"
     local dest_dir="$2"
-    local ref="$3"
-    local expected_commit="$4"
 
-    local resolved_tag_commit=""
-    resolved_tag_commit=$(git ls-remote "$repo_url" "refs/tags/${ref}^{}" | awk 'NR==1 {print $1}')
-    if [[ -z "$resolved_tag_commit" ]]; then
-        resolved_tag_commit=$(git ls-remote "$repo_url" "refs/tags/${ref}" | awk 'NR==1 {print $1}')
-    fi
-    if [[ -z "$resolved_tag_commit" ]]; then
-        echo "ERROR: Could not resolve tag ${ref} from ${repo_url}"
+    local latest_tag=""
+    latest_tag=$(resolve_latest_tag "$repo_url" "$INSTALLER_TAG_PATTERN")
+    if [[ -z "$latest_tag" ]]; then
+        echo "ERROR: Could not resolve latest tag (${INSTALLER_TAG_PATTERN}) from ${repo_url}"
         return 1
     fi
-    if [[ "$resolved_tag_commit" != "$expected_commit" ]]; then
-        echo "ERROR: ${repo_url} tag ${ref} resolves to ${resolved_tag_commit}, expected ${expected_commit}"
-        return 1
-    fi
+
+    echo "  → Resolved installer tag: ${latest_tag}"
 
     GIT_TERMINAL_PROMPT=0 git init -q "$dest_dir"
     git -C "$dest_dir" remote add origin "$repo_url"
-    GIT_TERMINAL_PROMPT=0 git -C "$dest_dir" fetch --depth=1 origin "$expected_commit"
+    GIT_TERMINAL_PROMPT=0 git -C "$dest_dir" fetch --depth=1 origin "refs/tags/${latest_tag}:refs/tags/${latest_tag}"
     git -C "$dest_dir" checkout --detach -q FETCH_HEAD
-
-    local actual_commit
-    actual_commit=$(git -C "$dest_dir" rev-parse HEAD)
-    if [[ "$actual_commit" != "$expected_commit" ]]; then
-        echo "ERROR: ${repo_url} ref ${ref} resolved to ${actual_commit}, expected ${expected_commit}"
-        return 1
-    fi
 
     return 0
 }
@@ -96,6 +88,31 @@ assert_installer_contract() {
         return 1
     fi
 
+    if ! grep -q 'Drop malformed bare subvol= tokens' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing bare subvol token sanitizer"
+        return 1
+    fi
+
+    if grep -q 'ensure_cmdline_token "subvol=' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh still injects bare subvol= kernel args"
+        return 1
+    fi
+
+    if ! grep -q '^ensure_btrfs_rootflags$' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing ensure_btrfs_rootflags call"
+        return 1
+    fi
+
+    if ! grep -q 'sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX"' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing GRUB_CMDLINE_LINUX sanitizer call"
+        return 1
+    fi
+
+    if ! grep -q 'sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX_DEFAULT"' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing GRUB_CMDLINE_LINUX_DEFAULT sanitizer call"
+        return 1
+    fi
+
     if grep -q 'rootflags=subvol=@' "${install_path}/scripts/configure-grub.sh"; then
         echo "ERROR: Installer contract check failed: configure-grub.sh still forces rootflags=subvol=@"
         return 1
@@ -113,6 +130,21 @@ assert_installer_contract() {
 
     if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
         echo "ERROR: Installer contract check failed: enable-services.sh still enables iwd"
+        return 1
+    fi
+
+    if grep -q 'Current=sddm-astron_theme' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh still sets astron SDDM theme"
+        return 1
+    fi
+
+    if ! grep -q 'autologin-live.conf' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh missing SDDM autologin cleanup"
+        return 1
+    fi
+
+    if ! grep -q 'Current=pixel-night-city' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh missing SDDM theme pin"
         return 1
     fi
 
@@ -218,11 +250,9 @@ install_installer() {
     local retries=3
     local count=0
     while [ $count -lt $retries ]; do
-        if clone_ref_verified \
+        if clone_latest_tag \
             "https://github.com/${INSTALLER_GITHUB_REPO}/${installer_name}.git" \
-            "${build_dir}/${installer_module}" \
-            "$INSTALLER_REF_TAG" \
-            "$INSTALLER_REF_COMMIT"; then
+            "${build_dir}/${installer_module}"; then
             break
         fi
         count=$((count + 1))
@@ -255,9 +285,28 @@ install_installer() {
     # Avoid deleting heredoc blocks (can break script syntax); drop only the iwd line.
     if [[ -f "${install_path}/scripts/apply-configuration.sh" ]]; then
         sed -i '/wifi\.backend=iwd/d' "${install_path}/scripts/apply-configuration.sh"
+        sed -i 's/^Current=.*/Current=pixel-night-city/' "${install_path}/scripts/apply-configuration.sh"
         if grep -q 'wifi.backend=iwd' "${install_path}/scripts/apply-configuration.sh"; then
             echo "ERROR: Failed to remove installer iwd backend override"
             return 1
+        fi
+
+        if ! grep -q 'madOS: disable live SDDM autologin' "${install_path}/scripts/apply-configuration.sh"; then
+            cat >> "${install_path}/scripts/apply-configuration.sh" << 'EOSDDM'
+
+# madOS: preserve SDDM theme and disable live autologin on installed systems
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/10-mados-theme.conf << 'EOF'
+[Theme]
+Current=pixel-night-city
+EOF
+if [ -f /etc/sddm.conf ]; then
+    sed -i 's/^Current=.*/Current=pixel-night-city/' /etc/sddm.conf
+fi
+rm -f /etc/sddm.conf.d/autologin-live.conf
+# Do not write an empty [Autologin] block; defaults already keep autologin disabled.
+rm -f /etc/sddm.conf.d/90-disable-autologin.conf
+EOSDDM
         fi
         echo "  → Removed installer iwd backend override line"
     fi
@@ -272,6 +321,37 @@ import sys
 p = Path(sys.argv[1])
 t = p.read_text(encoding="utf-8")
 changed = False
+
+if 'ensure_cmdline_token "subvol=${root_subvol}"' in t:
+    t = t.replace(
+        'ensure_cmdline_token "subvol=${root_subvol}"',
+        'ensure_cmdline_token "rootflags=${root_subvol}"',
+    )
+    changed = True
+
+sanitize_fn = '''sanitize_grub_cmdline_key() {
+    local key="$1"
+    local file="/etc/default/grub"
+    local raw current
+
+    raw=$(grep -E "^${key}=" "$file" | tail -n1 || true)
+    if [[ -z "$raw" ]]; then
+        return 0
+    fi
+
+    current=${raw#${key}=}
+    current=${current#\"}
+    current=${current%\"}
+
+    current=$(printf '%s' "$current" | sed -E 's/(^|[[:space:]])subvol=[^[:space:]]+([[:space:]]|$)/ /g; s/[[:space:]]+/ /g; s/^ //; s/ $//')
+    set_grub_key "$key" "\"$current\""
+}
+
+'''
+
+if "sanitize_grub_cmdline_key()" not in t and "ensure_btrfs_rootflags()" in t:
+    t = t.replace("ensure_btrfs_rootflags() {\n", sanitize_fn + "ensure_btrfs_rootflags() {\n", 1)
+    changed = True
 
 legacy_non_btrfs_fallback = '''    if [[ -n "$root_subvol" ]]; then
         ensure_cmdline_token "rootflags=${root_subvol}"
@@ -311,6 +391,26 @@ if inject_after in t and "ensure_btrfs_rootflags()" not in t:
     t = t.replace(inject_after, block, 1)
     t = t.replace('ensure_cmdline_token "plymouth.use-simpledrm=0"\n', 'ensure_cmdline_token "plymouth.use-simpledrm=0"\nensure_btrfs_rootflags\n', 1)
 
+    changed = True
+
+if "ensure_btrfs_rootflags()" in t and "Drop malformed bare subvol= tokens" not in t and inject_after in t:
+    t = t.replace(inject_after, block, 1)
+    changed = True
+
+if "ensure_btrfs_rootflags()" in t and "ensure_cmdline_token \"plymouth.use-simpledrm=0\"\nensure_btrfs_rootflags\n" not in t:
+    t = t.replace(
+        'ensure_cmdline_token "plymouth.use-simpledrm=0"\n',
+        'ensure_cmdline_token "plymouth.use-simpledrm=0"\nensure_btrfs_rootflags\n',
+        1,
+    )
+    changed = True
+
+sanitize_calls = '''sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX"
+sanitize_grub_cmdline_key "GRUB_CMDLINE_LINUX_DEFAULT"
+'''
+
+if "sanitize_grub_cmdline_key \"GRUB_CMDLINE_LINUX\"" not in t and "ensure_btrfs_rootflags" in t:
+    t = t.replace('ensure_btrfs_rootflags\n', 'ensure_btrfs_rootflags\n' + sanitize_calls, 1)
     changed = True
 
 if changed:
@@ -1003,6 +1103,27 @@ SKWD_WALL_SERVICE_FALLBACK
     return 0
 }
 
+restrict_wallpaper_desktop_to_sway() {
+    local desktop
+    local desktop_files=(
+        "/usr/share/applications/mados-wallpaper.desktop"
+        "/usr/share/applications/mados-wallpaper-picker.desktop"
+        "/usr/share/applications/skwd-wall.desktop"
+    )
+
+    for desktop in "${desktop_files[@]}"; do
+        [[ -f "$desktop" ]] || continue
+
+        if grep -q '^OnlyShowIn=' "$desktop"; then
+            sed -i 's/^OnlyShowIn=.*/OnlyShowIn=Sway;/' "$desktop"
+        elif grep -q '^\[Desktop Entry\]' "$desktop"; then
+            sed -i '/^\[Desktop Entry\]/a OnlyShowIn=Sway;' "$desktop"
+        fi
+
+        echo "  → Restricted $(basename "$desktop") to Sway"
+    done
+}
+
 setup_wallpaper_assets() {
     local wallpaper_dir="${INSTALL_DIR}/mados_wallpaper"
     
@@ -1047,6 +1168,7 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     install_mados_apps
     setup_wallpaper_assets
     install_skwd_wall
+    restrict_wallpaper_desktop_to_sway
     install_installer
     install_updater
     install_oh_my_zsh

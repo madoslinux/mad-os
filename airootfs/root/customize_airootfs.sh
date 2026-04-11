@@ -100,6 +100,12 @@ if ! run_module "03-apps.sh" "install_oh_my_zsh"; then
     exit 1
 fi
 
+# 04-sddm-qylock.sh - Install SDDM and qylock theme assets
+if ! run_module "04-sddm-qylock.sh" "install_sddm_qylock"; then
+    echo "FATAL: SDDM qylock setup failed"
+    exit 1
+fi
+
 # 05-shell-theme.sh - Prepare imperative-dots shell theme
 if ! run_module "05-shell-theme.sh" "install_shell_theme_module"; then
     echo "FATAL: Shell theme preparation failed"

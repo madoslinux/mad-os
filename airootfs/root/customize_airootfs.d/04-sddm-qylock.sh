@@ -4,9 +4,11 @@ set -euo pipefail
 
 QYLOCK_REPO="https://github.com/DarkKal44/qylock"
 QYLOCK_DIR="/root/build_tmp/qylock"
+QYLOCK_SHARE_DIR="/usr/local/share/qylock"
 SYSTEM_THEMES_DIR="/usr/share/sddm/themes"
 SDDM_CONF_DIR="/etc/sddm.conf.d"
 SDDM_CONF="${SDDM_CONF_DIR}/theme.conf"
+SDDM_AUTOLOGIN_CONF="${SDDM_CONF_DIR}/autologin-live.conf"
 SELECTED_THEME="pixel-night-city"
 
 mkdir -p "$SDDM_CONF_DIR"
@@ -45,6 +47,14 @@ install_sddm_theme() {
     rm -rf "${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
     cp -r "$QYLOCK_DIR/themes/${SELECTED_THEME}" "${SYSTEM_THEMES_DIR}/"
 
+    local theme_dir="${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
+    local qml_file=""
+    qml_file=$(grep -R -l -E 'Connectiong\.\.\.|Connecting\.\.\.|Password\.\.\.' "$theme_dir" --include='*.qml' 2>/dev/null | head -n1 || true)
+    if [ -n "$qml_file" ]; then
+        sed -i 's/Connectiong\.\.\./Enter password.../g; s/Connecting\.\.\./Enter password.../g; s/Password\.\.\./Enter password.../g' "$qml_file"
+        echo "  → Updated password prompt text in $(basename "$qml_file")"
+    fi
+
     echo "  → Copied theme to ${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
     return 0
 }
@@ -60,7 +70,17 @@ Current=${SELECTED_THEME}
 InputMethod=
 EOF
 
+    cat > "$SDDM_AUTOLOGIN_CONF" << 'EOF'
+[Autologin]
+User=mados
+Session=mados-auto.desktop
+EOF
+
+    mkdir -p /etc/systemd/system
+    ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/display-manager.service
+
     echo "  → Created ${SDDM_CONF}"
+    echo "  → Created ${SDDM_AUTOLOGIN_CONF}"
     return 0
 }
 
@@ -72,12 +92,15 @@ prepare_quickshell_lockscreen() {
         return 0
     fi
 
-    cp -r "$QYLOCK_DIR/quickshell-lockscreen" "/root/quickshell-lockscreen"
-    chmod +x "/root/quickshell-lockscreen/lock.sh"
+    mkdir -p "$QYLOCK_SHARE_DIR"
+    rm -rf "$QYLOCK_SHARE_DIR/quickshell-lockscreen" "$QYLOCK_SHARE_DIR/themes"
 
-    cp -r "$QYLOCK_DIR/themes" "/root/qylock-themes"
+    cp -r "$QYLOCK_DIR/quickshell-lockscreen" "$QYLOCK_SHARE_DIR/quickshell-lockscreen"
+    chmod +x "$QYLOCK_SHARE_DIR/quickshell-lockscreen/lock.sh"
 
-    echo "  → Quickshell lockscreen prepared at /root/quickshell-lockscreen"
+    cp -r "$QYLOCK_DIR/themes" "$QYLOCK_SHARE_DIR/themes"
+
+    echo "  → Quickshell lockscreen prepared at ${QYLOCK_SHARE_DIR}/quickshell-lockscreen"
     return 0
 }
 
@@ -96,10 +119,14 @@ install_theme_fonts() {
     return 0
 }
 
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+install_sddm_qylock() {
     clone_qylock
     install_sddm_theme
     install_theme_fonts
     configure_sddm
     prepare_quickshell_lockscreen
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    install_sddm_qylock
 fi

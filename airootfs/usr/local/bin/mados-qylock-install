@@ -5,7 +5,8 @@ set -euo pipefail
 TARGET_DIR="$HOME/.local/share/quickshell-lockscreen"
 THEMES_LINK="$TARGET_DIR/themes_link"
 CONFIG_DIR="$HOME/.config/qylock"
-QYLOCK_THEMES="/root/qylock-themes"
+QYLOCK_THEMES="/usr/local/share/qylock/themes"
+QYLOCK_LOCKSCREEN_SRC="/usr/local/share/qylock/quickshell-lockscreen"
 
 if ! command -v quickshell &> /dev/null; then
     echo "ERROR: Quickshell is not installed. This lockscreen requires quickshell."
@@ -52,10 +53,10 @@ install_lockscreen() {
     rm -rf "$TARGET_DIR"
     mkdir -p "$(dirname "$TARGET_DIR")"
 
-    if [ -d "/root/quickshell-lockscreen" ]; then
-        cp -r /root/quickshell-lockscreen "$TARGET_DIR"
+    if [ -d "$QYLOCK_LOCKSCREEN_SRC" ]; then
+        cp -r "$QYLOCK_LOCKSCREEN_SRC" "$TARGET_DIR"
     else
-        echo "ERROR: Quickshell lockscreen source not found at /root/quickshell-lockscreen"
+        echo "ERROR: Quickshell lockscreen source not found at $QYLOCK_LOCKSCREEN_SRC"
         exit 1
     fi
 

@@ -6,6 +6,7 @@ Wants=dbus.service
 
 [Service]
 Type=dbus
+BusName=org.fedoraproject.FirewallD1
 ExecStart=/usr/bin/firewalld --nofork --nopid
 ExecReload=/usr/bin/firewalld --reload
 ProtectSystem=full
