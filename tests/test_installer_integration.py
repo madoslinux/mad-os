@@ -219,6 +219,7 @@ class TestAutostartStrategy(unittest.TestCase):
         self.assertIn("Hidden=true", content)
 
 
+@unittest.skip("Tests for imperative-dots theme integration - moved to theme-imperative-dots repo")
 class TestSkwdWallIntegration(unittest.TestCase):
     """Validate skwd-wall wiring across build and runtime configs."""
 

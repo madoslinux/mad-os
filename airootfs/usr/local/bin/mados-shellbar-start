@@ -52,17 +52,17 @@ launch_theme() {
     local theme_launcher=""
     local theme_healthcheck=""
 
-    if [[ -x "${THEME_DIR_USER}/start.sh" ]]; then
+    if [[ -x "${THEME_DIR_USER}/scripts/start/start.sh" ]]; then
         theme_dir="${THEME_DIR_USER}"
-    elif [[ -x "${THEME_DIR_SYSTEM}/start.sh" ]]; then
+    elif [[ -x "${THEME_DIR_SYSTEM}/scripts/start/start.sh" ]]; then
         theme_dir="${THEME_DIR_SYSTEM}"
     else
         log_warn "No imperative-dots launcher found in user or system paths"
         return 1
     fi
 
-    theme_launcher="${theme_dir}/start.sh"
-    theme_healthcheck="${theme_dir}/healthcheck.sh"
+    theme_launcher="${theme_dir}/scripts/start/start.sh"
+    theme_healthcheck="${theme_dir}/scripts/start/healthcheck.sh"
 
     log_info "Launching imperative-dots theme from ${theme_dir}"
     if ! "${theme_launcher}"; then

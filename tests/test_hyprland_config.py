@@ -1439,6 +1439,7 @@ class TestWallpaperGlitchScript(unittest.TestCase):
                 )
 
 
+@unittest.skip("Tests for imperative-dots theme files - moved to theme-imperative-dots repo")
 class TestHyprlandMatugenStartup(unittest.TestCase):
     """Verify matugen startup/reload integration for Hyprland sessions."""
 

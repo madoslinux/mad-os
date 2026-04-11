@@ -2,7 +2,7 @@
 set -euo pipefail
 
 WALL=""
-DEFAULT_WALL="/usr/share/mados/themes/imperative-dots/.config/sddm/themes/matugen-minimal/wallpaper.jpg"
+DEFAULT_WALL="/usr/share/mados/themes/imperative-dots/config/sddm/themes/matugen-minimal/wallpaper.jpg"
 USER_WALL_DIR="$HOME/.local/share/mados/wallpapers"
 
 if [ -f "/tmp/lock_bg.png" ]; then

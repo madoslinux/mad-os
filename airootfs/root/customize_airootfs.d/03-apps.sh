@@ -1259,8 +1259,53 @@ setup_wallpaper_assets() {
     fi
 }
 
+IMPERATIVE_DOTS_REPO="madkoding/theme-imperative-dots"
+IMPERATIVE_DOTS_INSTALL_DIR="/usr/share/mados/themes/imperative-dots"
+
+install_imperative_dots() {
+    echo "Installing imperative-dots theme..."
+
+    if [[ -d "$IMPERATIVE_DOTS_INSTALL_DIR" ]]; then
+        echo "  → imperative-dots already installed, skipping"
+        return 0
+    fi
+
+    local build_dir="${BUILD_DIR}/imperative-dots_$$"
+    rm -rf "$build_dir"
+    mkdir -p "$build_dir"
+    cd "$BUILD_DIR"
+
+    local retries=3
+    local count=0
+    while [ $count -lt $retries ]; do
+        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch main --no-tags "https://github.com/${IMPERATIVE_DOTS_REPO}.git" "${build_dir}/imperative-dots"; then
+            break
+        fi
+        count=$((count + 1))
+        echo "  Retry $count/$retries..."
+        sleep 2
+    done
+
+    if [ $count -eq $retries ]; then
+        echo "ERROR: Failed to clone imperative-dots after $retries attempts"
+        rm -rf "$build_dir"
+        return 1
+    fi
+
+    mkdir -p "$(dirname "$IMPERATIVE_DOTS_INSTALL_DIR")"
+    mv "${build_dir}/imperative-dots" "$IMPERATIVE_DOTS_INSTALL_DIR"
+    rm -rf "$build_dir"
+
+    chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh"
+    chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh"
+
+    echo "✓ imperative-dots installed to ${IMPERATIVE_DOTS_INSTALL_DIR}"
+    return 0
+}
+
 # Main execution
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    install_imperative_dots
     install_mados_apps
     setup_wallpaper_assets
     install_skwd_wall

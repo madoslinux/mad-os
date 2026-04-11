@@ -14,7 +14,7 @@
 # focused workspace.
 
 DB_PATH="${HOME}/.local/share/mados/wallpapers.db"
-MATUGEN_RELOAD_SCRIPT="${HOME}/.config/hypr/scripts/quickshell/wallpaper/matugen_reload.sh"
+MATUGEN_RELOAD_SCRIPT="${HOME}/.config/quickshell/widgets/wallpaper/matugen_reload.sh"
 MATUGEN_STATE_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/mados-last-matugen-wallpaper"
 
 ws="${1:-}"

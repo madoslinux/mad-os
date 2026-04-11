@@ -106,10 +106,12 @@ pre-commit install
 
 ### Launcher (Quickshell) Config
 
-- Main UI and behavior: `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/LauncherPopup.qml`
-- App discovery and metadata: `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/list_apps.py`
-- Launcher tuning (ranking/UI): `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/config.json`
-- Default hidden apps rules: `airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/launcher/hidden-apps.json`
+The shell theme is installed from [theme-imperative-dots](https://github.com/madkoding/theme-imperative-dots) during ISO build.
+
+- Main UI and behavior: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/LauncherPopup.qml`
+- App discovery and metadata: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/list_apps.py`
+- Launcher tuning (ranking/UI): `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/config.json`
+- Default hidden apps rules: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/hidden-apps.json`
 
 ## CI/CD Pipeline
 

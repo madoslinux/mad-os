@@ -5,4 +5,3 @@ out/
 airootfs/usr/local/bin/__pycache__/
 __pycache__/
 .pytest_cache/
-airootfs/usr/share/mados/themes/imperative-dots/.config/hypr/scripts/quickshell/calendar/.env

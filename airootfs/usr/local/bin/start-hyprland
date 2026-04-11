@@ -25,6 +25,12 @@ export MOZ_ENABLE_WAYLAND="${MOZ_ENABLE_WAYLAND:-1}"
 # Use systemd-logind as the seat management backend (madOS uses systemd)
 export LIBSEAT_BACKEND="${LIBSEAT_BACKEND:-logind}"
 
+# Avoid duplicated/ghost cursor after SDDM -> Hyprland handoff.
+# Hyprland users have reported that forcing no_hardware_cursors=1/2 can trigger
+# a persistent ghost pointer on multi-monitor setups; default to hardware cursors.
+export WLR_NO_HARDWARE_CURSORS="${WLR_NO_HARDWARE_CURSORS:-0}"
+export AQ_NO_HARDWARE_CURSORS="${AQ_NO_HARDWARE_CURSORS:-0}"
+
 # Verify Hyprland binary exists
 if ! command -v Hyprland >/dev/null 2>&1; then
     logger -p user.err -t "$LOG_TAG" "Hyprland binary not found"

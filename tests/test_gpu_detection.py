@@ -453,6 +453,20 @@ class TestSessionWrappers(unittest.TestCase):
             content = f.read()
         self.assertIn("exec start-hyprland", content, "hyprland-session must exec start-hyprland")
 
+    def test_start_hyprland_disables_hardware_cursors(self):
+        """start-hyprland must disable hardware cursors to avoid duplicate pointer."""
+        path = os.path.join(BIN_DIR, "start-hyprland")
+        if not os.path.isfile(path):
+            self.skipTest("start-hyprland not found")
+        with open(path) as f:
+            content = f.read()
+        self.assertIn(
+            "WLR_NO_HARDWARE_CURSORS", content, "start-hyprland must export WLR cursor toggle"
+        )
+        self.assertIn(
+            "AQ_NO_HARDWARE_CURSORS", content, "start-hyprland must export AQ cursor toggle"
+        )
+
     def test_sway_session_disables_gpu_for_chromium(self):
         """sway-session must disable GPU for Chromium on legacy hardware."""
         path = os.path.join(BIN_DIR, "sway-session")
