@@ -138,6 +138,10 @@ Layout contract used by madOS:
 
 This project is licensed under `AGPL-3.0-only` (GNU Affero General Public License v3.0 only).
 See [LICENSE](LICENSE) for the full text.
+
+madOS is licensed under `AGPL-3.0-only`; the ISO image may include third-party software subject to different licenses.
+
+Third-party packages included in the ISO may use different licenses. See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 ## Resources
 
 - [GitHub](https://github.com/madkoding/mad-os)

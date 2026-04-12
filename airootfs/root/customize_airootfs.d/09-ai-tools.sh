@@ -39,6 +39,27 @@ install_qwen_fallback() {
     fi
 }
 
+install_qwen_npm_fallback() {
+    echo "  Falling back to npm install..."
+    if command -v npm &>/dev/null; then
+        if npm install -g @qwen-code/qwen-code@latest 2>&1; then
+            echo "✓ Qwen installed via npm (@qwen-code/qwen-code)"
+            return 0
+        fi
+
+        if npm install -g qwen-code@latest 2>&1; then
+            echo "✓ Qwen installed via npm (qwen-code)"
+            return 0
+        fi
+
+        echo "WARNING: Qwen npm install also failed"
+        echo "  Users can install manually: npm install -g @qwen-code/qwen-code"
+    else
+        echo "  npm not available, cannot fallback. Install manually after boot."
+    fi
+    return 1
+}
+
 ensure_forge_global_command() {
     local forge_src=""
 
@@ -60,6 +81,33 @@ ensure_forge_global_command() {
 
     install -m 755 "$forge_src" /usr/local/bin/forge
     echo "  → Installed global forge wrapper: /usr/local/bin/forge"
+    return 0
+}
+
+ensure_qwen_global_command() {
+    local qwen_src=""
+
+    if command -v qwen &>/dev/null; then
+        qwen_src="$(command -v qwen)"
+    else
+        for candidate in /root/.local/bin/qwen /home/liveuser/.local/bin/qwen /root/.qwen/bin/qwen /home/liveuser/.qwen/bin/qwen; do
+            if [[ -x "$candidate" ]]; then
+                qwen_src="$candidate"
+                break
+            fi
+        done
+    fi
+
+    if [[ -z "$qwen_src" ]]; then
+        echo "  WARNING: qwen binary not found after install"
+        return 1
+    fi
+
+    if [[ "$qwen_src" != "/usr/local/bin/qwen" ]]; then
+        install -m 755 "$qwen_src" /usr/local/bin/qwen
+        echo "  → Installed global qwen wrapper: /usr/local/bin/qwen"
+    fi
+
     return 0
 }
 
@@ -95,6 +143,12 @@ install_qwen() {
     fi
 
     install_qwen_fallback
+
+    if ! command -v qwen &>/dev/null; then
+        install_qwen_npm_fallback || true
+    fi
+
+    ensure_qwen_global_command || true
 }
 
 configure_ai_tools_permissions() {
