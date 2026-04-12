@@ -47,7 +47,8 @@ SPEED_MBPS = ISO_SIZE_MB / ELAPSED if ELAPSED > 0 else 0
 print("---")
 if response:
     print(f"Upload completed successfully in {ELAPSED:.1f}s ({SPEED_MBPS:.1f} MB/s)")
-    print(f"URL: https://archive.org/details/mados-{VERSION}")
+    IA_URL = f"https://archive.org/download/mados-{VERSION}/{ISO_NAME}"
+    print(f"URL: {IA_URL}")
 else:
     print(f"Upload failed: {response}")
     sys.exit(1)
