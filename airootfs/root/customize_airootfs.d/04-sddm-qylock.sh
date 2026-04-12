@@ -81,35 +81,37 @@ PY
     return 0
 }
 
-enforce_theme_font() {
-    local theme_dir="${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
+enforce_font_in_dir() {
+    local target_dir="$1"
+    local target_label="$2"
 
-    if [ ! -d "$theme_dir" ]; then
-        echo "ERROR: Theme directory not found for font replacement: $theme_dir"
+    if [ ! -d "$target_dir" ]; then
+        echo "ERROR: Theme directory not found for font replacement: $target_dir"
         return 1
     fi
 
-    python3 - "$theme_dir" "$DISTRO_FONT" <<'PY'
+    python3 - "$target_dir" "$DISTRO_FONT" "$target_label" <<'PY'
 from pathlib import Path
 import re
 import sys
 
 theme_dir = Path(sys.argv[1])
 font_name = sys.argv[2]
+target_label = sys.argv[3]
 
 patterns = [
     # QML/Qt style
-    (re.compile(r'font\\.family\\s*:\\s*"[^"]*"'), f'font.family: "{font_name}"'),
-    (re.compile(r"font\\.family\\s*:\\s*'[^']*'"), f'font.family: "{font_name}"'),
-    (re.compile(r'font\\.family\\s*:\\s*[A-Za-z_][A-Za-z0-9_]*\\.name'), f'font.family: "{font_name}"'),
-    (re.compile(r'fontFamily\\s*:\\s*"[^"]*"'), f'fontFamily: "{font_name}"'),
-    (re.compile(r"fontFamily\\s*:\\s*'[^']*'"), f'fontFamily: "{font_name}"'),
+    (re.compile(r'font\.family\s*:\s*"[^"]*"'), f'font.family: "{font_name}"'),
+    (re.compile(r"font\.family\s*:\s*'[^']*'"), f'font.family: "{font_name}"'),
+    (re.compile(r'font\.family\s*:\s*[A-Za-z_][A-Za-z0-9_]*\.name'), f'font.family: "{font_name}"'),
+    (re.compile(r'fontFamily\s*:\s*"[^"]*"'), f'fontFamily: "{font_name}"'),
+    (re.compile(r"fontFamily\s*:\s*'[^']*'"), f'fontFamily: "{font_name}"'),
 
     # INI/desktop-like keys occasionally used by themes
-    (re.compile(r'^\\s*Font\\s*=\\s*.+$', re.MULTILINE), f'Font={font_name}'),
+    (re.compile(r'^\s*Font\s*=\s*.+$', re.MULTILINE), f'Font={font_name}'),
 
     # CSS/SVG snippets embedded in theme assets
-    (re.compile(r'font-family\\s*:\\s*[^;\\n]+;'), f'font-family: "{font_name}";'),
+    (re.compile(r'font-family\s*:\s*[^;\n]+;'), f'font-family: "{font_name}";'),
 ]
 
 changed_files = []
@@ -123,12 +125,28 @@ for file_path in list(theme_dir.rglob("*.qml")) + list(theme_dir.rglob("*.conf")
         changed_files.append(file_path.relative_to(theme_dir).as_posix())
 
 if changed_files:
-    print(f"  → Enforced distro font '{font_name}' in {len(changed_files)} files")
+    print(f"  → Enforced distro font '{font_name}' in {len(changed_files)} files ({target_label})")
 else:
-    print(f"  → No explicit font declarations found; theme will use system default '{font_name}'")
+    print(f"  → No explicit font declarations found; theme will use system default '{font_name}' ({target_label})")
 PY
 
     return 0
+}
+
+enforce_theme_font() {
+    local theme_dir="${SYSTEM_THEMES_DIR}/${SELECTED_THEME}"
+    enforce_font_in_dir "$theme_dir" "sddm-theme"
+}
+
+enforce_qylock_fonts() {
+    local qylock_themes_dir="${QYLOCK_SHARE_DIR}/themes"
+
+    if [ ! -d "$qylock_themes_dir" ]; then
+        echo "WARNING: Qylock themes directory not found for font replacement: $qylock_themes_dir"
+        return 0
+    fi
+
+    enforce_font_in_dir "$qylock_themes_dir" "qylock-themes"
 }
 
 configure_sddm() {
@@ -198,6 +216,7 @@ install_sddm_qylock() {
     install_theme_fonts
     configure_sddm
     prepare_quickshell_lockscreen
+    enforce_qylock_fonts
 }
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
