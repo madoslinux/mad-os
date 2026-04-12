@@ -35,6 +35,21 @@ validate_shell_theme() {
         return 0
     fi
 
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/widgets/launcher/list_apps.py" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/widgets/launcher/list_apps.py"
+        return 0
+    fi
+
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/widgets/network/wifi_panel_logic.sh" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/widgets/network/wifi_panel_logic.sh"
+        return 0
+    fi
+
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/scripts/sys_info.sh" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/scripts/sys_info.sh"
+        return 0
+    fi
+
     if [[ ! -x "${THEME_INSTALL_DIR}/config/hypr/scripts/init.sh" ]]; then
         echo "WARNING: Theme is missing executable config/hypr/scripts/init.sh"
         return 0

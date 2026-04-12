@@ -235,6 +235,14 @@ class TestThemeLayoutContract(unittest.TestCase):
             content,
         )
         self.assertIn('"${THEME_INSTALL_DIR}/scripts/quickshell/lib/I18n.qml"', content)
+        self.assertIn(
+            '"${THEME_INSTALL_DIR}/scripts/quickshell/widgets/launcher/list_apps.py"', content
+        )
+        self.assertIn(
+            '"${THEME_INSTALL_DIR}/scripts/quickshell/widgets/network/wifi_panel_logic.sh"',
+            content,
+        )
+        self.assertIn('"${THEME_INSTALL_DIR}/scripts/quickshell/scripts/sys_info.sh"', content)
         self.assertIn('"${THEME_INSTALL_DIR}/config/hypr/scripts/init.sh"', content)
 
     def test_shellbar_uses_scripts_quickshell_layout(self):
