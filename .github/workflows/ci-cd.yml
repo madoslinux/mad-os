@@ -135,10 +135,10 @@ jobs:
         run: echo "Skipping validation - installer is now tested in mados-installer repo"
 
   # ================================================================
-  # Stage 3: Build ISO (only on tag push)
+  # Stage 3: Build ISO + Release (only on tag push)
   # ================================================================
-  build:
-    name: "Build ISO"
+  build-and-release:
+    name: "Build & Release"
     runs-on: ubuntu-latest
     needs: validate
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -202,6 +202,7 @@ jobs:
           echo "Build successful!"
 
       - name: Upload to Internet Archive
+        id: ia-upload
         env:
           IA_ACCESS_KEY: ${{ secrets.IA_ACCESS_KEY }}
           IA_SECRET_KEY: ${{ secrets.IA_SECRET_KEY }}
@@ -214,11 +215,34 @@ jobs:
           BUILD_DATE="${{ steps.build.outputs.build_date }}"
           export IA_ACCESS_KEY IA_SECRET_KEY ISO_NAME VERSION BUILD_DATE
 
-          python3 "${{ github.workspace }}/.github/scripts/ia_upload.py"
+          IA_URL=$(python3 "${{ github.workspace }}/.github/scripts/ia_upload.py" 2>&1 | grep "^URL:" | cut -d' ' -f2)
+          if [ -z "$IA_URL" ]; then
+            echo "ERROR: Failed to get Internet Archive URL"
+            exit 1
+          fi
+          echo "ia_url=$IA_URL" >> $GITHUB_OUTPUT
 
-    outputs:
-      iso_name: ${{ steps.build.outputs.iso_name }}
-      version: ${{ steps.build.outputs.version }}
-      build_date: ${{ steps.build.outputs.build_date }}
-      iso_size_mb: ${{ steps.build.outputs.iso_size_mb }}
-      short_sha: ${{ steps.build.outputs.short_sha }}
+      - name: Get tag
+        id: get_tag
+        run: echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+        with:
+          tag_name: ${{ steps.get_tag.outputs.TAG }}
+          name: ${{ steps.get_tag.outputs.TAG }}
+          draft: false
+          prerelease: false
+          body: |
+            ## madOS ${{ steps.get_tag.outputs.TAG }}
+
+            **Download:** [Internet Archive](${{ steps.ia-upload.outputs.ia_url }})
+
+            ---
+            Built from: `${{ github.sha }}`
+          files: |
+            out/${{ steps.build.outputs.iso_name }}
+            out/SHA256SUMS
