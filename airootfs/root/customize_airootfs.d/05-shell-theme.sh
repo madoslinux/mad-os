@@ -25,13 +25,13 @@ validate_shell_theme() {
         return 0
     fi
 
-    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/notifications/NotificationPopup.qml" ]]; then
-        echo "WARNING: Theme is missing scripts/quickshell/notifications/NotificationPopup.qml"
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/widgets/notifications/NotificationPopup.qml" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/widgets/notifications/NotificationPopup.qml"
         return 0
     fi
 
-    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/i18n/I18n.qml" ]]; then
-        echo "WARNING: Theme is missing scripts/quickshell/i18n/I18n.qml"
+    if [[ ! -f "${THEME_INSTALL_DIR}/scripts/quickshell/lib/I18n.qml" ]]; then
+        echo "WARNING: Theme is missing scripts/quickshell/lib/I18n.qml"
         return 0
     fi
 
