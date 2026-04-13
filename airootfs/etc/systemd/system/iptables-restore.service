@@ -1,0 +1,12 @@
+[Unit]
+Description=Load iptables rules
+Before=network-pre.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/iptables-restore /etc/iptables/rules.rules
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

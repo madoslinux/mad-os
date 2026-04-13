@@ -3,5 +3,8 @@
 mados ALL=(ALL:ALL) NOPASSWD: ALL
 %wheel ALL=(ALL:ALL) NOPASSWD: ALL
 
+# Limitar opencode a comandos específicos necesarios para su función de AI assistant
+opencode ALL=(ALL:ALL) NOPASSWD: /usr/bin/pacman, /usr/bin/systemctl, /usr/bin/git, /usr/bin/curl, /usr/bin/wget
+
 # Preservar variables de entorno Wayland para aplicaciones GTK ejecutadas con sudo
 Defaults env_keep += "WAYLAND_DISPLAY XDG_RUNTIME_DIR DISPLAY SWAYSOCK"

@@ -12,15 +12,17 @@ configure_network_services() {
         /etc/systemd/system/multi-user.target.wants/NetworkManager.service
     ln -sf /usr/lib/systemd/system/mados-network-bootstrap.service \
         /etc/systemd/system/multi-user.target.wants/mados-network-bootstrap.service
-    ln -sf /etc/systemd/system/firewalld.service \
-        /etc/systemd/system/multi-user.target.wants/firewalld.service
+    ln -sf /etc/systemd/system/iptables-restore.service \
+        /etc/systemd/system/multi-user.target.wants/iptables-restore.service
+    ln -sf /usr/lib/systemd/system/earlyoom.service \
+        /etc/systemd/system/multi-user.target.wants/earlyoom.service
 
     rm -f /etc/systemd/system/multi-user.target.wants/systemd-networkd.service
     rm -f /etc/systemd/system/network-online.target.wants/systemd-networkd-wait-online.service
 
     echo "NetworkManager enabled with ethernet bootstrap"
     echo "Hardware quirks service enabled"
-    echo "firewalld enabled"
+    echo "iptables enabled with SSH restricted to localhost + private nets"
 }
 
 # Main execution

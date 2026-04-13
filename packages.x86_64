@@ -17,15 +17,11 @@ syslinux
 sudo
 zsh
 
-# Compositores Wayland (Hyprland para hardware moderno, Sway para software rendering)
-hyprland
-hypridle
+# Compositores Wayland (Sway para software rendering, i3 como fallback)
 sway
 swaybg
 swayidle
 swaylock
-awww
-quickshell
 swaync
 waybar
 wofi
@@ -36,21 +32,12 @@ xorg-xwayland
 xorg-server
 xorg-xinit
 xorg-xrandr
-xf86-video-dummy
-xf86-video-vesa
-xf86-video-fbdev
-xdg-desktop-portal-hyprland
+xdg-desktop-portal-wlr
+
+# Fallback window managers (only for emergency recovery)
+feh
 
 # Additional Desktop Environments
-# plasma-meta
-# xfce4
-# xfce4-goodies
-i3-wm
-i3status
-dmenu
-polybar
-feh
-steam
 # i3lock
 # qtile
 # niri
@@ -114,7 +101,6 @@ rfkill
 grim
 slurp
 wl-clipboard
-xdg-desktop-portal-wlr
 brightnessctl
 matugen
 
@@ -129,19 +115,17 @@ ttf-roboto-mono
 earlyoom
 zram-generator
 
-# Drivers de video (multi-GPU)
-intel-media-driver
-vulkan-intel
-vulkan-swrast
-libva-intel-driver
-xf86-video-amdgpu
-xf86-video-ati
-vulkan-radeon
-xf86-video-nouveau
-nvidia-open
-nvidia-settings
+# Software rendering (llvmpipe/swrast)
 mesa
 mesa-utils
+vulkan-swrast
+pixman
+llvm
+
+# Fallback video drivers (minimal)
+xf86-video-dummy
+xf86-video-vesa
+xf86-video-fbdev
 
 # Bluetooth
 bluez
@@ -220,11 +204,9 @@ snapper
 virtualbox-guest-utils
 open-vm-tools
 
-# Login manager (SDDM with Qylock themes)
-sddm
-qt6-declarative
-qt6-5compat
-qt6-svg
+# Login manager (greetd + tuigreet para software rendering)
+greetd
+tuigreet
 perl
 
 # Gamepad/Steam Deck support
@@ -268,8 +250,8 @@ libjxl
 # madOS PDF Viewer - PDF rendering and annotations
 poppler-glib
 
-# Firewall
-firewalld
+# Firewall (simple iptables - firewalld is too heavy for live CD)
+iptables
 
 # Security
 usbguard
@@ -278,5 +260,5 @@ clamav
 fail2ban
 zenity
 
-# Optional desktop extras moved to packages.optional-heavy.x86_64
-# This default profile stays aligned with low-RAM targets.
+# madOS-lite: No optional-heavy packages (GIMP, LibreOffice langs, etc.)
+# This profile stays aligned with low-RAM targets and legacy hardware.

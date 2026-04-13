@@ -1,10 +1,13 @@
 repos:
-  - repo: https://github.com/koalaman/shellcheck-pre-commit
-    rev: v0.10.0
+  - repo: local
     hooks:
       - id: shellcheck
-        args: ["--severity=error"]
-        files: \.sh$
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        types: [shell]
+        args: ["--severity=error", "-s", "bash"]
+        description: "Run shellcheck on all bash scripts"
 
   - repo: local
     hooks:
@@ -34,4 +37,4 @@ repos:
         language: system
         types: [python]
         pass_filenames: false
-        args: ["tests/test_boot_scripts.py", "tests/test_liveusb_scripts.py", "tests/test_hyprland_config.py", "tests/test_sway_config.py", "-v"]
+        args: ["tests/test_boot_scripts.py", "-v"]

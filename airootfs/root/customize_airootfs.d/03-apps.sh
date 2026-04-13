@@ -13,6 +13,10 @@ MADOS_APPS=(
     "mados-wallpaper"
 )
 
+NUCLEAR_GITHUB_REPO="madoslinux"
+NUCLEAR_INSTALL_DIR="/opt/nuclear"
+NUCLEAR_BIN="/usr/local/bin/nuclear"
+
 GITHUB_REPO="madoslinux"
 INSTALLER_APP="mados-installer"
 INSTALLER_GITHUB_REPO="madoslinux"
@@ -355,24 +359,19 @@ if old in t:
     p.write_text(t, encoding="utf-8")
 PY
 
-        if ! grep -q 'madOS: disable live SDDM autologin' "${install_path}/scripts/apply-configuration.sh"; then
-            cat >> "${install_path}/scripts/apply-configuration.sh" << 'EOSDDM'
+        if ! grep -q 'madOS-lite: configure greetd' "${install_path}/scripts/apply-configuration.sh"; then
+            cat >> "${install_path}/scripts/apply-configuration.sh" << 'EOGREETD'
 
-# madOS: preserve SDDM theme and disable live autologin on installed systems
-mkdir -p /etc/sddm.conf.d
-cat > /etc/sddm.conf.d/10-mados-theme.conf << 'EOF'
-[Theme]
-Current=pixel-night-city
+# madOS-lite: configure greetd as display manager
+mkdir -p /etc/greetd
+cat > /etc/greetd/config.toml << 'EOF'
+[default_session]
+command = "tuigreet --theme /usr/share/greetd/themes/sugar-dark.css --session 'sway'"
+user = "greeter"
 EOF
-if [ -f /etc/sddm.conf ]; then
-    sed -i 's/^Current=.*/Current=pixel-night-city/' /etc/sddm.conf
-fi
-rm -f /etc/sddm.conf.d/autologin-live.conf
-# Do not write an empty [Autologin] block; defaults already keep autologin disabled.
-rm -f /etc/sddm.conf.d/90-disable-autologin.conf
-EOSDDM
+EOGREETD
         fi
-        echo "  → Removed installer iwd backend override line"
+        echo "  → Configured greetd for installed system"
     fi
 
     # Harden GRUB cmdline handling: never pass bare subvol= to kernel.
@@ -699,406 +698,6 @@ SKWD_WALL_INSTALL_DIR="/usr/local/share/skwd-wall"
 SKWD_WALL_COMPAT_DIR="/opt/mados/skwd-wall"
 SKWD_WALL_BIN="/usr/local/bin/skwd-wall"
 
-install_skwd_wall_legacy() {
-    echo "Installing skwd-wall..."
-
-    local build_dir="${BUILD_DIR}/skwd-wall_$$"
-    rm -rf "$build_dir"
-    mkdir -p "$build_dir"
-    cd "$BUILD_DIR"
-
-    local retries=3
-    local count=0
-    while [ $count -lt $retries ]; do
-        if GIT_TERMINAL_PROMPT=0 git clone --depth=1 --single-branch --branch main --no-tags "https://github.com/${SKWD_WALL_REPO}.git" "${build_dir}/skwd-wall"; then
-            break
-        fi
-        count=$((count + 1))
-        echo "  Retry $count/$retries..."
-        sleep 2
-    done
-
-    if [ $count -eq $retries ]; then
-        echo "ERROR: Failed to clone skwd-wall after $retries attempts"
-        rm -rf "$build_dir"
-        return 1
-    fi
-
-    mkdir -p "$INSTALL_DIR" "/usr/local/share" "/opt/mados"
-    rm -rf "$SKWD_WALL_INSTALL_DIR"
-    mv "${build_dir}/skwd-wall" "$SKWD_WALL_INSTALL_DIR"
-
-    rm -rf "$SKWD_WALL_COMPAT_DIR"
-    ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"
-
-    mkdir -p /etc/skel/.config/skwd-wall /etc/skel/.config/systemd/user
-
-    cat > /etc/skel/.config/systemd/user/skwd-wall.service << 'SKWD_WALL_SERVICE'
-[Unit]
-Description=skwd-wall wallpaper selector daemon
-Documentation=https://github.com/madkoding/skwd-wall
-PartOf=graphical-session.target
-After=graphical-session.target
-
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/mados-skwd-wall-daemon
-Restart=on-failure
-RestartSec=2
-
-[Install]
-WantedBy=graphical-session.target
-SKWD_WALL_SERVICE
-
-    if [[ -f "$SKWD_WALL_INSTALL_DIR/data/config.json.example" ]]; then
-        cp "$SKWD_WALL_INSTALL_DIR/data/config.json.example" /etc/skel/.config/skwd-wall/config.json
-    fi
-
-    if [[ -f /etc/skel/.config/skwd-wall/config.json ]]; then
-        sed -i 's/"compositor":[[:space:]]*"[^"]*"/"compositor": "hyprland"/' /etc/skel/.config/skwd-wall/config.json
-    fi
-
-    if [[ -d /home/mados ]]; then
-        mkdir -p /home/mados/.config/skwd-wall /home/mados/.config/systemd/user
-        cp /etc/skel/.config/systemd/user/skwd-wall.service /home/mados/.config/systemd/user/skwd-wall.service
-
-        if [[ -f /etc/skel/.config/skwd-wall/config.json ]]; then
-            cp /etc/skel/.config/skwd-wall/config.json /home/mados/.config/skwd-wall/config.json
-        fi
-
-        chown -R 1000:1000 /home/mados/.config/skwd-wall /home/mados/.config/systemd
-    fi
-
-    rm -rf "$build_dir"
-
-    cat > "$SKWD_WALL_BIN" << 'SKWD_WALL_WRAPPER'
-#!/usr/bin/env bash
-set -euo pipefail
-
-if [[ $# -eq 0 ]]; then
-    exec /usr/local/bin/mados-wallpaper-picker toggle
-fi
-
-exec /usr/local/bin/mados-wallpaper-picker "$@"
-SKWD_WALL_WRAPPER
-    chmod +x "$SKWD_WALL_BIN"
-
-    cat > /usr/local/bin/mados-skwd-wall-sources << 'MADOS_SKWD_WALL_SOURCES'
-#!/usr/bin/env python3
-
-import argparse
-import hashlib
-import json
-import os
-import shutil
-import sys
-from pathlib import Path
-
-DEFAULT_SOURCES = [
-    "~/.local/share/mados/wallpapers",
-    "~/Pictures/Wallpapers",
-    "/usr/share/backgrounds",
-    "/usr/share/wallpapers",
-    "/usr/share/mados/wallpapers",
-    "/opt/mados/mados_wallpaper",
-]
-
-EXCLUDED_SOURCE_PATHS = [
-    "/usr/share/backgrounds/sway",
-]
-
-IMAGE_EXTENSIONS = {
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".webp",
-    ".gif",
-    ".bmp",
-    ".tif",
-    ".tiff",
-}
-
-VIDEO_EXTENSIONS = {
-    ".mp4",
-    ".mkv",
-    ".mov",
-    ".webm",
-    ".avi",
-}
-
-
-def home() -> Path:
-    return Path.home()
-
-
-def config_file() -> Path:
-    xdg = os.environ.get("XDG_CONFIG_HOME", str(home() / ".config"))
-    return Path(xdg) / "skwd-wall" / "config.json"
-
-
-def cache_root() -> Path:
-    xdg = os.environ.get("XDG_CACHE_HOME", str(home() / ".cache"))
-    return Path(xdg) / "skwd-wall"
-
-
-def union_dir() -> Path:
-    return cache_root() / "wallpaper-union"
-
-
-def normalize(path: str) -> str:
-    value = os.path.expandvars(path.strip())
-    value = os.path.expanduser(value)
-    return str(Path(value).resolve())
-
-
-def ensure_config() -> dict:
-    path = config_file()
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    if not path.is_file():
-        install_dir = Path("/usr/local/share/skwd-wall")
-        example = install_dir / "data" / "config.json.example"
-        if example.is_file():
-            data = json.loads(example.read_text())
-        else:
-            data = {}
-    else:
-        try:
-            data = json.loads(path.read_text())
-        except json.JSONDecodeError:
-            data = {}
-
-    if not isinstance(data, dict):
-        data = {}
-
-    paths = data.get("paths")
-    if not isinstance(paths, dict):
-        paths = {}
-    data["paths"] = paths
-
-    sources = paths.get("wallpaperSources")
-    if not isinstance(sources, list):
-        sources = []
-
-    merged = []
-    seen = set()
-
-    legacy = paths.get("wallpaper")
-    if isinstance(legacy, str) and legacy.strip():
-        legacy_norm = normalize(legacy)
-        if legacy_norm not in seen and not legacy_norm.endswith("/wallpaper-union"):
-            merged.append(legacy_norm)
-            seen.add(legacy_norm)
-
-    for item in sources:
-        if isinstance(item, str) and item.strip():
-            norm = normalize(item)
-            if norm not in seen:
-                merged.append(norm)
-                seen.add(norm)
-
-    for item in DEFAULT_SOURCES:
-        norm = normalize(item)
-        if norm not in seen:
-            merged.append(norm)
-            seen.add(norm)
-
-    paths["wallpaperSources"] = merged
-    paths["wallpaper"] = str(union_dir())
-    if not isinstance(paths.get("videoWallpaper"), str) or not str(paths["videoWallpaper"]).strip():
-        paths["videoWallpaper"] = str(union_dir())
-
-    data["compositor"] = "hyprland"
-    save_config(data)
-    return data
-
-
-def save_config(data: dict) -> None:
-    path = config_file()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=4, ensure_ascii=False) + "\n")
-
-
-def iter_files(source: Path):
-    excluded_paths = [Path(item) for item in EXCLUDED_SOURCE_PATHS]
-    for path in source.rglob("*"):
-        if path.is_file():
-            if any(path.is_relative_to(excluded) for excluded in excluded_paths):
-                continue
-            ext = path.suffix.lower()
-            if ext in IMAGE_EXTENSIONS or ext in VIDEO_EXTENSIONS:
-                yield path
-
-
-def build_union_from_sources(sources: list[str]) -> None:
-    target = union_dir()
-    parent = target.parent
-    temp = parent / (target.name + ".tmp")
-    old = parent / (target.name + ".old")
-
-    shutil.rmtree(temp, ignore_errors=True)
-    temp.mkdir(parents=True, exist_ok=True)
-
-    for src in sources:
-        source = Path(src)
-        if not source.is_dir():
-            continue
-
-        for item in iter_files(source):
-            digest = hashlib.sha1(str(item).encode("utf-8")).hexdigest()[:10]
-            stem = item.stem or "wallpaper"
-            safe = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in stem)[:80]
-            name = f"{safe}__{digest}{item.suffix.lower()}"
-            link = temp / name
-            if not link.exists():
-                try:
-                    link.symlink_to(item)
-                except OSError:
-                    pass
-
-    shutil.rmtree(old, ignore_errors=True)
-    if target.exists() or target.is_symlink():
-        target.rename(old)
-    temp.rename(target)
-    shutil.rmtree(old, ignore_errors=True)
-
-
-def load_sources() -> list[str]:
-    data = ensure_config()
-    paths = data.get("paths", {})
-    sources = paths.get("wallpaperSources", [])
-    return [s for s in sources if isinstance(s, str)]
-
-
-def cmd_sync() -> int:
-    sources = load_sources()
-    build_union_from_sources(sources)
-    return 0
-
-
-def cmd_list() -> int:
-    for entry in load_sources():
-        print(entry)
-    return 0
-
-
-def cmd_add(path: str) -> int:
-    data = ensure_config()
-    paths = data["paths"]
-    sources = [s for s in paths.get("wallpaperSources", []) if isinstance(s, str)]
-    norm = normalize(path)
-    if norm not in sources:
-        sources.append(norm)
-        paths["wallpaperSources"] = sources
-        save_config(data)
-    build_union_from_sources(sources)
-    return 0
-
-
-def cmd_remove(path: str) -> int:
-    data = ensure_config()
-    paths = data["paths"]
-    sources = [s for s in paths.get("wallpaperSources", []) if isinstance(s, str)]
-    norm = normalize(path)
-    sources = [s for s in sources if s != norm]
-    paths["wallpaperSources"] = sources
-    save_config(data)
-    build_union_from_sources(sources)
-    return 0
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Manage skwd-wall wallpaper sources")
-    sub = parser.add_subparsers(dest="cmd")
-
-    sub.add_parser("sync")
-    sub.add_parser("list")
-    add_p = sub.add_parser("add")
-    add_p.add_argument("path")
-    rm_p = sub.add_parser("remove")
-    rm_p.add_argument("path")
-
-    args = parser.parse_args()
-    if args.cmd in {None, "sync"}:
-        return cmd_sync()
-    if args.cmd == "list":
-        return cmd_list()
-    if args.cmd == "add":
-        return cmd_add(args.path)
-    if args.cmd == "remove":
-        return cmd_remove(args.path)
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
-MADOS_SKWD_WALL_SOURCES
-    chmod +x /usr/local/bin/mados-skwd-wall-sources
-
-    cat > /usr/local/bin/mados-skwd-wall-daemon << 'MADOS_SKWD_WALL_DAEMON'
-#!/usr/bin/env bash
-set -euo pipefail
-
-export SKWD_WALL_INSTALL="/usr/local/share/skwd-wall"
-export SKWD_WALL_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/skwd-wall"
-
-/usr/local/bin/mados-skwd-wall-sources sync >/dev/null 2>&1 || true
-
-exec quickshell -p /usr/local/share/skwd-wall/daemon.qml
-MADOS_SKWD_WALL_DAEMON
-    chmod +x /usr/local/bin/mados-skwd-wall-daemon
-
-    cat > /usr/local/bin/mados-skwd-wall-doctor << 'MADOS_SKWD_WALL_DOCTOR'
-#!/usr/bin/env bash
-set -euo pipefail
-
-echo "== skwd-wall doctor =="
-
-check_cmd() {
-    local cmd="$1"
-    if command -v "$cmd" >/dev/null 2>&1; then
-        echo "[ok] $cmd"
-    else
-        echo "[missing] $cmd"
-    fi
-}
-
-check_cmd quickshell
-check_cmd awww
-check_cmd matugen
-check_cmd ffmpeg
-check_cmd magick
-check_cmd sqlite3
-check_cmd inotifywait
-
-if [[ -f /usr/local/share/skwd-wall/daemon.qml ]]; then
-    echo "[ok] daemon.qml"
-else
-    echo "[missing] /usr/local/share/skwd-wall/daemon.qml"
-fi
-
-if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/skwd-wall/config.json" ]]; then
-    echo "[ok] config.json"
-else
-    echo "[missing] ~/.config/skwd-wall/config.json"
-fi
-
-echo "-- systemd user --"
-systemctl --user is-enabled skwd-wall.service 2>/dev/null || true
-systemctl --user is-active skwd-wall.service 2>/dev/null || true
-
-echo "-- ipc --"
-quickshell ipc -p /usr/local/share/skwd-wall/daemon.qml show 2>/dev/null || true
-
-echo "-- recent logs --"
-journalctl --user -u skwd-wall.service -n 40 --no-pager 2>/dev/null || true
-MADOS_SKWD_WALL_DOCTOR
-    chmod +x /usr/local/bin/mados-skwd-wall-doctor
-
-    echo "✓ skwd-wall installed to ${SKWD_WALL_INSTALL_DIR}"
-    return 0
-}
-
 # Canonical skwd-wall installer (overrides legacy wrapper-heavy flow)
 install_skwd_wall() {
     echo "Installing skwd-wall..."
@@ -1183,6 +782,99 @@ SKWD_WALL_SERVICE_FALLBACK
     return 0
 }
 
+install_nuclear() {
+    echo "Installing Nuclear music player..."
+
+    echo "  → Fetching release info from GitHub API..."
+    local release_json
+    release_json=$(curl -fSL "https://api.github.com/repos/${NUCLEAR_GITHUB_REPO}/nuclear/releases/latest") || {
+        echo "ERROR: Failed to fetch releases API (curl failed with $?)"
+        return 1
+    }
+
+    if [[ -z "$release_json" ]]; then
+        echo "ERROR: Empty response from GitHub API"
+        return 1
+    fi
+
+    local release_tag appimage_url
+    release_tag=$(printf '%s' "$release_json" | python3 -c 'import sys, json; print(json.load(sys.stdin).get("tag_name", ""))')
+    appimage_url=$(printf '%s' "$release_json" | python3 -c '
+import sys, json
+for a in json.load(sys.stdin).get("assets", []):
+    if a.get("name", "").lower().endswith(".appimage"):
+        print(a.get("browser_download_url", ""))
+        break
+')
+
+    if [[ -z "$release_tag" || -z "$appimage_url" ]]; then
+        echo "ERROR: Could not resolve Nuclear release (tag='${release_tag}', url='${appimage_url}')"
+        return 1
+    fi
+
+    echo "  → Nuclear release: ${release_tag}"
+    echo "  → AppImage: ${appimage_url}"
+
+    local appimage_path="${BUILD_DIR}/nuclear.AppImage"
+    local retries=5
+    local count=0
+
+    while [ $count -lt $retries ]; do
+        echo "  → Downloading... (attempt $((count + 1))/$retries)"
+        if curl -fSL -o "$appimage_path" "$appimage_url"; then
+            echo "  → Download complete"
+            break
+        fi
+        count=$((count + 1))
+        if [ $count -lt $retries ]; then
+            echo "  → Retrying in 10 seconds..."
+            sleep 10
+        fi
+    done
+
+    if [ $count -eq $retries ]; then
+        echo "ERROR: Failed to download Nuclear after $retries attempts"
+        return 1
+    fi
+
+    if [ ! -f "$appimage_path" ] || [ ! -s "$appimage_path" ]; then
+        echo "ERROR: Downloaded file is missing or empty"
+        return 1
+    fi
+
+    echo "  → File size: $(stat -c%s "$appimage_path" 2>/dev/null || echo 'unknown') bytes"
+
+    mkdir -p "${NUCLEAR_INSTALL_DIR}"
+    cp "$appimage_path" "${NUCLEAR_INSTALL_DIR}/nuclear.AppImage"
+    chmod +x "${NUCLEAR_INSTALL_DIR}/nuclear.AppImage"
+
+    cat > "${NUCLEAR_BIN}" << 'NUCLEAR_WRAPPER'
+#!/bin/bash
+exec /opt/nuclear/nuclear.AppImage "$@"
+NUCLEAR_WRAPPER
+    chmod +x "${NUCLEAR_BIN}"
+
+    cat > /usr/share/applications/nuclear.desktop << 'NUCLEAR_DESKTOP'
+[Desktop Entry]
+Name=Nuclear Music Player
+GenericName=Music Player
+Comment=Free, open-source music player without ads or tracking
+Exec=nuclear %U
+Icon=nuclear
+Terminal=false
+Type=Application
+Categories=Audio;Music;Player;AudioVideo;
+MimeType=application/ogg;audio/flac;audio/mp3;audio/mpeg;audio/mpegurl;audio/mp4;audio/ogg;audio/vorbis;audio/wav;audio/x-flac;audio/x-mp3;audio/x-mpeg;audio/x-mpegurl;audio/x-ms-wma;audio/x-ogg;audio/x-vorbis;audio/x-wav;x-scheme-handler/nuclear;
+Keywords=music;player;audio;streaming;mp3;flac;ogg;
+NUCLEAR_DESKTOP
+
+    mkdir -p /etc/skel/.local/share/applications
+    cp /usr/share/applications/nuclear.desktop /etc/skel/.local/share/applications/
+
+    echo "✓ Nuclear ${release_tag} installed to ${NUCLEAR_INSTALL_DIR}"
+    return 0
+}
+
 restrict_wallpaper_desktop_to_sway() {
     local desktop
     local desktop_files=(
@@ -1202,6 +894,32 @@ restrict_wallpaper_desktop_to_sway() {
 
         echo "  → Restricted $(basename "$desktop") to Sway"
     done
+}
+
+setup_music_assets() {
+    if [[ ! -d /usr/share/music ]] || [[ -z "$(ls -A /usr/share/music 2>/dev/null)" ]]; then
+        return 0
+    fi
+
+    mkdir -p /etc/skel/Music /home/mados/Music
+
+    for f in /usr/share/music/*; do
+        [[ -f "$f" ]] || continue
+        base="$(basename "$f")"
+        if [[ ! -e "/etc/skel/Music/$base" ]]; then
+            ln -s "$f" "/etc/skel/Music/$base"
+        fi
+        if [[ -d /home/mados && ! -e "/home/mados/Music/$base" ]]; then
+            ln -s "$f" "/home/mados/Music/$base"
+            chown -h 1000:1000 "/home/mados/Music/$base"
+        fi
+    done
+
+    if [[ -d /home/mados ]]; then
+        chown -R 1000:1000 /home/mados/Music
+    fi
+
+    echo "  → Music demo files linked to ~/Music"
 }
 
 setup_wallpaper_assets() {
@@ -1297,10 +1015,12 @@ install_imperative_dots() {
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     install_imperative_dots
     install_mados_apps
+    setup_music_assets
     setup_wallpaper_assets
     install_skwd_wall
     restrict_wallpaper_desktop_to_sway
     install_installer
     install_updater
     install_oh_my_zsh
+    install_nuclear
 fi
