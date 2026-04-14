@@ -106,24 +106,18 @@ def create_button(icon, label, color, action):
 
 
 def get_window_manager():
-    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
-        return "hyprland"
-    elif os.environ.get("SWAYSOCK"):
+    if os.environ.get("SWAYSOCK"):
         return "sway"
     elif os.environ.get("DESKTOP_SESSION"):
         session = os.environ["DESKTOP_SESSION"].lower()
         if "sway" in session:
             return "sway"
-        elif "hypr" in session:
-            return "hyprland"
     return None
 
 
 def logout():
     wm = get_window_manager()
-    if wm == "hyprland":
-        subprocess.run(["hyprctl", "dispatch", "exit"])
-    elif wm == "sway":
+    if wm == "sway":
         subprocess.run(["swaymsg", "exit"])
     else:
         subprocess.run(["loginctl", "terminate-user", os.environ.get("USER", "")])

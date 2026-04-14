@@ -123,7 +123,7 @@ exec runuser -u mados -- env \
     DISPLAY=:0 \
     WLR_BACKENDS=x11 \
     XDG_CURRENT_DESKTOP=sway \
-    XDG_SESSION_TYPE=wayland \
+    XDG_SESSION_TYPE=x11 \
     XDG_RUNTIME_DIR=/run/user/1000 \
     HOME=/home/mados \
     USER=mados \

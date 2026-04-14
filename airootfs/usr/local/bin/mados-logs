@@ -14,7 +14,7 @@ case "${1:-}" in
         journalctl --no-pager -b
         ;;
     --compositor)
-        journalctl -t mados-auto-session -t mados-compositor -t mados-sway -t mados-hyprland --no-pager -b
+        journalctl -t mados-compositor -t mados-sway -t mados-desktop --no-pager -b
         ;;
     -h|--help)
         echo "madOS Log Viewer"

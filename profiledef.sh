@@ -33,7 +33,6 @@ file_permissions=(
   ["/root/customize_airootfs.d/08-firefox-defaults.sh"]="0:0:755"
   ["/root/customize_airootfs.d/05-shell-theme.sh"]="0:0:755"
   ["/root/customize_airootfs.d/04-cleanup.sh"]="0:0:755"
-  ["/root/customize_airootfs.d/10-greetd-tuigreet.sh"]="0:0:755"
   ["/root/customize_airootfs.d/10-autologin-sway.sh"]="0:0:755"
   ["/root/.automated_script.sh"]="0:0:755"
   ["/root/.zlogin"]="0:0:644"
@@ -57,12 +56,6 @@ file_permissions=(
   ["/usr/local/bin/sway-x11-session"]="0:0:755"
   ["/usr/local/bin/mados-i3-session"]="0:0:755"
 
-  ["/usr/local/bin/mados-wallpaper-picker"]="0:0:755"
-  ["/usr/local/bin/mados-skwd-wall-daemon"]="0:0:755"
-  ["/usr/local/bin/mados-skwd-wall-sources"]="0:0:755"
-  ["/usr/local/bin/mados-skwd-wall-doctor"]="0:0:755"
-
-  ["/etc/skel/.config/systemd/user/skwd-wall.service"]="0:0:644"
   ["/usr/local/bin/swww"]="0:0:755"
   ["/usr/local/bin/swww-daemon"]="0:0:755"
   ["/usr/local/lib/mados-media-helper.sh"]="0:0:755"
@@ -74,7 +67,6 @@ file_permissions=(
   ["/usr/local/bin/mados-persist-detect.sh"]="0:0:755"
   ["/usr/local/bin/mados-ventoy-setup.sh"]="0:0:755"
   ["/usr/local/bin/mados-timezone-detect.sh"]="0:0:755"
-  ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
   ["/usr/local/bin/mados-health-check"]="0:0:755"
   ["/usr/local/bin/mados-network-bootstrap.sh"]="0:0:755"
@@ -100,7 +92,6 @@ file_permissions=(
 
   # tools
   ["/usr/local/bin/mados-rate-mirrors"]="0:0:755"
-  ["/usr/local/bin/mados-select-desktop"]="0:0:755"
 
   # mados-updater (installed dynamically from github.com/madkoding/mados-updater)
   ["/usr/share/libalpm/hooks/pre-update.hook"]="0:0:644"

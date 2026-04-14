@@ -1,7 +1,7 @@
 #!/bin/bash
-export XDG_SESSION_TYPE=wayland
+export XDG_SESSION_TYPE=x11
 export XDG_CURRENT_DESKTOP=sway
-export MOZ_ENABLE_WAYLAND=1
+export MOZ_ENABLE_WAYLAND=0
 
 # Use systemd-logind as the seat management backend (madOS uses systemd)
 export LIBSEAT_BACKEND=logind
@@ -175,15 +175,15 @@ START_TIME=$(date +%s)
 # Check if we need to generate a config with native resolution from EDID
 NATIVE_RES=$(get_edid_native_resolution || true)
 if [ -n "$NATIVE_RES" ] && [ -f "$HOME/.config/sway/config" ]; then
-    SWAY_TMP_CONFIG="${XDG_RUNTIME_DIR:-/tmp}/mados-sway-wayland-config.$$"
+    SWAY_TMP_CONFIG="${XDG_RUNTIME_DIR:-/tmp}/mados-sway-x11-config.$$"
     cp "$HOME/.config/sway/config" "$SWAY_TMP_CONFIG"
     {
-        printf "\n# mados wayland dynamic output mode (EDID native)\n"
+        printf "\n# mados x11 dynamic output mode (EDID native)\n"
         printf "output * mode %s\n" "$NATIVE_RES"
         printf "output * pos 0 0\n"
         printf "output * scale 1\n"
     } >> "$SWAY_TMP_CONFIG"
-    logger -p user.info -t mados-sway "Wayland: using EDID native resolution ${NATIVE_RES}"
+    logger -p user.info -t mados-sway "X11: using EDID native resolution ${NATIVE_RES}"
     sway -c "$SWAY_TMP_CONFIG"
     EXIT_CODE=$?
 else

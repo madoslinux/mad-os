@@ -1,45 +1,17 @@
 #!/usr/bin/env bash
-# mados-wallpaperd - Unified wallpaper daemon/controller for Sway and Hyprland
+# mados-wallpaperd - Wallpaper daemon/controller for Sway
 
 set -u
 
 command_name="${1:-start}"
 workspace="${2:-}"
 
-detect_compositor() {
-    if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
-        echo "hyprland"
-        return
-    fi
-    if [[ -n "${SWAYSOCK:-}" ]]; then
-        echo "sway"
-        return
-    fi
-    if pgrep -x Hyprland >/dev/null 2>&1; then
-        echo "hyprland"
-        return
-    fi
-    if pgrep -x sway >/dev/null 2>&1; then
-        echo "sway"
-        return
-    fi
-    echo "unknown"
-}
-
 run_start() {
-    case "$(detect_compositor)" in
-        hyprland) exec mados-wallpaper-hyprland ;;
-        sway) exec mados-sway-wallpapers ;;
-        *) exit 0 ;;
-    esac
+    exec mados-sway-wallpapers
 }
 
 run_set() {
-    case "$(detect_compositor)" in
-        hyprland) exec mados-hyprland-wallpaper-set "$workspace" ;;
-        sway) exec mados-sway-wallpaper-set "$workspace" ;;
-        *) exit 0 ;;
-    esac
+    exec mados-sway-wallpaper-set "$workspace"
 }
 
 case "$command_name" in

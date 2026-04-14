@@ -1,6 +1,0 @@
-[Desktop Entry]
-Name=madOS Auto Session
-Comment=Automatically select Hyprland or Sway based on hardware
-Exec=/usr/local/bin/mados-auto-session
-Type=Application
-DesktopNames=madOS

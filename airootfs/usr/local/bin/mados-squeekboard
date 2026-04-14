@@ -105,15 +105,15 @@ start_squeekboard() {
         return 0
     fi
 
-    # Check Wayland session
-    if [[ -z "${WAYLAND_DISPLAY:-}" ]]; then
-        log_warn "No Wayland display detected, cannot start squeekboard"
+    # Check Wayland or X11 session
+    if [[ -z "${WAYLAND_DISPLAY:-}" && -z "${DISPLAY:-}" ]]; then
+        log_warn "No display detected, cannot start squeekboard"
         return 1
     fi
 
     log_info "Starting squeekboard (on-screen keyboard)"
 
-    # Set environment for GTK layer shell (bottom panel)
+    # Set environment for GTK layer shell (supports Wayland and X11 backend)
     export GDK_BACKEND=wayland
 
     squeekboard &

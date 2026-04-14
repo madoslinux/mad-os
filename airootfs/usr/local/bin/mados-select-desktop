@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# mados-select-desktop - Desktop environment and window manager selector
-# Allows users to select their preferred DE/WM during or after installation
+# mados-select-desktop - Desktop selector for madOS-lite
 
 set -euo pipefail
 
@@ -22,16 +21,11 @@ OPTIONS:
     help                Show this help message
 
 AVAILABLE DESKTOPS:
-    hyprland    - Modern Wayland compositor (GPU accelerated)
-    sway        - i3-compatible Wayland compositor (software rendering)
-    kde         - KDE Plasma 6 (full featured desktop)
-    xfce        - XFCE4 (lightweight, traditional desktop)
-    i3          - i3wm (tiling window manager)
-    qtile       - Qtile (Python-based tiling WM)
+    sway        - Sway compositor (X11 backend in madOS-lite)
 
 EXAMPLES:
     ${SCRIPT_NAME} list
-    ${SCRIPT_NAME} set hyprland
+    ${SCRIPT_NAME} set sway
     ${SCRIPT_NAME} current
 
 EOF
@@ -43,12 +37,7 @@ list_desktops() {
     echo ""
 
     local desktops=(
-        "hyprland:Modern Wayland compositor - GPU accelerated"
-        "sway:i3-compatible Wayland compositor - Software rendering"
-        "kde:KDE Plasma 6 - Full featured desktop environment"
-        "xfce:XFCE4 - Lightweight traditional desktop"
-        "i3:i3wm - Tiling window manager (X11)"
-        "qtile:Qtile - Python-based tiling window manager"
+        "sway:Sway compositor - X11 backend (no DRM required)"
     )
 
     for entry in "${desktops[@]}"; do
@@ -66,23 +55,8 @@ check_desktop_available() {
     local desktop="$1"
 
     case "$desktop" in
-        hyprland)
-            command -v Hyprland &>/dev/null
-            ;;
         sway)
             command -v sway &>/dev/null
-            ;;
-        kde|plasma)
-            command -v startplasma-x11 &>/dev/null || command -v startplasma-wayland &>/dev/null
-            ;;
-        xfce)
-            command -v startxfce4 &>/dev/null
-            ;;
-        i3)
-            command -v i3 &>/dev/null
-            ;;
-        qtile)
-            command -v qtile &>/dev/null
             ;;
         *)
             return 1

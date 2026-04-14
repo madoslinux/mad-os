@@ -15,7 +15,7 @@ help_data = [
             ("Super + Q", "Close window"),
             ("Super + E", "Open file manager"),
             ("Super + F", "Toggle fullscreen"),
-            ("Super+Shift+E", "Exit Hyprland"),
+            ("Super+Shift+E", "Exit session"),
         ],
     ),
     (

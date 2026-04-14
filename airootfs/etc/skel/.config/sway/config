@@ -184,7 +184,7 @@ bindsym $mod+r mode "resize"
 
 ### Utilities
 
-# SwayOSD — disabled for X11 backend (requires Wayland compositor features)
+# SwayOSD — disabled for X11 backend (requires compositor features not available here)
 # exec systemctl --user enable --now swayosd-server
 
 # Audio controls (disabled - requires swayosd)
@@ -203,7 +203,7 @@ bindsym $mod+r mode "resize"
 # On-screen keyboard toggle
 bindsym $mod+F12 exec mados-squeekboard toggle
 
-# Screenshots - Using grim/slurp (native Wayland, works on Sway)
+# Screenshots - Using grim/slurp
 # Ensure Pictures/Screenshots directory exists
 exec_always --no-startup-id mkdir -p ~/Pictures/Screenshots
 
@@ -218,7 +218,7 @@ bindsym $mod+Shift+s exec grim -g "$(slurp)" - | wl-copy
 # Shell bar with Waybar fallback
 exec_always --no-startup-id "mados-shellbar-start"
 
-# madOS Application Launcher dock (disabled - requires Wayland)
+# madOS Application Launcher dock (disabled in this profile)
 # exec --no-startup-id mados-launcher
 # exec --no-startup-id mados-wallpaperd -d
 
@@ -230,9 +230,6 @@ exec --no-startup-id mados-squeekboard auto
 # VirtualBox Guest Additions (auto-resize, clipboard, drag-and-drop)
 # Only runs when inside a VirtualBox VM, exits immediately otherwise
 exec --no-startup-id mados-vbox-guest
-
-# Xwayland (for maim screenshots)
-exec_always --no-startup-id "pgrep Xwayland || echo 'Xwayland should auto-start'"
 
 # Notification daemon (optional, uncomment if mako is installed)
 # exec_always --no-startup-id mako

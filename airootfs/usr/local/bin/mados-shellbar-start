@@ -30,11 +30,6 @@ cleanup_existing_bars() {
     pkill -x waybar >/dev/null 2>&1 || true
 }
 
-is_hyprland_session() {
-    local desktop="${XDG_CURRENT_DESKTOP:-}"
-    [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || [[ "${desktop,,}" == *"hyprland"* ]]
-}
-
 has_valid_sway_socket() {
     [[ -n "${SWAYSOCK:-}" ]] && [[ -S "${SWAYSOCK}" ]]
 }
@@ -47,12 +42,6 @@ is_sway_session() {
 detect_session_type() {
     local desktop="${XDG_CURRENT_DESKTOP:-}"
 
-    if is_hyprland_session; then
-        log_info "Hyprland session detected (hypr_sig=${HYPRLAND_INSTANCE_SIGNATURE:+set}, desktop=${desktop:-unset}, sway_sock=${SWAYSOCK:-unset})"
-        echo "hyprland"
-        return 0
-    fi
-
     if [[ -n "${SWAYSOCK:-}" ]] && ! has_valid_sway_socket; then
         log_warn "Ignoring stale SWAYSOCK: ${SWAYSOCK}"
     fi
@@ -63,7 +52,7 @@ detect_session_type() {
         return 0
     fi
 
-    log_warn "Unable to detect compositor session (desktop=${desktop:-unset}, hypr_sig=${HYPRLAND_INSTANCE_SIGNATURE:+set}, sway_sock=${SWAYSOCK:-unset})"
+    log_warn "Unable to detect compositor session (desktop=${desktop:-unset}, sway_sock=${SWAYSOCK:-unset})"
     echo "unknown"
     return 0
 }
@@ -223,10 +212,6 @@ if [[ "${session_type}" == "sway" ]]; then
 fi
 
 if launch_theme_with_retry; then
-    exit 0
-fi
-
-if [[ "${session_type}" == "hyprland" ]] && launch_quickshell_direct; then
     exit 0
 fi
 

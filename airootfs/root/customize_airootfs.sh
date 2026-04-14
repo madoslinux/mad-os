@@ -82,12 +82,6 @@ if ! run_module "03-apps.sh" "setup_wallpaper_assets"; then
     exit 1
 fi
 
-# 03-apps.sh - Install skwd-wall selector
-if ! run_module "03-apps.sh" "install_skwd_wall"; then
-    echo "FATAL: skwd-wall installation failed"
-    exit 1
-fi
-
 # Install mados-installer
 if ! run_module "03-apps.sh" "install_installer"; then
     echo "FATAL: Installer installation failed"

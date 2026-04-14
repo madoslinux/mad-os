@@ -86,7 +86,7 @@ jobs:
           - category: "Core & OTA"
             files: "tests/test_boot_scripts.py tests/test_liveusb_scripts.py tests/test_wifi_quirks.py tests/test_boot_compat_entries.py"
           - category: "Desktop Config"
-            files: "tests/test_hyprland_config.py tests/test_sway_config.py"
+            files: "tests/test_sway_config.py"
 
     steps:
       - name: Checkout

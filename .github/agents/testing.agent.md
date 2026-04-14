@@ -68,7 +68,7 @@ sys.path.insert(0, LIB_DIR)
 
 ## Existing Test Files
 
-Unit tests cover: boot scripts, post-installation, first-boot, OpenCode, Ollama, Hyprland config, WiFi backend, installer config, equalizer presets, photo navigator, persistence scripts, GPU detection, GPU compute, live USB scripts, audio quality, Bluetooth, download progress.
+Unit tests cover: boot scripts, post-installation, first-boot, OpenCode, Ollama, Sway config, WiFi backend, installer config, equalizer presets, photo navigator, persistence scripts, GPU detection, GPU compute, live USB scripts, audio quality, Bluetooth, download progress.
 
 Integration tests: USB persistence, first-boot simulation, installer Python validation, installer config generation, installer disk installation.
 

@@ -35,7 +35,7 @@ Build requirements:
 
 | Feature | madOS | madOS-lite |
 |---------|-------|------------|
-| Compositor | Hyprland + Sway | Sway only |
+| Compositor | Sway | Sway only |
 | Display Manager | SDDM | greetd + tuigreet |
 | GPU Support | NVIDIA, AMD, Intel (modern) | Software rendering only |
 | RAM Target | 1.9GB+ | 1.5GB+ |

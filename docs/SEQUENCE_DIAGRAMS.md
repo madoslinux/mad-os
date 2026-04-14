@@ -38,7 +38,7 @@ sequenceDiagram
     participant K as Linux Kernel
     participant S as Systemd
     participant A as archiso
-    participant W as Sway/Hyprland
+    participant W as Sway
     participant I as mados-installer-autostart
 
     B->>K: Load Linux + initramfs
@@ -48,7 +48,7 @@ sequenceDiagram
     S->>S: Start display manager (greetd → cage)
     
     S->>W: Launch compositor
-    W->>W: Load sway/hyprland config
+    W->>W: Load sway config
     W->>W: Start waybar, wallpaper, etc.
     
     W->>I: Execute autostart scripts
@@ -126,7 +126,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant G as Gamepad Input
-    participant W as Sway/Hyprland
+    participant W as Sway
     participant GM as mados-gamepad-wm
     participant M as mados-launcher
     participant A as mados-video-player

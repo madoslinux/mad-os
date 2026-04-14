@@ -83,7 +83,7 @@ show_shortcut_instructions() {
     echo "  $TARGET_DIR/lock.sh"
     echo ""
     echo "NOTE: This lockscreen uses ext-session-lock-v1 protocol."
-    echo "      It works with Sway, Hyprland, and other Wayland compositors."
+    echo "      It is intended for Sway sessions in this profile."
     echo "      It does NOT work on KDE Plasma (KWin)."
     echo ""
 }

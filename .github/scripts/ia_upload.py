@@ -30,7 +30,7 @@ response = ITEM.upload(
         "creator": "madoslinux",
         "date": BUILD_DATE,
         "description": f"madOS {VERSION} - AI-Orchestrated Arch Linux. Optimized for 1.9GB RAM with Intel Atom support.",
-        "subject": "madOS;Arch Linux;Linux distribution;Wayland;Sway",
+        "subject": "madOS;Arch Linux;Linux distribution;Sway;X11",
         "collection": "opensource",
         "license": "CC0-1.0",
     },

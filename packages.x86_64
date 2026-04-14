@@ -17,7 +17,7 @@ syslinux
 sudo
 zsh
 
-# Compositores Wayland (Sway para software rendering, i3 como fallback)
+# Compositores (Sway para software rendering, i3 como fallback)
 sway
 swaybg
 swayidle
@@ -27,7 +27,6 @@ waybar
 wofi
 mako
 
-xorg-xwayland
 xorg-server
 xorg-xinit
 xorg-xrandr
@@ -94,7 +93,7 @@ rsync
 inotify-tools
 rfkill
 
-# Screenshots Wayland
+# Screenshots
 grim
 slurp
 wl-clipboard

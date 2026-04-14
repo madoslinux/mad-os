@@ -4,7 +4,7 @@
 # i3-wm is available as fallback for when Sway is not available
 
 select_compositor() {
-    # madOS-lite: always use sway for Wayland compositor
+    # madOS-lite: always use sway compositor
     # Legacy hardware detection is handled by sway-session directly
     if command -v sway >/dev/null 2>&1; then
         logger -p user.info -t mados-compositor "madOS-lite: selecting sway"

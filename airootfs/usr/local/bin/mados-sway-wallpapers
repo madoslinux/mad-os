@@ -8,8 +8,7 @@
 # reboots and can be read/edited by a future wallpaper-settings GUI.
 #
 # Architecture: single persistent jq --unbuffered pipeline that filters
-# workspace focus events and emits only workspace numbers.  Zero forks
-# per event — comparable to the Hyprland socat approach.
+# workspace focus events and emits only workspace numbers.
 
 WALLPAPER_DIR="${WALLPAPER_DIR:-/usr/share/backgrounds}"
 DEFAULT_WALLPAPER="${DEFAULT_WALLPAPER:-/usr/share/backgrounds/mad-os-wallpaper.png}"
@@ -297,7 +296,7 @@ log "initial wallpaper set for workspace $last_ws"
 # Uses a single persistent jq --unbuffered process in the pipeline to
 # filter workspace focus events and emit only the workspace number.
 # This means ZERO forks per event — jq stays alive for the lifetime of
-# the subscription, just like socat in the Hyprland daemon.
+# the subscription loop remains stable across restarts.
 #
 # Reconnects automatically if the subscription ends. Backoff only applies
 # when reconnections happen faster than 5 seconds apart (crash loop).

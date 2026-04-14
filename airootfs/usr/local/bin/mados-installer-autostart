@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # madOS Installer Autostart Helper
-# Launched by Sway/Hyprland config - checks conditions and starts the GTK installer
+# Launched by Sway config - checks conditions and starts the GTK installer
 # Only runs in live environment (archiso) and NOT when booted via Ventoy
 
 LOG_DIR="/run/user/$(id -u)"
@@ -50,11 +50,9 @@ log "Live environment detected, launching installer..."
 
 # Get the current user's display and runtime dir
 CURRENT_USER=$(whoami)
-WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u "$CURRENT_USER")}"
 
 log "Current user: $CURRENT_USER"
-log "WAYLAND_DISPLAY: $WAYLAND_DISPLAY"
 log "XDG_RUNTIME_DIR: $XDG_RUNTIME_DIR"
 
 sleep 2
