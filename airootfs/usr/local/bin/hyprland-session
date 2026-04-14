@@ -14,4 +14,4 @@ if [ -x /usr/local/bin/detect-legacy-hardware ]; then
 fi
 
 logger -p user.info -t mados-hyprland "Launching Hyprland compositor"
-exec start-hyprland
+exec /usr/local/bin/start-hyprland

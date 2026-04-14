@@ -14,7 +14,6 @@ REQUIRED_ENTRIES = [
     '/usr/local/lib/mados-hw-quirks.d/10-rtl8723de-rtw88.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/20-intel-wifi-power-save-off.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/21-realtek-rtl8821ce.sh"]="0:0:755',
-    '/usr/local/lib/mados-hw-quirks.d/30-intel-i915-legacy-stability.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/31-amdgpu-stability.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/40-nvme-conservative-power.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/50-audio-hda-fallback.sh"]="0:0:755',
@@ -25,7 +24,6 @@ REQUIRED_ENTRIES = [
     '/usr/local/lib/mados-hw-quirks.d/81-suspend-resume-network-reset.sh"]="0:0:755',
     '/usr/lib/systemd/system-sleep/mados-resume-network-reset"]="0:0:755',
     '/etc/systemd/system/mados-hw-quirks.service"]="0:0:644',
-    '/usr/local/bin/mados-autoinstall"]="0:0:755',
 ]
 
 

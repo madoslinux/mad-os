@@ -19,7 +19,6 @@ The madOS repository license applies to madOS code and assets, not automatically
 - `alsa-firmware` (firmware blobs)
 - `sof-firmware` (firmware blobs)
 - `steam` (proprietary client/software distribution platform)
-- `code` (official Visual Studio Code build)
 
 These components are included for hardware compatibility and user experience, but they may not satisfy strict "100% free software" criteria.
 

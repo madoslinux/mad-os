@@ -4,49 +4,10 @@
 set -euo pipefail
 
 install_nordic_theme() {
-    local nordic_dir="/usr/share/themes/Nordic"
-    local nordic_build_dir=$(mktemp -d)
-    
-    if [[ -d "$nordic_dir" ]]; then
-        echo "Nordic theme already installed"
-        rm -rf "$nordic_build_dir"
-        return 0
-    fi
-    
-    echo "Installing Nordic GTK theme..."
-    if git clone --depth=1 https://github.com/EliverLara/Nordic.git "$nordic_build_dir/Nordic" 2>&1; then
-        mkdir -p /usr/share/themes
-        cp -a "$nordic_build_dir/Nordic" "$nordic_dir"
-        rm -rf "$nordic_dir/.git" "$nordic_dir/.gitignore"
-        rm -rf "$nordic_dir/Art" "$nordic_dir/LICENSE" "$nordic_dir/README.md"
-        rm -rf "$nordic_dir/KDE" "$nordic_dir/Wallpaper"
-        echo "✓ Nordic theme installed"
-    else
-        echo "WARNING: Failed to install Nordic theme"
-    fi
-    rm -rf "$nordic_build_dir"
     return 0
 }
 
 install_nordzy_icons() {
-    local nordzy_dir="/usr/share/icons/Nordzy-dark"
-    local nordzy_build_dir=$(mktemp -d)
-    
-    if [[ -d "$nordzy_dir" ]]; then
-        echo "Nordzy-dark icons already installed"
-        rm -rf "$nordzy_build_dir"
-        return 0
-    fi
-    
-    echo "Installing Nordzy-dark icon theme..."
-    if git clone --depth=1 https://github.com/MolassesLover/Nordzy-icon.git "$nordzy_build_dir/Nordzy-icon" 2>&1; then
-        cd "$nordzy_build_dir/Nordzy-icon"
-        bash install.sh -d /usr/share/icons -c dark -t default
-        echo "✓ Nordzy-dark icons installed"
-    else
-        echo "WARNING: Failed to install Nordzy icons"
-    fi
-    rm -rf "$nordzy_build_dir"
     return 0
 }
 

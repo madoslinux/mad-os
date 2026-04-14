@@ -20,6 +20,10 @@ hyphen-es
 # Graphics
 gimp
 
+# CUDA - NVIDIA GPU computing (~4GB)
+cuda
+nvidia-cuda-toolkit
+
 # Extra document compatibility options (optional)
 # - onlyoffice-bin (AUR): Better DOCX/XLSX/PPTX fidelity (not available in official repos)
 # - wps-office (AUR): High compatibility for Microsoft Office formats

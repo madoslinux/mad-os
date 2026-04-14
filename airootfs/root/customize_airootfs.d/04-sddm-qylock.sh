@@ -157,7 +157,11 @@ configure_sddm() {
 Current=${SELECTED_THEME}
 
 [General]
+DisplayServer=wayland
 InputMethod=
+
+[Wayland]
+SessionCommand=/usr/local/bin/mados-auto-session
 EOF
 
     cat > "$SDDM_AUTOLOGIN_CONF" << 'EOF'
@@ -168,6 +172,7 @@ EOF
 
     mkdir -p /etc/systemd/system
     ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/display-manager.service
+    systemctl enable mados-sddm-env.service
 
     echo "  → Created ${SDDM_CONF}"
     echo "  → Created ${SDDM_AUTOLOGIN_CONF}"

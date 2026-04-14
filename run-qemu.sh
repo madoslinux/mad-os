@@ -10,11 +10,13 @@ MEMORY="${MEMORY:-4G}"
 CPU="${CPU:-4}"
 DISK_SIZE="${DISK_SIZE:-30G}"
 DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
-RENDER_MODE="${RENDER_MODE:-auto}"
+RENDER_MODE="${RENDER_MODE:-hw}"
 DISPLAY_BACKEND="${DISPLAY_BACKEND:-gtk}"
 VIDEO_PROFILE="${VIDEO_PROFILE:-virtio}"
+SCREEN_RESOLUTION="${SCREEN_RESOLUTION:-}"
 ENABLE_AUDIO="${ENABLE_AUDIO:-1}"
 NET_MODE="${NET_MODE:-nat}"
+SSH_PORT="${SSH_PORT:-2244}"
 BRIDGE_IF="${BRIDGE_IF:-br0}"
 INTERACTIVE=0
 USE_LAST=0
@@ -36,24 +38,27 @@ Options:
   --interactive         Launch interactive menu (TUI)
   --last                Reuse last interactive configuration
   --software-render     Force software rendering profile
+  --hw-render           Force hardware 3D rendering (virtio-vga-gl + virgl)
   --virtio-render       Use virgl/virtio render profile
   --gtk                 Use GTK display backend
   --sdl                 Use SDL display backend
   --memory <size>       RAM, e.g. 4G
-  --cpu <count>         CPU cores, e.g. 4
-  --disk-size <size>    Disk size when creating qcow2, e.g. 30G
-  --disk-file <path>    Disk image path
-  --iso <path>          ISO path (default: latest from out/)
-  --preset <name>       Preset: normal | software-drm | no-drm-test
-  --no-audio            Disable audio
-  --net-mode <mode>     Network mode: nat | bridge
-  --bridge <ifname>     Bridge interface for bridge mode (default: br0)
-  --help                Show this help
+  --cpu <count>          CPU cores, e.g. 4
+  --disk-size <size>     Disk size when creating qcow2, e.g. 30G
+  --disk-file <path>     Disk image path
+  --iso <path>           ISO path (default: latest from out/)
+  --preset <name>        Preset: normal | software-drm | no-drm-test | hw-render
+  --no-audio             Disable audio
+  --net-mode <mode>      Network mode: nat | bridge
+  --bridge <ifname>      Bridge interface for bridge mode (default: br0)
+  --ssh-port <port>      SSH port (default: 2244)
+  --resolution <wxh>     Screen resolution (e.g. 1920x1080)
+  --help                 Show this help
 
 Examples:
   ./run-qemu.sh
   ./run-qemu.sh --interactive
-  ./run-qemu.sh --preset no-drm-test
+  ./run-qemu.sh --preset hw-render
   ./run-qemu.sh --software-render --gtk -- -serial mon:stdio
 EOF
 }
@@ -92,7 +97,9 @@ DISPLAY_BACKEND=${DISPLAY_BACKEND}
 VIDEO_PROFILE=${VIDEO_PROFILE}
 ENABLE_AUDIO=${ENABLE_AUDIO}
 NET_MODE=${NET_MODE}
+SSH_PORT=${SSH_PORT}
 BRIDGE_IF=${BRIDGE_IF}
+SCREEN_RESOLUTION=${SCREEN_RESOLUTION}
 EOF
 }
 
@@ -160,9 +167,14 @@ apply_preset() {
             DISPLAY_BACKEND="gtk"
             VIDEO_PROFILE="std"
             ;;
+        hw-render)
+            RENDER_MODE="hw"
+            DISPLAY_BACKEND="gtk"
+            VIDEO_PROFILE="virtio"
+            ;;
         *)
             echo "Unknown preset: ${preset}"
-            echo "Valid presets: normal, software-drm, no-drm-test"
+            echo "Valid presets: normal, software-drm, no-drm-test, hw-render"
             exit 1
             ;;
     esac
@@ -172,7 +184,7 @@ interactive_menu() {
     echo "=== madOS QEMU Launcher (Interactive) ==="
     echo ""
 
-    local presets=("normal" "software-drm" "no-drm-test")
+    local presets=("normal" "software-drm" "no-drm-test" "hw-render")
     local preset
     preset=$(choose_from_list "Quick preset:" "${presets[@]}" || true)
     if [[ -n "${preset:-}" ]]; then
@@ -216,6 +228,8 @@ interactive_menu() {
 
     if [[ "$NET_MODE" == "bridge" ]]; then
         BRIDGE_IF=$(prompt_value "Bridge interface" "$BRIDGE_IF")
+    else
+        SSH_PORT=$(prompt_value "SSH port" "$SSH_PORT")
     fi
 
     local profile_choice
@@ -242,7 +256,8 @@ parse_args() {
     local preset_name=""
 
     if [[ $# -eq 0 ]]; then
-        INTERACTIVE=1
+        RENDER_MODE="hw"
+        INTERACTIVE=0
     fi
 
     while [[ $# -gt 0 ]]; do
@@ -261,6 +276,10 @@ parse_args() {
                 ;;
             --virtio-render)
                 RENDER_MODE="auto"
+                shift
+                ;;
+            --hw-render)
+                RENDER_MODE="hw"
                 shift
                 ;;
             --gtk)
@@ -303,8 +322,16 @@ parse_args() {
                 NET_MODE="$2"
                 shift 2
                 ;;
+            --ssh-port)
+                SSH_PORT="$2"
+                shift 2
+                ;;
             --bridge)
                 BRIDGE_IF="$2"
+                shift 2
+                ;;
+            --resolution)
+                SCREEN_RESOLUTION="$2"
                 shift 2
                 ;;
             --help|-h)
@@ -367,9 +394,35 @@ set_kvm_accel() {
     fi
 }
 
+set_resolution_opts() {
+    if [[ -z "$SCREEN_RESOLUTION" ]]; then
+        RES_OPTS=()
+        return
+    fi
+
+    local width height
+    IFS='x' read -r width height <<< "$SCREEN_RESOLUTION"
+
+    if [[ ! "$width" =~ ^[0-9]+$ ]] || [[ ! "$height" =~ ^[0-9]+$ ]]; then
+        echo "Invalid resolution format: ${SCREEN_RESOLUTION} (expected WIDTHxHEIGHT)"
+        RES_OPTS=()
+        return
+    fi
+
+    echo "Resolution: ${width}x${height} (guest sets)"
+    RES_OPTS=()
+}
+
 set_rendering_opts() {
     local mode="$1"
     local backend="$2"
+
+    if [[ -n "$SCREEN_RESOLUTION" ]]; then
+        echo "Resolution override: std VGA (guest controls resolution)"
+        VIDEO_OPTS=(-vga std -display "${backend},gl=off")
+        DMI_OPTS=(-smbios type=1,product=madOS-QEMU-SWRENDER)
+        return
+    fi
 
     if [[ "$VIDEO_PROFILE" == "std" ]]; then
         echo "Using std VGA profile (for no-DRM fallback testing)"
@@ -383,6 +436,10 @@ set_rendering_opts() {
         echo "Hint: keeps DRM for wlroots while forcing software render in guest"
         VIDEO_OPTS=(-vga virtio -global virtio-vga.max_outputs=1 -display "${backend},gl=off")
         DMI_OPTS=(-smbios type=1,product=madOS-QEMU-SWRENDER)
+    elif [[ "$mode" == "hw" ]]; then
+        echo "Using hardware 3D rendering (virtio-vga-gl + virgl)"
+        VIDEO_OPTS=(-device virtio-vga-gl -display "${backend},gl=on")
+        DMI_OPTS=(-smbios type=1,product=madOS-QEMU-HWRENDER)
     else
         echo "Using virtio rendering mode (virgl) with ${backend} backend"
         VIDEO_OPTS=(-device virtio-vga-gl -display "${backend},gl=on")
@@ -430,7 +487,7 @@ set_network_opts() {
         nat)
             echo "Network mode: NAT (QEMU user networking)"
             NET_OPTS=(
-                -netdev user,id=net0,hostfwd=tcp::2222-:22
+                -netdev user,id=net0,hostfwd=tcp::${SSH_PORT}-:22
                 -device virtio-net-pci,netdev=net0
             )
             ;;
@@ -461,6 +518,7 @@ build_qemu_cmd() {
         "${NET_OPTS[@]}"
         "${VIDEO_OPTS[@]}"
         "${DMI_OPTS[@]}"
+        "${RES_OPTS[@]}"
         -device qemu-xhci
         -device usb-tablet
         "${AUDIO_OPTS[@]}"
@@ -488,6 +546,10 @@ print_config() {
     if [[ "$NET_MODE" == "bridge" ]]; then
         echo "  Bridge interface: ${BRIDGE_IF}"
     fi
+    echo "  SSH port: ${SSH_PORT}"
+    if [[ -n "$SCREEN_RESOLUTION" ]]; then
+        echo "  Resolution: ${SCREEN_RESOLUTION}"
+    fi
     echo "  Audio: $([ "$ENABLE_AUDIO" -eq 1 ] && echo "enabled" || echo "disabled")"
     echo ""
 }
@@ -511,7 +573,19 @@ run_qemu_cmd() {
     local mode="$1"
 
     if [[ "$mode" == "software" ]]; then
-        "${QEMU_CMD[@]}"
+        "${QEMU_CMD[@]}" &
+        local qemu_pid=$!
+        sleep 2
+        if [[ -n "$SCREEN_RESOLUTION" ]] && command -v xdotool &>/dev/null; then
+            local width height
+            IFS='x' read -r width height <<< "$SCREEN_RESOLUTION"
+            local winid
+            winid=$(xdotool search --pid "$qemu_pid" --name "QEMU" 2>/dev/null | head -1 || true)
+            if [[ -n "$winid" ]]; then
+                xdotool windowsize "$winid" "$width" "$height"
+            fi
+        fi
+        wait "$qemu_pid"
         return $?
     fi
 
@@ -531,7 +605,20 @@ run_qemu_cmd() {
     fi
 
     env_cmd+=("${QEMU_CMD[@]}")
-    "${env_cmd[@]}"
+    "${env_cmd[@]}" &
+    local qemu_pid=$!
+    sleep 2
+    if [[ -n "$SCREEN_RESOLUTION" ]] && command -v xdotool &>/dev/null; then
+        local width height
+        IFS='x' read -r width height <<< "$SCREEN_RESOLUTION"
+        local winid
+        winid=$(xdotool search --pid "$qemu_pid" --name "QEMU" 2>/dev/null | head -1 || true)
+        if [[ -n "$winid" ]]; then
+            xdotool windowsize "$winid" "$width" "$height"
+        fi
+    fi
+    wait "$qemu_pid"
+    return $?
 }
 
 main() {
@@ -557,6 +644,7 @@ main() {
 
     set_kvm_accel
     set_uefi_firmware
+    set_resolution_opts
     set_audio_opts
     set_network_opts
 
@@ -564,49 +652,10 @@ main() {
     echo "Starting QEMU..."
     echo ""
 
-    if [[ "$RENDER_MODE" == "software" ]]; then
-        set_rendering_opts "software" "$DISPLAY_BACKEND"
-        build_qemu_cmd
-        print_qemu_command
-        run_qemu_cmd "software"
-        exit $?
-    fi
-
-    set_rendering_opts "auto" "$DISPLAY_BACKEND"
+    set_rendering_opts "$RENDER_MODE" "$DISPLAY_BACKEND"
     build_qemu_cmd
     print_qemu_command
-    if run_qemu_cmd "auto"; then
-        exit 0
-    fi
-
-    if [[ "$DISPLAY_BACKEND" == "gtk" ]]; then
-        echo ""
-        echo "GTK + virgl failed. Trying SDL + virgl..."
-        echo ""
-
-        set_rendering_opts "auto" "sdl"
-        build_qemu_cmd
-        print_qemu_command
-        if run_qemu_cmd "auto"; then
-            exit 0
-        fi
-    fi
-
-    if [[ "$VIDEO_PROFILE" == "std" ]]; then
-        echo ""
-        echo "std profile failed. Not retrying with virtio fallback automatically."
-        echo ""
-        exit 1
-    fi
-
-    echo ""
-    echo "Virgl mode failed. Falling back to software rendering..."
-    echo ""
-
-    set_rendering_opts "software" "$DISPLAY_BACKEND"
-    build_qemu_cmd
-    print_qemu_command
-    run_qemu_cmd "software"
+    run_qemu_cmd "$RENDER_MODE"
 }
 
 main "$@"

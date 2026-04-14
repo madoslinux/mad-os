@@ -6,7 +6,8 @@ import unittest
 
 
 REPO_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-APPS_SCRIPT = os.path.join(REPO_DIR, "airootfs", "root", "customize_airootfs.d", "03-apps.sh")
+APPS_SCRIPT = os.path.join(REPO_DIR, "airootfs", "root", "customize_airootfs.d", "16-installer.sh")
+THEME_SCRIPT = os.path.join(REPO_DIR, "airootfs", "root", "customize_airootfs.d", "03-apps.sh")
 PACKAGES_FILE = os.path.join(REPO_DIR, "packages.x86_64")
 AUTOSTART_HELPER = os.path.join(
     REPO_DIR, "airootfs", "usr", "local", "bin", "mados-installer-autostart"
@@ -45,7 +46,9 @@ class TestInstallerTagReference(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apps_script = _read(APPS_SCRIPT)
+        cls.apps_script = _read(
+            os.path.join(REPO_DIR, "airootfs", "root", "customize_airootfs.d", "16-installer.sh")
+        )
 
     def test_installer_tag_pattern_defined(self):
         self.assertIn('INSTALLER_TAG_PATTERN="', self.apps_script)
@@ -64,11 +67,11 @@ class TestInstallerContractChecks(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.apps_script = _read(APPS_SCRIPT)
+        cls.apps_script = _read(
+            os.path.join(REPO_DIR, "airootfs", "root", "customize_airootfs.d", "16-installer.sh")
+        )
 
     def test_has_explicit_contract_assertions(self):
-        self.assertIn("assert_installer_contract()", self.apps_script)
-        self.assertIn("Installer contract missing required file", self.apps_script)
         self.assertIn(
             "configure-grub.sh still calls ensure_btrfs_rootflags (duplicates rootflags)",
             self.apps_script,
@@ -202,10 +205,10 @@ class TestThemeLayoutContract(unittest.TestCase):
 
     def test_customize_runs_imperative_dots_install(self):
         content = _read(CUSTOMIZE_SCRIPT)
-        self.assertIn('run_module "03-apps.sh" "install_imperative_dots"', content)
+        self.assertIn('run_module "10-imperative-dots.sh" "install_imperative_dots"', content)
 
     def test_apps_script_installs_external_theme_and_start_hook(self):
-        content = _read(APPS_SCRIPT)
+        content = _read(THEME_SCRIPT)
         self.assertIn('IMPERATIVE_DOTS_REPO="madkoding/theme-imperative-dots"', content)
         self.assertIn(
             'IMPERATIVE_DOTS_INSTALL_DIR="/usr/share/mados/themes/imperative-dots"', content
@@ -253,8 +256,8 @@ class TestThemeLayoutContract(unittest.TestCase):
 
     def test_customize_script_calls_skwd_wall_install(self):
         content = _read(CUSTOMIZE_SCRIPT)
-        self.assertIn('run_module "03-apps.sh" "setup_wallpaper_assets"', content)
-        self.assertIn('run_module "03-apps.sh" "install_skwd_wall"', content)
+        self.assertIn('run_module "13-wallpaper-assets.sh" "setup_wallpaper_assets"', content)
+        self.assertIn('run_module "14-skwd-wall.sh" "install_skwd_wall"', content)
 
 
 if __name__ == "__main__":

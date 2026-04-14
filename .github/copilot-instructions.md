@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-madOS is an Arch Linux distribution built using `archiso`. It targets low-RAM systems (1.9GB) with Intel Atom processors and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
+madOS is an Arch Linux distribution built using `archiso`. It targets modern hardware with GPU acceleration and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Hyprland desktop environment.
 
 ## Build Commands
 
@@ -35,9 +35,6 @@ python3 -m pytest tests/test_boot_scripts.py -v
 ### Integration Tests (require Docker with Arch Linux container)
 
 ```bash
-# USB Persistence tests
-docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests/test-liveusb-persistence.sh
-
 # First-boot simulation
 docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests/test-first-boot-simulation.sh
 
@@ -62,9 +59,8 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 
 ### Boot Configuration
 
-- `grub/` — GRUB bootloader config (UEFI)
 - `syslinux/` — Syslinux config (BIOS)
-- `efiboot/` — EFI boot loader configuration
+- `efiboot/` — EFI boot loader configuration (systemd-boot)
 
 ### Root Filesystem (`airootfs/`)
 
@@ -75,13 +71,12 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 ### Key Scripts
 
 - `airootfs/usr/local/bin/mados-installer-autostart` — Launcher for external installer
-- `airootfs/usr/local/bin/setup-persistence.sh` — Persistent storage setup
 
 ### Documentation
 
 - `docs/` — Project documentation and GitHub Pages site
-- `docs/PERSISTENCE.md` — Persistent storage documentation
-- `docs/DEBUGGING.md` — Debugging guide
+- `docs/HARDWARE_QUIRKS.md` — Hardware-specific configurations
+- `docs/SEQUENCE_DIAGRAMS.md` — System sequence diagrams
 
 ## Code Style and Conventions
 
@@ -107,8 +102,7 @@ GitHub Pages deployment is in `.github/workflows/pages.yml`.
 ## Important Guidelines
 
 - Keep `python`, `python-gobject`, and `gtk3` in `packages.x86_64` (required for the installer)
-- RAM optimizations target 1.9GB systems — avoid adding heavy packages without justification
 - When adding new scripts to `airootfs/usr/local/bin/`, update `profiledef.sh` with proper permissions
 - When modifying the installer, update tests in `tests/test_installer_config.py`
-- Desktop configs live in `airootfs/etc/skel/.config/` (Sway, Waybar, Foot, Wofi)
+- Desktop configs live in `airootfs/etc/skel/.config/` (Hyprland, Waybar, Foot, Wofi)
 - ZRAM and kernel tuning configs are in `airootfs/etc/sysctl.d/` and `airootfs/etc/systemd/`

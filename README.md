@@ -1,15 +1,29 @@
 # madOS
 
-Arch Linux distribution built with `archiso`. Targets low-RAM systems (1.9GB) with Intel Atom processors, featuring OpenCode AI assistant, Sway/Hyprland desktop environments, and a GTK graphical installer.
+Arch Linux distribution built with `archiso`. Targets modern hardware with GPU acceleration, featuring OpenCode AI assistant, Hyprland desktop environment, and a GTK graphical installer.
 
 ## Features
 
-- **Low RAM optimized**: Runs on systems with as little as 1.9GB RAM
-- **Dual Compositors**: Sway (software rendering) and Hyprland (modern GPU)
+- **Modern GPU Acceleration**: Hyprland compositor with Vulkan/OpenGL support
+- **Multi-GPU Support**: NVIDIA, AMD, and Intel drivers included
+- **CUDA Support**: NVIDIA CUDA toolkit for GPU computing
 - **AI Assistant**: OpenCode integrated out-of-the-box
-- **Persistence**: Dynamic USB persistence with ext4 partition
-- **Multi-GPU Support**: Intel, AMD, and NVIDIA drivers included
 - **GTK Installer**: External installer (`/usr/local/bin/mados-installer`) for disk installation
+
+## Hardware Targets
+
+- **Minimum**: Intel/AMD integrated graphics, 2GB+ RAM
+- **Recommended**: Dedicated GPU (NVIDIA/AMD), 4GB+ RAM
+
+## Differences from madOS-lite
+
+| Feature | madOS | madOS-lite |
+|---------|-------|------------|
+| Compositor | Hyprland only | Sway only |
+| Display Manager | SDDM | greetd + tuigreet |
+| GPU Support | NVIDIA, AMD, Intel (modern) | Software rendering only |
+| RAM Target | 2GB+ | 1.5GB+ |
+| CUDA | ✅ | ❌ |
 
 ## Quick Start
 
@@ -32,11 +46,10 @@ Build requirements:
 
 ## Package Profiles
 
-- `packages.x86_64` is the default low-RAM profile used for ISO builds
+- `packages.x86_64` is the main profile with GPU acceleration and CUDA support
 - `packages.optional-heavy.x86_64` contains optional desktop-heavy extras
 - To install extras on an installed system: `sudo pacman -S --needed - < packages.optional-heavy.x86_64`
 - Base profile includes Steam + LibreOffice for Word/Excel/PowerPoint support
-- ONLYOFFICE is available as `onlyoffice-bin` from AUR (not in official Arch repos used by archiso)
 
 ## Project Structure
 
@@ -44,7 +57,7 @@ Build requirements:
 .
 ├── airootfs/              # Root filesystem for the ISO
 │   ├── etc/               # System configuration
-│   │   ├── skel/          # User skeleton files (.config for Sway/Hyprland)
+│   │   ├── skel/          # User skeleton files (.config for Hyprland)
 │   │   └── systemd/       # Systemd units
 │   └── usr/local/bin/     # Custom scripts
 │       └── mados-*        # madOS utilities

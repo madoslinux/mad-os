@@ -1,0 +1,12 @@
+[Unit]
+Description=madOS SDDM Environment Renderer
+After=mados-gpu-wait.service
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mados-sddm-env.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

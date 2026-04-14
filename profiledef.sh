@@ -27,7 +27,16 @@ file_permissions=(
   ["/root/customize_airootfs.d/00-kernel.sh"]="0:0:755"
   ["/root/customize_airootfs.d/01-initramfs.sh"]="0:0:755"
   ["/root/customize_airootfs.d/02-themes.sh"]="0:0:755"
-  ["/root/customize_airootfs.d/03-apps.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/03-lib.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/10-imperative-dots.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/11-mados-apps.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/12-music-assets.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/13-wallpaper-assets.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/14-skwd-wall.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/15-updater.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/16-installer.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/17-nuclear.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/18-oh-my-zsh.sh"]="0:0:755"
   ["/root/customize_airootfs.d/06-network.sh"]="0:0:755"
   ["/root/customize_airootfs.d/07-pacman-runtime.sh"]="0:0:755"
   ["/root/customize_airootfs.d/08-firefox-defaults.sh"]="0:0:755"
@@ -40,6 +49,8 @@ file_permissions=(
   ["/home/mados"]="1000:1000:750"
   ["/home/mados/.zlogin"]="1000:1000:644"
   ["/home/mados/.automated_script.sh"]="1000:1000:700"
+  ["/root/customize_airootfs.d/09-audio-fix.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/09-ai-tools.sh"]="0:0:755"
   ["/usr/local/bin/choose-mirror"]="0:0:755"
   ["/usr/local/bin/Installation_guide"]="0:0:755"
   ["/usr/local/bin/livecd-sound"]="0:0:755"
@@ -49,11 +60,6 @@ file_permissions=(
   ["/usr/local/bin/toggle-demo-mode.sh"]="0:0:755"
 
   ["/usr/local/bin/mados-debug"]="0:0:755"
-  ["/usr/local/bin/detect-legacy-hardware"]="0:0:755"
-  ["/usr/local/bin/cage-greeter"]="0:0:755"
-  ["/usr/local/bin/sway-session"]="0:0:755"
-  ["/usr/local/bin/sway-x11-session"]="0:0:755"
-  ["/usr/local/bin/mados-i3-session"]="0:0:755"
   ["/usr/local/bin/hyprland-session"]="0:0:755"
   ["/usr/local/bin/start-hyprland"]="0:0:755"
   ["/usr/local/bin/select-compositor"]="0:0:755"
@@ -63,10 +69,6 @@ file_permissions=(
   ["/usr/local/bin/mados-hyprland-wallpaper"]="0:0:755"
   ["/usr/local/bin/mados-wallpaper-hyprland"]="0:0:755"
   ["/usr/local/bin/mados-wallpaperd"]="0:0:755"
-  ["/usr/local/bin/mados-sway-wallpaper"]="0:0:755"
-  ["/usr/local/bin/mados-sway-wallpapers"]="0:0:755"
-  ["/usr/local/bin/mados-sway-wallpaper-set"]="0:0:755"
-  ["/usr/local/bin/mados-sway-workspace-cycle"]="0:0:755"
   ["/usr/local/bin/mados-hyprland-wallpaper-set"]="0:0:755"
   ["/usr/local/bin/mados-hyprland-workspace-cycle"]="0:0:755"
   ["/usr/local/bin/mados-wallpaper-picker"]="0:0:755"
@@ -78,13 +80,9 @@ file_permissions=(
   ["/usr/local/bin/swww"]="0:0:755"
   ["/usr/local/bin/swww-daemon"]="0:0:755"
   ["/usr/local/lib/mados-media-helper.sh"]="0:0:755"
-  ["/usr/local/bin/mados-persistence"]="0:0:755"
   ["/usr/local/bin/mados-installer-autostart"]="0:0:755"
 
   ["/usr/local/bin/mados-vbox-guest"]="0:0:755"
-  ["/usr/local/bin/mados-persist-sync.sh"]="0:0:755"
-  ["/usr/local/bin/mados-persist-detect.sh"]="0:0:755"
-  ["/usr/local/bin/mados-ventoy-setup.sh"]="0:0:755"
   ["/usr/local/bin/mados-timezone-detect.sh"]="0:0:755"
   ["/usr/local/bin/mados-gamepad-wm"]="0:0:755"
   ["/usr/local/bin/mados-squeekboard"]="0:0:755"
@@ -114,10 +112,6 @@ file_permissions=(
   ["/usr/local/bin/mados-rate-mirrors"]="0:0:755"
   ["/usr/local/bin/mados-select-desktop"]="0:0:755"
 
-  # mados-updater (installed dynamically from github.com/madkoding/mados-updater)
-  ["/usr/share/libalpm/hooks/pre-update.hook"]="0:0:644"
-  ["/usr/local/bin/snapper-pre-update"]="0:0:755"
-
   ["/etc/mados/"]="0:0:755"
   ["/usr/share/icons/hicolor/48x48/apps/mados-wallpaper.png"]="0:0:644"
 
@@ -133,7 +127,6 @@ file_permissions=(
   # USBGuard
   ["/etc/usbguard/usbguard-daemon.conf"]="0:0:644"
   ["/etc/usbguard/rules.conf"]="0:0:600"
-  ["/etc/usbguard/usbguard-notify.sh"]="0:0:755"
   ["/etc/systemd/system/usbguard.service"]="0:0:644"
 
   # RKHunter (disabled by default)
@@ -166,7 +159,6 @@ file_permissions=(
   ["/usr/local/lib/mados-hw-quirks.d/10-rtl8723de-rtw88.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/20-intel-wifi-power-save-off.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/21-realtek-rtl8821ce.sh"]="0:0:755"
-  ["/usr/local/lib/mados-hw-quirks.d/30-intel-i915-legacy-stability.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/31-amdgpu-stability.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/40-nvme-conservative-power.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/50-audio-hda-fallback.sh"]="0:0:755"
@@ -176,7 +168,6 @@ file_permissions=(
   ["/usr/local/lib/mados-hw-quirks.d/80-suspend-prefer-s2idle-dmi.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/81-suspend-resume-network-reset.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/32-intel-low-power-cpu-stability.sh"]="0:0:755"
-  ["/usr/local/lib/mados-hw-quirks.d/33-intel-i915-execlist-crash.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/34-intel-hda-position-fix.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/22-atheros-ath9k-powersave-off.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/23-mt76-power-save-off.sh"]="0:0:755"
@@ -187,6 +178,8 @@ file_permissions=(
   ["/etc/systemd/system/mados-pacman-sandbox-compat.service"]="0:0:644"
   ["/usr/local/bin/mados-gpu-wait.sh"]="0:0:755"
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
+  ["/usr/local/bin/mados-sddm-env.sh"]="0:0:755"
+  ["/etc/systemd/system/mados-sddm-env.service"]="0:0:644"
 
 
   # Audio fix (Dummy Output workaround) - configs created by 09-audio-fix.sh
@@ -195,30 +188,6 @@ file_permissions=(
   # AI tools installation
   ["/root/customize_airootfs.d/09-ai-tools.sh"]="0:0:755"
 
-  # Btrfs Snapper
-  ["/usr/local/bin/mados-snapper"]="0:0:755"
-  ["/usr/local/bin/mados-autoinstall"]="0:0:755"
-  ["/etc/systemd/system/mados-snapper.service"]="0:0:644"
-  ["/etc/systemd/system/mados-snapper.timer"]="0:0:644"
-  ["/etc/snapper/configs/root"]="0:0:644"
-
-  # Network wait service
   ["/usr/local/bin/mados-network-wait.sh"]="0:0:755"
-  # ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
-
-  # Hardware quirk generated configs (created at runtime by mados-hw-quirks scripts)
-  ["/etc/modprobe.d/intel-low-power-cpu.conf"]="0:0:644"
-  ["/etc/modprobe.d/i915-execlist-off.conf"]="0:0:644"
-  ["/etc/modprobe.d/snd-hda-intel-position.conf"]="0:0:644"
-  ["/etc/modprobe.d/ath9k.conf"]="0:0:644"
-  ["/etc/modprobe.d/mt76.conf"]="0:0:644"
-  ["/etc/modprobe.d/usbcore-hub.conf"]="0:0:644"
-  ["/etc/modprobe.d/r8169-eee-off.conf"]="0:0:644"
-  ["/etc/modprobe.d/libata-alpm.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-intel-low-power-cpu.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-audio-latency.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-atheros-wifi.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-realtek-ethernet.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-sata-alpm.conf"]="0:0:644"
 
 )

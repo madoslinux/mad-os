@@ -2,7 +2,14 @@
 
 ## Project Overview
 
-madOS is an Arch Linux distribution built using `archiso`. It targets low-RAM systems (1.9GB) with Intel Atom processors and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
+madOS is an Arch Linux distribution built using `archiso`. It targets modern hardware with GPU acceleration and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Hyprland desktop environment.
+
+### imperative-dots Live/Local Workflow
+
+- `../theme-imperative-dots` is the canonical working repository used to iterate on imperative-dots theme fixes.
+- The same theme is consumed by madOS during build/install under `/usr/share/mados/themes/imperative-dots`.
+- Development flow: edit and test behavior live from `theme-imperative-dots` against the local madOS environment, validate fixes in-session, then commit changes back to `theme-imperative-dots`.
+- When investigating visual mismatches, compare all theme files between the local runtime copy and `theme-imperative-dots` before fixing issues.
 
 ---
 
@@ -242,8 +249,8 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 ### Documentation
 
 - `docs/` — Project documentation and GitHub Pages site
-- `docs/PERSISTENCE.md` — Persistent storage documentation
-- `docs/DEBUGGING.md` — Debugging guide
+- `docs/HARDWARE_QUIRKS.md` — Hardware-specific configurations
+- `docs/SEQUENCE_DIAGRAMS.md` — System sequence diagrams
 
 ---
 

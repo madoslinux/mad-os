@@ -17,43 +17,18 @@ syslinux
 sudo
 zsh
 
-# Compositores Wayland (Hyprland para hardware moderno, Sway para software rendering)
+# Compositores Wayland (Hyprland para hardware moderno)
 hyprland
 hypridle
-sway
-swaybg
-swayidle
-swaylock
 awww
 quickshell
-swaync
 waybar
 wofi
 mako
 qt5ct
 qt6ct
-xorg-xwayland
-xorg-server
-xorg-xinit
-xorg-xrandr
-xf86-video-dummy
-xf86-video-vesa
-xf86-video-fbdev
 xdg-desktop-portal-hyprland
-
-# Additional Desktop Environments
-# plasma-meta
-# xfce4
-# xfce4-goodies
-i3-wm
-i3status
-dmenu
-polybar
-feh
-steam
-# i3lock
-# qtile
-# niri
+xdg-desktop-portal-wlr
 
 # Aplicaciones principales
 foot
@@ -114,7 +89,6 @@ rfkill
 grim
 slurp
 wl-clipboard
-xdg-desktop-portal-wlr
 brightnessctl
 matugen
 
@@ -129,17 +103,16 @@ ttf-roboto-mono
 earlyoom
 zram-generator
 
-# Drivers de video (multi-GPU)
+# Drivers de video (multi-GPU moderno)
 intel-media-driver
 vulkan-intel
-vulkan-swrast
 libva-intel-driver
 xf86-video-amdgpu
-xf86-video-ati
 vulkan-radeon
 xf86-video-nouveau
 nvidia-open
 nvidia-settings
+nvidia-utils
 mesa
 mesa-utils
 
@@ -214,7 +187,6 @@ e2fsprogs
 ntfs-3g
 btrfs-progs
 unzip
-snapper
 
 # Soporte VM
 virtualbox-guest-utils
@@ -240,17 +212,13 @@ ollama
 opencode
 
 # AI tools dependencies
-# OpenClaw needs nodejs + npm
 nodejs
 npm
-# ForgeCode needs bat, fd, fzf
 bat
 fd
 fzf
 
 # madOS Native Apps Dependencies
-# madOS Photo Viewer - image viewing and video playback
-# GStreamer with gtksink support (from gst-plugin-gtk package)
 gstreamer
 gst-plugins-base
 gst-plugins-good
@@ -258,7 +226,6 @@ gst-plugins-ugly
 gst-plugins-bad
 gst-libav
 gst-python
-gst-plugin-gtk
 python-pillow
 librsvg
 libwebp
@@ -274,9 +241,9 @@ firewalld
 # Security
 usbguard
 rkhunter
-clamav
 fail2ban
 zenity
 
-# Optional desktop extras moved to packages.optional-heavy.x86_64
-# This default profile stays aligned with low-RAM targets.
+# Optional profiles:
+# - packages.optional-heavy.x86_64: CUDA, nvidia-cuda-toolkit, clamav
+# - packages.i3-fallback.x86_64: i3-wm, polybar, dmenu (fallback compositor)
