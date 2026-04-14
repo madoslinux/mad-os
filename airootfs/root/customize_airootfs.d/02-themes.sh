@@ -28,29 +28,6 @@ install_nordic_theme() {
     return 0
 }
 
-install_nordzy_icons() {
-    local nordzy_dir="/usr/share/icons/Nordzy-dark"
-    local nordzy_build_dir=$(mktemp -d)
-    
-    if [[ -d "$nordzy_dir" ]]; then
-        echo "Nordzy-dark icons already installed"
-        rm -rf "$nordzy_build_dir"
-        return 0
-    fi
-    
-    echo "Installing Nordzy-dark icon theme..."
-    if git clone --depth=1 https://github.com/MolassesLover/Nordzy-icon.git "$nordzy_build_dir/Nordzy-icon" 2>&1; then
-        cd "$nordzy_build_dir/Nordzy-icon"
-        bash install.sh -d /usr/share/icons -c dark -t default
-        echo "✓ Nordzy-dark icons installed"
-    else
-        echo "WARNING: Failed to install Nordzy icons"
-    fi
-    rm -rf "$nordzy_build_dir"
-    return 0
-}
-
-
 install_michroma_font() {
     local michroma_dir="/usr/share/fonts/truetype/michroma"
     local michroma_url="https://github.com/google/fonts/raw/main/ofl/michroma/Michroma-Regular.ttf"
@@ -104,7 +81,6 @@ install_logos_and_splashes() {
 
 install_themes() {
     install_nordic_theme
-    install_nordzy_icons
 
     install_michroma_font
     install_logos_and_splashes

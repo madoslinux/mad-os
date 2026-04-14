@@ -5,9 +5,31 @@ repos:
         name: shellcheck
         entry: shellcheck
         language: system
-        types: [shell]
+        files: \.(sh|bash)$
         args: ["--severity=error", "-s", "bash"]
         description: "Run shellcheck on all bash scripts"
+
+  - repo: local
+    hooks:
+      - id: shellcheck-scripts
+        name: shellcheck-scripts
+        entry: bash
+        language: system
+        files: airootfs/usr/local/bin/.*$
+        pass_filenames: true
+        args: ["-c", "for f in \"$@\"; do case \"$(head -1 \"$f\")\" in *bash|*sh) shellcheck -s bash --severity=error \"$f\" ;; esac; done"]
+        description: "Run shellcheck on airootfs/usr/local/bin scripts"
+
+  - repo: local
+    hooks:
+      - id: shellcheck-installer
+        name: shellcheck-installer
+        entry: bash
+        language: system
+        files: airootfs/usr/local/lib/mados_installer/scripts/.*$
+        pass_filenames: true
+        args: ["-c", "for f in \"$@\"; do case \"$(head -1 \"$f\")\" in *bash|*sh) shellcheck -s bash --severity=error \"$f\" ;; esac; done"]
+        description: "Run shellcheck on installer scripts"
 
   - repo: local
     hooks:

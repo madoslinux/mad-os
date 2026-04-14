@@ -1,8 +1,46 @@
-# AGENTS.md - Agentic Coding Guidelines for madOS
+# AGENTS.md - Agentic Coding Guidelines for madOS-lite
 
 ## Project Overview
 
-madOS is an Arch Linux distribution built using `archiso`. It targets low-RAM systems (1.9GB) with Intel Atom processors and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
+madOS-lite is a lightweight Arch Linux distribution built using `archiso`. It targets legacy hardware (1.9GB RAM) with Intel Atom processors and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
+
+madOS-lite uses greetd + tuigreet as display manager and targets systems without 3D hardware acceleration.
+
+### imperative-dots Live/Local Workflow
+
+- `../theme-imperative-dots` is the canonical working repository used to iterate on imperative-dots theme fixes.
+- The same theme is consumed by madOS during build/install under `/usr/share/mados/themes/imperative-dots`.
+- Development flow: edit and test behavior live from `theme-imperative-dots` against the local madOS environment, validate fixes in-session, then commit changes back to `theme-imperative-dots`.
+- When investigating visual mismatches, compare all theme files between the local runtime copy and `theme-imperative-dots` before fixing issues.
+
+### Live ISO Debug Protocol (Mandatory)
+
+- For remote live debugging, connect explicitly with `ssh -p 2222 mados@127.0.0.1` (password `mados`).
+- Do not switch to alternate SSH ports when the session is expected on `2222`.
+- When the desktop fails to start, inspect `/var/log/mados-desktop.log` first; this file captures boot-to-graphics bring-up details.
+- Primary desktop startup path for no-DRM environments: `Xorg` + `sway` with `WLR_BACKENDS=x11`.
+- Assume legacy/QEMU targets may not expose `/dev/dri`; do not require DRM for live-session bring-up.
+- Do not enable `greetd` for live ISO bring-up; it can fail with "no terminal specified" in these environments.
+- Keep Safe Compat entries as verbose/debug-friendly boot options.
+
+### Boot-to-Graphics Logging
+
+- `airootfs/root/customize_airootfs.d/10-autologin-sway.sh` installs `mados-autologin.service` and writes launcher `/usr/local/bin/mados-start-desktop`.
+- Startup log destination: `/var/log/mados-desktop.log`.
+- Logging scope includes:
+  - kernel cmdline and early boot journal snapshot (`journalctl -b`)
+  - runtime environment (`DISPLAY`, `XDG_*`, `WAYLAND_DISPLAY`)
+  - display device detection (`/dev/dri`, `/dev/fb*`)
+  - Xorg startup state and socket readiness
+  - Sway launch attempt and runtime errors
+
+### Plymouth + Framebuffer Policy
+
+- Plymouth is enabled for normal live boot entries and configured with framebuffer renderer:
+  - `airootfs/etc/plymouth/plymouthd.conf` uses `Renderer=frame-buffer`
+  - normal entries use `quiet splash` with lower loglevel
+- Safe Compat keeps Plymouth disabled (`plymouth.enable=0`) for diagnostics.
+- Do not keep an empty override at `airootfs/etc/systemd/system/plymouth.service` because it can suppress Plymouth startup.
 
 ---
 

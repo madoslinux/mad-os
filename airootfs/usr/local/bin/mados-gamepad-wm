@@ -280,7 +280,7 @@ class InhibitChecker:
     def _is_known_desktop_app(app_id, wm_class):
         """Return True if this is a known desktop app (not a game) in fullscreen."""
         known_apps = {
-            "foot", "chromium", "firefox", "code", "code-oss",
+            "foot", "chromium", "firefox",
             "pcmanfm", "wofi", "waybar", "mako",
             "pavucontrol", "blueman", "nm-applet",
             "mados-installer", "mados-photo-viewer", "mados-pdf-viewer",

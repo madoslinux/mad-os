@@ -33,13 +33,15 @@ file_permissions=(
   ["/root/customize_airootfs.d/08-firefox-defaults.sh"]="0:0:755"
   ["/root/customize_airootfs.d/05-shell-theme.sh"]="0:0:755"
   ["/root/customize_airootfs.d/04-cleanup.sh"]="0:0:755"
-  ["/root/customize_airootfs.d/04-sddm-qylock.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/10-greetd-tuigreet.sh"]="0:0:755"
+  ["/root/customize_airootfs.d/10-autologin-sway.sh"]="0:0:755"
   ["/root/.automated_script.sh"]="0:0:755"
   ["/root/.zlogin"]="0:0:644"
   ["/root/.gnupg"]="0:0:700"
   ["/home/mados"]="1000:1000:750"
   ["/home/mados/.zlogin"]="1000:1000:644"
   ["/home/mados/.automated_script.sh"]="1000:1000:700"
+  ["/etc/skel/Music"]="0:0:755"
   ["/usr/local/bin/choose-mirror"]="0:0:755"
   ["/usr/local/bin/Installation_guide"]="0:0:755"
   ["/usr/local/bin/livecd-sound"]="0:0:755"
@@ -54,21 +56,7 @@ file_permissions=(
   ["/usr/local/bin/sway-session"]="0:0:755"
   ["/usr/local/bin/sway-x11-session"]="0:0:755"
   ["/usr/local/bin/mados-i3-session"]="0:0:755"
-  ["/usr/local/bin/hyprland-session"]="0:0:755"
-  ["/usr/local/bin/start-hyprland"]="0:0:755"
-  ["/usr/local/bin/select-compositor"]="0:0:755"
-  ["/usr/local/bin/mados-auto-session"]="0:0:755"
-  ["/usr/local/bin/mados-logs"]="0:0:755"
-  ["/usr/local/bin/mados-install-yay"]="0:0:755"
-  ["/usr/local/bin/mados-hyprland-wallpaper"]="0:0:755"
-  ["/usr/local/bin/mados-wallpaper-hyprland"]="0:0:755"
-  ["/usr/local/bin/mados-wallpaperd"]="0:0:755"
-  ["/usr/local/bin/mados-sway-wallpaper"]="0:0:755"
-  ["/usr/local/bin/mados-sway-wallpapers"]="0:0:755"
-  ["/usr/local/bin/mados-sway-wallpaper-set"]="0:0:755"
-  ["/usr/local/bin/mados-sway-workspace-cycle"]="0:0:755"
-  ["/usr/local/bin/mados-hyprland-wallpaper-set"]="0:0:755"
-  ["/usr/local/bin/mados-hyprland-workspace-cycle"]="0:0:755"
+
   ["/usr/local/bin/mados-wallpaper-picker"]="0:0:755"
   ["/usr/local/bin/mados-skwd-wall-daemon"]="0:0:755"
   ["/usr/local/bin/mados-skwd-wall-sources"]="0:0:755"
@@ -124,36 +112,35 @@ file_permissions=(
   # Security hardening
   ["/etc/sysctl.d/99-security.conf"]="0:0:644"
 
-  # Firewall
-  ["/etc/firewalld/"]="0:0:755"
-  ["/etc/firewalld/zones/"]="0:0:755"
-  ["/etc/firewalld/firewalld.conf"]="0:0:644"
-  ["/etc/systemd/system/firewalld.service"]="0:0:644"
+  # Files created at runtime by hw-quirks or other scripts - don't add to file_permissions
+  # firewalld configs - keep if exists in source, comment if not
+  # [/etc/firewalld/]="0:0:755"
+  # [/etc/firewalld/zones/]="0:0:755"
+  # [/etc/firewalld/firewalld.conf"]="0:0:644"
+  # [/etc/systemd/system/firewalld.service"]="0:0:644"
 
   # USBGuard
-  ["/etc/usbguard/usbguard-daemon.conf"]="0:0:644"
-  ["/etc/usbguard/rules.conf"]="0:0:600"
-  ["/etc/usbguard/usbguard-notify.sh"]="0:0:755"
-  ["/etc/systemd/system/usbguard.service"]="0:0:644"
+  # [/etc/usbguard/usbguard-daemon.conf]="0:0:644"
+  # [/etc/usbguard/rules.conf]="0:0:600"
+  # [/etc/usbguard/usbguard-notify.sh]="0:0:755"
+  # [/etc/systemd/system/usbguard.service]="0:0:644"
+  # [/etc/systemd/system/usbguard.service.d/]="0:0:755"
+  # [/etc/systemd/system/usbguard.service.d/skip-live.conf]="0:0:644"
 
   # RKHunter (disabled by default)
-  ["/etc/rkhunter.conf"]="0:0:644"
-  ["/etc/systemd/system/rkhunter.service"]="0:0:644"
-  ["/etc/systemd/system/rkhunter.timer"]="0:0:644"
-  ["/etc/systemd/system/rkhunter.timer.d/"]="0:0:755"
-  ["/etc/systemd/system/rkhunter.timer.d/skip-live.conf"]="0:0:644"
-  ["/etc/systemd/system/rkhunter.service.d/"]="0:0:755"
-  ["/etc/systemd/system/rkhunter.service.d/skip-live.conf"]="0:0:644"
-
-  # USBGuard (disabled by default)
-  ["/etc/systemd/system/usbguard.service.d/"]="0:0:755"
-  ["/etc/systemd/system/usbguard.service.d/skip-live.conf"]="0:0:644"
+  # [/etc/rkhunter.conf]="0:0:644"
+  # [/etc/systemd/system/rkhunter.service]="0:0:644"
+  # [/etc/systemd/system/rkhunter.timer]="0:0:644"
+  # [/etc/systemd/system/rkhunter.timer.d/]="0:0:755"
+  # [/etc/systemd/system/rkhunter.timer.d/skip-live.conf]="0:0:644"
+  # [/etc/systemd/system/rkhunter.service.d/]="0:0:755"
+  # [/etc/systemd/system/rkhunter.service.d/skip-live.conf]="0:0:644"
 
   # Fail2Ban
-  ["/etc/fail2ban/jail.local"]="0:0:644"
+  # [/etc/fail2ban/jail.local]="0:0:644"
 
   # Security notifications
-  ["/etc/profile.d/mados-security-notify.sh"]="0:0:755"
+  # [/etc/profile.d/mados-security-notify.sh]="0:0:755"
 
   # Framebuffer and GPU early services
   ["/etc/systemd/system/mados-gpu-wait.service"]="0:0:644"
@@ -189,11 +176,14 @@ file_permissions=(
   ["/etc/systemd/system/mados-fb-resolution.service"]="0:0:644"
 
 
+
   # Audio fix (Dummy Output workaround) - configs created by 09-audio-fix.sh
   ["/root/customize_airootfs.d/09-audio-fix.sh"]="0:0:755"
 
   # AI tools installation
   ["/root/customize_airootfs.d/09-ai-tools.sh"]="0:0:755"
+
+  # nuclear is installed by 03-apps.sh with correct permissions
 
   # Btrfs Snapper
   ["/usr/local/bin/mados-snapper"]="0:0:755"
@@ -207,18 +197,19 @@ file_permissions=(
   # ["/etc/systemd/system/network-wait-online.service"]="0:0:644"
 
   # Hardware quirk generated configs (created at runtime by mados-hw-quirks scripts)
-  ["/etc/modprobe.d/intel-low-power-cpu.conf"]="0:0:644"
-  ["/etc/modprobe.d/i915-execlist-off.conf"]="0:0:644"
-  ["/etc/modprobe.d/snd-hda-intel-position.conf"]="0:0:644"
-  ["/etc/modprobe.d/ath9k.conf"]="0:0:644"
-  ["/etc/modprobe.d/mt76.conf"]="0:0:644"
-  ["/etc/modprobe.d/usbcore-hub.conf"]="0:0:644"
-  ["/etc/modprobe.d/r8169-eee-off.conf"]="0:0:644"
-  ["/etc/modprobe.d/libata-alpm.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-intel-low-power-cpu.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-audio-latency.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-atheros-wifi.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-realtek-ethernet.conf"]="0:0:644"
-  ["/etc/sysctl.d/99-sata-alpm.conf"]="0:0:644"
+  # These are created dynamically, so don't include in file_permissions
+  # [/etc/modprobe.d/intel-low-power-cpu.conf]="0:0:644"
+  # [/etc/modprobe.d/i915-execlist-off.conf]="0:0:644"
+  # [/etc/modprobe.d/snd-hda-intel-position.conf]="0:0:644"
+  # [/etc/modprobe.d/ath9k.conf]="0:0:644"
+  # [/etc/modprobe.d/mt76.conf]="0:0:644"
+  # [/etc/modprobe.d/usbcore-hub.conf]="0:0:644"
+  # [/etc/modprobe.d/r8169-eee-off.conf]="0:0:644"
+  # [/etc/modprobe.d/libata-alpm.conf]="0:0:644"
+  # [/etc/sysctl.d/99-intel-low-power-cpu.conf]="0:0:644"
+  # [/etc/sysctl.d/99-audio-latency.conf]="0:0:644"
+  # [/etc/sysctl.d/99-atheros-wifi.conf]="0:0:644"
+  # [/etc/sysctl.d/99-realtek-ethernet.conf]="0:0:644"
+  # [/etc/sysctl.d/99-sata-alpm.conf]="0:0:644"
 
 )

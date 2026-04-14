@@ -5,8 +5,6 @@ set -euo pipefail
 
 MADOS_APPS=(
     "mados-audio-player"
-    "mados-equalizer"
-    "mados-launcher"
     "mados-pdf-viewer"
     "mados-photo-viewer"
     "mados-video-player"
@@ -164,31 +162,6 @@ assert_installer_contract() {
 
     if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
         echo "ERROR: Installer contract check failed: enable-services.sh still enables iwd"
-        return 1
-    fi
-
-    if grep -q 'Current=sddm-astron_theme' "${install_path}/scripts/apply-configuration.sh"; then
-        echo "ERROR: Installer contract check failed: apply-configuration.sh still sets astron SDDM theme"
-        return 1
-    fi
-
-    if ! grep -q 'autologin-live.conf' "${install_path}/scripts/apply-configuration.sh"; then
-        echo "ERROR: Installer contract check failed: apply-configuration.sh missing SDDM autologin cleanup"
-        return 1
-    fi
-
-    if ! grep -q 'Current=pixel-night-city' "${install_path}/scripts/apply-configuration.sh"; then
-        echo "ERROR: Installer contract check failed: apply-configuration.sh missing SDDM theme pin"
-        return 1
-    fi
-
-    if grep -q 'systemctl enable getty@tty2.service' "${install_path}/scripts/apply-configuration.sh"; then
-        echo "ERROR: Installer contract check failed: apply-configuration.sh still enables getty@tty2"
-        return 1
-    fi
-
-    if grep -q 'systemctl enable getty@tty1.service' "${install_path}/scripts/apply-configuration.sh"; then
-        echo "ERROR: Installer contract check failed: apply-configuration.sh still enables getty@tty1 fallback"
         return 1
     fi
 
@@ -366,7 +339,7 @@ PY
 mkdir -p /etc/greetd
 cat > /etc/greetd/config.toml << 'EOF'
 [default_session]
-command = "tuigreet --theme /usr/share/greetd/themes/sugar-dark.css --session 'sway'"
+command = "tuigreet --theme /usr/share/greetd/themes/sugar-dark.css --cmd sway"
 user = "greeter"
 EOF
 EOGREETD

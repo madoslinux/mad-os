@@ -13,6 +13,7 @@ DISK_FILE="${OUT_DIR}/madOS-test.qcow2"
 RENDER_MODE="${RENDER_MODE:-auto}"
 DISPLAY_BACKEND="${DISPLAY_BACKEND:-gtk}"
 VIDEO_PROFILE="${VIDEO_PROFILE:-virtio}"
+SCREEN_RESOLUTION="${SCREEN_RESOLUTION:-}"
 ENABLE_AUDIO="${ENABLE_AUDIO:-1}"
 NET_MODE="${NET_MODE:-nat}"
 BRIDGE_IF="${BRIDGE_IF:-br0}"
@@ -48,6 +49,7 @@ Options:
   --no-audio            Disable audio
   --net-mode <mode>     Network mode: nat | bridge
   --bridge <ifname>     Bridge interface for bridge mode (default: br0)
+  --resolution <wxh>   Screen resolution (e.g. 1920x1080)
   --help                Show this help
 
 Examples:
@@ -93,6 +95,7 @@ VIDEO_PROFILE=${VIDEO_PROFILE}
 ENABLE_AUDIO=${ENABLE_AUDIO}
 NET_MODE=${NET_MODE}
 BRIDGE_IF=${BRIDGE_IF}
+SCREEN_RESOLUTION=${SCREEN_RESOLUTION}
 EOF
 }
 
@@ -307,6 +310,10 @@ parse_args() {
                 BRIDGE_IF="$2"
                 shift 2
                 ;;
+            --resolution)
+                SCREEN_RESOLUTION="$2"
+                shift 2
+                ;;
             --help|-h)
                 print_usage
                 exit 0
@@ -367,9 +374,35 @@ set_kvm_accel() {
     fi
 }
 
+set_resolution_opts() {
+    if [[ -z "$SCREEN_RESOLUTION" ]]; then
+        RES_OPTS=()
+        return
+    fi
+
+    local width height
+    IFS='x' read -r width height <<< "$SCREEN_RESOLUTION"
+
+    if [[ ! "$width" =~ ^[0-9]+$ ]] || [[ ! "$height" =~ ^[0-9]+$ ]]; then
+        echo "Invalid resolution format: ${SCREEN_RESOLUTION} (expected WIDTHxHEIGHT)"
+        RES_OPTS=()
+        return
+    fi
+
+    echo "Resolution: ${width}x${height} (guest sets)"
+    RES_OPTS=()
+}
+
 set_rendering_opts() {
     local mode="$1"
     local backend="$2"
+
+    if [[ -n "$SCREEN_RESOLUTION" ]]; then
+        echo "Resolution override: std VGA (guest controls resolution)"
+        VIDEO_OPTS=(-vga std -display "${backend},gl=off")
+        DMI_OPTS=(-smbios type=1,product=madOS-QEMU-SWRENDER)
+        return
+    fi
 
     if [[ "$VIDEO_PROFILE" == "std" ]]; then
         echo "Using std VGA profile (for no-DRM fallback testing)"
@@ -461,6 +494,7 @@ build_qemu_cmd() {
         "${NET_OPTS[@]}"
         "${VIDEO_OPTS[@]}"
         "${DMI_OPTS[@]}"
+        "${RES_OPTS[@]}"
         -device qemu-xhci
         -device usb-tablet
         "${AUDIO_OPTS[@]}"
@@ -488,6 +522,9 @@ print_config() {
     if [[ "$NET_MODE" == "bridge" ]]; then
         echo "  Bridge interface: ${BRIDGE_IF}"
     fi
+    if [[ -n "$SCREEN_RESOLUTION" ]]; then
+        echo "  Resolution: ${SCREEN_RESOLUTION}"
+    fi
     echo "  Audio: $([ "$ENABLE_AUDIO" -eq 1 ] && echo "enabled" || echo "disabled")"
     echo ""
 }
@@ -511,7 +548,19 @@ run_qemu_cmd() {
     local mode="$1"
 
     if [[ "$mode" == "software" ]]; then
-        "${QEMU_CMD[@]}"
+        "${QEMU_CMD[@]}" &
+        local qemu_pid=$!
+        sleep 2
+        if [[ -n "$SCREEN_RESOLUTION" ]] && command -v xdotool &>/dev/null; then
+            local width height
+            IFS='x' read -r width height <<< "$SCREEN_RESOLUTION"
+            local winid
+            winid=$(xdotool search --pid "$qemu_pid" --name "QEMU" 2>/dev/null | head -1 || true)
+            if [[ -n "$winid" ]]; then
+                xdotool windowsize "$winid" "$width" "$height"
+            fi
+        fi
+        wait "$qemu_pid"
         return $?
     fi
 
@@ -531,7 +580,20 @@ run_qemu_cmd() {
     fi
 
     env_cmd+=("${QEMU_CMD[@]}")
-    "${env_cmd[@]}"
+    "${env_cmd[@]}" &
+    local qemu_pid=$!
+    sleep 2
+    if [[ -n "$SCREEN_RESOLUTION" ]] && command -v xdotool &>/dev/null; then
+        local width height
+        IFS='x' read -r width height <<< "$SCREEN_RESOLUTION"
+        local winid
+        winid=$(xdotool search --pid "$qemu_pid" --name "QEMU" 2>/dev/null | head -1 || true)
+        if [[ -n "$winid" ]]; then
+            xdotool windowsize "$winid" "$width" "$height"
+        fi
+    fi
+    wait "$qemu_pid"
+    return $?
 }
 
 main() {
@@ -557,20 +619,13 @@ main() {
 
     set_kvm_accel
     set_uefi_firmware
+    set_resolution_opts
     set_audio_opts
     set_network_opts
 
     echo ""
     echo "Starting QEMU..."
     echo ""
-
-    if [[ "$RENDER_MODE" == "software" ]]; then
-        set_rendering_opts "software" "$DISPLAY_BACKEND"
-        build_qemu_cmd
-        print_qemu_command
-        run_qemu_cmd "software"
-        exit $?
-    fi
 
     set_rendering_opts "auto" "$DISPLAY_BACKEND"
     build_qemu_cmd

@@ -106,11 +106,27 @@ if ! run_module "03-apps.sh" "install_oh_my_zsh"; then
     exit 1
 fi
 
-# 04-sddm-qylock.sh - Install SDDM and qylock theme assets
-if ! run_module "04-sddm-qylock.sh" "install_sddm_qylock"; then
-    echo "FATAL: SDDM qylock setup failed"
+# Install Nuclear music player
+if ! run_module "03-apps.sh" "install_nuclear"; then
+    echo "FATAL: Nuclear installation failed"
     exit 1
 fi
+
+# Setup music assets (demo audio files)
+if ! run_module "03-apps.sh" "setup_music_assets"; then
+    echo "FATAL: Music assets setup failed"
+    exit 1
+fi
+
+# 10-autologin-sway.sh - Direct autologin to sway for live ISO
+if ! run_module "10-autologin-sway.sh" "install_autologin_sway"; then
+    echo "FATAL: autologin sway setup failed"
+    exit 1
+fi
+
+# NOTE: Do not enable greetd in the live ISO path.
+# Live session uses mados-autologin.service (Xorg + sway on X11 backend)
+# to avoid "no terminal specified" failures on legacy/QEMU targets.
 
 # 05-shell-theme.sh - Prepare imperative-dots shell theme
 if ! run_module "05-shell-theme.sh" "install_shell_theme_module"; then

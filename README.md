@@ -1,14 +1,15 @@
-# madOS
+# madOS-lite
 
-Arch Linux distribution built with `archiso`. Targets low-RAM systems (1.9GB) with Intel Atom processors, featuring OpenCode AI assistant, Sway/Hyprland desktop environments, and a GTK graphical installer.
+Arch Linux distribution built with `archiso`. Targets legacy hardware (1.9GB RAM) with Intel Atom processors, featuring OpenCode AI assistant, Sway desktop environment, and a GTK graphical installer.
+
+madOS-lite uses greetd + tuigreet as display manager and is optimized for systems without 3D hardware acceleration.
 
 ## Features
 
 - **Low RAM optimized**: Runs on systems with as little as 1.9GB RAM
-- **Dual Compositors**: Sway (software rendering) and Hyprland (modern GPU)
+- **Software Rendering**: Sway compositor with llvmpipe/pixman
 - **AI Assistant**: OpenCode integrated out-of-the-box
 - **Persistence**: Dynamic USB persistence with ext4 partition
-- **Multi-GPU Support**: Intel, AMD, and NVIDIA drivers included
 - **GTK Installer**: External installer (`/usr/local/bin/mados-installer`) for disk installation
 
 ## Quick Start
@@ -27,16 +28,18 @@ Build requirements:
 
 ## Hardware Targets
 
-- **Minimum**: Intel Atom, 1.9GB RAM
-- **Recommended**: Intel/AMD integrated graphics, 4GB+ RAM
+- **Minimum**: Intel Atom, 1.9GB RAM, no 3D GPU
+- **Recommended**: Intel integrated graphics, 2GB+ RAM
 
-## Package Profiles
+## Differences from madOS
 
-- `packages.x86_64` is the default low-RAM profile used for ISO builds
-- `packages.optional-heavy.x86_64` contains optional desktop-heavy extras
-- To install extras on an installed system: `sudo pacman -S --needed - < packages.optional-heavy.x86_64`
-- Base profile includes Steam + LibreOffice for Word/Excel/PowerPoint support
-- ONLYOFFICE is available as `onlyoffice-bin` from AUR (not in official Arch repos used by archiso)
+| Feature | madOS | madOS-lite |
+|---------|-------|------------|
+| Compositor | Hyprland + Sway | Sway only |
+| Display Manager | SDDM | greetd + tuigreet |
+| GPU Support | NVIDIA, AMD, Intel (modern) | Software rendering only |
+| RAM Target | 1.9GB+ | 1.5GB+ |
+| Optional Heavy | GIMP, LibreOffice langs | None |
 
 ## Project Structure
 
@@ -44,106 +47,23 @@ Build requirements:
 .
 ├── airootfs/              # Root filesystem for the ISO
 │   ├── etc/               # System configuration
-│   │   ├── skel/          # User skeleton files (.config for Sway/Hyprland)
+│   │   ├── skel/          # User skeleton files (.config for Sway)
 │   │   └── systemd/       # Systemd units
 │   └── usr/local/bin/     # Custom scripts
 │       └── mados-*        # madOS utilities
-├── tests/                 # Unit and integration tests
-├── .github/               # CI/CD workflows and agents
-├── profiledef.sh          # ISO metadata and file permissions
-├── packages.x86_64        # Package list
-└── pacman.conf            # Pacman configuration
+├── efiboot/               # UEFI boot configuration (systemd-boot)
+├── syslinux/              # BIOS boot configuration
+├── packages.x86_64         # Main package list
+└── profiledef.sh           # ISO profile definition
 ```
 
-## Development
+## Boot Options
 
-### Common Scripts
-
-```bash
-# Main workflow
-./build-iso.sh
-./run-qemu.sh
-
-# Optional: share built ISO
-./serve-iso.sh
-
-# Optional: advanced debugging helpers
-./scripts/debug/run-serial.sh
-./scripts/debug/run-debug.sh
-./scripts/debug/run-no-kvm.sh
-./scripts/debug/run-monitor.sh
-```
-
-### Testing
-
-```bash
-# Run all unit tests
-python3 -m pytest tests/ -v
-
-# Run a single test file
-python3 -m pytest tests/test_boot_scripts.py -v
-```
-
-### Linting
-
-```bash
-# Install tools
-pip install ruff
-pacman -S shellcheck
-
-# Run linters
-ruff check .
-ruff format .
-shellcheck airootfs/usr/local/bin/*.sh
-```
-
-### Pre-commit Hooks
-
-```bash
-pip install pre-commit
-pre-commit install
-```
-
-### Launcher (Quickshell) Config
-
-The shell theme is installed from [theme-imperative-dots](https://github.com/madkoding/theme-imperative-dots) during ISO build.
-
-Layout contract used by madOS:
-
-- Theme startup entrypoint: `/usr/share/mados/themes/imperative-dots/scripts/start/start.sh`
-- Hypr helper scripts source: `/usr/share/mados/themes/imperative-dots/config/hypr/scripts/`
-- Quickshell widgets source: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/`
-
-- Main UI and behavior: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/LauncherPopup.qml`
-- App discovery and metadata: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/list_apps.py`
-- Launcher tuning (ranking/UI): `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/config.json`
-- Default hidden apps rules: `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher/hidden-apps.json`
-
-## CI/CD Pipeline
-
-1. **Stage 1**: Unit tests + integration tests (parallel)
-2. **Stage 2**: Installer validation in Arch container
-3. **Stage 3**: ISO build with mkarchiso
-4. **Stage 4**: Upload to Internet Archive
-5. **Stage 5**: GitHub Release + website update
+- **Normal**: Standard boot with Sway
+- **Software Rendering**: Forced llvmpipe/pixman
+- **Safe Compat**: nomodeset for problematic hardware
 
 ## Documentation
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
-- [AGENTS.md](AGENTS.md) - Agentic coding guidelines
-- [docs/HARDWARE_QUIRKS.md](docs/HARDWARE_QUIRKS.md) - Hardware compatibility quirks and disable switches
-- `airootfs/usr/share/doc/madOS/` - In-system documentation
-
-## License
-
-This project is licensed under `AGPL-3.0-only` (GNU Affero General Public License v3.0 only).
-See [LICENSE](LICENSE) for the full text.
-
-madOS is licensed under `AGPL-3.0-only`; the ISO image may include third-party software subject to different licenses.
-
-Third-party packages included in the ISO may use different licenses. See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
-## Resources
-
-- [GitHub](https://github.com/madkoding/mad-os)
-- [Issues](https://github.com/madkoding/mad-os/issues)
-- [Discussions](https://github.com/madkoding/mad-os/discussions)
+- [Persistence](docs/PERSISTENCE.md) - USB persistence setup
+- [Debugging](docs/DEBUGGING.md) - Troubleshooting guide

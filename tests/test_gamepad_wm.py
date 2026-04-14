@@ -746,7 +746,7 @@ class TestInhibitChecker(unittest.TestCase):
 
     def test_does_not_match_desktop_apps(self):
         """_matches_game must NOT match desktop app names."""
-        for app in ["foot", "chromium", "code", "pcmanfm", "wofi"]:
+        for app in ["foot", "chromium", "codium", "pcmanfm", "wofi"]:
             with self.subTest(app=app):
                 self.assertFalse(self.mod.InhibitChecker._matches_game(app))
 

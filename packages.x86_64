@@ -26,8 +26,7 @@ swaync
 waybar
 wofi
 mako
-qt5ct
-qt6ct
+
 xorg-xwayland
 xorg-server
 xorg-xinit
@@ -45,8 +44,7 @@ feh
 # Aplicaciones principales
 foot
 firefox
-libreoffice-fresh
-vim
+
 nano
 code
 pcmanfm
@@ -85,8 +83,7 @@ xdg-desktop-portal-gtk
 xdg-user-dirs
 
 # Utilidades del sistema
-htop
-btop
+
 wget
 curl
 jq
@@ -148,7 +145,7 @@ alsa-ucm-conf
 alsa-topology-conf
 sof-firmware
 pavucontrol
-easyeffects
+
 flac
 pamixer
 playerctl
@@ -206,7 +203,7 @@ open-vm-tools
 
 # Login manager (greetd + tuigreet para software rendering)
 greetd
-tuigreet
+greetd-tuigreet
 perl
 
 # Gamepad/Steam Deck support

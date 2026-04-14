@@ -40,6 +40,24 @@ EOF
     echo "Created mkinitcpio preset: $preset_file"
 }
 
+configure_plymouth_theme() {
+    local theme="mados"
+
+    if ! command -v plymouth-set-default-theme >/dev/null 2>&1; then
+        echo "WARN: plymouth-set-default-theme not found; skipping theme activation"
+        return 0
+    fi
+
+    if [[ ! -f "/usr/share/plymouth/themes/${theme}/${theme}.plymouth" ]]; then
+        echo "WARN: Plymouth theme '${theme}' not found; skipping theme activation"
+        return 0
+    fi
+
+    plymouth-set-default-theme "${theme}"
+    echo "✓ Plymouth theme set to: ${theme}"
+    return 0
+}
+
 generate_initramfs() {
     local kver="${1:-$(detect_mados_kernel_version)}"
     
@@ -58,6 +76,9 @@ generate_initramfs() {
     
     # Setup presets
     setup_mkinitcpio_presets "$kver"
+
+    # Ensure default Plymouth theme is selected before generating initramfs
+    configure_plymouth_theme
     
     # Generate initramfs
     if ! mkinitcpio -k "$kver" -g /boot/initramfs-linux-mados.img 2>&1; then

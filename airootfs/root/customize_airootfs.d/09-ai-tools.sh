@@ -151,34 +151,10 @@ install_qwen() {
     ensure_qwen_global_command || true
 }
 
-configure_ai_tools_permissions() {
-    echo "Configuring AI tools permissions..."
-
-    for bin in openclaw forge forgecode qwen; do
-        for path in /usr/bin/$bin /usr/local/bin/$bin; do
-            if [[ -f "$path" ]]; then
-                chown root:wheel "$path" 2>/dev/null || true
-                chmod 755 "$path"
-                echo "  → Configured: $path"
-            fi
-        done
-    done
-
-    if command -v forge &>/dev/null; then
-        echo "  → Forge command available: forge"
-    elif command -v forgecode &>/dev/null; then
-        echo "  → Forge command available: forgecode"
-    else
-        echo "  → WARNING: ForgeCode CLI not found after install"
-    fi
-    echo "✓ AI tools permissions configured"
-}
-
 install_ai_tools() {
     install_openclaw
     install_forgecode
     install_qwen
-    configure_ai_tools_permissions
     echo "✓ AI tools installation complete"
 }
 

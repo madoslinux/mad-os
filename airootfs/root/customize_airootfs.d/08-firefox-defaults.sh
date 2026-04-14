@@ -171,15 +171,3 @@ setup_firefox_desktop_override
 setup_firefox_wrapper
 setup_skel_firefox_prefs
 setup_root_firefox_prefs
-
-# Enable PipeWire services for all users (fixes Dummy Output)
-mkdir -p /etc/systemd/user/default.target.wants
-ln -sf /usr/lib/systemd/user/pipewire.service /etc/systemd/user/default.target.wants/pipewire.service
-ln -sf /usr/lib/systemd/user/pipewire-pulse.service /etc/systemd/user/default.target.wants/pipewire-pulse.service
-ln -sf /usr/lib/systemd/user/wireplumber.service /etc/systemd/user/default.target.wants/wireplumber.service
-
-# Also enable for the mados user specifically
-mkdir -p /etc/skel/.config/systemd/user/default.target.wants
-ln -sf /usr/lib/systemd/user/pipewire.service /etc/skel/.config/systemd/user/default.target.wants/pipewire.service
-ln -sf /usr/lib/systemd/user/pipewire-pulse.service /etc/skel/.config/systemd/user/default.target.wants/pipewire-pulse.service
-ln -sf /usr/lib/systemd/user/wireplumber.service /etc/skel/.config/systemd/user/default.target.wants/wireplumber.service
