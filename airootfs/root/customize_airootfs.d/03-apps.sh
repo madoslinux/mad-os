@@ -160,6 +160,26 @@ assert_installer_contract() {
         return 1
     fi
 
+    if grep -q 'systemctl enable sddm.service' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh still enables sddm"
+        return 1
+    fi
+
+    if grep -q 'sddm.service is enabled' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh still treats sddm as active display manager"
+        return 1
+    fi
+
+    if grep -q 'sddm.service is NOT enabled — enabling' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh still attempts to enable sddm"
+        return 1
+    fi
+
+    if ! grep -q 'systemctl enable greetd.service' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh missing greetd enable fallback"
+        return 1
+    fi
+
     if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
         echo "ERROR: Installer contract check failed: enable-services.sh still enables iwd"
         return 1
@@ -332,6 +352,41 @@ if old in t:
     p.write_text(t, encoding="utf-8")
 PY
 
+        python3 - "${install_path}/scripts/apply-configuration.sh" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+old = '''if systemctl is-enabled sddm.service &>/dev/null; then
+    echo "  ✓ sddm.service is enabled"
+else
+    echo "  ✗ sddm.service is NOT enabled — enabling..."
+    systemctl enable sddm.service 2>/dev/null || true
+fi
+
+'''
+
+new = '''if systemctl is-enabled greetd.service &>/dev/null; then
+    echo "  ✓ greetd.service is enabled"
+else
+    echo "  ✗ greetd.service is NOT enabled — enabling..."
+    systemctl enable greetd.service 2>/dev/null || true
+fi
+
+if systemctl is-enabled sddm.service &>/dev/null; then
+    echo "  ⚠ sddm.service unexpectedly enabled — disabling..."
+    systemctl disable sddm.service 2>/dev/null || true
+fi
+
+'''
+
+if old in t:
+    t = t.replace(old, new, 1)
+    p.write_text(t, encoding="utf-8")
+PY
+
         if ! grep -q 'madOS-lite: configure greetd' "${install_path}/scripts/apply-configuration.sh"; then
             cat >> "${install_path}/scripts/apply-configuration.sh" << 'EOGREETD'
 
@@ -439,6 +494,13 @@ if [ -L /etc/systemd/system/display-manager.service ]; then
     if [ "${dm_target}" = "/etc/systemd/system/mados-autologin.service" ]; then
         rm -f /etc/systemd/system/display-manager.service
     fi
+fi
+
+# Re-enable greetd after cleaning stale live-ISO display-manager alias.
+# In some installs, enabling greetd earlier fails while display-manager.service
+# still points to mados-autologin.service from the live environment.
+if ! systemctl is-enabled greetd.service >/dev/null 2>&1; then
+    systemctl enable greetd.service 2>/dev/null || true
 fi
 EOGREETD
         fi
