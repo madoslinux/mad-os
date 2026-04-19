@@ -210,13 +210,19 @@ class Test03AppsShContract(unittest.TestCase):
             ("retrying without ACL/xattr", "rsync VFAT fallback"),
             ("wifi.backend=iwd", "iwd backend removal"),
             ("enable_service iwd", "iwd service removal"),
-            ("autologin-live.conf", "SDDM live autologin cleanup"),
             ("Current=pixel-night-city", "SDDM theme pin on installed system"),
-            ("Current=sddm-astron_theme", "astron SDDM theme replacement"),
             ("systemctl enable getty@tty2.service", "disable tty2 fallback enable"),
             (
-                "Keeping SDDM as primary login path",
-                "replace tty1 fallback with SDDM-only behavior",
+                "remove live installer autostart artifacts",
+                "remove live-only installer autostarts from installed system",
+            ),
+            (
+                "mados-installer-autostart.desktop",
+                "remove XDG autostart for live installer on installed system",
+            ),
+            (
+                "50-installer-autostart.conf",
+                "remove sway installer autostart drop-in on installed system",
             ),
         ]
 

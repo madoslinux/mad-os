@@ -52,7 +52,7 @@ if systemd-detect-virt --vm --quiet 2>/dev/null; then
     # VM performance: generate optimized sway config drop-in
     # Reduces visual overhead (no gaps) for smoother experience
     VM_CONF="/etc/sway/config.d/99-vm-performance.conf"
-    if [ ! -f "$VM_CONF" ]; then
+    if [ ! -f "$VM_CONF" ] && [ "$(id -u)" -eq 0 ]; then
         mkdir -p /etc/sway/config.d
         cat > "$VM_CONF" << 'VMCONF'
 # Auto-generated VM performance optimizations
@@ -62,6 +62,8 @@ gaps inner 0
 gaps outer 0
 VMCONF
         logger -p user.info -t mados-sway "Generated VM performance config: $VM_CONF"
+    elif [ ! -f "$VM_CONF" ]; then
+        logger -p user.info -t mados-sway "VM performance config not writable as user; continuing without /etc drop-in"
     fi
 fi
 
@@ -103,6 +105,7 @@ wait_for_drm_card() {
 if ! wait_for_drm_card; then
     logger -p user.warning -t mados-sway "No DRM card device detected before sway launch"
     if [ -x /usr/local/bin/sway-x11-session ]; then
+        logger -p user.info -t mados-sway "Backend selected: X11 fallback (vesa/fbdev/dummy)"
         if /usr/local/bin/sway-x11-session; then
             exit 0
         fi
@@ -163,13 +166,13 @@ get_edid_native_resolution() {
 }
 
 if [ "${WLR_RENDERER:-}" = "pixman" ]; then
-    logger -p user.info -t mados-sway "Launching sway compositor (software rendering)"
+    logger -p user.info -t mados-sway "Backend selected: DRM with software renderer (pixman)"
     exec sway
 fi
 
 # Try hardware rendering first; if sway exits quickly (< 5s) it likely
 # failed during renderer initialisation — retry with pixman.
-logger -p user.info -t mados-sway "Launching sway compositor"
+logger -p user.info -t mados-sway "Backend selected: DRM (native), launching sway compositor"
 START_TIME=$(date +%s)
 
 # Check if we need to generate a config with native resolution from EDID

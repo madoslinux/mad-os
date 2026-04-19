@@ -180,6 +180,11 @@ assert_installer_contract() {
         return 1
     fi
 
+    if ! grep -q 'remove live installer autostart artifacts' "${install_path}/scripts/apply-configuration.sh"; then
+        echo "ERROR: Installer contract check failed: apply-configuration.sh missing installer autostart cleanup"
+        return 1
+    fi
+
     if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
         echo "ERROR: Installer contract check failed: enable-services.sh still enables iwd"
         return 1
@@ -386,6 +391,15 @@ if old in t:
     t = t.replace(old, new, 1)
     p.write_text(t, encoding="utf-8")
 PY
+
+        if ! grep -q 'madOS-lite: remove live installer autostart artifacts' "${install_path}/scripts/apply-configuration.sh"; then
+            cat >> "${install_path}/scripts/apply-configuration.sh" << 'EOFINSTALLERCLEAN'
+
+# madOS-lite: remove live installer autostart artifacts on installed systems
+rm -f /etc/sway/config.d/50-installer-autostart.conf
+rm -f /etc/xdg/autostart/mados-installer-autostart.desktop
+EOFINSTALLERCLEAN
+        fi
 
         if ! grep -q 'madOS-lite: configure greetd' "${install_path}/scripts/apply-configuration.sh"; then
             cat >> "${install_path}/scripts/apply-configuration.sh" << 'EOGREETD'

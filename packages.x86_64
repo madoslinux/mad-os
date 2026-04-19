@@ -30,6 +30,7 @@ mako
 xorg-server
 xorg-xinit
 xorg-xrandr
+xorg-xwayland
 xdg-desktop-portal-wlr
 
 # Fallback window managers (only for emergency recovery)
