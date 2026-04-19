@@ -168,6 +168,7 @@ file_permissions=(
   ["/usr/local/lib/mados-hw-quirks.d/80-suspend-prefer-s2idle-dmi.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/81-suspend-resume-network-reset.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/32-intel-low-power-cpu-stability.sh"]="0:0:755"
+  ["/usr/local/lib/mados-hw-quirks.d/33-nvidia-conditional-stack.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/34-intel-hda-position-fix.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/22-atheros-ath9k-powersave-off.sh"]="0:0:755"
   ["/usr/local/lib/mados-hw-quirks.d/23-mt76-power-save-off.sh"]="0:0:755"

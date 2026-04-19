@@ -15,6 +15,7 @@ REQUIRED_ENTRIES = [
     '/usr/local/lib/mados-hw-quirks.d/20-intel-wifi-power-save-off.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/21-realtek-rtl8821ce.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/31-amdgpu-stability.sh"]="0:0:755',
+    '/usr/local/lib/mados-hw-quirks.d/33-nvidia-conditional-stack.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/40-nvme-conservative-power.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/50-audio-hda-fallback.sh"]="0:0:755',
     '/usr/local/lib/mados-hw-quirks.d/51-audio-sof-to-hda-fallback.sh"]="0:0:755',

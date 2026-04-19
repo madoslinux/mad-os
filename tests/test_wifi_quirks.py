@@ -18,6 +18,7 @@ INTEL_WIFI_QUIRK_PATH = os.path.join(QUIRKS_DIR, "20-intel-wifi-power-save-off.s
 RTL8821CE_QUIRK_PATH = os.path.join(QUIRKS_DIR, "21-realtek-rtl8821ce.sh")
 I915_QUIRK_PATH = os.path.join(QUIRKS_DIR, "30-intel-i915-legacy-stability.sh")
 AMDGPU_QUIRK_PATH = os.path.join(QUIRKS_DIR, "31-amdgpu-stability.sh")
+NVIDIA_QUIRK_PATH = os.path.join(QUIRKS_DIR, "33-nvidia-conditional-stack.sh")
 NVME_QUIRK_PATH = os.path.join(QUIRKS_DIR, "40-nvme-conservative-power.sh")
 AUDIO_HDA_QUIRK_PATH = os.path.join(QUIRKS_DIR, "50-audio-hda-fallback.sh")
 AUDIO_SOF_QUIRK_PATH = os.path.join(QUIRKS_DIR, "51-audio-sof-to-hda-fallback.sh")
@@ -91,6 +92,7 @@ class TestHwQuirksWiring(unittest.TestCase):
         self.assertIn("mados-hw-quirks.d/20-intel-wifi-power-save-off.sh", content)
         self.assertIn("mados-hw-quirks.d/21-realtek-rtl8821ce.sh", content)
         self.assertIn("mados-hw-quirks.d/31-amdgpu-stability.sh", content)
+        self.assertIn("mados-hw-quirks.d/33-nvidia-conditional-stack.sh", content)
         self.assertIn("mados-hw-quirks.d/40-nvme-conservative-power.sh", content)
         self.assertIn("mados-hw-quirks.d/50-audio-hda-fallback.sh", content)
         self.assertIn("mados-hw-quirks.d/51-audio-sof-to-hda-fallback.sh", content)
@@ -143,6 +145,13 @@ class TestHwQuirkRules(unittest.TestCase):
             content = f.read()
         self.assertIn("amdgpu", content)
         self.assertIn("aspm=0", content)
+
+    def test_nvidia_rule_exists(self):
+        self.assertTrue(os.path.isfile(NVIDIA_QUIRK_PATH))
+        with open(NVIDIA_QUIRK_PATH) as f:
+            content = f.read()
+        self.assertIn("15_nvidia_gbm.json", content)
+        self.assertIn("10de", content)
 
     def test_nvme_rule_exists(self):
         self.assertTrue(os.path.isfile(NVME_QUIRK_PATH))

@@ -30,6 +30,81 @@ install_imperative_dots() {
     mkdir -p "$IMPERATIVE_DOTS_INSTALL_DIR"
     rm -rf "$IMPERATIVE_DOTS_INSTALL_DIR"
     mv "$build_dir/imperative-dots" "$IMPERATIVE_DOTS_INSTALL_DIR"
+
+    if [[ -f "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh" ]]; then
+        chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh"
+    fi
+
+    if [[ -f "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh" ]]; then
+        chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/healthcheck.sh"
+    fi
+
+    if [[ -d "${IMPERATIVE_DOTS_INSTALL_DIR}/config/hypr/scripts" ]]; then
+        find "${IMPERATIVE_DOTS_INSTALL_DIR}/config/hypr/scripts" -type f -name "*.sh" -exec chmod +x {} +
+    fi
+
+    local topbar_qml="${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/quickshell/TopBar.qml"
+    if [[ -f "$topbar_qml" ]]; then
+        python3 - "$topbar_qml" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+orig = text
+
+if "id: iaPill" not in text:
+    text = text.replace("// IA Services\n                    Rectangle {", "// IA Services\n                    Rectangle {\n                        id: iaPill", 1)
+
+if "id: helpPill" not in text:
+    text = text.replace("// Help (keybinds)\n                    Rectangle {", "// Help (keybinds)\n                    Rectangle {\n                        id: helpPill", 1)
+
+if "id: volPill" not in text:
+    text = text.replace("// Volume\n                    Rectangle {", "// Volume\n                    Rectangle {\n                        id: volPill", 1)
+
+if "id: batPill" not in text:
+    text = text.replace("// Battery\n                    Rectangle {", "// Battery\n                    Rectangle {\n                        id: batPill", 1)
+
+order = ["iaPill", "helpPill", "wifiPill", "btPill", "volPill", "batPill"]
+
+timer_rx = re.compile(r"^(\s*)Timer \{ running: rightLayout\.showLayout && !initAnimTrigger; interval: ([0-9]+); onTriggered: initAnimTrigger = true \}$", re.M)
+opacity_rx = re.compile(r"^(\s*)opacity: initAnimTrigger \? 1 : 0$", re.M)
+transform_rx = re.compile(r"^(\s*)transform: Translate \{ y: initAnimTrigger \? 0 : 15; Behavior on y \{ NumberAnimation \{ duration: 500; easing\.type: Easing\.OutBack \} \} \}$", re.M)
+
+def replace_seq(rx, repl_fn):
+    matches = list(rx.finditer(text))
+    if len(matches) < len(order):
+        return text
+    out = []
+    last = 0
+    for i, m in enumerate(matches):
+        out.append(text[last:m.start()])
+        out.append(repl_fn(m, i))
+        last = m.end()
+    out.append(text[last:])
+    return "".join(out)
+
+text = replace_seq(
+    timer_rx,
+    lambda m, i: f"{m.group(1)}Timer {{ running: rightLayout.showLayout && !{order[i]}.initAnimTrigger; interval: {m.group(2)}; onTriggered: {order[i]}.initAnimTrigger = true }}",
+)
+
+text = replace_seq(
+    opacity_rx,
+    lambda m, i: f"{m.group(1)}opacity: {order[i]}.initAnimTrigger ? 1 : 0",
+)
+
+text = replace_seq(
+    transform_rx,
+    lambda m, i: f"{m.group(1)}transform: Translate {{ y: {order[i]}.initAnimTrigger ? 0 : 15; Behavior on y {{ NumberAnimation {{ duration: 500; easing.type: Easing.OutBack }} }} }}",
+)
+
+if text != orig:
+    path.write_text(text, encoding="utf-8")
+PY
+    fi
+
     rm -rf "$build_dir"
 
     echo "✓ imperative-dots installed to ${IMPERATIVE_DOTS_INSTALL_DIR}"

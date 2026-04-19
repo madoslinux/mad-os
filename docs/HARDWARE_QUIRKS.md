@@ -45,6 +45,11 @@ Examples:
   - Detects AMD VGA hardware
   - Reloads `amdgpu` with `aspm=0`
 
+- `33-nvidia-conditional-stack.sh`
+  - Detects NVIDIA GPUs (`10de:*`)
+  - Keeps NVIDIA EGL external platform enabled only on NVIDIA systems
+  - Disables `/usr/share/egl/egl_external_platform.d/15_nvidia_gbm.json` on non-NVIDIA systems
+
 - `40-nvme-conservative-power.sh`
   - Detects NVMe controllers (`class 0108`)
   - Reloads `nvme_core` with `default_ps_max_latency_us=0`
