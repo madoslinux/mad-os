@@ -6,6 +6,7 @@
     "passthrough": false,
     "gtk-layer-shell": true,
     "modules-left": [
+        "custom/launcher",
         "sway/workspaces",
         "sway/mode"
     ],
@@ -142,6 +143,11 @@
             "󰁹"
         ],
         "tooltip-format": "{capacity}% • {timeTo}"
+    },
+    "custom/launcher": {
+        "format": "󰣇",
+        "on-click": "bash -c 'export WAYLAND_DISPLAY=$WAYLAND_DISPLAY && export DISPLAY=$DISPLAY && wofi --show drun'",
+        "tooltip": false
     },
     "custom/help": {
         "format": "?",

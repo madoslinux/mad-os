@@ -4,7 +4,9 @@
 
 madOS-lite is a lightweight Arch Linux distribution built using `archiso`. It targets legacy hardware (1.9GB RAM) with Intel Atom processors and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
 
-madOS-lite uses greetd + tuigreet as display manager and targets systems without 3D hardware acceleration.
+madOS-lite targets systems without 3D hardware acceleration.
+- **Live ISO**: Uses TTY-based autologin (no greetd/sddm) to avoid TTY allocation failures in QEMU/legacy environments
+- **Normal ISO**: Uses greetd + tuigreet as display manager for proper login management
 
 ### imperative-dots Live/Local Workflow
 
@@ -13,38 +15,69 @@ madOS-lite uses greetd + tuigreet as display manager and targets systems without
 - Development flow: edit and test behavior live from `theme-imperative-dots` against the local madOS environment, validate fixes in-session, then commit changes back to `theme-imperative-dots`.
 - When investigating visual mismatches, compare all theme files between the local runtime copy and `theme-imperative-dots` before fixing issues.
 
+### Live ISO Boot Flow
+
+#### Autologin via mados-autologin.service
+- `airootfs/root/customize_airootfs.d/10-autologin-sway.sh` installs `mados-autologin.service`
+- Service runs as `mados` user on TTY1 (graphics session)
+- Autologin configured in systemd conf: `/etc/systemd/system/getty@.service.d/autologin.conf`
+- TTY policy: **tty1** for Sway desktop, **tty2** for system shell access
+
+#### Desktop Startup via mados-start-desktop
+- Entry point: `/usr/local/bin/mados-start-desktop`
+- Script handles display environment setup and startup sequence
+- Logs to `/var/log/mados-desktop.log` for troubleshooting
+
+#### Logging to /var/log/mados-desktop.log
+Startup log captures:
+- Kernel cmdline and early boot journal snapshot (`journalctl -b`)
+- Runtime environment variables (`DISPLAY`, `XDG_*`, `WAYLAND_DISPLAY`)
+- Display device detection (`/dev/dri`, `/dev/fb*`)
+- Xorg startup state and socket readiness (`/tmp/.X11-unix/X0`)
+- Sway launch attempt and runtime errors
+
+#### TTY Policy
+- **tty1**:graphics session (Sway via autologin)
+- **tty2**: system shell access (for troubleshooting without network)
+- Prevents conflict between graphical session and system shell
+
 ### Live ISO Debug Protocol (Mandatory)
 
 - For remote live debugging, connect explicitly with `ssh -p 2222 mados@127.0.0.1` (password `mados`).
 - Do not switch to alternate SSH ports when the session is expected on `2222`.
 - When the desktop fails to start, inspect `/var/log/mados-desktop.log` first; this file captures boot-to-graphics bring-up details.
-- Primary desktop startup path for no-DRM environments: `Xorg` + `sway` with `WLR_BACKENDS=x11`.
+- Primary desktop startup path for no-DRM environments: `Xorg` + `sway` with `WLR_BACKENDS=x11` (no DRM in legacy/QEMU).
 - Assume legacy/QEMU targets may not expose `/dev/dri`; do not require DRM for live-session bring-up.
-- Do not enable `greetd` for live ISO bring-up; it can fail with "no terminal specified" in these environments.
+- Do not enable `greetd` for live ISO bring-up; it fails with "no terminal specified" in these environments.
 - Keep Safe Compat entries as verbose/debug-friendly boot options.
-
-### Boot-to-Graphics Logging
-
-- `airootfs/root/customize_airootfs.d/10-autologin-sway.sh` installs `mados-autologin.service` and writes launcher `/usr/local/bin/mados-start-desktop`.
-- Startup log destination: `/var/log/mados-desktop.log`.
-- Logging scope includes:
-  - kernel cmdline and early boot journal snapshot (`journalctl -b`)
-  - runtime environment (`DISPLAY`, `XDG_*`, `WAYLAND_DISPLAY`)
-  - display device detection (`/dev/dri`, `/dev/fb*`)
-  - Xorg startup state and socket readiness
-  - Sway launch attempt and runtime errors
 
 ### Plymouth + Framebuffer Policy
 
 - Plymouth is enabled for normal live boot entries and configured with framebuffer renderer:
   - `airootfs/etc/plymouth/plymouthd.conf` uses `Renderer=frame-buffer`
-  - normal entries use `quiet splash` with lower loglevel
+  - normal entries use `quiet splash` with loglevel=3
+  - Handoff: Plymouth retain-splash + 400ms delay for X11 backend startup
 - Safe Compat keeps Plymouth disabled (`plymouth.enable=0`) for diagnostics.
 - Do not keep an empty override at `airootfs/etc/systemd/system/plymouth.service` because it can suppress Plymouth startup.
 
+### Sway + X11 Backend
+
+- Why we use `WLR_BACKENDS=x11`: No DRM in legacy/QEMU environments; X11 backend provides compatibility
+- Xorg startup with fbdev config if `/dev/fb0` exists (fallback for legacy hardware)
+- Handoff: Plymouth `retain-splash` + 400ms delay ensures smooth transition from Plymouth to X11/Sway
+
+### Removed Components
+
+- **No greetd**: Fails in live ISO without proper TTY allocation in legacy/QEMU environments
+- **No skwd-wall**: Not part of codebase; legacy wallpaper tool replaced by mados-wallpaper
+- **No mados-auto-session**: Session management handled by mados-autologin.service
+- **No auto-hyprland session**: hyprland disabled; sway is the primary compositor
+- **No mados-gamepad-wm**: Not packaged in the distribution
+- **No HYPRELAND_INSTANCE_SIGNATURE checks**: hyprland-related logic removed
+
 ---
 
-## Build Commands
+## Build + Debug Commands
 
 ```bash
 # Build standard ISO (syslinux BIOS + systemd-boot UEFI)

@@ -323,7 +323,7 @@ fi
 '''
 
 new = '''if [ "$GRAPHICAL_OK" -eq 0 ]; then
-    echo "  ⚠ Some graphical components are missing. Keeping SDDM as primary login path."
+    echo "  ⚠ Some graphical components are missing. Keeping greetd path for madOS-lite."
 fi
 '''
 
@@ -337,11 +337,109 @@ PY
 
 # madOS-lite: configure greetd as display manager
 mkdir -p /etc/greetd
+
+cat > /usr/local/bin/mados-greetd-login << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+THEME="/usr/share/greetd/themes/sugar-dark.css"
+SESSION_CMD="/usr/local/bin/mados-session-launch"
+
+if [ ! -x "${SESSION_CMD}" ]; then
+    echo "Missing session launcher: ${SESSION_CMD}" >&2
+    exit 1
+fi
+
+if [ -r "${THEME}" ]; then
+    exec tuigreet --theme "${THEME}" --cmd "${SESSION_CMD}"
+fi
+
+exec tuigreet --cmd "${SESSION_CMD}"
+EOF
+chmod 0755 /usr/local/bin/mados-greetd-login
+
+cat > /usr/local/bin/mados-session-launch << 'EOF'
+#!/usr/bin/env bash
+set -u
+
+LOG_FILE="/tmp/mados-greetd-session.log"
+
+log() {
+    printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "${LOG_FILE}" 2>/dev/null || true
+}
+
+export XDG_CURRENT_DESKTOP=sway
+export XDG_SESSION_DESKTOP=sway
+export XDG_SESSION_TYPE=x11
+export MOZ_ENABLE_WAYLAND=0
+
+if [ -z "${XDG_RUNTIME_DIR:-}" ]; then
+    export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+fi
+
+if [ ! -d "${XDG_RUNTIME_DIR}" ]; then
+    mkdir -p "${XDG_RUNTIME_DIR}" 2>/dev/null || true
+fi
+chmod 0700 "${XDG_RUNTIME_DIR}" 2>/dev/null || true
+
+export WLR_BACKENDS=x11
+export WLR_RENDERER=pixman
+export WLR_NO_HARDWARE_CURSORS=1
+export LIBGL_ALWAYS_SOFTWARE=1
+export MESA_GL_VERSION_OVERRIDE=3.3
+export GSK_RENDERER=cairo
+export CHROMIUM_FLAGS="${CHROMIUM_FLAGS:-} --disable-gpu"
+
+log "Starting session launcher (user=${USER:-unknown}, uid=$(id -u), tty=$(tty 2>/dev/null || echo unknown), runtime=${XDG_RUNTIME_DIR})"
+
+if [ -x /usr/local/bin/sway-session ]; then
+    log "Trying sway-session (DRM -> X11 fallback)"
+    if /usr/local/bin/sway-session >>"${LOG_FILE}" 2>&1; then
+        exit 0
+    fi
+    log "sway-session failed with exit code $?"
+fi
+
+if [ -x /usr/local/bin/sway-x11-session ]; then
+    log "Trying sway-x11-session (X11 -> vesa/fbdev/dummy)"
+    if /usr/local/bin/sway-x11-session >>"${LOG_FILE}" 2>&1; then
+        exit 0
+    fi
+    log "sway-x11-session failed with exit code $?"
+fi
+
+log "No compatible session launcher found"
+echo "No compatible session launcher found" >>"${LOG_FILE}" 2>&1
+
+if command -v openvt >/dev/null 2>&1; then
+    log "Starting emergency shell on tty2"
+    exec openvt -c 2 -f -- /bin/bash -lc 'echo "madOS session failed. Check /tmp/mados-greetd-session.log"; exec bash'
+fi
+
+sleep 2
+exit 1
+EOF
+chmod 0755 /usr/local/bin/mados-session-launch
+
 cat > /etc/greetd/config.toml << 'EOF'
+[terminal]
+vt = 1
+
 [default_session]
-command = "tuigreet --theme /usr/share/greetd/themes/sugar-dark.css --cmd sway"
+command = "/usr/local/bin/mados-greetd-login"
 user = "greeter"
 EOF
+
+# Ensure installed system uses greetd, not live autologin service alias.
+if systemctl is-enabled mados-autologin.service >/dev/null 2>&1; then
+    systemctl disable mados-autologin.service 2>/dev/null || true
+fi
+if [ -L /etc/systemd/system/display-manager.service ]; then
+    dm_target="$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)"
+    if [ "${dm_target}" = "/etc/systemd/system/mados-autologin.service" ]; then
+        rm -f /etc/systemd/system/display-manager.service
+    fi
+fi
 EOGREETD
         fi
         echo "  → Configured greetd for installed system"
@@ -546,11 +644,22 @@ PY
 
     if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then
         sed -i '/enable_service iwd/d' "${install_path}/scripts/enable-services.sh"
+        sed -i '/enable_service sddm/d' "${install_path}/scripts/enable-services.sh"
+        sed -i '/enable_service greetd/d' "${install_path}/scripts/enable-services.sh"
         if ! grep -q 'enable_service sshd' "${install_path}/scripts/enable-services.sh"; then
             printf '\nenable_service sshd\n' >> "${install_path}/scripts/enable-services.sh"
         fi
+        printf 'enable_service greetd\n' >> "${install_path}/scripts/enable-services.sh"
         if grep -q 'enable_service iwd' "${install_path}/scripts/enable-services.sh"; then
             echo "ERROR: Failed to remove iwd enable from installer services"
+            return 1
+        fi
+        if grep -q 'enable_service sddm' "${install_path}/scripts/enable-services.sh"; then
+            echo "ERROR: Failed to remove installer sddm enable"
+            return 1
+        fi
+        if ! grep -q 'enable_service greetd' "${install_path}/scripts/enable-services.sh"; then
+            echo "ERROR: Failed to enforce greetd enable in installer services"
             return 1
         fi
         if ! grep -q 'enable_service sshd' "${install_path}/scripts/enable-services.sh"; then
@@ -558,6 +667,8 @@ PY
             return 1
         fi
         echo "  → Removed installer iwd service enable"
+        echo "  → Removed installer sddm service enable"
+        echo "  → Enforced installer greetd service enable"
         echo "  → Enforced installer sshd service enable"
     fi
 
