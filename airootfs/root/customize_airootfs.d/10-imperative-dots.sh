@@ -66,6 +66,11 @@ if "id: volPill" not in text:
 if "id: batPill" not in text:
     text = text.replace("// Battery\n                    Rectangle {", "// Battery\n                    Rectangle {\n                        id: batPill", 1)
 
+text = text.replace(
+    "onClicked: Quickshell.execDetached([\"bash\", \"-c\", \"~/.config/hypr/scripts/qs_manager.sh toggle launcher\"])",
+    "onClicked: Quickshell.execDetached([\"bash\", \"-c\", \"~/.config/hypr/scripts/qs_manager.sh open launcher\"])",
+)
+
 order = ["iaPill", "helpPill", "wifiPill", "btPill", "volPill", "batPill"]
 
 timer_rx = re.compile(r"^(\s*)Timer \{ running: rightLayout\.showLayout && !initAnimTrigger; interval: ([0-9]+); onTriggered: initAnimTrigger = true \}$", re.M)
@@ -102,6 +107,40 @@ text = replace_seq(
 
 if text != orig:
     path.write_text(text, encoding="utf-8")
+PY
+    fi
+
+    local qs_manager_sh="${IMPERATIVE_DOTS_INSTALL_DIR}/config/hypr/scripts/qs_manager.sh"
+    if [[ -f "$qs_manager_sh" ]]; then
+        python3 - "$qs_manager_sh" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text(encoding="utf-8")
+
+text = text.replace(
+    "ACTIVE_MON=$(hyprctl monitors -j | jq -r '.[] | select(.focused==true)')",
+    "ACTIVE_MON=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused==true)' 2>/dev/null)",
+)
+text = text.replace(
+    "MX=$(echo \"$ACTIVE_MON\" | jq -r '.x // 0')",
+    "MX=$(echo \"$ACTIVE_MON\" | jq -r '.x // 0' 2>/dev/null || echo 0)",
+)
+text = text.replace(
+    "MY=$(echo \"$ACTIVE_MON\" | jq -r '.y // 0')",
+    "MY=$(echo \"$ACTIVE_MON\" | jq -r '.y // 0' 2>/dev/null || echo 0)",
+)
+text = text.replace(
+    "MW=$(echo \"$ACTIVE_MON\" | jq -r '(.width / (.scale // 1)) | round // 1920')",
+    "MW=$(echo \"$ACTIVE_MON\" | jq -r '(.width / (.scale // 1)) | round // 1920' 2>/dev/null || echo 1920)",
+)
+text = text.replace(
+    "MH=$(echo \"$ACTIVE_MON\" | jq -r '(.height / (.scale // 1)) | round // 1080')",
+    "MH=$(echo \"$ACTIVE_MON\" | jq -r '(.height / (.scale // 1)) | round // 1080' 2>/dev/null || echo 1080)",
+)
+
+path.write_text(text, encoding="utf-8")
 PY
     fi
 

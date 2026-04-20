@@ -11,6 +11,20 @@ madOS is an Arch Linux distribution built using `archiso`. It targets modern har
 - Development flow: edit and test behavior live from `theme-imperative-dots` against the local madOS environment, validate fixes in-session, then commit changes back to `theme-imperative-dots`.
 - When investigating visual mismatches, compare all theme files between the local runtime copy and `theme-imperative-dots` before fixing issues.
 
+### Shell Component Source Of Truth (Important)
+
+- `SKWD Launcher` source of truth is `../skwd` (repo `madkoding/skwd`), not `skwd-wall`.
+- Launcher implementation paths in `skwd`:
+  - `qml/launcher/AppLauncher.qml`
+  - `qml/launcher/AppLauncherService.qml`
+  - `scripts/python/build-app-cache`
+- In madOS live runtime, launcher UI may still be consumed from the installed theme copy under `~/.config/quickshell/widgets/launcher` and `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher`, but upstream fixes for launcher behavior should be applied in `skwd`.
+- `skwd-wall` (`madkoding/skwd-wall`) is wallpaper selector/daemon only. It is installed to `/usr/local/share/skwd-wall` and does not contain the app launcher module.
+- Theme repo (`../theme-imperative-dots`) remains the source of truth for top bar/main shell composition and quickshell startup wiring:
+  - `scripts/quickshell/TopBar.qml`
+  - `scripts/quickshell/Main.qml`
+  - `scripts/start/start.sh`
+
 ---
 
 ## Build Commands
