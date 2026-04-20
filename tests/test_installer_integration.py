@@ -127,6 +127,11 @@ class TestInstallerContractChecks(unittest.TestCase):
         )
         self.assertIn("configure-grub.sh still forces rootflags=subvol=@", self.apps_script)
         self.assertIn("steps.py missing rsync metadata fallback", self.apps_script)
+        self.assertIn("steps.py missing btrfs mount retry helper", self.apps_script)
+        self.assertIn(
+            "steps.py missing explicit btrfs mount type for subvolumes",
+            self.apps_script,
+        )
 
 
 class TestInstallerRuntimePaths(unittest.TestCase):

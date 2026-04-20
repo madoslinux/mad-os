@@ -208,6 +208,14 @@ class Test03AppsShContract(unittest.TestCase):
                 "reject legacy rootflag token injection in installer GRUB script",
             ),
             ("retrying without ACL/xattr", "rsync VFAT fallback"),
+            (
+                "steps.py missing btrfs mount retry helper",
+                "require btrfs mount retry helper for subvolume creation",
+            ),
+            (
+                "steps.py missing explicit btrfs mount type for subvolumes",
+                "require explicit btrfs mount type during subvolume setup",
+            ),
             ("wifi.backend=iwd", "iwd backend removal"),
             ("enable_service iwd", "iwd service removal"),
             ("Current=pixel-night-city", "SDDM theme pin on installed system"),
