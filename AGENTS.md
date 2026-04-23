@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-madOS is an Arch Linux distribution built using `archiso`. It targets low-RAM systems (1.9GB) with Intel Atom processors and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
+madOS is an Arch Linux distribution built using `archiso`. It targets low-RAM systems (1.9GB) with x86_64 processors (Intel/AMD) and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
 
 ---
 

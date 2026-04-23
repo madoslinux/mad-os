@@ -188,6 +188,36 @@ assert_installer_contract() {
         return 1
     fi
 
+    if ! grep -q 'vmlinuz-linux-lts' "${install_path}/installer/steps.py"; then
+        echo "ERROR: Installer contract check failed: steps.py missing linux-lts kernel fallback"
+        return 1
+    fi
+
+    if ! grep -q 'supported kernel not found' "${install_path}/installer/steps.py"; then
+        echo "ERROR: Installer contract check failed: steps.py missing generic supported-kernel error path"
+        return 1
+    fi
+
+    if ! grep -q 'for candidate in linux-lts linux-mados linux linux-zen' "${install_path}/scripts/configure-grub.sh"; then
+        echo "ERROR: Installer contract check failed: configure-grub.sh missing kernel fallback candidate detection"
+        return 1
+    fi
+
+    if ! grep -q 'for candidate in linux-lts linux-mados linux linux-zen' "${install_path}/scripts/rebuild-initramfs.sh"; then
+        echo "ERROR: Installer contract check failed: rebuild-initramfs.sh missing kernel fallback candidate detection"
+        return 1
+    fi
+
+    if ! grep -q '/boot/vmlinuz-linux-lts' "${install_path}/scripts/setup-bootloader.sh"; then
+        echo "ERROR: Installer contract check failed: setup-bootloader.sh missing linux-lts signing/validation fallback"
+        return 1
+    fi
+
+    if ! grep -q 'KERNEL_NAME=""' "${install_path}/scripts/configure-limine.sh"; then
+        echo "ERROR: Installer contract check failed: configure-limine.sh missing dynamic kernel detection"
+        return 1
+    fi
+
     return 0
 }
 
@@ -570,6 +600,428 @@ PY
             return 1
         fi
         echo "  → Hardened installer rsync for VFAT /boot metadata limitations"
+    fi
+
+    if [[ -f "${install_path}/installer/steps.py" ]]; then
+        python3 - "${install_path}/installer/steps.py" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+if "supported kernel not found" not in t:
+    new_func = '''def _ensure_kernel_in_target(app):
+    """Ensure a supported kernel image exists in target /boot before entering the chroot."""
+    os.makedirs("/mnt/boot", exist_ok=True)
+
+    preferred_kernels = [
+        "linux-lts",
+        "linux-mados",
+        "linux",
+        "linux-zen",
+    ]
+
+    def _target_path(kernel_name):
+        return f"/mnt/boot/vmlinuz-{kernel_name}"
+
+    def _copy_kernel(src, kernel_name):
+        target = _target_path(kernel_name)
+        subprocess.run(["cp", src, target], check=True)
+        log_message(app, f"  Copied kernel from {src} -> {target}")
+
+    def _detect_kernel_name_from_module_path(path):
+        mod_ver = os.path.basename(os.path.dirname(path)).lower()
+        if "lts" in mod_ver:
+            return "linux-lts"
+        if "mados" in mod_ver:
+            return "linux-mados"
+        if "zen" in mod_ver:
+            return "linux-zen"
+        return "linux"
+
+    log_message(app, "  DEBUG: Checking archiso bootmnt kernel paths:")
+    for f in sorted(globmod.glob("/run/archiso/bootmnt/arch/boot/x86_64/vmlinuz*")):
+        log_message(app, f"    {f}")
+    log_message(app, "  DEBUG: Checking live system /boot:")
+    for f in sorted(globmod.glob("/boot/vmlinuz*")):
+        log_message(app, f"    {f}")
+    log_message(app, "  DEBUG: Checking live system /lib/modules:")
+    for d in sorted(globmod.glob("/lib/modules/*")):
+        log_message(app, f"    {d}")
+    log_message(app, "  DEBUG: Checking /usr/lib/modules/*/vmlinuz:")
+    for f in sorted(globmod.glob("/usr/lib/modules/*/vmlinuz")):
+        log_message(app, f"    {f}")
+    log_message(app, "  DEBUG: Checking /lib/modules/*/vmlinuz:")
+    for f in sorted(globmod.glob("/lib/modules/*/vmlinuz")):
+        log_message(app, f"    {f}")
+
+    for kernel_name in preferred_kernels:
+        target = _target_path(kernel_name)
+        if os.path.isfile(target) and os.access(target, os.R_OK) and os.path.getsize(target) > 0:
+            log_message(app, f"  Kernel already exists in target /boot: {target}")
+            return
+
+    log_message(app, "  Kernel not found in target /boot, copying from live system...")
+
+    for kernel_name in preferred_kernels:
+        for src in (
+            f"/run/archiso/bootmnt/arch/boot/x86_64/vmlinuz-{kernel_name}",
+            f"/boot/vmlinuz-{kernel_name}",
+        ):
+            if os.path.isfile(src) and os.access(src, os.R_OK):
+                _copy_kernel(src, kernel_name)
+                return
+
+    for search_glob in (
+        "/usr/lib/modules/*/vmlinuz",
+        "/lib/modules/*/vmlinuz",
+        "/mnt/usr/lib/modules/*/vmlinuz",
+    ):
+        for vmlinuz in sorted(globmod.glob(search_glob), reverse=True):
+            if os.path.isfile(vmlinuz) and os.access(vmlinuz, os.R_OK):
+                kernel_name = _detect_kernel_name_from_module_path(vmlinuz)
+                _copy_kernel(vmlinuz, kernel_name)
+                return
+
+    log_message(
+        app,
+        "  ERROR: Could not find supported kernel (linux-lts/linux-mados/linux/linux-zen) in live system",
+    )
+    raise RuntimeError("supported kernel not found")
+'''
+
+    pattern = re.compile(r"def _ensure_kernel_in_target\(app\):.*?\n\ndef step_partition_disk", re.S)
+    if pattern.search(t):
+        t = pattern.sub(new_func + "\n\ndef step_partition_disk", t, count=1)
+        p.write_text(t, encoding="utf-8")
+PY
+        if ! grep -q 'supported kernel not found' "${install_path}/installer/steps.py"; then
+            echo "ERROR: Failed to add installer kernel fallback support"
+            return 1
+        fi
+        echo "  → Added linux-lts fallback to installer kernel copy step"
+    fi
+
+    if [[ -f "${install_path}/scripts/configure-grub.sh" ]]; then
+        python3 - "${install_path}/scripts/configure-grub.sh" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+old = '''KERNEL="linux-mados"
+
+if [ ! -f /boot/vmlinuz-${KERNEL} ]; then
+    echo "ERROR: No madOS kernel found in /boot"
+    exit 1
+fi
+
+mkdir -p /etc/default
+[ -f /etc/default/grub ] || touch /etc/default/grub
+
+mkdir -p /etc/mados
+echo "$KERNEL" > /etc/mados/default-kernel
+echo "  Selected default kernel: $KERNEL"
+'''
+
+new = '''KERNEL=""
+for candidate in linux-lts linux-mados linux linux-zen; do
+    if [ -f "/boot/vmlinuz-${candidate}" ]; then
+        KERNEL="${candidate}"
+        break
+    fi
+done
+
+if [ -z "$KERNEL" ]; then
+    echo "ERROR: No supported kernel found in /boot"
+    exit 1
+fi
+
+mkdir -p /etc/default
+[ -f /etc/default/grub ] || touch /etc/default/grub
+
+mkdir -p /etc/mados
+echo "$KERNEL" > /etc/mados/default-kernel
+echo "  Selected default kernel: $KERNEL"
+'''
+
+changed = False
+if "for candidate in linux-lts linux-mados linux linux-zen" not in t and old in t:
+    t = t.replace(old, new, 1)
+    changed = True
+
+if 'if ! grep -q "vmlinuz-linux-mados" /boot/grub/grub.cfg; then' in t:
+    t = t.replace(
+        'if ! grep -q "vmlinuz-linux-mados" /boot/grub/grub.cfg; then',
+        'if ! grep -q "vmlinuz-${KERNEL}" /boot/grub/grub.cfg; then',
+        1,
+    )
+    changed = True
+
+if 'echo "ERROR: grub.cfg does not contain linux-mados entry"' in t:
+    t = t.replace(
+        'echo "ERROR: grub.cfg does not contain linux-mados entry"',
+        'echo "ERROR: grub.cfg does not contain vmlinuz-${KERNEL} entry"',
+        1,
+    )
+    changed = True
+
+if changed:
+    p.write_text(t, encoding="utf-8")
+PY
+        if ! grep -q 'for candidate in linux-lts linux-mados linux linux-zen' "${install_path}/scripts/configure-grub.sh"; then
+            echo "ERROR: Failed to add kernel fallback detection to configure-grub.sh"
+            return 1
+        fi
+        echo "  → Added linux-lts fallback to installer GRUB configuration"
+    fi
+
+    if [[ -f "${install_path}/scripts/rebuild-initramfs.sh" ]]; then
+        python3 - "${install_path}/scripts/rebuild-initramfs.sh" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+old_kernel_select = '''KERNEL="linux-mados"
+if [ ! -s /boot/vmlinuz-${KERNEL} ] || [ ! -r /boot/vmlinuz-${KERNEL} ]; then
+    echo "  ERROR: Could not find kernel image. Reinstalling ${KERNEL} package..."
+    $PACMAN -Sy --noconfirm ${KERNEL} || { echo "FATAL: Failed to install kernel"; exit 1; }
+fi
+'''
+
+new_kernel_select = '''KERNEL=""
+for candidate in linux-lts linux-mados linux linux-zen; do
+    if [ -s "/boot/vmlinuz-${candidate}" ] && [ -r "/boot/vmlinuz-${candidate}" ]; then
+        KERNEL="${candidate}"
+        break
+    fi
+done
+
+if [ -z "$KERNEL" ]; then
+    KERNEL="linux-lts"
+    echo "  WARNING: Could not find kernel image in /boot. Installing ${KERNEL} package..."
+    $PACMAN -Sy --noconfirm ${KERNEL} || { echo "FATAL: Failed to install kernel"; exit 1; }
+fi
+
+if [ ! -s "/boot/vmlinuz-${KERNEL}" ] || [ ! -r "/boot/vmlinuz-${KERNEL}" ]; then
+    echo "  ERROR: Could not find readable kernel image: /boot/vmlinuz-${KERNEL}"
+    exit 1
+fi
+'''
+
+old_modules_detect = '''TARGET_KVER=""
+for kver in /lib/modules/*/; do
+    kver_name=$($BASENAME "$kver")
+    if [[ "$kver_name" == *"mados"* ]]; then
+        TARGET_KVER="$kver_name"
+        echo "  Found target kernel: $TARGET_KVER"
+        break
+    fi
+done
+
+if [ -z "$TARGET_KVER" ]; then
+    echo "  ERROR: No madOS kernel modules found in /lib/modules"
+    echo "  Available kernels:"
+    $LS /lib/modules/ 2>/dev/null || echo "  (none)"
+    exit 1
+fi
+'''
+
+new_modules_detect = '''TARGET_KVER=""
+for kver in /lib/modules/*/; do
+    kver_name=$($BASENAME "$kver")
+    case "$KERNEL" in
+        linux-lts)
+            [[ "$kver_name" == *"lts"* ]] || continue
+            ;;
+        linux-mados)
+            [[ "$kver_name" == *"mados"* ]] || continue
+            ;;
+        linux-zen)
+            [[ "$kver_name" == *"zen"* ]] || continue
+            ;;
+        linux)
+            [[ "$kver_name" == *"arch"* || "$kver_name" == *"linux"* ]] || continue
+            ;;
+    esac
+    TARGET_KVER="$kver_name"
+    echo "  Found target kernel: $TARGET_KVER"
+    break
+done
+
+if [ -z "$TARGET_KVER" ]; then
+    echo "  WARNING: No matching kernel modules found for ${KERNEL}; using first available module tree"
+    for kver in /lib/modules/*/; do
+        TARGET_KVER=$($BASENAME "$kver")
+        break
+    done
+fi
+
+if [ -z "$TARGET_KVER" ]; then
+    echo "  ERROR: No kernel modules found in /lib/modules"
+    echo "  Available kernels:"
+    $LS /lib/modules/ 2>/dev/null || echo "  (none)"
+    exit 1
+fi
+'''
+
+changed = False
+if "for candidate in linux-lts linux-mados linux linux-zen" not in t and old_kernel_select in t:
+    t = t.replace(old_kernel_select, new_kernel_select, 1)
+    changed = True
+
+if old_modules_detect in t:
+    t = t.replace(old_modules_detect, new_modules_detect, 1)
+    changed = True
+
+if changed:
+    p.write_text(t, encoding="utf-8")
+PY
+        if ! grep -q 'for candidate in linux-lts linux-mados linux linux-zen' "${install_path}/scripts/rebuild-initramfs.sh"; then
+            echo "ERROR: Failed to add kernel fallback detection to rebuild-initramfs.sh"
+            return 1
+        fi
+        echo "  → Added linux-lts fallback to installer initramfs rebuild"
+    fi
+
+    if [[ -f "${install_path}/scripts/setup-bootloader.sh" ]]; then
+        python3 - "${install_path}/scripts/setup-bootloader.sh" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+old_sign_loop = '''    for path in \
+        /boot/EFI/BOOT/BOOTX64.EFI \
+        /boot/EFI/BOOT/grubx64.efi \
+        /boot/EFI/madOS/grubx64.efi \
+        /boot/vmlinuz-linux-mados; do
+        if [ -f "$path" ]; then
+            artifacts+=("$path")
+        fi
+    done
+'''
+
+new_sign_loop = '''    for path in \
+        /boot/EFI/BOOT/BOOTX64.EFI \
+        /boot/EFI/BOOT/grubx64.efi \
+        /boot/EFI/madOS/grubx64.efi; do
+        if [ -f "$path" ]; then
+            artifacts+=("$path")
+        fi
+    done
+
+    for path in \
+        /boot/vmlinuz-linux-lts \
+        /boot/vmlinuz-linux-mados \
+        /boot/vmlinuz-linux \
+        /boot/vmlinuz-linux-zen; do
+        if [ -f "$path" ]; then
+            artifacts+=("$path")
+        fi
+    done
+'''
+
+new_validate_fn = '''validate_boot_artifacts() {
+    local required_paths=(
+        "/boot/EFI/BOOT/BOOTX64.EFI"
+        "/boot/EFI/madOS/grubx64.efi"
+    )
+
+    local path
+    for path in "${required_paths[@]}"; do
+        if [ ! -s "$path" ]; then
+            echo "ERROR: Required boot artifact missing: $path"
+            exit 1
+        fi
+    done
+
+    local kernel_found=0
+    local kernel_path
+    for kernel_path in \
+        /boot/vmlinuz-linux-lts \
+        /boot/vmlinuz-linux-mados \
+        /boot/vmlinuz-linux \
+        /boot/vmlinuz-linux-zen; do
+        if [ -s "$kernel_path" ]; then
+            kernel_found=1
+            break
+        fi
+    done
+
+    if [ "$kernel_found" -ne 1 ]; then
+        echo "ERROR: Required kernel artifact missing: expected one of /boot/vmlinuz-linux-lts|linux-mados|linux|linux-zen"
+        exit 1
+    fi
+}
+'''
+
+changed = False
+if old_sign_loop in t:
+    t = t.replace(old_sign_loop, new_sign_loop, 1)
+    changed = True
+
+validate_pattern = re.compile(r"validate_boot_artifacts\(\) \{.*?\n\}\n\nrequire_cmd", re.S)
+if validate_pattern.search(t):
+    t = validate_pattern.sub(new_validate_fn + "\nrequire_cmd", t, count=1)
+    changed = True
+
+if changed:
+    p.write_text(t, encoding="utf-8")
+PY
+        if ! grep -q '/boot/vmlinuz-linux-lts' "${install_path}/scripts/setup-bootloader.sh"; then
+            echo "ERROR: Failed to add linux-lts boot artifact fallback to setup-bootloader.sh"
+            return 1
+        fi
+        echo "  → Added linux-lts fallback to installer bootloader setup"
+    fi
+
+    if [[ -f "${install_path}/scripts/configure-limine.sh" ]]; then
+        python3 - "${install_path}/scripts/configure-limine.sh" <<'PY'
+from pathlib import Path
+import sys
+
+p = Path(sys.argv[1])
+t = p.read_text(encoding="utf-8")
+
+if 'KERNEL_NAME=""' not in t:
+    marker = "mkdir -p /boot/EFI/BOOT\n\n"
+    insert = '''KERNEL_NAME=""
+for candidate in linux-lts linux-mados linux linux-zen; do
+    if [ -f "/boot/vmlinuz-${candidate}" ] && [ -f "/boot/initramfs-${candidate}.img" ]; then
+        KERNEL_NAME="${candidate}"
+        break
+    fi
+done
+
+if [ -z "$KERNEL_NAME" ]; then
+    echo "ERROR: No supported kernel/initramfs pair found in /boot"
+    exit 1
+fi
+
+'''
+    if marker in t:
+        t = t.replace(marker, marker + insert, 1)
+
+    t = t.replace("path: boot():/vmlinuz-linux-mados-zen", "path: boot():/vmlinuz-${KERNEL_NAME}")
+    t = t.replace(
+        "module_path: boot():/initramfs-linux-mados-zen.img",
+        "module_path: boot():/initramfs-${KERNEL_NAME}.img",
+    )
+    p.write_text(t, encoding="utf-8")
+PY
+        if ! grep -q 'KERNEL_NAME=""' "${install_path}/scripts/configure-limine.sh"; then
+            echo "ERROR: Failed to add dynamic kernel detection to configure-limine.sh"
+            return 1
+        fi
+        echo "  → Added linux-lts fallback to installer Limine configuration"
     fi
 
     if [[ -f "${install_path}/scripts/enable-services.sh" ]]; then

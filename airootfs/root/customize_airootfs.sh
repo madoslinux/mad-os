@@ -46,17 +46,7 @@ run_module() {
 }
 
 # Execute modules in order - stop on first failure
-# 00-kernel.sh - Install madOS kernel
-if ! run_module "00-kernel.sh" "install_mados_kernel"; then
-    echo "FATAL: Kernel installation failed"
-    exit 1
-fi
-
-# 01-initramfs.sh - Generate initramfs  
-if ! run_module "01-initramfs.sh" "generate_initramfs"; then
-    echo "FATAL: Initramfs generation failed"
-    exit 1
-fi
+# Kernel is provided by packages.x86_64 (linux-lts).
 
 # 02-themes.sh - Install themes
 if ! run_module "02-themes.sh" "install_themes"; then

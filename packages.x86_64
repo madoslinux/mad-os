@@ -1,6 +1,5 @@
 # Sistema base
 base
-linux-zen
 linux-lts
 linux-firmware
 nvme-cli

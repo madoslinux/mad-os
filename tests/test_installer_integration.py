@@ -127,6 +127,27 @@ class TestInstallerContractChecks(unittest.TestCase):
         )
         self.assertIn("configure-grub.sh still forces rootflags=subvol=@", self.apps_script)
         self.assertIn("steps.py missing rsync metadata fallback", self.apps_script)
+        self.assertIn("steps.py missing linux-lts kernel fallback", self.apps_script)
+        self.assertIn(
+            "steps.py missing generic supported-kernel error path",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-grub.sh missing kernel fallback candidate detection",
+            self.apps_script,
+        )
+        self.assertIn(
+            "rebuild-initramfs.sh missing kernel fallback candidate detection",
+            self.apps_script,
+        )
+        self.assertIn(
+            "setup-bootloader.sh missing linux-lts signing/validation fallback",
+            self.apps_script,
+        )
+        self.assertIn(
+            "configure-limine.sh missing dynamic kernel detection",
+            self.apps_script,
+        )
 
 
 class TestInstallerRuntimePaths(unittest.TestCase):

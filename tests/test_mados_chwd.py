@@ -372,9 +372,9 @@ class TestPackagesIncludeNewTools(unittest.TestCase):
                 line.strip() for line in f if line.strip() and not line.startswith("#")
             ]
 
-    def test_includes_linux_zen(self):
-        """packages.x86_64 must include linux-zen kernel."""
-        self.assertIn("linux-zen", self.packages, "packages.x86_64 must include linux-zen")
+    def test_excludes_linux_zen(self):
+        """packages.x86_64 should not include linux-zen when LTS is selected."""
+        self.assertNotIn("linux-zen", self.packages, "packages.x86_64 should not include linux-zen")
 
     def test_includes_linux_lts(self):
         """packages.x86_64 must include linux-lts kernel."""
