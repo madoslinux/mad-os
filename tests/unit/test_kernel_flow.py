@@ -68,6 +68,27 @@ class TestArchisoLookupCompatibility:
         content = _read(path)
         assert "archisosearchuuid=%ARCHISO_UUID%" in content
 
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "syslinux/archiso_sys-linux.cfg",
+            "syslinux/archiso_sys-linux-compat.cfg",
+            "syslinux/archiso_pxe-linux.cfg",
+            "efiboot/loader/entries/01-archiso-linux.conf",
+            "efiboot/loader/entries/02-archiso-safe-graphics.conf",
+            "efiboot/loader/entries/03-archiso-safe-compat.conf",
+            "grub/grub.cfg",
+            "grub/loopback.cfg",
+        ],
+    )
+    def test_uses_quiet_boot_status_flags(self, path):
+        content = _read(path)
+        assert "quiet splash" in content
+        assert "loglevel=3" in content
+        assert "rd.systemd.show_status=false" in content
+        assert "systemd.show_status=false" in content
+        assert "vt.global_cursor_default=0" in content
+
 
 class TestKernelCustomizationFlow:
     """The build flow should not force custom kernel install."""
