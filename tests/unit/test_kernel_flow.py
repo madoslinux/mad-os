@@ -1,112 +1,107 @@
 #!/usr/bin/env python3
-"""Tests for kernel installation flow - validates 00-kernel.sh logic"""
+"""Tests for boot configuration flow with linux-lts and archiso label lookup."""
 
-import os
-import pytest
 from pathlib import Path
-import urllib.request
-import json
+
+import pytest
 
 
-class TestKernelInstallationFlow:
-    """Validate that the kernel installation flow works correctly"""
-
-    def test_fetches_latest_kernel_version(self):
-        """Verify we can fetch latest kernel version from GitHub API"""
-        url = "https://api.github.com/repos/madoslinux/mados-kernel/releases/latest"
-        response = urllib.request.urlopen(url)
-        data = json.loads(response.read().decode())
-        tag = data["tag_name"]
-
-        assert tag.startswith("v"), f"Tag should start with v, got: {tag}"
-        assert "zen1" in tag, f"Tag should contain zen1, got: {tag}"
-
-    def test_kernel_url_construction(self):
-        """Test kernel URL is correctly constructed"""
-        version = "6.19.10.zen1-34"
-        import re
-
-        pkgver = re.sub(r"^([0-9]+\.[0-9]+\.[0-9]+\.zen1)-[0-9]+$", r"\1-1", version)
-        assert pkgver == "6.19.10.zen1-1"
-
-        url = f"https://github.com/madoslinux/mados-kernel/releases/download/v{version}/linux-mados-{pkgver}-x86_64.pkg.tar.zst"
-        assert "v6.19.10.zen1-34" in url
-        assert "linux-mados-6.19.10.zen1-1" in url
-
-    def test_kernel_package_contents(self):
-        """Verify kernel package contains expected files"""
-        version = "6.19.10.zen1-34"
-        pkgver = "6.19.10.zen1-1"
-        url = f"https://github.com/madoslinux/mados-kernel/releases/download/v{version}/linux-mados-{pkgver}-x86_64.pkg.tar.zst"
-
-        # Just verify URL is valid (don't actually download)
-        assert url.endswith(".pkg.tar.zst")
-        assert "linux-mados-" in url
-
-    def test_headers_package_contents(self):
-        """Verify headers package contains expected files"""
-        version = "6.19.10.zen1-34"
-        pkgver = "6.19.10.zen1-1"
-        url = f"https://github.com/madoslinux/mados-kernel/releases/download/v{version}/linux-mados-headers-{pkgver}-x86_64.pkg.tar.zst"
-
-        assert url.endswith(".pkg.tar.zst")
-        assert "linux-mados-headers" in url
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-class TestKernelPathFiltering:
-    """Test that kernel filtering logic correctly identifies madOS kernel"""
-
-    def test_mados_module_filter(self):
-        """Modules directory should filter for mados only"""
-        modules = [
-            "6.19.10-zen1-mados",  # Should be included
-            "6.19.10-arch1-1",  # Should be excluded
-            "5.15.100-1-ARCH",  # Should be excluded
-            "6.18.20-1-cachyos-lts",  # Should be excluded
-        ]
-
-        import re
-
-        pattern = re.compile(r"^6\.[0-9]+\.[0-9]+-zen1-mados$")
-
-        for mod in modules:
-            if pattern.match(mod):
-                assert "mados" in mod
-
-    def test_arch_kernel_excluded(self):
-        """Arch kernel should be identified for removal"""
-        boot_files = [
-            "/boot/vmlinuz-linux",  # Arch - should be removed
-            "/boot/vmlinuz-linux-mados",  # madOS - should be kept
-            "/boot/initramfs-linux.img",  # Arch - should be removed
-            "/boot/initramfs-linux-mados.img",  # madOS - should be kept
-        ]
-
-        arch_kernel_files = [
-            f for f in boot_files if f == "/boot/vmlinuz-linux" or f == "/boot/initramfs-linux.img"
-        ]
-        mados_kernel_files = [f for f in boot_files if "mados" in f]
-
-        assert "/boot/vmlinuz-linux" in arch_kernel_files
-        assert "/boot/vmlinuz-linux-mados" in mados_kernel_files
+def _read(path: str) -> str:
+    return (REPO_ROOT / path).read_text(encoding="utf-8")
 
 
-class TestKernelVersionParsing:
-    """Test kernel version parsing from GitHub tag"""
+class TestBootEntriesUseLtsKernel:
+    """Boot entries should point to linux-lts kernel artifacts."""
 
-    def test_version_stripping(self):
-        """Tag v6.19.10.zen1-34 should become 6.19.10.zen1-34"""
-        tag = "v6.19.10.zen1-34"
-        version = tag.lstrip("v")
-        assert version == "6.19.10.zen1-34"
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "syslinux/archiso_sys-linux.cfg",
+            "syslinux/archiso_sys-linux-compat.cfg",
+            "syslinux/archiso_pxe-linux.cfg",
+            "efiboot/loader/entries/01-archiso-linux.conf",
+            "efiboot/loader/entries/02-archiso-safe-graphics.conf",
+            "efiboot/loader/entries/03-archiso-safe-compat.conf",
+        ],
+    )
+    def test_uses_linux_lts_paths(self, path):
+        content = _read(path)
+        assert "vmlinuz-linux-lts" in content
+        assert "initramfs-linux-lts.img" in content
+        assert "vmlinuz-linux-mados" not in content
+        assert "initramfs-linux-mados.img" not in content
 
-    def test_pkgver_conversion(self):
-        """6.19.10.zen1-34 should become 6.19.10-zen1"""
-        import re
 
-        version = "6.19.10.zen1-34"
-        pkgver = re.sub(r"^([0-9]+\.[0-9]+\.[0-9]+\.zen1)-[0-9]+$", r"\1-1", version)
-        assert pkgver == "6.19.10.zen1-1"
+class TestArchisoLookupCompatibility:
+    """Boot entries should use label lookup for Ventoy compatibility."""
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "syslinux/archiso_sys-linux.cfg",
+            "syslinux/archiso_sys-linux-compat.cfg",
+            "syslinux/archiso_pxe-linux.cfg",
+            "efiboot/loader/entries/01-archiso-linux.conf",
+            "efiboot/loader/entries/02-archiso-safe-graphics.conf",
+            "efiboot/loader/entries/03-archiso-safe-compat.conf",
+        ],
+    )
+    def test_uses_archisolabel(self, path):
+        content = _read(path)
+        assert "archisolabel=%ARCHISO_LABEL%" in content
+
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "syslinux/archiso_sys-linux.cfg",
+            "syslinux/archiso_sys-linux-compat.cfg",
+            "syslinux/archiso_pxe-linux.cfg",
+            "efiboot/loader/entries/01-archiso-linux.conf",
+            "efiboot/loader/entries/02-archiso-safe-graphics.conf",
+            "efiboot/loader/entries/03-archiso-safe-compat.conf",
+        ],
+    )
+    def test_keeps_archisosearchuuid(self, path):
+        content = _read(path)
+        assert "archisosearchuuid=%ARCHISO_UUID%" in content
+
+
+class TestKernelCustomizationFlow:
+    """The build flow should not force custom kernel install."""
+
+    def test_customize_script_does_not_run_custom_kernel_modules(self):
+        content = _read("airootfs/root/customize_airootfs.sh")
+        assert 'run_module "00-kernel.sh" "install_mados_kernel"' not in content
+        assert 'run_module "01-initramfs.sh" "generate_initramfs"' not in content
+
+
+class TestGrubLoopbackCompatibility:
+    """GRUB loopback config should support ISO loop boot (e.g. Ventoy)."""
+
+    def test_loopback_cfg_exists_and_uses_img_loop(self):
+        content = _read("grub/loopback.cfg")
+        assert "img_dev=UUID=${archiso_img_dev_uuid}" in content
+        assert 'img_loop="${iso_path}"' in content
+        assert "vmlinuz-linux-lts" in content
+        assert "initramfs-linux-lts.img" in content
+
+    def test_grub_cfg_exists_with_lts_entries(self):
+        content = _read("grub/grub.cfg")
+        assert "vmlinuz-linux-lts" in content
+        assert "initramfs-linux-lts.img" in content
+        assert "cow_label=mados-persist" in content
+        assert "archisolabel=%ARCHISO_LABEL%" in content
+
+
+class TestProfileSearchFilename:
+    """Ensure profile exports GRUB search filename for loopback support."""
+
+    def test_profiledef_sets_search_filename_to_loopback(self):
+        content = _read("profiledef.sh")
+        assert 'search_filename="boot/grub/loopback.cfg"' in content
 
 
 if __name__ == "__main__":

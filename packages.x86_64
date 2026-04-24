@@ -1,6 +1,5 @@
 # Sistema base
 base
-linux-zen
 linux-lts
 linux-firmware
 nvme-cli
@@ -17,26 +16,47 @@ syslinux
 sudo
 zsh
 
-# Compositores Wayland (Hyprland para hardware moderno)
+# Compositores Wayland (Hyprland para hardware moderno, Sway para software rendering)
 hyprland
 hypridle
+sway
+swaybg
+swayidle
+swaylock
 awww
 quickshell
+swaync
 waybar
 wofi
 mako
 qt5ct
 qt6ct
+xorg-xwayland
+xorg-server
+xorg-xinit
+xorg-xrandr
+xf86-video-dummy
+xf86-video-vesa
+xf86-video-fbdev
 xdg-desktop-portal-hyprland
-xdg-desktop-portal-wlr
+
+# Additional Desktop Environments
+# plasma-meta
+# xfce4
+# xfce4-goodies
+i3-wm
+i3status
+dmenu
+polybar
+feh
+# i3lock
+# qtile
+# niri
 
 # Aplicaciones principales
 foot
 firefox
-libreoffice-fresh
-vim
 nano
-code
 pcmanfm
 gvfs
 tumbler
@@ -64,7 +84,6 @@ libadwaita
 bc
 gst-plugin-gtk
 gtk-layer-shell
-noto-fonts-cjk
 noto-fonts-emoji
 gdk-pixbuf2
 xdg-desktop-portal-gtk
@@ -89,6 +108,7 @@ rfkill
 grim
 slurp
 wl-clipboard
+xdg-desktop-portal-wlr
 brightnessctl
 matugen
 
@@ -103,16 +123,15 @@ ttf-roboto-mono
 earlyoom
 zram-generator
 
-# Drivers de video (multi-GPU moderno)
+# Drivers de video (multi-GPU)
 intel-media-driver
 vulkan-intel
+vulkan-swrast
 libva-intel-driver
 xf86-video-amdgpu
+xf86-video-ati
 vulkan-radeon
 xf86-video-nouveau
-nvidia-open
-nvidia-settings
-nvidia-utils
 mesa
 mesa-utils
 
@@ -149,22 +168,18 @@ mpv
 cava
 
 # Build tools
-make
 pkgconf
 pciutils
 usbutils
 
 # GTK themes (more preinstalled choices for LXAppearance/GTK apps)
 adw-gtk-theme
-materia-gtk-theme
-orchis-theme
 
 # Icon themes (Papirus as default + alternatives)
 papirus-icon-theme
 
 # Fuentes
-ttf-jetbrains-mono-nerd
-ttf-iosevka-nerd
+ttf-hack-nerd
 ttf-carlito
 gnu-free-fonts
 
@@ -187,6 +202,7 @@ e2fsprogs
 ntfs-3g
 btrfs-progs
 unzip
+snapper
 
 # Soporte VM
 virtualbox-guest-utils
@@ -211,14 +227,15 @@ ollama
 # OpenCode AI Assistant (~30MB)
 opencode
 
-# AI tools dependencies
-nodejs
-npm
+# Optional AI tooling helpers
+# Keep bat/fd/fzf for terminal workflows and manual tooling installs
 bat
 fd
 fzf
 
 # madOS Native Apps Dependencies
+# madOS Photo Viewer - image viewing and video playback
+# GStreamer with gtksink support (from gst-plugin-gtk package)
 gstreamer
 gst-plugins-base
 gst-plugins-good
@@ -226,6 +243,7 @@ gst-plugins-ugly
 gst-plugins-bad
 gst-libav
 gst-python
+gst-plugin-gtk
 python-pillow
 librsvg
 libwebp
@@ -244,6 +262,5 @@ rkhunter
 fail2ban
 zenity
 
-# Optional profiles:
-# - packages.optional-heavy.x86_64: CUDA, nvidia-cuda-toolkit, clamav
-# - packages.i3-fallback.x86_64: i3-wm, polybar, dmenu (fallback compositor)
+# Optional desktop extras moved to packages.optional-heavy.x86_64
+# This default profile stays aligned with low-RAM targets.

@@ -3,6 +3,18 @@
 # Atomic module for cleanup operations
 set -euo pipefail
 
+SUPPORTED_LOCALE_PREFIXES=(
+    en
+    es
+    fr
+    de
+    it
+    pt
+    ru
+    ja
+    zh
+)
+
 clean_pacman_cache() {
     echo "Cleaning pacman cache..."
     rm -rf /var/cache/pacman/pkg/*
@@ -58,19 +70,21 @@ clean_unused_fonts_icons() {
     echo "✓ Fonts/icons cleaned"
 }
 
+is_supported_locale_name() {
+    local value="$1"
+    local prefix
+
+    for prefix in "${SUPPORTED_LOCALE_PREFIXES[@]}"; do
+        if [[ "$value" == "$prefix" || "$value" == "${prefix}_"* ]]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 keep_only_supported_locales() {
     echo "Keeping locale support for 9 languages..."
-    local supported_prefixes=(
-        en
-        es
-        fr
-        de
-        it
-        pt
-        ru
-        ja
-        zh
-    )
 
     for lang in /usr/share/locale/*; do
         local lang_name
@@ -80,20 +94,96 @@ keep_only_supported_locales() {
             continue
         fi
 
-        local keep=false
-        local prefix
-        for prefix in "${supported_prefixes[@]}"; do
-            if [[ "$lang_name" == "$prefix" || "$lang_name" == "${prefix}_"* ]]; then
-                keep=true
-                break
-            fi
-        done
-
-        if [[ "$keep" == false ]]; then
+        if ! is_supported_locale_name "$lang_name"; then
             rm -rf "$lang"
         fi
     done
     echo "✓ 9-language locale set applied"
+}
+
+trim_qt_translations() {
+    echo "Trimming Qt translations to 9-language set..."
+
+    local dir
+    for dir in /usr/share/qt/translations /usr/share/qt6/translations; do
+        [[ -d "$dir" ]] || continue
+
+        local removed=0
+        while IFS= read -r -d '' qm_file; do
+            local base
+            local keep=false
+            local prefix
+
+            base=$(basename "$qm_file")
+            if [[ ! "$base" =~ _[A-Za-z]{2}([_@.-]|$) ]]; then
+                continue
+            fi
+
+            for prefix in "${SUPPORTED_LOCALE_PREFIXES[@]}"; do
+                if [[ "$base" =~ _${prefix}([_@.-]|$) ]]; then
+                    keep=true
+                    break
+                fi
+            done
+
+            if [[ "$keep" == false ]]; then
+                rm -f "$qm_file"
+                ((removed++)) || true
+            fi
+        done < <(find "$dir" -type f -name '*.qm' -print0)
+
+        echo "  → Trimmed ${removed} Qt translation files in ${dir}"
+    done
+
+    echo "✓ Qt translations trimmed"
+}
+
+clean_runtime_dev_artifacts() {
+    echo "Removing development-only runtime artifacts..."
+
+    rm -rf /usr/include
+    rm -rf /usr/lib/cmake /usr/share/cmake
+    rm -rf /usr/lib/pkgconfig /usr/share/pkgconfig
+    find /usr/lib -type f \( -name "*.a" -o -name "*.la" \) -delete 2>/dev/null || true
+    rm -rf /usr/share/help/*
+    rm -rf /usr/share/info/*
+
+    echo "✓ Development artifacts removed"
+}
+
+trim_icon_themes_runtime() {
+    echo "Trimming icon themes for runtime footprint..."
+
+    rm -rf /usr/share/icons/breeze /usr/share/icons/breeze-dark
+    rm -rf /usr/share/icons/Papirus-Light /usr/share/icons/Papirus-Dark
+    if [[ -d /usr/share/icons/Papirus ]]; then
+        find /usr/share/icons/Papirus -maxdepth 1 -type d -name "*@2x" -exec rm -rf {} +
+    fi
+
+    echo "✓ Icon themes trimmed"
+}
+
+dedupe_wallpaper_assets() {
+    echo "Deduplicating wallpaper assets..."
+
+    local canonical_dir="/opt/mados/mados_wallpaper/wallpapers"
+    local backgrounds_dir="/usr/share/backgrounds"
+    local skel_mados_dir="/etc/skel/.local/share/mados"
+    local skel_wallpapers_dir="${skel_mados_dir}/wallpapers"
+
+    if [[ ! -d "$canonical_dir" ]]; then
+        echo "  → Canonical wallpaper dir not found, skipping dedupe"
+        return 0
+    fi
+
+    rm -rf "$backgrounds_dir"
+    ln -s "$canonical_dir" "$backgrounds_dir"
+
+    mkdir -p "$skel_mados_dir"
+    rm -rf "$skel_wallpapers_dir"
+    ln -s "$backgrounds_dir" "$skel_wallpapers_dir"
+
+    echo "✓ Wallpaper assets deduplicated"
 }
 
 clean_pacman_db() {
@@ -210,6 +300,10 @@ cleanup_all() {
     clean_debug_symbols
     clean_unused_fonts_icons
     keep_only_supported_locales
+    trim_qt_translations
+    clean_runtime_dev_artifacts
+    trim_icon_themes_runtime
+    dedupe_wallpaper_assets
     clean_pacman_db
     set_executable_permissions
     hide_unwanted_desktop_entries

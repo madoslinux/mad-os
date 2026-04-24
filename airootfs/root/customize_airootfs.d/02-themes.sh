@@ -3,11 +3,27 @@
 # Atomic module for theme installation
 set -euo pipefail
 
-install_nordic_theme() {
-    return 0
-}
+apply_default_gtk_theme() {
+    local settings_file="/etc/gtk-3.0/settings.ini"
 
-install_nordzy_icons() {
+    mkdir -p /etc/gtk-3.0
+    if [[ -f "$settings_file" ]]; then
+        sed -i 's/^gtk-theme-name=.*/gtk-theme-name=adw-gtk3-dark/' "$settings_file"
+        sed -i 's/^gtk-icon-theme-name=.*/gtk-icon-theme-name=Papirus/' "$settings_file"
+    else
+        cat > "$settings_file" << 'EOF'
+[Settings]
+gtk-theme-name=adw-gtk3-dark
+gtk-icon-theme-name=Papirus
+gtk-font-name=Hack Nerd Font 10
+gtk-cursor-theme-name=Adwaita
+gtk-cursor-theme-size=16
+gtk-application-prefer-dark-theme=true
+gtk-decoration-layout=:minimize,maximize,close
+EOF
+    fi
+
+    echo "✓ Default GTK theme set to adw-gtk3-dark (Papirus icons)"
     return 0
 }
 
@@ -64,9 +80,7 @@ install_logos_and_splashes() {
 }
 
 install_themes() {
-    install_nordic_theme
-    install_nordzy_icons
-
+    apply_default_gtk_theme
     install_michroma_font
     install_logos_and_splashes
     fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true
