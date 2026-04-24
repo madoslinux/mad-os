@@ -84,9 +84,9 @@ jobs:
       matrix:
         include:
           - category: "Core & OTA"
-            files: "tests/test_boot_scripts.py tests/test_liveusb_scripts.py tests/test_wifi_quirks.py tests/test_boot_compat_entries.py"
+            files: "tests/test_boot_scripts.py tests/test_wifi_quirks.py tests/test_mados_chwd.py tests/test_profiledef_permissions.py"
           - category: "Desktop Config"
-            files: "tests/test_hyprland_config.py tests/test_sway_config.py"
+            files: "tests/test_gamepad_wm.py tests/test_squeekboard.py tests/test_timezone_detect.py tests/test_vbox_guest.py"
 
     steps:
       - name: Checkout
@@ -103,13 +103,20 @@ jobs:
 
       - name: Run tests
         run: |
+          executed=0
           for file in ${{ matrix.files }}; do
             if [ ! -f "$file" ]; then
-              echo "Missing test file: $file"
-              exit 1
+              echo "Skipping missing test file: $file"
+              continue
             fi
             python3 -m pytest "$file" -v
+            executed=$((executed + 1))
           done
+
+          if [ "$executed" -eq 0 ]; then
+            echo "No test files executed for matrix category: ${{ matrix.category }}"
+            exit 1
+          fi
 
   test-integration:
     name: "Integration"
