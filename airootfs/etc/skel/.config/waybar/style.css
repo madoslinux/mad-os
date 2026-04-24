@@ -11,7 +11,7 @@
 window#waybar {
     background: linear-gradient(90deg, rgba(46, 52, 64, 0.75) 0%, rgba(59, 66, 82, 0.75) 50%, rgba(46, 52, 64, 0.75) 100%);
     color: #ECEFF4;
-    font-family: "Michroma", "JetBrainsMono Nerd Font", monospace;
+    font-family: "Michroma", "Hack Nerd Font", monospace;
     font-size: 8px;
     font-weight: 500;
 }

@@ -63,6 +63,19 @@ clone_latest_tag() {
     return 0
 }
 
+strip_vcs_metadata() {
+    local target_dir="$1"
+
+    [[ -d "$target_dir" ]] || return 0
+
+    rm -rf \
+        "$target_dir/.git" \
+        "$target_dir/.github" \
+        "$target_dir/.gitignore" \
+        "$target_dir/.gitattributes" \
+        "$target_dir/.gitmodules"
+}
+
 assert_installer_contract() {
     local install_path="$1"
 
@@ -188,7 +201,7 @@ assert_installer_contract() {
         return 1
     fi
 
-    if ! grep -q 'vmlinuz-linux-lts' "${install_path}/installer/steps.py"; then
+    if ! grep -q '"linux-lts"' "${install_path}/installer/steps.py"; then
         echo "ERROR: Installer contract check failed: steps.py missing linux-lts kernel fallback"
         return 1
     fi
@@ -255,6 +268,7 @@ clone_and_install_app() {
     mkdir -p "$INSTALL_DIR"
     rm -rf "$install_path"
     mv "${build_dir}/${module_name}" "$install_path"
+    strip_vcs_metadata "$install_path"
     rm -rf "$build_dir"
     
     # Keep mados-wallpaper as assets-only package (no executable wrappers)
@@ -339,6 +353,7 @@ install_installer() {
     mkdir -p "$INSTALL_DIR"
     rm -rf "$install_path"
     mv "${build_dir}/${installer_module}" "$install_path"
+    strip_vcs_metadata "$install_path"
     rm -rf "$build_dir"
 
     # Keep installed-system Plymouth logo size identical to live ISO theme.
@@ -1127,6 +1142,7 @@ install_oh_my_zsh() {
     fi
     
     mv "${build_dir}/ohmyzsh" "$omz_dir"
+    strip_vcs_metadata "$omz_dir"
     rm -rf "$build_dir"
     
     if [[ -d /home/mados ]]; then
@@ -1179,6 +1195,7 @@ install_skwd_wall_legacy() {
     mkdir -p "$INSTALL_DIR" "/usr/local/share" "/opt/mados"
     rm -rf "$SKWD_WALL_INSTALL_DIR"
     mv "${build_dir}/skwd-wall" "$SKWD_WALL_INSTALL_DIR"
+    strip_vcs_metadata "$SKWD_WALL_INSTALL_DIR"
 
     rm -rf "$SKWD_WALL_COMPAT_DIR"
     ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"
@@ -1580,6 +1597,7 @@ install_skwd_wall() {
     mkdir -p "$INSTALL_DIR" "/usr/local/share" "/opt/mados" /etc/skel/.config/skwd-wall /etc/skel/.config/systemd/user
     rm -rf "$SKWD_WALL_INSTALL_DIR"
     mv "${build_dir}/skwd-wall" "$SKWD_WALL_INSTALL_DIR"
+    strip_vcs_metadata "$SKWD_WALL_INSTALL_DIR"
 
     rm -rf "$SKWD_WALL_COMPAT_DIR"
     ln -s "$SKWD_WALL_INSTALL_DIR" "$SKWD_WALL_COMPAT_DIR"
@@ -1667,32 +1685,7 @@ setup_wallpaper_assets() {
         mkdir -p /usr/share/icons/hicolor/scalable/apps
         cp "$wallpaper_dir/mados-wallpaper.svg" /usr/share/icons/hicolor/scalable/apps/
     fi
-    
-    mkdir -p /etc/skel/.local/share/mados/wallpapers
-    mkdir -p /etc/skel/Pictures/Wallpapers
-    mkdir -p /usr/share/mados/wallpapers
-    cp "$wallpaper_dir"/*.png /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.jpg /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.jpeg /etc/skel/.local/share/mados/wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.png /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.jpg /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.jpeg /etc/skel/Pictures/Wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.png /usr/share/mados/wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.jpg /usr/share/mados/wallpapers/ 2>/dev/null || true
-    cp "$wallpaper_dir"/*.jpeg /usr/share/mados/wallpapers/ 2>/dev/null || true
-    
-    if [[ -d /home/mados ]]; then
-        mkdir -p /home/mados/.local/share/mados/wallpapers
-        mkdir -p /home/mados/Pictures/Wallpapers
-        cp "$wallpaper_dir"/*.png /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
-        cp "$wallpaper_dir"/*.jpg /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
-        cp "$wallpaper_dir"/*.jpeg /home/mados/.local/share/mados/wallpapers/ 2>/dev/null || true
-        cp "$wallpaper_dir"/*.png /home/mados/Pictures/Wallpapers/ 2>/dev/null || true
-        cp "$wallpaper_dir"/*.jpg /home/mados/Pictures/Wallpapers/ 2>/dev/null || true
-        cp "$wallpaper_dir"/*.jpeg /home/mados/Pictures/Wallpapers/ 2>/dev/null || true
-        chown -R 1000:1000 /home/mados/.local/share/mados
-        chown -R 1000:1000 /home/mados/Pictures
-    fi
+
 }
 
 IMPERATIVE_DOTS_REPO="madkoding/theme-imperative-dots"
@@ -1735,6 +1728,7 @@ install_imperative_dots() {
 
     mkdir -p "$(dirname "$IMPERATIVE_DOTS_INSTALL_DIR")"
     mv "${build_dir}/imperative-dots" "$IMPERATIVE_DOTS_INSTALL_DIR"
+    strip_vcs_metadata "$IMPERATIVE_DOTS_INSTALL_DIR"
     rm -rf "$build_dir"
 
     chmod +x "${IMPERATIVE_DOTS_INSTALL_DIR}/scripts/start/start.sh"

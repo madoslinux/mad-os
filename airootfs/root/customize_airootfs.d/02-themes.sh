@@ -3,50 +3,27 @@
 # Atomic module for theme installation
 set -euo pipefail
 
-install_nordic_theme() {
-    local nordic_dir="/usr/share/themes/Nordic"
-    local nordic_build_dir=$(mktemp -d)
-    
-    if [[ -d "$nordic_dir" ]]; then
-        echo "Nordic theme already installed"
-        rm -rf "$nordic_build_dir"
-        return 0
-    fi
-    
-    echo "Installing Nordic GTK theme..."
-    if git clone --depth=1 https://github.com/EliverLara/Nordic.git "$nordic_build_dir/Nordic" 2>&1; then
-        mkdir -p /usr/share/themes
-        cp -a "$nordic_build_dir/Nordic" "$nordic_dir"
-        rm -rf "$nordic_dir/.git" "$nordic_dir/.gitignore"
-        rm -rf "$nordic_dir/Art" "$nordic_dir/LICENSE" "$nordic_dir/README.md"
-        rm -rf "$nordic_dir/KDE" "$nordic_dir/Wallpaper"
-        echo "✓ Nordic theme installed"
-    else
-        echo "WARNING: Failed to install Nordic theme"
-    fi
-    rm -rf "$nordic_build_dir"
-    return 0
-}
+apply_default_gtk_theme() {
+    local settings_file="/etc/gtk-3.0/settings.ini"
 
-install_nordzy_icons() {
-    local nordzy_dir="/usr/share/icons/Nordzy-dark"
-    local nordzy_build_dir=$(mktemp -d)
-    
-    if [[ -d "$nordzy_dir" ]]; then
-        echo "Nordzy-dark icons already installed"
-        rm -rf "$nordzy_build_dir"
-        return 0
-    fi
-    
-    echo "Installing Nordzy-dark icon theme..."
-    if git clone --depth=1 https://github.com/MolassesLover/Nordzy-icon.git "$nordzy_build_dir/Nordzy-icon" 2>&1; then
-        cd "$nordzy_build_dir/Nordzy-icon"
-        bash install.sh -d /usr/share/icons -c dark -t default
-        echo "✓ Nordzy-dark icons installed"
+    mkdir -p /etc/gtk-3.0
+    if [[ -f "$settings_file" ]]; then
+        sed -i 's/^gtk-theme-name=.*/gtk-theme-name=adw-gtk3-dark/' "$settings_file"
+        sed -i 's/^gtk-icon-theme-name=.*/gtk-icon-theme-name=Papirus/' "$settings_file"
     else
-        echo "WARNING: Failed to install Nordzy icons"
+        cat > "$settings_file" << 'EOF'
+[Settings]
+gtk-theme-name=adw-gtk3-dark
+gtk-icon-theme-name=Papirus
+gtk-font-name=Hack Nerd Font 10
+gtk-cursor-theme-name=Adwaita
+gtk-cursor-theme-size=16
+gtk-application-prefer-dark-theme=true
+gtk-decoration-layout=:minimize,maximize,close
+EOF
     fi
-    rm -rf "$nordzy_build_dir"
+
+    echo "✓ Default GTK theme set to adw-gtk3-dark (Papirus icons)"
     return 0
 }
 
@@ -103,9 +80,7 @@ install_logos_and_splashes() {
 }
 
 install_themes() {
-    install_nordic_theme
-    install_nordzy_icons
-
+    apply_default_gtk_theme
     install_michroma_font
     install_logos_and_splashes
     fc-cache -f /usr/share/fonts/truetype/ 2>/dev/null || true

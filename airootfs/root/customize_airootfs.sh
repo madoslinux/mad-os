@@ -140,10 +140,8 @@ if ! run_module "04-cleanup.sh" "cleanup_all"; then
     exit 1
 fi
 
-# 09-ai-tools.sh - Install AI tools (OpenClaw, ForgeCode) from AUR
-if ! run_module "09-ai-tools.sh" "install_ai_tools"; then
-    echo "WARNING: AI tools installation had issues (non-fatal, tools may need manual install)"
-fi
+# 09-ai-tools.sh is intentionally skipped in default builds to keep ISO lean.
+# Users can install optional tools (OpenClaw/Forge/Qwen) post-install if needed.
 
 echo ""
 echo "=== madOS: Post-installation complete ==="

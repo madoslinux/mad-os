@@ -49,7 +49,6 @@ i3status
 dmenu
 polybar
 feh
-steam
 # i3lock
 # qtile
 # niri
@@ -57,10 +56,7 @@ steam
 # Aplicaciones principales
 foot
 firefox
-libreoffice-fresh
-vim
 nano
-code
 pcmanfm
 gvfs
 tumbler
@@ -88,7 +84,6 @@ libadwaita
 bc
 gst-plugin-gtk
 gtk-layer-shell
-noto-fonts-cjk
 noto-fonts-emoji
 gdk-pixbuf2
 xdg-desktop-portal-gtk
@@ -137,8 +132,6 @@ xf86-video-amdgpu
 xf86-video-ati
 vulkan-radeon
 xf86-video-nouveau
-nvidia-open
-nvidia-settings
 mesa
 mesa-utils
 
@@ -175,22 +168,18 @@ mpv
 cava
 
 # Build tools
-make
 pkgconf
 pciutils
 usbutils
 
 # GTK themes (more preinstalled choices for LXAppearance/GTK apps)
 adw-gtk-theme
-materia-gtk-theme
-orchis-theme
 
 # Icon themes (Papirus as default + alternatives)
 papirus-icon-theme
 
 # Fuentes
-ttf-jetbrains-mono-nerd
-ttf-iosevka-nerd
+ttf-hack-nerd
 ttf-carlito
 gnu-free-fonts
 
@@ -238,11 +227,8 @@ ollama
 # OpenCode AI Assistant (~30MB)
 opencode
 
-# AI tools dependencies
-# OpenClaw needs nodejs + npm
-nodejs
-npm
-# ForgeCode needs bat, fd, fzf
+# Optional AI tooling helpers
+# Keep bat/fd/fzf for terminal workflows and manual tooling installs
 bat
 fd
 fzf
@@ -273,7 +259,6 @@ firewalld
 # Security
 usbguard
 rkhunter
-clamav
 fail2ban
 zenity
 
