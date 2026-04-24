@@ -2,7 +2,28 @@
 
 ## Project Overview
 
-madOS is an Arch Linux distribution built using `archiso`. It targets low-RAM systems (1.9GB) with x86_64 processors (Intel/AMD) and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Sway desktop environment.
+madOS is an Arch Linux distribution built using `archiso`. It targets modern hardware with GPU acceleration and integrates OpenCode as an AI assistant. The project produces a custom live/installer ISO with a GTK graphical installer and pre-configured Hyprland desktop environment.
+
+### imperative-dots Live/Local Workflow
+
+- `../theme-imperative-dots` is the canonical working repository used to iterate on imperative-dots theme fixes.
+- The same theme is consumed by madOS during build/install under `/usr/share/mados/themes/imperative-dots`.
+- Development flow: edit and test behavior live from `theme-imperative-dots` against the local madOS environment, validate fixes in-session, then commit changes back to `theme-imperative-dots`.
+- When investigating visual mismatches, compare all theme files between the local runtime copy and `theme-imperative-dots` before fixing issues.
+
+### Shell Component Source Of Truth (Important)
+
+- `SKWD Launcher` source of truth is `../skwd` (repo `madkoding/skwd`), not `skwd-wall`.
+- Launcher implementation paths in `skwd`:
+  - `qml/launcher/AppLauncher.qml`
+  - `qml/launcher/AppLauncherService.qml`
+  - `scripts/python/build-app-cache`
+- In madOS live runtime, launcher UI may still be consumed from the installed theme copy under `~/.config/quickshell/widgets/launcher` and `/usr/share/mados/themes/imperative-dots/scripts/quickshell/widgets/launcher`, but upstream fixes for launcher behavior should be applied in `skwd`.
+- `skwd-wall` (`madkoding/skwd-wall`) is wallpaper selector/daemon only. It is installed to `/usr/local/share/skwd-wall` and does not contain the app launcher module.
+- Theme repo (`../theme-imperative-dots`) remains the source of truth for top bar/main shell composition and quickshell startup wiring:
+  - `scripts/quickshell/TopBar.qml`
+  - `scripts/quickshell/Main.qml`
+  - `scripts/start/start.sh`
 
 ---
 
@@ -242,8 +263,8 @@ docker run --privileged --rm -v $(pwd):/build archlinux:latest bash /build/tests
 ### Documentation
 
 - `docs/` — Project documentation and GitHub Pages site
-- `docs/PERSISTENCE.md` — Persistent storage documentation
-- `docs/DEBUGGING.md` — Debugging guide
+- `docs/HARDWARE_QUIRKS.md` — Hardware-specific configurations
+- `docs/SEQUENCE_DIAGRAMS.md` — System sequence diagrams
 
 ---
 

@@ -6,9 +6,20 @@ if [[ $# -gt 0 ]]; then
     shift
 fi
 QUERY_ARGS=("$@")
-DAEMON_QML="/usr/local/share/skwd-wall/daemon.qml"
+SKWD_WALL_INSTALL="${SKWD_WALL_INSTALL:-/usr/local/share/skwd-wall}"
+if [[ ! -d "$SKWD_WALL_INSTALL" && -d "${HOME}/.local/share/skwd-wall" ]]; then
+    SKWD_WALL_INSTALL="${HOME}/.local/share/skwd-wall"
+fi
+
+HELPER_BIN_DIR="/usr/local/bin"
+if [[ ! -x "${HELPER_BIN_DIR}/mados-skwd-wall-daemon" && -x "${HOME}/.local/bin/mados-skwd-wall-daemon" ]]; then
+    HELPER_BIN_DIR="${HOME}/.local/bin"
+fi
+
+DAEMON_QML="${SKWD_WALL_INSTALL}/daemon.qml"
 SERVICE_NAME="skwd-wall.service"
 LOG_FILE="${XDG_CACHE_HOME:-$HOME/.cache}/mados/skwd-wall.log"
+FALLBACK_QS_MANAGER="${HOME}/.config/hypr/scripts/qs_manager.sh"
 
 detect_lang() {
     local locale
@@ -101,10 +112,17 @@ ensure_log_dir() {
 }
 
 close_qs_overlay() {
-    local qs_manager="$HOME/.config/hypr/scripts/qs_manager.sh"
-    if [[ -x "$qs_manager" ]]; then
-        "$qs_manager" close "" keepfocus >>"$LOG_FILE" 2>&1 &
+    if [[ -x "$FALLBACK_QS_MANAGER" ]]; then
+        "$FALLBACK_QS_MANAGER" close "" keepfocus >>"$LOG_FILE" 2>&1 &
     fi
+}
+
+fallback_open() {
+    if [[ -x "$FALLBACK_QS_MANAGER" ]]; then
+        "$FALLBACK_QS_MANAGER" toggle wallpaper >>"$LOG_FILE" 2>&1 &
+        return 0
+    fi
+    return 1
 }
 
 daemon_ready() {
@@ -116,14 +134,14 @@ start_daemon_service() {
         return 0
     fi
 
-    /usr/local/bin/mados-skwd-wall-sources prepare >>"$LOG_FILE" 2>&1 || true
-    /usr/local/bin/mados-skwd-wall-sources sync >>"$LOG_FILE" 2>&1 &
+    "${HELPER_BIN_DIR}/mados-skwd-wall-sources" prepare >>"$LOG_FILE" 2>&1 || true
+    "${HELPER_BIN_DIR}/mados-skwd-wall-sources" sync >>"$LOG_FILE" 2>&1 &
     if command -v systemctl >/dev/null 2>&1; then
         systemctl --user start "$SERVICE_NAME" >>"$LOG_FILE" 2>&1 || true
     fi
 
     if ! daemon_ready; then
-        setsid -f /usr/local/bin/mados-skwd-wall-daemon >>"$LOG_FILE" 2>&1 || true
+        setsid -f "${HELPER_BIN_DIR}/mados-skwd-wall-daemon" >>"$LOG_FILE" 2>&1 || true
     fi
 
     local tries=0
@@ -141,6 +159,37 @@ start_daemon_service() {
 ipc_call() {
     local method="$1"
     quickshell ipc -p "$DAEMON_QML" call wallpaper "$method" >>"$LOG_FILE" 2>&1 &
+}
+
+ui_running() {
+    pgrep -f "quickshell -p ${SKWD_WALL_INSTALL}/shell.qml" >/dev/null 2>&1
+}
+
+start_ui_shell() {
+    if [[ -f "${SKWD_WALL_INSTALL}/shell.qml" ]]; then
+        setsid -f quickshell -p "${SKWD_WALL_INSTALL}/shell.qml" >>"$LOG_FILE" 2>&1 || true
+    fi
+}
+
+ensure_ui_open() {
+    case "$ACTION" in
+        toggle|open)
+            ;;
+        *)
+            return 0
+            ;;
+    esac
+
+    local tries=0
+    while [[ $tries -lt 8 ]]; do
+        if ui_running; then
+            return 0
+        fi
+        sleep 0.1
+        tries=$((tries + 1))
+    done
+
+    start_ui_shell
 }
 
 open_wallhaven_web() {
@@ -167,6 +216,7 @@ main() {
 
     if [[ ! -f "$DAEMON_QML" ]]; then
         notify_error "$(t skwd_not_installed)"
+        fallback_open && exit 0
         exit 1
     fi
 
@@ -187,6 +237,7 @@ main() {
             close_qs_overlay
             start_daemon_service || {
                 notify_error "$(t daemon_start_failed)"
+                fallback_open && exit 0
                 exit 1
             }
             ;;
@@ -200,12 +251,14 @@ main() {
             close_qs_overlay
             start_daemon_service || {
                 notify_error "$(t daemon_start_failed)"
+                fallback_open && exit 0
                 exit 1
             }
             ;;
     esac
 
     ipc_call "$ACTION"
+    ensure_ui_open
 }
 
 main "$@"

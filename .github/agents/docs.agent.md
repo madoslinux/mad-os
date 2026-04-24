@@ -19,9 +19,8 @@ You are the documentation specialist for the madOS project, an Arch Linux distri
 ### Project Docs (`docs/`)
 
 - `docs/README.md` — Main documentation index
-- `docs/PERSISTENCE.md` — Persistent USB storage user guide
-- `docs/PERSISTENCE_TESTING.md` — Persistence testing procedures
-- `docs/DEBUGGING.md` — Troubleshooting and debugging guide
+- `docs/HARDWARE_QUIRKS.md` — Hardware-specific configurations
+- `docs/SEQUENCE_DIAGRAMS.md` — System sequence diagrams
 - `docs/AUDIO_QUALITY.md` — Audio quality system documentation
 - `docs/INSTRUCTIONS.md` — General instructions
 
@@ -64,9 +63,8 @@ You are the documentation specialist for the madOS project, an Arch Linux distri
 
 ### Key Project Details for Documentation
 
-- **Hardware target**: 1.9GB RAM systems with Intel Atom processors
-- **Desktop**: Sway compositor with Nord color scheme
+- **Hardware target**: Modern hardware with GPU acceleration
+- **Desktop**: Hyprland compositor with Nord color scheme
 - **AI assistant**: OpenCode (installed via npm)
 - **Installer**: External GTK installer (in `/usr/local/bin/mados-installer`)
-- **Persistence**: Dynamic USB persistence with ext4 partition
 - **Services**: earlyoom, iwd, systemd-timesyncd, ZRAM

@@ -18,6 +18,7 @@ INTEL_WIFI_QUIRK_PATH = os.path.join(QUIRKS_DIR, "20-intel-wifi-power-save-off.s
 RTL8821CE_QUIRK_PATH = os.path.join(QUIRKS_DIR, "21-realtek-rtl8821ce.sh")
 I915_QUIRK_PATH = os.path.join(QUIRKS_DIR, "30-intel-i915-legacy-stability.sh")
 AMDGPU_QUIRK_PATH = os.path.join(QUIRKS_DIR, "31-amdgpu-stability.sh")
+NVIDIA_QUIRK_PATH = os.path.join(QUIRKS_DIR, "33-nvidia-conditional-stack.sh")
 NVME_QUIRK_PATH = os.path.join(QUIRKS_DIR, "40-nvme-conservative-power.sh")
 AUDIO_HDA_QUIRK_PATH = os.path.join(QUIRKS_DIR, "50-audio-hda-fallback.sh")
 AUDIO_SOF_QUIRK_PATH = os.path.join(QUIRKS_DIR, "51-audio-sof-to-hda-fallback.sh")
@@ -30,7 +31,6 @@ SLEEP_HOOK_PATH = os.path.join(
 )
 PROFILEDEF_PATH = os.path.join(REPO_DIR, "profiledef.sh")
 NETWORK_MODULE_PATH = os.path.join(AIROOTFS, "root", "customize_airootfs.d", "06-network.sh")
-AUTOINSTALL_PATH = os.path.join(AIROOTFS, "usr", "local", "bin", "mados-autoinstall")
 
 
 class TestHwQuirksRunner(unittest.TestCase):
@@ -91,8 +91,8 @@ class TestHwQuirksWiring(unittest.TestCase):
         self.assertIn("mados-hw-quirks.d/10-rtl8723de-rtw88.sh", content)
         self.assertIn("mados-hw-quirks.d/20-intel-wifi-power-save-off.sh", content)
         self.assertIn("mados-hw-quirks.d/21-realtek-rtl8821ce.sh", content)
-        self.assertIn("mados-hw-quirks.d/30-intel-i915-legacy-stability.sh", content)
         self.assertIn("mados-hw-quirks.d/31-amdgpu-stability.sh", content)
+        self.assertIn("mados-hw-quirks.d/33-nvidia-conditional-stack.sh", content)
         self.assertIn("mados-hw-quirks.d/40-nvme-conservative-power.sh", content)
         self.assertIn("mados-hw-quirks.d/50-audio-hda-fallback.sh", content)
         self.assertIn("mados-hw-quirks.d/51-audio-sof-to-hda-fallback.sh", content)
@@ -104,12 +104,6 @@ class TestHwQuirksWiring(unittest.TestCase):
 
     def test_network_module_enables_service(self):
         with open(NETWORK_MODULE_PATH) as f:
-            content = f.read()
-
-        self.assertIn("mados-hw-quirks.service", content)
-
-    def test_autoinstall_enables_service(self):
-        with open(AUTOINSTALL_PATH) as f:
             content = f.read()
 
         self.assertIn("mados-hw-quirks.service", content)
@@ -145,19 +139,19 @@ class TestHwQuirkRules(unittest.TestCase):
         self.assertIn("10ec:c821", content)
         self.assertIn("rtl8821ce", content)
 
-    def test_i915_rule_exists(self):
-        self.assertTrue(os.path.isfile(I915_QUIRK_PATH))
-        with open(I915_QUIRK_PATH) as f:
-            content = f.read()
-        self.assertIn("i915", content)
-        self.assertIn("enable_psr=0", content)
-
     def test_amdgpu_rule_exists(self):
         self.assertTrue(os.path.isfile(AMDGPU_QUIRK_PATH))
         with open(AMDGPU_QUIRK_PATH) as f:
             content = f.read()
         self.assertIn("amdgpu", content)
         self.assertIn("aspm=0", content)
+
+    def test_nvidia_rule_exists(self):
+        self.assertTrue(os.path.isfile(NVIDIA_QUIRK_PATH))
+        with open(NVIDIA_QUIRK_PATH) as f:
+            content = f.read()
+        self.assertIn("15_nvidia_gbm.json", content)
+        self.assertIn("10de", content)
 
     def test_nvme_rule_exists(self):
         self.assertTrue(os.path.isfile(NVME_QUIRK_PATH))

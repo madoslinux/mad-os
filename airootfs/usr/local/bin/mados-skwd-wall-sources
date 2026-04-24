@@ -9,6 +9,7 @@ import time
 from pathlib import Path
 
 DEFAULT_SOURCES = [
+    "~/Images/Wallpapers",
     "~/.local/share/mados/wallpapers",
     "~/Pictures/Wallpapers",
     "/usr/share/backgrounds",
@@ -128,6 +129,12 @@ def should_rebuild(sources: list[str], force: bool = False) -> bool:
 
     union = union_dir()
     if not union.exists():
+        return True
+
+    try:
+        if not any(union.iterdir()):
+            return True
+    except OSError:
         return True
 
     state = load_sync_state()

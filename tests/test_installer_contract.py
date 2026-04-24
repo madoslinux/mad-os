@@ -147,10 +147,10 @@ class TestInstallerRepoSource(unittest.TestCase):
 
 
 class Test03AppsShContract(unittest.TestCase):
-    """Verify 03-apps.sh applies/asserts contract checks."""
+    """Verify 16-installer.sh applies/asserts contract checks."""
 
     def test_installer_contract_assertions_in_03_apps(self):
-        script_path = REPO_DIR / "airootfs/root/customize_airootfs.d/03-apps.sh"
+        script_path = REPO_DIR / "airootfs/root/customize_airootfs.d/16-installer.sh"
         content = script_path.read_text()
 
         assertions = [

@@ -21,7 +21,7 @@ sequenceDiagram
         M->>A: Copy airootfs/ to work/
         M->>A: Run customize_airootfs.sh
     and Configure Boot
-        M->>M: Setup GRUB (UEFI)
+        M->>M: Setup systemd-boot (UEFI)
         M->>M: Setup Syslinux (BIOS)
     end
     
@@ -38,25 +38,23 @@ sequenceDiagram
     participant K as Linux Kernel
     participant S as Systemd
     participant A as archiso
-    participant W as Sway/Hyprland
+    participant W as Hyprland
     participant I as mados-installer-autostart
 
     B->>K: Load Linux + initramfs
     K->>S: Boot systemd
     S->>A: Mount squashfs (read-only)
-    S->>A: Setup overlayfs (persistence)
-    S->>S: Start display manager (greetd → cage)
+    S->>S: Start display manager (SDDM)
     
     S->>W: Launch compositor
-    W->>W: Load sway/hyprland config
+    W->>W: Load hyprland config
     W->>W: Start waybar, wallpaper, etc.
     
     W->>I: Execute autostart scripts
     alt In archiso live environment
         I->>I: Check /run/archiso exists
-        I->>I: Check NOT Ventoy boot
         I->>I: Launch installer at /usr/local/bin/mados-installer
-    else Ventoy or installed system
+    else Installed system
         I->>I: Exit silently
     end
 ```
@@ -77,7 +75,6 @@ sequenceDiagram
     rect rgb(240, 248, 255)
         note right of A: Pre-flight checks
         A->>A: Check /run/archiso (live env?)
-        A->>A: Check /proc/cmdline (Ventoy?)
     end
 
     A->>I: Execute installer
@@ -85,48 +82,12 @@ sequenceDiagram
     G-->>U: Show installer UI
 ```
 
-## USB Persistence Detection
-
-```mermaid
-sequenceDiagram
-    participant K as Kernel
-    participant D as mados-persist-detect.sh
-    participant P as blkid
-    participant M as mount
-    participant C as mados-persist-sync.sh
-
-    K->>D: Run via systemd (persist-detect.service)
-    
-    D->>P: blkid -o device -s LABEL
-    P-->>D: List block devices
-    
-    loop Each block device
-        D->>P: blkid -s PERSISTENT
-        alt Has PERSISTENT flag
-            D->>M: Mount persistence partition
-            M-->>D: /run/mnt/persist
-            
-            D->>D: Check /run/mnt/persist/mados/
-            alt madOS data exists
-                D->>C: Sync to /home/mados
-                C-->>D: Sync complete
-            end
-            
-            D->>M: Umount
-        else No persistence
-            D->>D: Continue (no persistence)
-        end
-    end
-    
-    D-->>K: Exit
-```
-
 ## Desktop App Launch (Gamepad Mode)
 
 ```mermaid
 sequenceDiagram
     participant G as Gamepad Input
-    participant W as Sway/Hyprland
+    participant W as Hyprland
     participant GM as mados-gamepad-wm
     participant M as mados-launcher
     participant A as mados-video-player
