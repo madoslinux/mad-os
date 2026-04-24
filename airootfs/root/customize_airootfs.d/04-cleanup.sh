@@ -166,12 +166,25 @@ trim_icon_themes_runtime() {
 dedupe_wallpaper_assets() {
     echo "Deduplicating wallpaper assets..."
 
-    local canonical_dir="/opt/mados/mados_wallpaper/wallpapers"
+    local canonical_candidates=(
+        "/opt/mados/mados_wallpaper/wallpapers"
+        "/usr/share/mados/wallpapers"
+        "/opt/mados/mados_wallpaper"
+    )
+    local canonical_dir=""
+    local candidate
     local backgrounds_dir="/usr/share/backgrounds"
     local skel_mados_dir="/etc/skel/.local/share/mados"
     local skel_wallpapers_dir="${skel_mados_dir}/wallpapers"
 
-    if [[ ! -d "$canonical_dir" ]]; then
+    for candidate in "${canonical_candidates[@]}"; do
+        if [[ -d "$candidate" ]]; then
+            canonical_dir="$candidate"
+            break
+        fi
+    done
+
+    if [[ -z "$canonical_dir" ]]; then
         echo "  → Canonical wallpaper dir not found, skipping dedupe"
         return 0
     fi

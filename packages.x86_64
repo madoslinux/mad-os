@@ -84,6 +84,8 @@ libadwaita
 bc
 gst-plugin-gtk
 gtk-layer-shell
+noto-fonts
+noto-fonts-cjk
 noto-fonts-emoji
 gdk-pixbuf2
 xdg-desktop-portal-gtk
